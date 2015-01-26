@@ -1,0 +1,65 @@
+﻿
+@using Pluribus.SampleWebApp.Models;
+@model SendTestMessage
+
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/_Layout.cshtml";
+}
+
+@if (Model.MessageSent)
+{
+    <div class="alert alert-success">
+        <a href="#" class="close" data-dismiss="alert">&times;</a>
+        Message sent successfully (ID @Model.SentMessageId)
+    </div>
+}
+
+@if (Model.ErrorsOccurred)
+{
+    <div class="alert alert-warning">
+        <a href="#" class="close" data-dismiss="alert">&times;</a>
+        <strong>Error!</strong> @Model.ErrorMessage
+    </div>
+}
+
+<h2>Send Test Message</h2>
+
+@using (Html.BeginForm("SendTestMessage", "SendTestMessage", FormMethod.Post, new {@class = "form-horizontal"}))
+{
+    <fieldset>
+        <div class="form-group">
+            @Html.LabelFor(model => model.Destination, "Destination", new {@class = "control-label col-md-3"})
+            <div class="col-md-9">
+                @Html.TextBoxFor(model => model.Destination, new {@class = "form-control"})
+            </div>
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.UseDurableTransport, "Use Durable Transport?", new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                <div class="pull-left">
+                    @Html.CheckBoxFor(model => model.UseDurableTransport, new { @class = "form-control" })    
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.ContentType, "MessageText-Type", new {@class = "control-label col-md-3"})
+            <div class="col-md-9">
+                @{
+                    var contentTypeSelectItems = Model.ContentTypeOptions
+                        .Select(ct => new SelectListItem {Text = ct, Value = ct});
+                }
+                @Html.DropDownListFor(model => model.ContentType, contentTypeSelectItems, new {@class = "form-control"})
+            </div>
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(tstMsg => tstMsg.MessageText, "Message Text", new {@class = "control-label col-md-3"})
+            <div class="col-md-9">
+                @Html.TextAreaFor(tstMsg => tstMsg.MessageText, new {@class = "form-control"})
+            </div>
+        </div>
+        <div class="form-group">
+            <input type="submit" value="Send" class="btn btn-default center-block"/>
+        </div>
+    </fieldset>
+}

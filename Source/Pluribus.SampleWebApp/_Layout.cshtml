@@ -1,0 +1,16 @@
+﻿@using System.Web.Optimization
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>@Page.Title</title>
+        @RenderSection("head", required: false)
+
+        @Styles.Render("~/Content/bootstrap")
+        @Scripts.Render("~/bundles/bootstrap")
+    </head>
+<body>
+<div class="container">
+    @RenderBody()
+</div>
+</body>
+</html>
