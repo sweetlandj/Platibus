@@ -1,0 +1,54 @@
+﻿@using Pluribus.SampleWebApp.Models;
+@model ViewReceivedMessages
+
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/_Layout.cshtml";
+}
+
+<h2>Send Test Message</h2>
+
+@using (Html.BeginForm("Index", "ViewReceivedMessages", FormMethod.Post, new {@class = "form-horizontal"}))
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Message ID</th>
+            <th>Name</th>
+            <th>Sent</th>
+            <th>Received</th>
+            <th>From</th>
+            <th>Related To</th>
+            <th>Expires</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var receivedMessage in Model.ReceivedMessages)
+        {
+            <tr>
+                <td>@receivedMessage.MessageId</td>
+                <td>@receivedMessage.MessageName</td>
+                <td>@receivedMessage.Sent.ToString("o")</td>
+                <td>@receivedMessage.Received.ToString("o")</td>
+                <td>@receivedMessage.Origination</td>
+                <td>@receivedMessage.RelatedTo</td>
+                <td>@(receivedMessage.Expires == null ? "" : receivedMessage.Expires.Value.ToString("o"))</td>
+                <td>
+                    <div class="btn-group">
+                        <input type="submit" formaction="@Url.Action("ViewReceivedMessageDetail", receivedMessage.MessageId)" class="btn btn-default" value="View"/>
+                        <input type="submit" formaction="@Url.Action("RemoveReceivedMessage", receivedMessage.MessageId)" class="btn btn-danger" value="Clear"/>
+                    </div>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <div class="row">
+        <a href="@Url.Action("Index", "SendTestMessage")" class="btn btn-primary">
+            <span class="glyphicon glyphicon-arrow-left"></span>
+            Send Test Message
+        </a>
+        <input type="submit" formaction="@Url.Action("ClearReceivedMessages", "ViewReceivedMessages")" value="Clear All Messages" class="btn btn-danger"/>
+    </div>
+}

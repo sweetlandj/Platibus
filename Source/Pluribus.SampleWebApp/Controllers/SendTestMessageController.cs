@@ -8,17 +8,15 @@ namespace Pluribus.SampleWebApp.Controllers
 {
     public class SendTestMessageController : Controller
     {
-        private readonly Bus _bus;
-
-        public SendTestMessageController()
+        public async Task<ActionResult> Index()
         {
-            _bus = BusManager.GetInstance().ConfigureAwait(false).GetAwaiter().GetResult();
-        }
-
-        // GET: SendTestMessage
-        public ActionResult Index()
-        {
-            return View(NewModel());
+            var bus = await BusManager.GetInstance();
+            return View(new SendTestMessage
+            {
+                MessageId = MessageId.Generate(),
+                Destination = bus.BaseUri.ToString(),
+                ContentType = "application/json"
+            });
         }
 
         public async Task<ActionResult> SendTestMessage(SendTestMessage sendTestMessage)
@@ -36,7 +34,8 @@ namespace Pluribus.SampleWebApp.Controllers
                     Text = sendTestMessage.MessageText
                 };
 
-                var sentMessage = await _bus.Send(message, sendOptions).ConfigureAwait(false);
+                var bus = await BusManager.GetInstance();
+                var sentMessage = await bus.Send(message, sendOptions);
                 return View("Index", new SendTestMessage
                 {
                     MessageSent = true,
@@ -49,16 +48,6 @@ namespace Pluribus.SampleWebApp.Controllers
                 sendTestMessage.ErrorMessage = ex.ToString();
             }
             return View("Index", sendTestMessage);
-        }
-
-        private SendTestMessage NewModel()
-        {
-            return new SendTestMessage
-            {
-                MessageId = MessageId.Generate(),
-                Destination = _bus.BaseUri.ToString(),
-                ContentType = "application/json"
-            };
         }
     }
 }

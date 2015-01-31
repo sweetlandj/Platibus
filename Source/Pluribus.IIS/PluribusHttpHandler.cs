@@ -21,6 +21,8 @@
 // THE SOFTWARE.
 
 using System;
+using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using Pluribus.Http;
 using System.Web;
@@ -51,6 +53,11 @@ namespace Pluribus.IIS
 
         public async Task ProcessRequestAsync(HttpContextBase context)
         {
+            Log.DebugFormat("[Process {0}, Thread {1}, AppDomain {2}]",
+                Process.GetCurrentProcess().Id,
+                Thread.CurrentThread.ManagedThreadId,
+                AppDomain.CurrentDomain.Id);
+
             Log.DebugFormat("Processing {0} request for resource {1} (HTTP handler instance: {2})...", context.Request.HttpMethod, context.Request.Url, _instanceId);
             try
             {

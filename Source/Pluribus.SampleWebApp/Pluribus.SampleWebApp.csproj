@@ -151,21 +151,28 @@
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="App_Start\PluribusConfigurationHook.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
+    <Compile Include="Controllers\ReceivedMessageRepository.cs" />
+    <Compile Include="Controllers\ViewReceivedMessagesController.cs" />
+    <Compile Include="Models\ReceivedMessage.cs" />
+    <Compile Include="Models\ViewReceivedMessages.cs" />
     <Compile Include="Controllers\SendTestMessageController.cs" />
     <Compile Include="Controllers\TestMessage.cs" />
-    <Compile Include="Controllers\TestHandler.cs" />
+    <Compile Include="Controllers\ReceivedMessageHandler.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\SendTestMessage.cs" />
     <Compile Include="Models\MessageHeader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SampleWebAppLoggingCategories.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\web.config" />
     <Content Include="packages.config" />
     <Content Include="Views\SendTestMessage\Index.cshtml" />
     <Content Include="Scripts\jquery-2.1.3.min.map" />
+    <Content Include="Views\ViewReceivedMessages\Index.cshtml" />
+    <Content Include="Views\ViewReceivedMessages\ReceivedMessageDetail.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

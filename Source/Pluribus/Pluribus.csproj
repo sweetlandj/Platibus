@@ -142,6 +142,7 @@
     <Compile Include="IQueuedMessageContext.cs" />
     <Compile Include="NameResolutionFailedException.cs" />
     <Compile Include="InMemory\InMemorySubscriptionTrackingService.cs" />
+    <Compile Include="PrincipalExtensions.cs" />
     <Compile Include="SentMessageExtensions.cs" />
     <Compile Include="SentMessageWithCachedReplies.cs" />
     <Compile Include="QueueNotFoundException.cs" />

@@ -20,10 +20,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace Pluribus.IIS
+using System.Security.Principal;
+
+namespace Pluribus
 {
-    public static class IISLoggingCategories
+    public static class PrincipalExtensions
     {
-        public const string IIS = "Pluribus.IIS";
+        public const string AnonymousPrincipalName = "(Unknown)";
+
+        public static string GetName(this IPrincipal principal)
+        {
+            if (principal == null || principal.Identity == null)
+            {
+                return AnonymousPrincipalName;
+            }
+
+            return string.IsNullOrWhiteSpace(principal.Identity.Name) 
+                ? AnonymousPrincipalName 
+                : principal.Identity.Name;
+        }
     }
 }
