@@ -37,12 +37,12 @@ namespace Pluribus.Filesystem
         private bool _disposed;
         private int _initialized;
         private readonly bool _autoAcknowledge;
-        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly SemaphoreSlim _concurrentMessageProcessingSlot;
         private readonly DirectoryInfo _directory;
         private readonly IQueueListener _listener;
         private readonly int _maxAttempts;
-        private readonly BufferBlock<MessageFile> _queuedMessages = new BufferBlock<MessageFile>();
+        private readonly BufferBlock<MessageFile> _queuedMessages;
         private readonly TimeSpan _retryDelay;
 
         public FilesystemQueue(DirectoryInfo directory, IQueueListener listener,
@@ -61,6 +61,12 @@ namespace Pluribus.Filesystem
                 ? QueueOptions.DefaultConcurrencyLimit
                 : options.ConcurrencyLimit;
             _concurrentMessageProcessingSlot = new SemaphoreSlim(concurrencyLimit);
+
+            _cancellationTokenSource = new CancellationTokenSource();
+            _queuedMessages = new BufferBlock<MessageFile>(new DataflowBlockOptions
+            {
+                CancellationToken = _cancellationTokenSource.Token
+            });
         }
 
         public void Dispose()
@@ -103,6 +109,7 @@ namespace Pluribus.Filesystem
                 {
                     await EnqueueExistingFiles().ConfigureAwait(false);
                 }
+
                 // ReSharper disable once UnusedVariable
                 var processingTask = ProcessQueuedMessages(_cancellationTokenSource.Token);
             }
@@ -130,19 +137,21 @@ namespace Pluribus.Filesystem
         private async Task ProcessQueuedMessage(MessageFile queuedMessage, CancellationToken cancellationToken)
         {
             var attemptCount = 0;
-            var attemptsRemaining = _maxAttempts;
-            while (attemptsRemaining > 0)
+            while (attemptCount <= _maxAttempts)
             {
                 attemptCount++;
-                attemptsRemaining--;
-                Log.DebugFormat("Processing queued message {0} (attempt {1} of {2})...", queuedMessage.File,
-                    attemptCount, _maxAttempts);
+
+                Log.DebugFormat("Processing queued message {0} (attempt {1} of {2})...", 
+                    queuedMessage.File,
+                    attemptCount, 
+                    _maxAttempts);
                 
                 var context = new FilesystemQueuedMessageContext(queuedMessage);
                 cancellationToken.ThrowIfCancellationRequested();
 
                 await _concurrentMessageProcessingSlot.WaitAsync(cancellationToken).ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
+
                 try
                 {
                     var message = await queuedMessage.ReadMessage(cancellationToken).ConfigureAwait(false);
@@ -175,7 +184,7 @@ namespace Pluribus.Filesystem
                     break;
                 }
 
-                if (attemptsRemaining > 0)
+                if (attemptCount < _maxAttempts)
                 {
                     Log.DebugFormat("Message not acknowledged.  Retrying in {0}...", _retryDelay);
                     await Task.Delay(_retryDelay, cancellationToken).ConfigureAwait(false);

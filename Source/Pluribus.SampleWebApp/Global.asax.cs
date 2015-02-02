@@ -3,6 +3,7 @@ using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
 using Pluribus.IIS;
+using Pluribus.SampleWebApp.Controllers;
 
 namespace Pluribus.SampleWebApp
 {
@@ -17,6 +18,8 @@ namespace Pluribus.SampleWebApp
             AreaRegistration.RegisterAllAreas();
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
+
+            ControllerBuilder.Current.SetControllerFactory(new ControllerFactory());
         }
 
         protected void Application_Shutdown()

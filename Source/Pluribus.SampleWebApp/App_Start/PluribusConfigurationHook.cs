@@ -7,7 +7,10 @@ namespace Pluribus.SampleWebApp
     {
         public void Configure(PluribusConfiguration configuration)
         {
-            configuration.AddHandlingRule(".*TestMessage", new ReceivedMessageHandler());
+            var receivedMessageRespository = new ReceivedMessageRepository();
+            receivedMessageRespository.Init();
+
+            configuration.AddHandlingRule(".*TestMessage", new ReceivedMessageHandler(receivedMessageRespository));
         }
     }
 }

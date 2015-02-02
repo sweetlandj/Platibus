@@ -9,6 +9,7 @@ namespace Pluribus.SampleWebApp.Models
         public string MessageId { get; set; }
         public string MessageName { get; set; }
         public string Origination { get; set; }
+        public string Destination { get; set; }
         public string RelatedTo { get; set; }
         public DateTime Sent { get; set; }
         public DateTime Received { get; set; }

@@ -8,56 +8,76 @@
 
 <h2>Message @Model.MessageId</h2>
 
-@using (Html.BeginForm("Index", "ViewReceivedMessages", FormMethod.Post, new { @class = "form-horizontal" }))
+@using (Html.BeginForm("Index", "ViewReceivedMessages", FormMethod.Post))
 {
     <fieldset>
-        <div class="form-group">
-            @Html.LabelFor(model => model.MessageName, "Name", new {@class = "control-label col-md-3"})
-            <div class="col-md-9">
-                @Html.TextBoxFor(model => model.MessageName, new {@class = "form-control", @readonly = true})
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.MessageName, "Name", new { @class = "control-label" })
+                    @Html.TextBoxFor(model => model.MessageName, new { @class = "form-control", @readonly = true })
+                </div>    
             </div>
         </div>
-        <div class="form-group">
-            @Html.LabelFor(model => model.Sent, "Sent", new {@class = "control-label col-md-3"})
-            <div class="col-md-9">
-                @Html.TextBoxFor(model => model.Sent, "o", new {@class = "form-control", @readonly = true})
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Origination, "From", new {@class = "control-label"})
+                    @Html.TextBoxFor(model => model.Origination, new {@class = "form-control", @readonly = true})
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Destination, "To", new {@class = "control-label"})
+                    @Html.TextBoxFor(model => model.Destination, new {@class = "form-control", @readonly = true})
+                </div>
             </div>
         </div>
-        <div class="form-group">
-            @Html.LabelFor(model => model.Received, "Received", new {@class = "control-label col-md-3"})
-            <div class="col-md-9">
-                @Html.TextBoxFor(model => model.Received, "o", new {@class = "form-control", @readonly = true})
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Sent, "Sent", new { @class = "control-label" })
+                    @Html.TextBoxFor(model => model.Sent, "{0:o}", new { @class = "form-control", @readonly = true })
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Received, "Received", new { @class = "control-label" })
+                    @Html.TextBoxFor(model => model.Received, "{0:o}", new { @class = "form-control", @readonly = true })
+                </div>
             </div>
         </div>
-        <div class="form-group">
-            @Html.LabelFor(model => model.Origination, "From", new {@class = "control-label col-md-3"})
-            <div class="col-md-9">
-                @Html.TextBoxFor(model => model.Origination, new {@class = "form-control", @readonly = true})
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.ContentType, "Content Type", new {@class = "control-label"})
+                    @Html.TextBoxFor(model => model.ContentType, new {@class = "form-control", @readonly = true})
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.RelatedTo, "Related To", new {@class = "control-label"})
+                    @Html.TextBoxFor(model => model.RelatedTo, new {@class = "form-control", @readonly = true})
+                </div>
             </div>
         </div>
-        <div class="form-group">
-            @Html.LabelFor(model => model.RelatedTo, "Related To", new {@class = "control-label col-md-3"})
-            <div class="col-md-9">
-                @Html.TextBoxFor(model => model.RelatedTo, new {@class = "form-control", @readonly = true})
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Content, "Content", new { @class = "control-label" })
+                    @Html.TextAreaFor(model => model.Content, new { @class = "form-control", @readonly = true })
+                </div>    
             </div>
         </div>
-        <div class="form-group">
-            @Html.LabelFor(model => model.ContentType, "Content Type", new {@class = "control-label col-md-3"})
-            <div class="col-md-9">
-                @Html.TextBoxFor(model => model.ContentType, new {@class = "form-control", @readonly = true})
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <a href="@Url.Action("Index", "ViewReceivedMessages")" class="btn btn-default">
+                        <span class="glyphicon glyphicon-arrow-left"></span>
+                        Back
+                    </a>
+                </div>    
             </div>
-        </div>
-        <div class="form-group">
-            @Html.LabelFor(model => model.Content, "Content", new { @class = "control-label col-md-3" })
-            <div class="col-md-9">
-                @Html.TextAreaFor(model => model.Content, new { @class = "form-control", @readonly = true })
-            </div>
-        </div>
-        <div class="form-group">
-            <a href="@Url.Action("Index", "ViewReceivedMessages")" class="btn btn-default">
-                <span class="glyphicon glyphicon-arrow-left"></span>
-                Back
-            </a>
         </div>
     </fieldset>
 }

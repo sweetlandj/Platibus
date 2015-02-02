@@ -11,15 +11,14 @@ namespace Pluribus.SampleWebApp.Controllers
     {
         private static readonly ILog Log = LogManager.GetLogger(SampleWebAppLoggingCategories.SampleWebApp);
 
-        public ReceivedMessageHandler()
+        private readonly ReceivedMessageRepository _repository;
+
+        public ReceivedMessageHandler(ReceivedMessageRepository repository)
         {
-            Log.DebugFormat("Initializing ReceivedMessageHandler [Process {0}, Thread {1}, AppDomain {2}]",
-                Process.GetCurrentProcess().Id,
-                Thread.CurrentThread.ManagedThreadId,
-                AppDomain.CurrentDomain.Id);
+            _repository = repository;
         }
 
-        public Task HandleMessage(Message message, IMessageContext context, CancellationToken cancellationToken)
+        public async Task HandleMessage(Message message, IMessageContext context, CancellationToken cancellationToken)
         {
             Log.DebugFormat("[Process {0}, Thread {1}, AppDomain {2}]",
                 Process.GetCurrentProcess().Id,
@@ -40,6 +39,7 @@ namespace Pluribus.SampleWebApp.Controllers
                 MessageId = message.Headers.MessageId,
                 MessageName = message.Headers.MessageName,
                 Origination = message.Headers.Origination == null ? "" : message.Headers.Origination.ToString(),
+                Destination = message.Headers.Destination == null ? "" : message.Headers.Destination.ToString(),
                 RelatedTo = message.Headers.RelatedTo,
                 Sent = message.Headers.Sent,
                 Received = message.Headers.Received,
@@ -48,15 +48,12 @@ namespace Pluribus.SampleWebApp.Controllers
                 Content = message.Content
             };
 
-            var repository = ReceivedMessageRepository.SingletonInstance;
-            repository.Add(receivedMessage);
+            await _repository.Add(receivedMessage);
             context.Acknowledge();
 
             Log.DebugFormat("{0} ID {1} handled successfully",
                 message.Headers.MessageName,
                 message.Headers.MessageId);
-
-            return Task.FromResult(true);
         }
     }
 }

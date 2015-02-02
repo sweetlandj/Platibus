@@ -25,45 +25,37 @@
 
 <h2>Send Test Message</h2>
 
-@using (Html.BeginForm("SendTestMessage", "SendTestMessage", FormMethod.Post, new {@class = "form-horizontal"}))
+@using (Html.BeginForm("SendTestMessage", "SendTestMessage", FormMethod.Post))
 {
     <fieldset>
         <div class="form-group">
-            @Html.LabelFor(model => model.Destination, "Destination", new {@class = "control-label col-md-3"})
-            <div class="col-md-9">
-                @Html.TextBoxFor(model => model.Destination, new {@class = "form-control"})
-            </div>
+            @Html.LabelFor(model => model.Destination, "Destination", new {@class = "control-label"})
+            @Html.TextBoxFor(model => model.Destination, new {@class = "form-control"})
+        </div>
+        <div class="checkbox">
+            <label>
+                @Html.CheckBoxFor(model => model.UseDurableTransport)
+                Use Durable Transport
+            </label>
         </div>
         <div class="form-group">
-            @Html.LabelFor(model => model.UseDurableTransport, "Use Durable Transport?", new { @class = "control-label col-md-3" })
-            <div class="col-md-9">
-                <div class="pull-left">
-                    @Html.CheckBoxFor(model => model.UseDurableTransport, new { @class = "form-control" })    
-                </div>
-            </div>
+            @Html.LabelFor(model => model.ContentType, "Content Type", new {@class = "control-label"})
+            @{
+                var contentTypeSelectItems = Model.ContentTypeOptions
+                    .Select(ct => new SelectListItem {Text = ct, Value = ct});
+            }
+            @Html.DropDownListFor(model => model.ContentType, contentTypeSelectItems, new {@class = "form-control"})
         </div>
         <div class="form-group">
-            @Html.LabelFor(model => model.ContentType, "MessageText-Type", new {@class = "control-label col-md-3"})
-            <div class="col-md-9">
-                @{
-                    var contentTypeSelectItems = Model.ContentTypeOptions
-                        .Select(ct => new SelectListItem {Text = ct, Value = ct});
-                }
-                @Html.DropDownListFor(model => model.ContentType, contentTypeSelectItems, new {@class = "form-control"})
-            </div>
+            @Html.LabelFor(tstMsg => tstMsg.MessageText, "Message Text", new {@class = "control-label"})
+            @Html.TextAreaFor(tstMsg => tstMsg.MessageText, new {@class = "form-control"})
         </div>
         <div class="form-group">
-            @Html.LabelFor(tstMsg => tstMsg.MessageText, "Message Text", new {@class = "control-label col-md-3"})
-            <div class="col-md-9">
-                @Html.TextAreaFor(tstMsg => tstMsg.MessageText, new {@class = "form-control"})
-            </div>
-        </div>
-        <div class="form-group">
-            <input type="submit" value="Send" class="btn btn-primary"/>
+            <input type="submit" value="Send" class="btn btn-primary" />
             <a href="@Url.Action("Index", "ViewReceivedMessages")" class="btn btn-default">
                 View Received Messages
                 <span class="glyphicon glyphicon-arrow-right"></span>
-            </a>
+            </a>    
         </div>
     </fieldset>
 }

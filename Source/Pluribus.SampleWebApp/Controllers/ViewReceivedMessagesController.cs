@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web.Mvc;
 using Common.Logging;
 using Pluribus.SampleWebApp.Models;
@@ -14,43 +15,42 @@ namespace Pluribus.SampleWebApp.Controllers
 
         private readonly ReceivedMessageRepository _repository;
 
-        public ViewReceivedMessagesController()
+        public ViewReceivedMessagesController(ReceivedMessageRepository repository)
         {
-            _repository = ReceivedMessageRepository.SingletonInstance;
+            _repository = repository;
         }
 
         // GET: ViewReceivedMessages
-        public ActionResult Index()
+        public async Task<ActionResult> Index()
         {
             Log.DebugFormat("[Process {0}, Thread {1}, AppDomain {2}]",
                 Process.GetCurrentProcess().Id,
                 Thread.CurrentThread.ManagedThreadId,
                 AppDomain.CurrentDomain.Id);
 
-            return View(new ViewReceivedMessages
+            return View("Index", new ViewReceivedMessages
             {
-                ReceivedMessages = _repository
-                    .GetMessages()
+                ReceivedMessages = (await _repository.GetMessages())
                     .OrderByDescending(msg => msg.Received)
                     .ToList()
             });
         }
 
-        public ActionResult ClearReceivedMessages()
+        public async Task<ActionResult> ClearReceivedMessages()
         {
-            _repository.RemoveAll();
-            return Index();
+            await _repository.RemoveAll();
+            return await Index();
         }
 
-        public ActionResult RemoveReceivedMessage(string messageId)
+        public async Task<ActionResult> RemoveReceivedMessage(string messageId)
         {
-            _repository.Remove(messageId);
-            return Index();
+            await _repository.Remove(messageId);
+            return await Index();
         }
 
-        public ActionResult ViewReceivedMessageDetail(string messageId)
+        public async Task<ActionResult> ViewReceivedMessageDetail(string messageId)
         {
-            var receivedMessage = _repository.Get(messageId);
+            var receivedMessage = await _repository.Get(messageId);
             return View("ReceivedMessageDetail", receivedMessage);
         }
     }
