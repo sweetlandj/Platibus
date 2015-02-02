@@ -90,39 +90,39 @@ Example configuration:
 </pluribus>
 ```
 
-### <pluribus>
+### `<pluribus>`
 
 This is the top level configuration element.  The `baseUri` attribute is required and specifies the base URI for this instance.  All nested elements are optional.
 
-#### <timeouts>
+#### `<timeouts>`
 
 Specifies the various timeouts for the application.  The `replyTimeout` specifies the maximum amount of time a reply observer will be held open waiting for correlated messages to arrive.
 
-#### <queueing>
+#### `<queueing>`
 
 Overrides the default queueing configuration.  The value of the `type` attribute indicates which queuing service will be used and which nested configuration element is expected.  (Currently the only supported `type` is `Filesystem`.)
 
-##### <filesystem>
+##### `<filesystem>`
 
 Configures filesystem based queueing.  The `path` attribute specifies the path in which queues and message files will be written.  If the specified path is not rooted, then it will be considered relative to the app domain base directory.
 
-#### <subscriptionTracking>
+#### `<subscriptionTracking>`
 
 Overrides the default subscription tracking configuration.  The value of the `type` attribute indicates which queuing service will be used and which nested configuration element is expected.  (Currently the only supported `type` is `Filesystem`.)
 
-##### <filesystem>
+##### `<filesystem>`
 
 Configures filesystem based subscription tracking.  The `path` attribute specifies the path in which topic and subscriber data will be written.  If the specified path is not rooted, then it will be considered relative to the app domain base directory.
 
-#### <endpoints>
+#### `<endpoints>`
 
 A collection of endpoint configuration elements.  Each endpoint requires a `name` and `address` (URI).
 
-#### <sendRules>
+#### `<sendRules>`
 
 A collection of send rule configuration elements.  Each rule requires a `namePattern` and the name of the `endpoint` to which matching messages will be sent.  The `namePattern` is a regular expression used to match message names.
 
-#### <subscriptionRules>
+#### `<subscriptionRules>`
 
 A collection of subscription rule configuration elements.  Each rule requires an `endpoint` name and the name of the `topic` at that endpoint being subscribed to.  A `ttl` (time to live) may also be specified to limit how long the subscription should remain on the remote server after the last renewal.
 
