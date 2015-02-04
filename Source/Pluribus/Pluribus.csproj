@@ -178,14 +178,14 @@
     <Compile Include="MemoryCacheReplyHub.cs" />
     <Compile Include="EndpointNotFoundException.cs" />
     <Compile Include="ReplyStream.cs" />
+    <Compile Include="Serialization\Base64ObjectSerializer.cs" />
     <Compile Include="Serialization\DefaultSerializationService.cs" />
-    <Compile Include="Serialization\DelegateDeserializedContentHandler.cs" />
-    <Compile Include="Serialization\DeserializedContentHandler.cs" />
     <Compile Include="Serialization\ISerializer.cs" />
     <Compile Include="Serialization\ISerializationService.cs" />
     <Compile Include="Serialization\NewtonsoftJsonSerializer.cs" />
     <Compile Include="Serialization\SerializerNotFoundException.cs" />
     <Compile Include="Serialization\DataContractSerializerAdapter.cs" />
+    <Compile Include="Serialization\StringSerializer.cs" />
     <Compile Include="Serialization\XmlSerializerAdapter.cs" />
     <Compile Include="SubscriptionRequestReceivedEventArgs.cs" />
     <Compile Include="SubscriptionRequestReceivedHandler.cs" />

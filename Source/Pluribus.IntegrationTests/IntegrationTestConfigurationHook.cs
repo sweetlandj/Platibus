@@ -20,11 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using Pluribus.Config;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Pluribus.IntegrationTests
 {
@@ -32,7 +27,7 @@ namespace Pluribus.IntegrationTests
     {
         public void Configure(PluribusConfiguration configuration)
         {
-            configuration.AddHandlingRule(".*TestMessage", new TestHandler());
+            configuration.AddHandlingRule<TestMessage>(".*TestMessage", TestHandler.HandleMessage);
             configuration.AddHandlingRule(".*TestPublication", new TestPublicationHandler());
         }
     }

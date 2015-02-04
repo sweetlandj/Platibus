@@ -205,7 +205,7 @@ namespace Pluribus
                 var handlers = rules.Select(r => r.MessageHandler);
 
                 await _messageQueueingService
-                    .CreateQueue(queueName, new MessageHandlingListener(this, handlers))
+                    .CreateQueue(queueName, new MessageHandlingListener(this, _messageNamingService, _serializationService, handlers))
                     .ConfigureAwait(false);
             }
 

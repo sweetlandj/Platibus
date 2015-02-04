@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using Pluribus.Filesystem;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -274,9 +275,11 @@ namespace Pluribus.UnitTests
                 .EnqueueMessage(queueName, message, Thread.CurrentPrincipal)
                 .ConfigureAwait(false);
 
-            await listenerCalledEvent
-                .WaitOneAsync(TimeSpan.FromSeconds(1))
+            var listenerCalled = await listenerCalledEvent
+                .WaitOneAsync(Debugger.IsAttached ? TimeSpan.FromMinutes(5) : TimeSpan.FromSeconds(3))
                 .ConfigureAwait(false);
+
+            Assert.That(listenerCalled, Is.True);
 
             // The listener is called before the file is deleted, so there is a possible
             // race condition here.  Wait for a second to allow the delete to take place

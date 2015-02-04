@@ -27,6 +27,6 @@ namespace Pluribus
 {
     public interface IMessageHandler
     {
-        Task HandleMessage(Message message, IMessageContext messageContext, CancellationToken cancellationToken);
+        Task HandleMessage(object message, IMessageContext messageContext, CancellationToken cancellationToken);
     }
 }

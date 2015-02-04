@@ -34,6 +34,11 @@ namespace Pluribus
         IBus Bus { get; }
 
         /// <summary>
+        ///     The headers on the incoming message
+        /// </summary>
+        IMessageHeaders Headers { get; }
+
+        /// <summary>
         ///     The identity of the sender
         /// </summary>
         IPrincipal SenderPrincipal { get; }

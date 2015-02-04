@@ -19,29 +19,26 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-
-using System.Threading;
-using System.Threading.Tasks;
+using System;
 
 namespace Pluribus.Serialization
 {
-    public abstract class DeserializedContentHandler<TContent> : IMessageHandler
+    public class StringSerializer : ISerializer
     {
-        private readonly ISerializationService _serializationService;
-
-        protected DeserializedContentHandler(ISerializationService serializationService = null)
+        public string Serialize(object obj)
         {
-            _serializationService = serializationService ?? new DefaultSerializationService();
+            if (obj == null) return "";
+            return obj.ToString();
         }
 
-        public Task HandleMessage(Message message, IMessageContext context, CancellationToken cancellationToken)
+        public object Deserialize(string str, Type type)
         {
-            var contentType = message.Headers.ContentType;
-            var serializer = _serializationService.GetSerializer(contentType);
-            var deserializedMessageContent = serializer.Deserialize<TContent>(message.Content);
-            return HandleMessageContent(deserializedMessageContent, context, cancellationToken);
+            return str;
         }
 
-        protected abstract Task HandleMessageContent(TContent content, IMessageContext context, CancellationToken cancellationToken);
+        public T Deserialize<T>(string str)
+        {
+            return (T)Deserialize(str, typeof(T));
+        }
     }
 }

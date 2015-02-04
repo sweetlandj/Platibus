@@ -18,42 +18,45 @@ namespace Pluribus.SampleWebApp.Controllers
             _repository = repository;
         }
 
-        public async Task HandleMessage(Message message, IMessageContext context, CancellationToken cancellationToken)
+        public async Task HandleMessage(object message, IMessageContext context, CancellationToken cancellationToken)
         {
+            var testMessage = (TestMessage)message;
+         
             Log.DebugFormat("[Process {0}, Thread {1}, AppDomain {2}]",
                 Process.GetCurrentProcess().Id,
                 Thread.CurrentThread.ManagedThreadId,
                 AppDomain.CurrentDomain.Id);
 
+            var headers = context.Headers;
             Log.DebugFormat("Handling {0} ID {1} sent from {2} by {3} at {4:o} and received {5:o}...", 
-                message.Headers.MessageName,
-                message.Headers.MessageId, 
-                message.Headers.Origination,
+                headers.MessageName,
+                headers.MessageId, 
+                headers.Origination,
                 context.SenderPrincipal.GetName(),
-                message.Headers.Sent,
-                message.Headers.Received);
+                headers.Sent,
+                headers.Received);
 
             var receivedMessage = new ReceivedMessage
             {
                 SenderPrincipal = context.SenderPrincipal == null ? null : context.SenderPrincipal.Identity.Name,
-                MessageId = message.Headers.MessageId,
-                MessageName = message.Headers.MessageName,
-                Origination = message.Headers.Origination == null ? "" : message.Headers.Origination.ToString(),
-                Destination = message.Headers.Destination == null ? "" : message.Headers.Destination.ToString(),
-                RelatedTo = message.Headers.RelatedTo,
-                Sent = message.Headers.Sent,
-                Received = message.Headers.Received,
-                Expires = message.Headers.Expires,
-                ContentType = message.Headers.ContentType,
-                Content = message.Content
+                MessageId = headers.MessageId,
+                MessageName = headers.MessageName,
+                Origination = headers.Origination == null ? "" : headers.Origination.ToString(),
+                Destination = headers.Destination == null ? "" : headers.Destination.ToString(),
+                RelatedTo = headers.RelatedTo,
+                Sent = headers.Sent,
+                Received = headers.Received,
+                Expires = headers.Expires,
+                ContentType = headers.ContentType,
+                Content = testMessage == null ? "" : testMessage.Text
             };
 
             await _repository.Add(receivedMessage);
             context.Acknowledge();
 
             Log.DebugFormat("{0} ID {1} handled successfully",
-                message.Headers.MessageName,
-                message.Headers.MessageId);
+                headers.MessageName,
+                headers.MessageId);
         }
     }
 }

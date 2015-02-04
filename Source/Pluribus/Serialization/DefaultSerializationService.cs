@@ -42,6 +42,12 @@ namespace Pluribus.Serialization
             var defaultXmlSerializer = new XmlSerializerAdapter();
             _serializers[applicationXml] = defaultXmlSerializer;
             _serializers[textXml] = defaultXmlSerializer;
+
+            var textPlain = NormalizeContentType("text/plain");
+            _serializers[textPlain] = new StringSerializer();
+
+            var applicationOctetStream = NormalizeContentType("application/octet-stream");
+            _serializers[applicationOctetStream] = new Base64ObjectSerializer();
         }
 
         public IEnumerator<KeyValuePair<string, ISerializer>> GetEnumerator()

@@ -23,7 +23,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Pluribus.Serialization;
 
 namespace Pluribus.Config
 {
@@ -36,56 +35,11 @@ namespace Pluribus.Config
             configuration.AddHandlingRule(specification, messageHandler, queueName);
         }
 
-        public static void AddHandlingRule(this PluribusConfiguration configuration, IMessageSpecification specification,
-            Func<Message, IMessageContext, Task> handleMessage, QueueName queueName = null)
-        {
-            var messageHandler = new DelegateMessageHandler(handleMessage);
-            configuration.AddHandlingRule(specification, messageHandler, queueName);
-        }
-
-        public static void AddHandlingRule(this PluribusConfiguration configuration, IMessageSpecification specification,
-            Func<Message, IMessageContext, CancellationToken, Task> handleMessage, QueueName queueName = null)
-        {
-            var messageHandler = new DelegateMessageHandler(handleMessage);
-            configuration.AddHandlingRule(specification, messageHandler, queueName);
-        }
-
-        public static void AddHandlingRule(this PluribusConfiguration configuration, IMessageSpecification specification,
-            Action<Message, IMessageContext> handleMessage, QueueName queueName = null)
-        {
-            var messageHandler = new DelegateMessageHandler(handleMessage);
-            configuration.AddHandlingRule(specification, messageHandler, queueName);
-        }
-
-        public static void AddHandlingRule(this PluribusConfiguration configuration, string namePattern,
-            Func<Message, IMessageContext, Task> handleMessage, QueueName queueName = null)
-        {
-            var specification = new MessageNamePatternSpecification(namePattern);
-            var messageHandler = new DelegateMessageHandler(handleMessage);
-            configuration.AddHandlingRule(specification, messageHandler, queueName);
-        }
-
-        public static void AddHandlingRule(this PluribusConfiguration configuration, string namePattern,
-            Func<Message, IMessageContext, CancellationToken, Task> handleMessage, QueueName queueName = null)
-        {
-            var specification = new MessageNamePatternSpecification(namePattern);
-            var messageHandler = new DelegateMessageHandler(handleMessage);
-            configuration.AddHandlingRule(specification, messageHandler, queueName);
-        }
-
-        public static void AddHandlingRule(this PluribusConfiguration configuration, string namePattern,
-            Action<Message, IMessageContext> handleMessage, QueueName queueName = null)
-        {
-            var specification = new MessageNamePatternSpecification(namePattern);
-            var messageHandler = new DelegateMessageHandler(handleMessage);
-            configuration.AddHandlingRule(specification, messageHandler, queueName);
-        }
-
         public static void AddHandlingRule<TContent>(this PluribusConfiguration configuration,
             IMessageSpecification specification,
             Func<TContent, IMessageContext, Task> handleContent, QueueName queueName = null)
         {
-            var messageHandler = new DelegateDeserializedContentHandler<TContent>(handleContent);
+            var messageHandler = DelegateMessageHandler.For(handleContent);
             configuration.AddHandlingRule(specification, messageHandler, queueName);
         }
 
@@ -94,7 +48,7 @@ namespace Pluribus.Config
             Func<TContent, IMessageContext, CancellationToken, Task> handleContent,
             QueueName queueName = null)
         {
-            var messageHandler = new DelegateDeserializedContentHandler<TContent>(handleContent);
+            var messageHandler = DelegateMessageHandler.For(handleContent);
             configuration.AddHandlingRule(specification, messageHandler, queueName);
         }
 
@@ -102,7 +56,7 @@ namespace Pluribus.Config
             IMessageSpecification specification, Action<TContent, IMessageContext> handleContent,
             QueueName queueName = null)
         {
-            var messageHandler = new DelegateDeserializedContentHandler<TContent>(handleContent);
+            var messageHandler = DelegateMessageHandler.For(handleContent);
             configuration.AddHandlingRule(specification, messageHandler, queueName);
         }
 
@@ -110,7 +64,7 @@ namespace Pluribus.Config
             Func<TContent, IMessageContext, Task> handleContent, QueueName queueName = null)
         {
             var specification = new MessageNamePatternSpecification(namePattern);
-            var messageHandler = new DelegateDeserializedContentHandler<TContent>(handleContent);
+            var messageHandler = DelegateMessageHandler.For(handleContent);
             configuration.AddHandlingRule(specification, messageHandler, queueName);
         }
 
@@ -119,7 +73,7 @@ namespace Pluribus.Config
             QueueName queueName = null)
         {
             var specification = new MessageNamePatternSpecification(namePattern);
-            var messageHandler = new DelegateDeserializedContentHandler<TContent>(handleContent);
+            var messageHandler = DelegateMessageHandler.For(handleContent);
             configuration.AddHandlingRule(specification, messageHandler, queueName);
         }
 
@@ -127,7 +81,7 @@ namespace Pluribus.Config
             Action<TContent, IMessageContext> handleContent, QueueName queueName = null)
         {
             var specification = new MessageNamePatternSpecification(namePattern);
-            var messageHandler = new DelegateDeserializedContentHandler<TContent>(handleContent);
+            var messageHandler = DelegateMessageHandler.For(handleContent);
             configuration.AddHandlingRule(specification, messageHandler, queueName);
         }
     }

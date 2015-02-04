@@ -137,7 +137,7 @@ namespace Pluribus.Filesystem
         private async Task ProcessQueuedMessage(MessageFile queuedMessage, CancellationToken cancellationToken)
         {
             var attemptCount = 0;
-            while (attemptCount <= _maxAttempts)
+            while (attemptCount < _maxAttempts)
             {
                 attemptCount++;
 

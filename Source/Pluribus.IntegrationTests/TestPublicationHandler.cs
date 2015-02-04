@@ -19,10 +19,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,11 +26,11 @@ namespace Pluribus.IntegrationTests
 {
     public class TestPublicationHandler : IMessageHandler
     {
-        private static readonly AutoResetEvent _messageReceivedEvent = new AutoResetEvent(false);
+        private static readonly AutoResetEvent MessageReceivedEvent = new AutoResetEvent(false);
 
         public static WaitHandle WaitHandle
         {
-            get { return _messageReceivedEvent; }
+            get { return MessageReceivedEvent; }
         }
 
         public string Name
@@ -42,9 +38,9 @@ namespace Pluribus.IntegrationTests
             get { return "PublicationHandler"; }
         }
 
-        public Task HandleMessage(Message message, IMessageContext messageContext, CancellationToken cancellationToken)
+        public Task HandleMessage(object message, IMessageContext messageContext, CancellationToken cancellationToken)
         {
-            _messageReceivedEvent.Set();
+            MessageReceivedEvent.Set();
             messageContext.Acknowledge();
             return Task.FromResult(true);
         }

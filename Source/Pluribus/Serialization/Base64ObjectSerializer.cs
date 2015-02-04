@@ -19,25 +19,40 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace Pluribus.IntegrationTests
+using System;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
+
+namespace Pluribus.Serialization
 {
-    public class TestHandler
+    public class Base64ObjectSerializer : ISerializer
     {
-        public static async Task HandleMessage(TestMessage message, IMessageContext messageContext, CancellationToken cancellationToken)
+        public string Serialize(object obj)
         {
-            await messageContext.SendReply(new TestReply
+            using (var stream = new MemoryStream())
             {
-                GuidData = message.GuidData,
-                IntData = message.IntData,
-                StringData = message.StringData,
-                DateData = message.DateData
-            }, cancellationToken: cancellationToken)
-            .ConfigureAwait(false);
+                var formatter = new BinaryFormatter();
+                formatter.Serialize(stream, obj);
+                return Convert.ToBase64String(stream.GetBuffer());
+            }
+        }
 
-            messageContext.Acknowledge();
+        public object Deserialize(string str, Type type)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return null;
+            var bytes = Convert.FromBase64String(str);
+            using (var stream = new MemoryStream(bytes))
+            {
+                var formatter = new BinaryFormatter();
+                return formatter.Deserialize(stream);
+            }
+        }
+
+        public T Deserialize<T>(string str)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return default(T);
+            return (T) Deserialize(str, typeof(T));
         }
     }
 }

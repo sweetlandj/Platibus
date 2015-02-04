@@ -26,6 +26,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
+using Pluribus.Serialization;
 
 namespace Pluribus
 {
@@ -33,17 +34,23 @@ namespace Pluribus
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Filesystem);
         private readonly Bus _bus;
+        private readonly IMessageNamingService _namingService;
+        private readonly ISerializationService _serializationService;
         private readonly IEnumerable<IMessageHandler> _messageHandlers;
 
-        public MessageHandlingListener(Bus bus, IEnumerable<IMessageHandler> messageHandlers)
+        public MessageHandlingListener(Bus bus, IMessageNamingService namingService, ISerializationService serializationService, IEnumerable<IMessageHandler> messageHandlers)
         {
             if (bus == null) throw new ArgumentNullException("bus");
+            if (namingService == null) throw new ArgumentNullException("namingService");
+            if (serializationService == null) throw new ArgumentNullException("serializationService");
             if (messageHandlers == null) throw new ArgumentNullException("messageHandlers");
 
             var handlerList = messageHandlers.Where(h => h != null).ToList();
             if (!handlerList.Any()) throw new ArgumentNullException("messageHandlers");
 
             _bus = bus;
+            _namingService = namingService;
+            _serializationService = serializationService;
             _messageHandlers = handlerList;
         }
 
@@ -58,8 +65,11 @@ namespace Pluribus
             }
 
             var messageContext = new BusMessageContext(_bus, context.Headers, context.SenderPrincipal);
-            var handlingTasks = _messageHandlers
-                .Select(handler => handler.HandleMessage(message, messageContext, cancellationToken));
+            var messageType = _namingService.GetTypeForName(message.Headers.MessageName);
+            var serializer = _serializationService.GetSerializer(message.Headers.ContentType);
+            var messageContent = serializer.Deserialize(message.Content, messageType);
+            var handlingTasks = _messageHandlers.Select(handler => 
+                handler.HandleMessage(messageContent, messageContext, cancellationToken));
             
             await Task.WhenAll(handlingTasks).ConfigureAwait(false);
             

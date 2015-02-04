@@ -21,11 +21,15 @@
 // THE SOFTWARE.
 
 using System;
+using System.Linq;
+using System.Runtime.Caching;
 
 namespace Pluribus
 {
     public class DefaultMessageNamingService : IMessageNamingService
     {
+        private readonly MemoryCache _nameTypeCache = new MemoryCache("DefaultMessageNamingService");
+
         public MessageName GetNameForType(Type messageType)
         {
             return messageType.FullName;
@@ -33,7 +37,20 @@ namespace Pluribus
 
         public Type GetTypeForName(MessageName messageName)
         {
-            return Type.GetType(messageName);
+            var type = _nameTypeCache.Get(messageName) as Type;
+            if (type == null)
+            {
+                type = Type.GetType(messageName) ?? AppDomain.CurrentDomain
+                    .GetAssemblies()
+                    .Select(assembly => assembly.GetType(messageName))
+                    .FirstOrDefault(t => t != null);
+
+                if (type != null)
+                {
+                    _nameTypeCache[messageName] = type;
+                }
+            }
+            return type;
         }
     }
 }

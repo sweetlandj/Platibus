@@ -29,7 +29,7 @@ namespace Pluribus
     public class MemoryCacheReplyHub : IDisposable
     {
         private bool _disposed;
-        private readonly MemoryCache _cache = new MemoryCache("HttpReplyStreams");
+        private readonly MemoryCache _cache = new MemoryCache("MemoryCacheReplyHub");
         private readonly TimeSpan _replyTimeout;
 
         public MemoryCacheReplyHub(TimeSpan replyTimeout)

@@ -25,7 +25,6 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Common.Logging;
 using Pluribus.Filesystem;
@@ -126,36 +125,8 @@ namespace Pluribus.Config
         {
             if (configuration == null) return;
 
-            var searchDirectories = new List<DirectoryInfo>();
-            var appDomain = AppDomain.CurrentDomain;
-            var appDomainDir = new DirectoryInfo(appDomain.BaseDirectory);
-            searchDirectories.Add(appDomainDir);
-
-            var binDir = new DirectoryInfo(Path.Combine(appDomainDir.FullName, "bin"));
-            if (binDir.Exists)
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                searchDirectories.Add(binDir);
-            }
-
-            var assemblyFiles = searchDirectories
-                .SelectMany(dir => dir
-                    .GetFiles("*.dll")
-                    .Union(appDomainDir.GetFiles("*.exe")));
-
-            foreach (var assemblyFile in assemblyFiles)
-            {
-                Assembly assembly;
-                try
-                {
-                    Log.DebugFormat("Loading assembly {0}...", assemblyFile);
-                    assembly = Assembly.LoadFile(assemblyFile.FullName);
-                }
-                catch (Exception ex)
-                {
-                    Log.InfoFormat("Error loading assembly {0}", ex, assemblyFile);
-                    continue;
-                }
-
                 Log.DebugFormat("Scanning assembly {0} for configuration hooks...", assembly.GetName().FullName);
                 var hookTypes = assembly.GetTypes()
                     .Where(typeof (IConfigurationHook).IsAssignableFrom)

@@ -21,6 +21,9 @@
 // THE SOFTWARE.
 
 using System;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Pluribus.Config
 {
@@ -52,7 +55,16 @@ namespace Pluribus.Config
             if (messageHandler == null) throw new ArgumentNullException("messageHandler");
             _messageSpecification = messageSpecification;
             _messageHandler = messageHandler;
-            _queueName = queueName ?? messageHandler.GetType().FullName;
+            _queueName = queueName ?? GenerateQueueName(messageHandler);
+        }
+
+        public static QueueName GenerateQueueName(IMessageHandler messageHandler)
+        {
+            // Produce a short type name that is safe (ish?) from collisions
+            var typeName = messageHandler.GetType().FullName;
+            var typeNameBytes = Encoding.UTF8.GetBytes(typeName);
+            var typeHash = MD5.Create().ComputeHash(typeNameBytes);
+            return string.Join("", typeHash.Select(b => ((ushort) b).ToString("x2")));
         }
     }
 }

@@ -11,11 +11,11 @@ namespace Pluribus.UnitTests
         private static readonly ILog Log = LogManager.GetLogger(UnitTestLoggingCategories.UnitTests);
 
         private static readonly AutoResetEvent MessageReceivedEvent = new AutoResetEvent(false);
-        private static readonly ConcurrentQueue<Message> HandledMessageQueue = new ConcurrentQueue<Message>();
+        private static readonly ConcurrentQueue<object> HandledMessageQueue = new ConcurrentQueue<object>();
 
         public WaitHandle WaitHandle { get { return MessageReceivedEvent; } }
 
-        public IEnumerable<Message> HandledMessages
+        public IEnumerable<object> HandledMessages
         {
             get { return HandledMessageQueue; }
         }
@@ -25,9 +25,9 @@ namespace Pluribus.UnitTests
             get { return "TestMessageHandler"; }
         }
 
-        public Task HandleMessage(Message message, IMessageContext messageContext, CancellationToken cancellationToken = default(CancellationToken))
+        public Task HandleMessage(object message, IMessageContext messageContext, CancellationToken cancellationToken = default(CancellationToken))
         {
-            Log.DebugFormat("Handling message ID {0}...", message.Headers.MessageId);
+            Log.DebugFormat("Handling message ID {0}...", messageContext.Headers.MessageId);
             HandledMessageQueue.Enqueue(message);
             messageContext.Acknowledge();
             MessageReceivedEvent.Set();
@@ -36,7 +36,7 @@ namespace Pluribus.UnitTests
 
         public static void Reset()
         {
-            Message message;
+            object message;
             while (HandledMessageQueue.TryDequeue(out message))
             {
             }

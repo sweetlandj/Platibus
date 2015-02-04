@@ -26,32 +26,65 @@ using System.Threading.Tasks;
 
 namespace Pluribus
 {
-    public class DelegateMessageHandler : IMessageHandler
+    public class DelegateMessageHandler : DelegateMessageHandler<object>
     {
-        private readonly Func<Message, IMessageContext, CancellationToken, Task> _handleMessage;
+        public DelegateMessageHandler(Func<object, IMessageContext, Task> handleMessage) 
+            : base(handleMessage)
+        {
+        }
 
-        public DelegateMessageHandler(Func<Message, IMessageContext, Task> handleMessage)
+        public DelegateMessageHandler(Func<object, IMessageContext, CancellationToken, Task> handleMessage) 
+            : base(handleMessage)
+        {
+        }
+
+        public DelegateMessageHandler(Action<object, IMessageContext> handleMessage) 
+            : base(handleMessage)
+        {
+        }
+    }
+
+    public class DelegateMessageHandler<TContent> : IMessageHandler
+    {
+        private readonly Func<TContent, IMessageContext, CancellationToken, Task> _handleMessage;
+
+        public DelegateMessageHandler(Func<TContent, IMessageContext, Task> handleMessage)
         {
             if (handleMessage == null) throw new ArgumentNullException("handleMessage");
             _handleMessage = (msg, ctx, tok) => handleMessage(msg, ctx);
         }
 
-        public DelegateMessageHandler(Func<Message, IMessageContext, CancellationToken, Task> handleMessage)
+        public DelegateMessageHandler(Func<TContent, IMessageContext, CancellationToken, Task> handleMessage)
         {
             if (handleMessage == null) throw new ArgumentNullException("handleMessage");
             _handleMessage = handleMessage;
         }
 
-        public DelegateMessageHandler(Action<Message, IMessageContext> handleMessage)
+        public DelegateMessageHandler(Action<TContent, IMessageContext> handleMessage)
         {
             if (handleMessage == null) throw new ArgumentNullException("handleMessage");
             _handleMessage = (msg, ctx, tok) => Task.Run(() => handleMessage(msg, ctx), tok);
         }
 
-        public Task HandleMessage(Message message, IMessageContext messageContext,
+        public Task HandleMessage(object message, IMessageContext messageContext,
             CancellationToken cancellationToken)
         {
-            return _handleMessage(message, messageContext, cancellationToken);
+            return _handleMessage((TContent)message, messageContext, cancellationToken);
+        }
+
+        public static DelegateMessageHandler<T> For<T>(Func<T, IMessageContext, Task> handleMessage)
+        {
+            return new DelegateMessageHandler<T>(handleMessage);
+        }
+
+        public static DelegateMessageHandler<T> For<T>(Func<T, IMessageContext, CancellationToken, Task> handleMessage)
+        {
+            return new DelegateMessageHandler<T>(handleMessage);
+        }
+
+        public static DelegateMessageHandler<T> For<T>(Action<T, IMessageContext> handleMessage)
+        {
+            return new DelegateMessageHandler<T>(handleMessage);
         }
     }
 }
