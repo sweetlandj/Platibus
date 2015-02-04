@@ -90,7 +90,13 @@ namespace Pluribus.Http
 
             try
             {
-                var httpClient = new HttpClient(new HttpClientHandler {AllowAutoRedirect = false})
+                var clientHandler = new HttpClientHandler
+                {
+                    AllowAutoRedirect = false,
+                    UseDefaultCredentials = true
+                };
+
+                var httpClient = new HttpClient(clientHandler)
                 {
                     BaseAddress = publisher
                 };
