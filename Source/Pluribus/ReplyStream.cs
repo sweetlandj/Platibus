@@ -25,15 +25,15 @@ using System.Collections.Generic;
 
 namespace Pluribus
 {
-    internal class ReplyStream : IObservable<Message>
+    internal class ReplyStream : IObservable<object>
     {
         private bool _complete;
         private Exception _error;
-        private readonly IList<Message> _replies = new List<Message>();
+        private readonly IList<object> _replies = new List<object>();
         private readonly IList<Subscription> _subscriptions = new List<Subscription>();
         private readonly object _syncRoot = new object();
 
-        public IDisposable Subscribe(IObserver<Message> observer)
+        public IDisposable Subscribe(IObserver<object> observer)
         {
             var subscription = new Subscription(observer, Unsubscribe);
             lock (_syncRoot)
@@ -67,7 +67,7 @@ namespace Pluribus
             }
         }
 
-        public void NotifyReplyReceived(Message reply)
+        public void NotifyReplyReceived(object reply)
         {
             IList<Subscription> subscriptions;
             lock (_syncRoot)
@@ -114,16 +114,16 @@ namespace Pluribus
 
         private class Subscription : IDisposable
         {
-            private readonly IObserver<Message> _observer;
+            private readonly IObserver<object> _observer;
             private readonly Action<Subscription> _unsubscribe;
 
-            public Subscription(IObserver<Message> observer, Action<Subscription> unsubscribe)
+            public Subscription(IObserver<object> observer, Action<Subscription> unsubscribe)
             {
                 _observer = observer;
                 _unsubscribe = unsubscribe;
             }
 
-            public IObserver<Message> Observer
+            public IObserver<object> Observer
             {
                 get { return _observer; }
             }

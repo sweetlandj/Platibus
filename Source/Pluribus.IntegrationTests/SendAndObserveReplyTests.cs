@@ -79,7 +79,7 @@ namespace Pluribus.IntegrationTests
             Assert.That(replies.Count, Is.EqualTo(1));
 
             var reply = replies.First();
-            Assert.That(reply, Is.InstanceOf<Message>());
+            Assert.That(reply, Is.InstanceOf<TestReply>());
 
             server0.Dispose();
             server1.Dispose();

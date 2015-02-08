@@ -34,7 +34,7 @@ namespace Pluribus
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Filesystem);
         private readonly Bus _bus;
-        private readonly IMessageNamingService _namingService;
+        private readonly IMessageNamingService _messageNamingService;
         private readonly ISerializationService _serializationService;
         private readonly IEnumerable<IMessageHandler> _messageHandlers;
 
@@ -49,7 +49,7 @@ namespace Pluribus
             if (!handlerList.Any()) throw new ArgumentNullException("messageHandlers");
 
             _bus = bus;
-            _namingService = namingService;
+            _messageNamingService = namingService;
             _serializationService = serializationService;
             _messageHandlers = handlerList;
         }
@@ -65,7 +65,7 @@ namespace Pluribus
             }
 
             var messageContext = new BusMessageContext(_bus, context.Headers, context.SenderPrincipal);
-            var messageType = _namingService.GetTypeForName(message.Headers.MessageName);
+            var messageType = _messageNamingService.GetTypeForName(message.Headers.MessageName);
             var serializer = _serializationService.GetSerializer(message.Headers.ContentType);
             var messageContent = serializer.Deserialize(message.Content, messageType);
             var handlingTasks = _messageHandlers.Select(handler => 

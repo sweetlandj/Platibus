@@ -27,6 +27,6 @@ namespace Pluribus
     public interface ISentMessage
     {
         MessageId MessageId { get; }
-        IObservable<Message> ObserveReplies();
+        IObservable<object> ObserveReplies();
     }
 }

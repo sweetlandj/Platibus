@@ -49,37 +49,43 @@ namespace Pluribus
             return new SentMessageWithCachedReplies(this, message.Headers.MessageId);
         }
 
-        public IObservable<Message> ObserveReplies(MessageId relatedToMessageId)
+        public IObservable<object> ObserveReplies(MessageId relatedToMessageId)
         {
             CheckDisposed();
-            var replyStream =
-                (ReplyStream)
-                    _cache.AddOrGetExisting(relatedToMessageId, new ReplyStream(), DateTime.UtcNow.Add(_replyTimeout));
+            var replyStreamExpiration = DateTime.UtcNow.Add(_replyTimeout);
+            var newReplyStream = new ReplyStream();
+            var replyStream = (ReplyStream) _cache.AddOrGetExisting(relatedToMessageId, newReplyStream, replyStreamExpiration);
 
             if (replyStream == null)
             {
                 // MemoryCache.AddOrGetExisting returns null if the key does not
-                // already exist, so we have to fetch it in these cases. See:
+                // already exist, so use the one we just created. See:
                 // http://msdn.microsoft.com/en-us/library/dd988741%28v=vs.110%29.aspx
-                replyStream = (ReplyStream) _cache[relatedToMessageId];
+                replyStream = newReplyStream;
             }
             return replyStream;
         }
 
-        public Task ReplyReceived(Message replyMessage, bool lastReply)
+        public Task ReplyReceived(object reply, MessageId relatedToMessageId)
         {
             CheckDisposed();
             return Task.Run(() =>
             {
-                var relatedToMessageId = replyMessage.Headers.RelatedTo;
                 var replyStream = _cache.Get(relatedToMessageId) as ReplyStream;
                 if (replyStream == null) return;
 
-                replyStream.NotifyReplyReceived(replyMessage);
-                if (lastReply)
-                {
-                    replyStream.NotifyCompleted();
-                }
+                replyStream.NotifyReplyReceived(reply);
+            });
+        }
+
+        public Task NotifyLastReplyReceived(MessageId relatedToMessageId)
+        {
+            return Task.Run(() =>
+            {
+                var replyStream = _cache.Get(relatedToMessageId) as ReplyStream;
+                if (replyStream == null) return;
+
+                replyStream.NotifyCompleted();
             });
         }
 

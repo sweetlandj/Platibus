@@ -29,9 +29,9 @@ namespace Pluribus
 {
     public static class SentMessageExtensions
     {
-        public static async Task<Message> GetReply(this ISentMessage sentMessage, TimeSpan timeout = default(TimeSpan))
+        public static async Task<object> GetReply(this ISentMessage sentMessage, TimeSpan timeout = default(TimeSpan))
         {
-            Message reply = null;
+            object reply = null;
             var replyReceivedEvent = new ManualResetEvent(false);
             var subscription = sentMessage.ObserveReplies().Subscribe(r =>
             {
@@ -46,20 +46,6 @@ namespace Pluribus
             replyReceivedEvent.Dispose();
 
             return reply;
-        }
-
-        public static async Task<TContent> GetReplyContent<TContent>(this ISentMessage sentMessage,
-            TimeSpan timeout = default(TimeSpan), ISerializationService serializationService = null)
-        {
-            if (serializationService == null)
-            {
-                serializationService = new DefaultSerializationService();
-            }
-            var message = await sentMessage.GetReply(timeout).ConfigureAwait(false);
-            var contentType = message.Headers.ContentType;
-            var serializer = serializationService.GetSerializer(contentType);
-            var deserializedMessageContent = serializer.Deserialize<TContent>(message.Content);
-            return deserializedMessageContent;
         }
     }
 }

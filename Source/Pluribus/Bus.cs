@@ -418,6 +418,17 @@ namespace Pluribus
                 .Select(q => _messageQueueingService.EnqueueMessage(q, message, args.SenderPrincipal))
                 .ToList();
 
+            var relatedToMessageId = message.Headers.RelatedTo;
+            if (relatedToMessageId != default(MessageId))
+            {
+                tasks.Add(NotifyReplyReceived(message));
+            }
+            
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+
+        private async Task NotifyReplyReceived(Message message)
+        {
             // TODO: Handle special "last reply" message.  Presently we only support a single reply.
             // This will probably be a special function of the ITransportService and will likely
             // be, for example, an empty POST to {baseUri}/message/{messageId}?lastReply=true, which
@@ -429,9 +440,13 @@ namespace Pluribus
             // number of replies received is less than the number expected, then the OnComplete
             // event can be deferred.
 
-            tasks.Add(_replyHub.ReplyReceived(message, true));
+            var relatedToMessageId = message.Headers.RelatedTo;
+            var messageType = _messageNamingService.GetTypeForName(message.Headers.MessageName);
+            var serializer = _serializationService.GetSerializer(message.Headers.ContentType);
+            var messageContent = serializer.Deserialize(message.Content, messageType);
 
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+            await _replyHub.ReplyReceived(messageContent, relatedToMessageId);
+            await _replyHub.NotifyLastReplyReceived(relatedToMessageId);
         }
 
         private async void OnSubscriptionRequestReceived(object source, SubscriptionRequestReceivedEventArgs args)

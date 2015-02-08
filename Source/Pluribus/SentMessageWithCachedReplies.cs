@@ -27,14 +27,14 @@ namespace Pluribus
     internal class SentMessageWithCachedReplies : ISentMessage
     {
         private readonly MessageId _messageId;
-        private readonly MemoryCacheReplyHub _replyHandler;
+        private readonly MemoryCacheReplyHub _replyHub;
 
-        public SentMessageWithCachedReplies(MemoryCacheReplyHub replyHandler, MessageId messageId)
+        public SentMessageWithCachedReplies(MemoryCacheReplyHub repluHub, MessageId messageId)
         {
-            if (replyHandler == null) throw new ArgumentNullException("replyHandler");
+            if (repluHub == null) throw new ArgumentNullException("repluHub");
             if (messageId == null) throw new ArgumentNullException("messageId");
 
-            _replyHandler = replyHandler;
+            _replyHub = repluHub;
             _messageId = messageId;
         }
 
@@ -43,9 +43,9 @@ namespace Pluribus
             get { return _messageId; }
         }
 
-        public IObservable<Message> ObserveReplies()
+        public IObservable<object> ObserveReplies()
         {
-            return _replyHandler.ObserveReplies(_messageId);
+            return _replyHub.ObserveReplies(_messageId);
         }
     }
 }
