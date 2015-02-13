@@ -88,6 +88,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IntegrationTestConfigurationHook.cs" />
+    <Compile Include="LoadTests.cs" />
     <Compile Include="TestPublicationHandler.cs" />
     <Compile Include="PubSubTests.cs" />
     <Compile Include="TestHandler.cs" />
@@ -99,7 +100,9 @@
     <Compile Include="TestReply.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
+    <None Include="app.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
     <None Include="Pluribus.IntegrationTests.licenseheader" />
     <None Include="Pluribus.snk" />

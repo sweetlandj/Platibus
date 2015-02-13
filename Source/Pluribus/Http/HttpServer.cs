@@ -37,9 +37,8 @@ namespace Pluribus.Http
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly HttpListener _httpListener;
         private readonly IHttpResourceRouter _router;
-        private readonly SemaphoreSlim _throttle;
 
-        public HttpServer(string sectionName = null, int maxConcurrency = 10)
+        public HttpServer(string sectionName = null)
         {
             var bus = Bootstrapper.InitBus(sectionName).ConfigureAwait(false).GetAwaiter().GetResult();
             Shutdown += (source, e) => bus.Dispose();
@@ -48,14 +47,9 @@ namespace Pluribus.Http
             _baseUri = bus.BaseUri;
             _httpListener = InitHttpListener();
             _httpListener.Prefixes.Add(_baseUri.ToString());
-            if (maxConcurrency <= 0)
-            {
-                maxConcurrency = 10;
-            }
-            _throttle = new SemaphoreSlim(maxConcurrency);
         }
 
-        public HttpServer(Bus bus, int maxConcurrency = 10)
+        public HttpServer(Bus bus)
         {
             if (bus == null) throw new ArgumentNullException("bus");
 
@@ -63,14 +57,9 @@ namespace Pluribus.Http
             _baseUri = bus.BaseUri;
             _httpListener = InitHttpListener();
             _httpListener.Prefixes.Add(_baseUri.ToString());
-            if (maxConcurrency <= 0)
-            {
-                maxConcurrency = 10;
-            }
-            _throttle = new SemaphoreSlim(maxConcurrency);
         }
 
-        public HttpServer(Uri baseUri, IHttpResourceRouter router, int maxConcurrency = 10)
+        public HttpServer(Uri baseUri, IHttpResourceRouter router)
         {
             if (router == null) throw new ArgumentNullException("router");
             if (baseUri == null)
@@ -82,11 +71,6 @@ namespace Pluribus.Http
             _baseUri = baseUri;
             _httpListener = InitHttpListener();
             _httpListener.Prefixes.Add(baseUri.ToString());
-            if (maxConcurrency <= 0)
-            {
-                maxConcurrency = 10;
-            }
-            _throttle = new SemaphoreSlim(maxConcurrency);
         }
 
         public Uri BaseUri
@@ -136,7 +120,6 @@ namespace Pluribus.Http
         {
             while (_httpListener.IsListening)
             {
-                await _throttle.WaitAsync(cancellationToken).ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var context = await _httpListener.GetContextAsync().ConfigureAwait(false);
@@ -186,8 +169,10 @@ namespace Pluribus.Http
                     handler(e);
                 }
             }
-            context.Response.Close();
-            _throttle.Release();
+            finally
+            {
+                context.Response.Close();
+            }
         }
 
         ~HttpServer()
@@ -213,8 +198,6 @@ namespace Pluribus.Http
                 _httpListener.Abort();
             }
             Log.InfoFormat("HTTP server stopped");
-
-            _throttle.Dispose();
 
             var shutdownHandlers = Shutdown;
             if (shutdownHandlers != null)

@@ -51,6 +51,21 @@ namespace Pluribus
         private readonly IList<TopicName> _topics;
         private readonly ITransportService _transportService;
 
+        public Uri BaseUri
+        {
+            get { return _baseUri; }
+        }
+
+        public ITransportService TransportService
+        {
+            get { return _transportService; }
+        }
+
+        public IEnumerable<TopicName> Topics
+        {
+            get { return _topics; }
+        }
+
         public Bus(IPluribusConfiguration configuration, ITransportService transportService)
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
@@ -79,21 +94,37 @@ namespace Pluribus
             _outboundQueueName = "Outbound";
         }
 
-        public Uri BaseUri
+        public async Task Init(CancellationToken cancellationToken = default(CancellationToken))
         {
-            get { return _baseUri; }
-        }
+            var handlingRulesGroupedByQueueName = _handlingRules
+                .GroupBy(r => r.QueueName)
+                .ToDictionary(grp => grp.Key, grp => grp);
 
-        public ITransportService TransportService
-        {
-            get { return _transportService; }
-        }
+            foreach (var ruleGroup in handlingRulesGroupedByQueueName)
+            {
+                var queueName = ruleGroup.Key;
+                var rules = ruleGroup.Value;
+                var handlers = rules.Select(r => r.MessageHandler);
 
-        public IEnumerable<TopicName> Topics
-        {
-            get { return _topics; }
-        }
+                await _messageQueueingService
+                    .CreateQueue(queueName, new MessageHandlingListener(this, _messageNamingService, _serializationService, handlers))
+                    .ConfigureAwait(false);
+            }
 
+            await _messageQueueingService
+                .CreateQueue(_outboundQueueName, new OutboundQueueListener(_transportService))
+                .ConfigureAwait(false);
+
+            foreach (var subscription in _subscriptions)
+            {
+                // Do not await these; it uses a loop with Task.Delay to ensure that the subscriptions
+                // are periodically renewed.
+
+                // ReSharper disable once UnusedVariable
+                var subscriptionTask = Subscribe(subscription, _cancellationTokenSource.Token);
+            }
+        }
+        
         public async Task<ISentMessage> Send(object content, SendOptions options = default(SendOptions),
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -190,37 +221,6 @@ namespace Pluribus
         {
             Dispose(true);
             GC.SuppressFinalize(this);
-        }
-
-        public async Task Init(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            var handlingRulesGroupedByQueueName = _handlingRules
-                .GroupBy(r => r.QueueName)
-                .ToDictionary(grp => grp.Key, grp => grp);
-
-            foreach (var ruleGroup in handlingRulesGroupedByQueueName)
-            {
-                var queueName = ruleGroup.Key;
-                var rules = ruleGroup.Value;
-                var handlers = rules.Select(r => r.MessageHandler);
-
-                await _messageQueueingService
-                    .CreateQueue(queueName, new MessageHandlingListener(this, _messageNamingService, _serializationService, handlers))
-                    .ConfigureAwait(false);
-            }
-
-            await _messageQueueingService
-                .CreateQueue(_outboundQueueName, new OutboundQueueListener(_transportService))
-                .ConfigureAwait(false);
-
-            foreach (var subscription in _subscriptions)
-            {
-                // Do not await these; it uses a loop with Task.Delay to ensure that the subscriptions
-                // are periodically renewed.
-
-                // ReSharper disable once UnusedVariable
-                var subscriptionTask = Subscribe(subscription, _cancellationTokenSource.Token);
-            }
         }
 
         private IEndpoint GetEndpoint(EndpointName endpointName)
