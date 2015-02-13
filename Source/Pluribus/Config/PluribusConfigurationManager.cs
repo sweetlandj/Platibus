@@ -29,6 +29,7 @@ using System.Threading.Tasks;
 using Common.Logging;
 using Pluribus.Filesystem;
 using Pluribus.Serialization;
+using System.Reflection;
 
 namespace Pluribus.Config
 {
@@ -125,26 +126,52 @@ namespace Pluribus.Config
         {
             if (configuration == null) return;
 
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            var appDomainBaseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            var directories = new []
             {
-                Log.DebugFormat("Scanning assembly {0} for configuration hooks...", assembly.GetName().FullName);
-                var hookTypes = assembly.GetTypes()
-                    .Where(typeof (IConfigurationHook).IsAssignableFrom)
-                    .Where(t => !t.IsInterface && !t.IsAbstract);
+                new DirectoryInfo(appDomainBaseDirectory),
+                new DirectoryInfo(Path.Combine(appDomainBaseDirectory, "bin"))
+            };
 
-                foreach (var hookType in hookTypes)
+            var filenamePatterns = new [] { "*.dll", "*.exe" };
+            var assemblyFiles = directories
+                .SelectMany(dir => filenamePatterns, (dir, pattern) => new
                 {
-                    try
-                    {
-                        Log.InfoFormat("Processing configuration hook {0}...", hookType.FullName);
-                        var hook = (IConfigurationHook) Activator.CreateInstance(hookType);
-                        hook.Configure(configuration);
-                        Log.InfoFormat("Configuration hook {0} processed successfully.", hookType.FullName);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.ErrorFormat("Unhandled exception in configuration hook {0}", ex, hookType.FullName);
-                    }
+                    Directory = dir,
+                    FilenamePattern = pattern
+                })
+                .SelectMany(x => x.Directory.GetFiles(x.FilenamePattern, SearchOption.TopDirectoryOnly));
+
+            var hookTypes = new List<Type>();
+            foreach (var assemblyFile in assemblyFiles)
+            {
+                try
+                {
+                    var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyFile.FullName);
+                    Log.DebugFormat("Scanning assembly {0} for configuration hooks...", assembly.GetName().FullName);
+                    hookTypes.AddRange(AppDomain.CurrentDomain.Load(assembly.GetName())
+                        .GetTypes()
+                        .Where(typeof(IConfigurationHook).IsAssignableFrom)
+                        .Where(t => !t.IsInterface && !t.IsAbstract));
+                }
+                catch(Exception ex)
+                {
+                    Log.WarnFormat("Error scanning assembly file {0}", ex, assemblyFile);
+                }
+            }
+
+            foreach (var hookType in hookTypes.Distinct())
+            {
+                try
+                {
+                    Log.InfoFormat("Processing configuration hook {0}...", hookType.FullName);
+                    var hook = (IConfigurationHook)Activator.CreateInstance(hookType);
+                    hook.Configure(configuration);
+                    Log.InfoFormat("Configuration hook {0} processed successfully.", hookType.FullName);
+                }
+                catch (Exception ex)
+                {
+                    Log.ErrorFormat("Unhandled exception in configuration hook {0}", ex, hookType.FullName);
                 }
             }
         }
