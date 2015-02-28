@@ -146,7 +146,11 @@ namespace Pluribus.UnitTests
                 .Returns(Task.FromResult(true));
 
             await fsQueueingService
-                .CreateQueue(queueName, mockListener.Object, new QueueOptions { MaxAttempts = 1 })
+                .CreateQueue(queueName, mockListener.Object, new QueueOptions 
+                { 
+                    MaxAttempts = 2, // Prevent message from being sent to the DLQ,
+                    RetryDelay = TimeSpan.FromSeconds(30)
+                })
                 .ConfigureAwait(false);
 
             var message = new Message(new MessageHeaders
@@ -262,7 +266,12 @@ namespace Pluribus.UnitTests
                 });
 
             await fsQueueingService
-                .CreateQueue(queueName, mockListener.Object, new QueueOptions { AutoAcknowledge = true, MaxAttempts = 1 })
+                .CreateQueue(queueName, mockListener.Object, new QueueOptions 
+                { 
+                    AutoAcknowledge = true, 
+                    MaxAttempts = 2, // So the message doesn't get moved to the DLQ
+                    RetryDelay = TimeSpan.FromSeconds(30) 
+                })
                 .ConfigureAwait(false);
 
             var message = new Message(new MessageHeaders

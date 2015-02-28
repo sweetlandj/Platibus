@@ -143,6 +143,9 @@
     <Compile Include="NameResolutionFailedException.cs" />
     <Compile Include="InMemory\InMemorySubscriptionTrackingService.cs" />
     <Compile Include="PrincipalExtensions.cs" />
+    <Compile Include="Security\SenderPrincipal.cs" />
+    <Compile Include="Security\SenderIdentity.cs" />
+    <Compile Include="Security\SenderRole.cs" />
     <Compile Include="SentMessageExtensions.cs" />
     <Compile Include="SentMessageWithCachedReplies.cs" />
     <Compile Include="QueueNotFoundException.cs" />

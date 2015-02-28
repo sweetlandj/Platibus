@@ -120,9 +120,25 @@ namespace Pluribus.Filesystem
 
                 Log.DebugFormat("Message file {0} read successfully", _file);
             }
-            catch (FormatException fx)
+            catch (Exception ex)
             {
-                throw new MessageFileFormatException(_file.FullName, "Error reading message file", fx);
+                throw new MessageFileFormatException(_file.FullName, "Error reading message file", ex);
+            }
+            finally
+            {
+                _fileAccess.Release();
+            }
+        }
+
+        public async Task<MessageFile> MoveTo(DirectoryInfo destinationDirectory, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var newPath = Path.Combine(destinationDirectory.FullName, _file.Name);
+            await _fileAccess.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                _file.MoveTo(newPath);
+                return new MessageFile(new FileInfo(newPath));
             }
             finally
             {

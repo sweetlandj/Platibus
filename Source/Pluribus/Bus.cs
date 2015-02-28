@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 using Common.Logging;
 using Pluribus.Config;
 using Pluribus.Serialization;
+using Pluribus.Security;
 
 namespace Pluribus
 {
@@ -411,11 +412,18 @@ namespace Pluribus
                 .Where(r => r.MessageSpecification.IsSatisfiedBy(message))
                 .ToList();
 
+            // Make sure that the principal is serializable before enqueuing
+            var senderPrincipal = args.Principal as SenderPrincipal;
+            if (senderPrincipal == null && args.Principal != null)
+            {
+                senderPrincipal = new SenderPrincipal(args.Principal);
+            }
+
             // Message expiration handled in MessageHandlingListener
             var tasks = matchingRules
                 .Select(rule => rule.QueueName)
                 .Distinct()
-                .Select(q => _messageQueueingService.EnqueueMessage(q, message, args.SenderPrincipal))
+                .Select(q => _messageQueueingService.EnqueueMessage(q, message, senderPrincipal))
                 .ToList();
 
             var relatedToMessageId = message.Headers.RelatedTo;

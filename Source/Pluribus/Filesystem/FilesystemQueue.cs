@@ -40,6 +40,7 @@ namespace Pluribus.Filesystem
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly SemaphoreSlim _concurrentMessageProcessingSlot;
         private readonly DirectoryInfo _directory;
+        private readonly DirectoryInfo _deadLetterDirectory;
         private readonly IQueueListener _listener;
         private readonly int _maxAttempts;
         private readonly BufferBlock<MessageFile> _queuedMessages;
@@ -52,6 +53,8 @@ namespace Pluribus.Filesystem
             if (listener == null) throw new ArgumentNullException("listener");
 
             _directory = directory;
+            _deadLetterDirectory = new DirectoryInfo(Path.Combine(directory.FullName, "dead"));
+
             _listener = listener;
             _autoAcknowledge = options.AutoAcknowledge;
             _maxAttempts = options.MaxAttempts <= 0 ? 10 : options.MaxAttempts;
@@ -100,12 +103,20 @@ namespace Pluribus.Filesystem
             if (Interlocked.Exchange(ref _initialized, 1) == 0)
             {
                 _directory.Refresh();
-                if (!_directory.Exists)
+
+                var directoryAlreadyExisted = _directory.Exists;
+                if (!directoryAlreadyExisted)
                 {
                     _directory.Create();
                     _directory.Refresh();
                 }
-                else
+
+                if (!_deadLetterDirectory.Exists)
+                {
+                    _deadLetterDirectory.Create();
+                }
+                    
+                if (directoryAlreadyExisted)
                 {
                     await EnqueueExistingFiles().ConfigureAwait(false);
                 }
@@ -137,7 +148,8 @@ namespace Pluribus.Filesystem
         private async Task ProcessQueuedMessage(MessageFile queuedMessage, CancellationToken cancellationToken)
         {
             var attemptCount = 0;
-            while (attemptCount < _maxAttempts)
+            var deadLetter = false;
+            while (!deadLetter)
             {
                 attemptCount++;
 
@@ -164,7 +176,7 @@ namespace Pluribus.Filesystem
                 catch (MessageFileFormatException ex)
                 {
                     Log.ErrorFormat("Unable to read invalid or corrupt message file {0}", ex, ex.Path);
-                    break;
+                    deadLetter = true;
                 }
                 catch (Exception ex)
                 {
@@ -179,16 +191,24 @@ namespace Pluribus.Filesystem
                 {
                     Log.DebugFormat("Message acknowledged.  Deleting message file {0}...", queuedMessage.File);
                     // TODO: Implement journaling
-                    queuedMessage.File.Delete();
+                    await queuedMessage.Delete();
                     Log.DebugFormat("Message file {0} deleted successfully", queuedMessage.File);
-                    break;
+                    return;
+                }
+                else if (attemptCount >= _maxAttempts)
+                {
+                    Log.WarnFormat("Maximum attempts to proces message file {0} exceeded", queuedMessage.File);
+                    deadLetter = true;
                 }
 
-                if (attemptCount < _maxAttempts)
+                if (deadLetter)
                 {
-                    Log.DebugFormat("Message not acknowledged.  Retrying in {0}...", _retryDelay);
-                    await Task.Delay(_retryDelay, cancellationToken).ConfigureAwait(false);
+                    await queuedMessage.MoveTo(_deadLetterDirectory, cancellationToken).ConfigureAwait(false);
+                    return;
                 }
+
+                Log.DebugFormat("Message not acknowledged.  Retrying in {0}...", _retryDelay);
+                await Task.Delay(_retryDelay, cancellationToken).ConfigureAwait(false);
             }
         }
 

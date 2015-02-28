@@ -48,7 +48,14 @@ namespace Pluribus.Http
                 var httpContent = new StringContent(message.Content);
                 WriteHttpContentHeaders(message, httpContent);
                 var endpointBaseUri = message.Headers.Destination;
-                var httpClient = new HttpClient(new HttpClientHandler {AllowAutoRedirect = false})
+                var httpClientHandler = new HttpClientHandler 
+                { 
+                    AllowAutoRedirect = true,
+                    UseProxy = false,
+                    UseDefaultCredentials = true
+                };
+
+                var httpClient = new HttpClient(httpClientHandler)
                 {
                     BaseAddress = endpointBaseUri
                 };
@@ -92,7 +99,8 @@ namespace Pluribus.Http
             {
                 var clientHandler = new HttpClientHandler
                 {
-                    AllowAutoRedirect = false,
+                    AllowAutoRedirect = true,
+                    UseProxy = false,
                     UseDefaultCredentials = true
                 };
 

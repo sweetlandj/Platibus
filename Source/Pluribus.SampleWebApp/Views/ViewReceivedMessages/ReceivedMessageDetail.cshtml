@@ -12,11 +12,17 @@
 {
     <fieldset>
         <div class="row">
-            <div class="col-md-12">
+            <div class="col-md-6">
                 <div class="form-group">
                     @Html.LabelFor(model => model.MessageName, "Name", new { @class = "control-label" })
                     @Html.TextBoxFor(model => model.MessageName, new { @class = "form-control", @readonly = true })
                 </div>    
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.SenderPrincipal, "Sender", new { @class = "control-label" })
+                    @Html.TextBoxFor(model => model.SenderPrincipal, new { @class = "form-control", @readonly = true })
+                </div>
             </div>
         </div>
         <div class="row">

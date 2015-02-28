@@ -35,7 +35,7 @@ namespace Pluribus
             get { return _message; }
         }
 
-        public IPrincipal SenderPrincipal
+        public IPrincipal Principal
         {
             get { return _senderPrincipal; }
         }

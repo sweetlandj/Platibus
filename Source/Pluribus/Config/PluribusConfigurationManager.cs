@@ -140,6 +140,7 @@ namespace Pluribus.Config
                     Directory = dir,
                     FilenamePattern = pattern
                 })
+                .Where(dir => dir.Directory.Exists)
                 .SelectMany(x => x.Directory.GetFiles(x.FilenamePattern, SearchOption.TopDirectoryOnly));
 
             var hookTypes = new List<Type>();
