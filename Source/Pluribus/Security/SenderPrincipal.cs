@@ -90,6 +90,23 @@ namespace Pluribus.Security
         public bool IsInRole(string role)
         {
             if (string.IsNullOrWhiteSpace(role)) return false;
+
+            var ntAccount = new NTAccount(role);
+            try
+            {
+                var sid = ntAccount.Translate(typeof(SecurityIdentifier)) as SecurityIdentifier;
+                if (sid != null)
+                {
+                    if (_roles.Contains(new SenderRole(sid.ToString())))
+                    {
+                        return true;
+                    }
+                }
+            }
+            catch(IdentityNotMappedException)
+            {
+            }
+            
             return _roles.Contains(new SenderRole(role));
         }
     }

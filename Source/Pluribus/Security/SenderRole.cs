@@ -45,16 +45,7 @@ namespace Pluribus.Security
         public SenderRole(Claim claim)
         {
             if (claim == null) throw new ArgumentNullException("claim");
-            if (claim.Type == ClaimTypes.GroupSid)
-            {
-                var identityRef = new SecurityIdentifier(claim.Value);
-                var ntAccount = (NTAccount)identityRef.Translate(typeof(NTAccount));
-                _name = ntAccount.ToString();
-            }
-            else
-            {
-                _name = claim.Value.Trim();
-            }
+            _name = claim.Value.Trim();
         }
 
         protected SenderRole(SerializationInfo info, StreamingContext context)
