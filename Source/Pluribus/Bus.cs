@@ -42,6 +42,7 @@ namespace Pluribus
         private readonly IDictionary<EndpointName, IEndpoint> _endpoints;
         private readonly IList<IHandlingRule> _handlingRules;
         private readonly IMessageNamingService _messageNamingService;
+        private readonly IMessageJournalingService _messageJournalingService;
         private readonly IMessageQueueingService _messageQueueingService;
         private readonly QueueName _outboundQueueName;
         private readonly MemoryCacheReplyHub _replyHub = new MemoryCacheReplyHub(TimeSpan.FromMinutes(5));
@@ -77,6 +78,7 @@ namespace Pluribus
             // TODO: Throw configuration exception if message queueing service, message naming
             // service, or serialization service are null
 
+            _messageJournalingService = configuration.MessageJournalingService;
             _messageQueueingService = configuration.MessageQueueingService;
             _messageNamingService = configuration.MessageNamingService;
             _serializationService = configuration.SerializationService;
@@ -113,7 +115,7 @@ namespace Pluribus
             }
 
             await _messageQueueingService
-                .CreateQueue(_outboundQueueName, new OutboundQueueListener(_transportService))
+                .CreateQueue(_outboundQueueName, new OutboundQueueListener(_transportService, _messageJournalingService))
                 .ConfigureAwait(false);
 
             foreach (var subscription in _subscriptions)
@@ -166,7 +168,11 @@ namespace Pluribus
             if (endpointName == null) throw new ArgumentNullException("endpointName");
             
             var endpoint = _endpoints[endpointName];
-            var message = BuildMessage(content, endpoint.Address, options: options);
+            var headers = new MessageHeaders
+            {
+                Destination = endpoint.Address
+            };
+            var message = BuildMessage(content, headers, options);
 
             Log.DebugFormat("Sending message ID {0} to endpoint \"{1}\" ({2})...", 
                 message.Headers.MessageId, endpointName, endpoint.Address);
@@ -182,7 +188,12 @@ namespace Pluribus
 
             if (content == null) throw new ArgumentNullException("content");
             if (endpointUri == null) throw new ArgumentNullException("endpointUri");
-            var message = BuildMessage(content, endpointUri, options: options);
+
+            var headers = new MessageHeaders
+            {
+                Destination = endpointUri
+            };
+            var message = BuildMessage(content, headers, options);
 
             Log.DebugFormat("Sending message ID {0} to \"{2}\"...",
                 message.Headers.MessageId, endpointUri);
@@ -197,7 +208,23 @@ namespace Pluribus
             CheckDisposed();
             if (!_topics.Contains(topic)) throw new TopicNotFoundException(topic);
 
-            var prototypicalMessage = BuildMessage(content);
+            var prototypicalHeaders = new MessageHeaders
+            {
+                Topic = topic,
+                Published = DateTime.UtcNow
+            };
+
+            var options = new SendOptions 
+            {
+                UseDurableTransport = true
+            };
+
+            var prototypicalMessage = BuildMessage(content, prototypicalHeaders, options);
+            if (_messageJournalingService != null)
+            {
+                await _messageJournalingService.MessagePublished(prototypicalMessage).ConfigureAwait(false);
+            }
+
             var subscribers = _subscriptionTrackingService.GetSubscribers(topic);
 
             var publishSendOptions = new SendOptions();
@@ -332,17 +359,15 @@ namespace Pluribus
             }
         }
 
-        private Message BuildMessage(object content, Uri destination = null, MessageId relatedTo = default(MessageId),
-            SendOptions options = default(SendOptions))
+        private Message BuildMessage(object content, IMessageHeaders suppliedHeaders = null, SendOptions options = default(SendOptions))
         {
             if (content == null) throw new ArgumentNullException("content");
             var messageName = _messageNamingService.GetNameForType(content.GetType());
-            var headers = new MessageHeaders
+            var headers = new MessageHeaders(suppliedHeaders)
             {
                 MessageId = MessageId.Generate(),
                 MessageName = messageName,
-                Origination = _baseUri,
-                RelatedTo = relatedTo
+                Origination = _baseUri
             };
 
             var contentType = options.ContentType;
@@ -351,11 +376,6 @@ namespace Pluribus
                 contentType = "application/json";
             }
             headers.ContentType = contentType;
-
-            if (destination != null)
-            {
-                headers.Destination = destination;
-            }
 
             var serializer = _serializationService.GetSerializer(headers.ContentType);
             var serializedContent = serializer.Serialize(content);
@@ -376,9 +396,13 @@ namespace Pluribus
         {
             if (messageContext == null) throw new ArgumentNullException("messageContext");
             if (replyContent == null) throw new ArgumentNullException("replyContent");
-            var destination = messageContext.Headers.Origination;
-            var relatedTo = messageContext.Headers.MessageId;
-            var replyMessage = BuildMessage(replyContent, destination, relatedTo, options);
+
+            var headers = new MessageHeaders
+            {
+                Destination = messageContext.Headers.Origination,
+                RelatedTo = messageContext.Headers.MessageId
+            };
+            var replyMessage = BuildMessage(replyContent,headers, options);
             await TransportMessage(replyMessage, options, cancellationToken).ConfigureAwait(false);
         }
 
@@ -398,16 +422,25 @@ namespace Pluribus
             else
             {
                 Log.DebugFormat("Durable transport not requested.  Attempting to transport message ID {0} directly to destination \"{1}\"...", message.Headers.MessageId, message.Headers.Destination);
-                await _transportService
-                    .SendMessage(message, cancellationToken)
-                    .ConfigureAwait(false);
+                await _transportService.SendMessage(message, cancellationToken).ConfigureAwait(false);
                 Log.DebugFormat("Message ID {0} transported successfully", message.Headers.MessageId);
+
+                if (_messageJournalingService != null)
+                {
+                    await _messageJournalingService.MessageSent(message).ConfigureAwait(false);
+                }
             }
         }
 
         private async void OnMessageReceived(object source, MessageReceivedEventArgs args)
         {
             var message = args.Message;
+
+            if (_messageJournalingService != null)
+            {
+                await _messageJournalingService.MessageReceived(message);
+            }
+
             var matchingRules = _handlingRules
                 .Where(r => r.MessageSpecification.IsSatisfiedBy(message))
                 .ToList();
@@ -490,11 +523,13 @@ namespace Pluribus
         private class OutboundQueueListener : IQueueListener
         {
             private readonly ITransportService _transportService;
+            private readonly IMessageJournalingService _messageJournalingService;
 
-            public OutboundQueueListener(ITransportService transportService)
+            public OutboundQueueListener(ITransportService transportService, IMessageJournalingService messageJournalingService)
             {
                 if (transportService == null) throw new ArgumentNullException("transportService");
                 _transportService = transportService;
+                _messageJournalingService = messageJournalingService;
             }
 
             public async Task MessageReceived(Message message, IQueuedMessageContext context,
@@ -509,6 +544,11 @@ namespace Pluribus
 
                 await _transportService.SendMessage(message, cancellationToken).ConfigureAwait(false);
                 await context.Acknowledge().ConfigureAwait(false);
+
+                if (_messageJournalingService != null)
+                {
+                    await _messageJournalingService.MessageSent(message).ConfigureAwait(false);
+                }
             }
         }
     }

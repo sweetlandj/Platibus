@@ -31,6 +31,7 @@ namespace Pluribus.Config
         Uri BaseUri { get; }
         ISerializationService SerializationService { get; }
         IMessageNamingService MessageNamingService { get; }
+        IMessageJournalingService MessageJournalingService { get; }
         IMessageQueueingService MessageQueueingService { get; }
         ISubscriptionTrackingService SubscriptionTrackingService { get; }
         IEnumerable<TopicName> Topics { get; }

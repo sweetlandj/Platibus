@@ -59,10 +59,24 @@ namespace Pluribus.Filesystem
 
         public static async Task<MessageFile> Create(DirectoryInfo directory, Message message, IPrincipal senderPrincipal)
         {
-            var filename = string.Format("{0}.pmsg", message.Headers.MessageId);
-            var filePath = Path.Combine(directory.FullName, filename);
-            var file = new FileInfo(filePath);
+            FileInfo file;
+            var counter = 0;
+            do
+            {
+                var filename = counter == 0
+                    ? string.Format("{0}.pmsg", message.Headers.MessageId)
+                    : string.Format("{0}_{1}.pmsg", message.Headers.MessageId, counter);
 
+                var filePath = Path.Combine(directory.FullName, filename);
+                file = new FileInfo(filePath);
+                counter++;
+            }
+            while (file.Exists);
+            return await Create(directory, message, senderPrincipal, file);
+        }
+
+        private static async Task<MessageFile> Create(DirectoryInfo directory, Message message, IPrincipal senderPrincipal, FileInfo file)
+        {
             Log.DebugFormat("Creating message file {0} for message ID {1}...", file, message.Headers.MessageId);
 
             using (var fileStream = file.Open(FileMode.CreateNew, FileAccess.Write))

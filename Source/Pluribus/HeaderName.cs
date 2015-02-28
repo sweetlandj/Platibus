@@ -67,6 +67,17 @@ namespace Pluribus
         public static readonly HeaderName RelatedTo = "Pluribus-RelatedTo";
 
         /// <summary>
+        ///     The ISO-8601 datetime the message was originally published to a topic.  
+        ///     If no offset is specified, UTC is assumed.
+        /// </summary>
+        public static readonly HeaderName Published = "Pluribus-Published";
+
+        /// <summary>
+        ///     The topic to which the message was published.
+        /// </summary>
+        public static readonly HeaderName Topic = "Pluribus-Topic";
+
+        /// <summary>
         ///     The ISO-8601 datetime the message was sent.  If no offset is specified,
         ///     UTC is assumed.
         /// </summary>

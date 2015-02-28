@@ -28,6 +28,7 @@ namespace Pluribus.Config
     public class PluribusConfigurationSection : ConfigurationSection
     {
         private const string BaseUriPropertyName = "baseUri";
+        private const string JournalingPropertyName = "journaling";
         private const string QueueingPropertyName = "queueing";
         private const string SubscriptionTrackingPropertyName = "subscriptionTracking";
         private const string TimeoutsPropertyName = "timeouts";
@@ -49,6 +50,13 @@ namespace Pluribus.Config
         {
             get { return (Uri) base[BaseUriPropertyName]; }
             set { base[BaseUriPropertyName] = value; }
+        }
+
+        [ConfigurationProperty(JournalingPropertyName)]
+        public JournalingElement Journaling
+        {
+            get { return (JournalingElement)base[JournalingPropertyName]; }
+            set { base[JournalingPropertyName] = value; }
         }
 
         [ConfigurationProperty(QueueingPropertyName)]

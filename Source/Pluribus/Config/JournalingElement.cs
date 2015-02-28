@@ -20,27 +20,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using System.Collections.Generic;
+using System.Configuration;
 
-namespace Pluribus
+namespace Pluribus.Config
 {
-    public interface IMessageHeaders : IEnumerable<KeyValuePair<HeaderName, string>>
+    public class JournalingElement : ConfigurationElement
     {
-        string this[HeaderName header] { get; }
-        MessageId MessageId { get; }
-        MessageName MessageName { get; }
-        DateTime Expires { get; }
-        Uri Origination { get; }
-        Uri ReplyTo { get; }
-        Uri Destination { get; }
-        MessageId RelatedTo { get; }
-        DateTime Published { get; }
-        TopicName Topic { get; }
-        DateTime Sent { get; }
-        DateTime Received { get; }
-        string ContentType { get; }
-        Uri GetUri(HeaderName headerName);
-        DateTime? GetDateTime(HeaderName headerName);
+        private const string TypePropertyName = "type";
+        private const string FilesystemPropertyName = "filesystem";
+
+        [ConfigurationProperty(TypePropertyName, DefaultValue = JournalingType.Filesystem)]
+        public JournalingType Type
+        {
+            get { return (JournalingType) base[TypePropertyName]; }
+            set { base[TypePropertyName] = value; }
+        }
+
+        [ConfigurationProperty(FilesystemPropertyName)]
+        public FilesystemJournalingElement Filesystem
+        {
+            get { return (FilesystemJournalingElement) base[FilesystemPropertyName]; }
+            set { base[FilesystemPropertyName] = value; }
+        }
     }
 }

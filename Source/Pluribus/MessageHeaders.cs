@@ -37,17 +37,23 @@ namespace Pluribus
 
         public MessageHeaders(IEnumerable<KeyValuePair<HeaderName, string>> headers)
         {
-            foreach (var header in headers)
+            if (headers != null)
             {
-                this[header.Key] = header.Value;
+                foreach (var header in headers)
+                {
+                    this[header.Key] = header.Value;
+                }
             }
         }
 
         public MessageHeaders(IEnumerable<KeyValuePair<string, string>> headers)
         {
-            foreach (var header in headers)
+            if (headers != null)
             {
-                this[header.Key] = header.Value;
+                foreach (var header in headers)
+                {
+                    this[header.Key] = header.Value;
+                }
             }
         }
 
@@ -102,6 +108,18 @@ namespace Pluribus
         {
             get { return this[HeaderName.RelatedTo]; }
             set { this[HeaderName.RelatedTo] = value; }
+        }
+
+        public DateTime Published
+        {
+            get { return GetDateTime(HeaderName.Published).GetValueOrDefault(DateTime.UtcNow); }
+            set { SetDateTime(HeaderName.Published, value); }
+        }
+
+        public TopicName Topic
+        {
+            get { return this[HeaderName.Topic]; }
+            set { this[HeaderName.Topic] = value; }
         }
 
         public DateTime Sent

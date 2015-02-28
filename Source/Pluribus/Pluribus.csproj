@@ -79,11 +79,14 @@
       <Link>Properties\Copyright.cs</Link>
     </Compile>
     <Compile Include="Config\Bootstrapper.cs" />
+    <Compile Include="Config\FilesystemJournalingElement.cs" />
     <Compile Include="Config\FilesystemSubscriptionsElement.cs" />
     <Compile Include="Config\ISubscription.cs" />
     <Compile Include="Config\PluribusConfigurationExtensions.cs" />
     <Compile Include="Config\PluribusConfigurationManager.cs" />
     <Compile Include="Config\IConfigurationHook.cs" />
+    <Compile Include="Config\JournalingElement.cs" />
+    <Compile Include="Config\JournalingType.cs" />
     <Compile Include="Config\Subscription.cs" />
     <Compile Include="Config\SubscriptionElement.cs" />
     <Compile Include="Config\SubscriptionElementCollection.cs" />
@@ -98,6 +101,7 @@
     <Compile Include="Config\TopicAlreadyExistsException.cs" />
     <Compile Include="DelegateMessageHandler.cs" />
     <Compile Include="Endpoint.cs" />
+    <Compile Include="Filesystem\FilesystemMessageJournalingService.cs" />
     <Compile Include="Filesystem\FilesystemSubscriptionTrackingService.cs" />
     <Compile Include="Filesystem\MessageFileFormatException.cs" />
     <Compile Include="Http\HttpServerShutdownEventArgs.cs" />
@@ -115,6 +119,7 @@
     <Compile Include="Http\IHttpResourceResponse.cs" />
     <Compile Include="Http\MessageController.cs" />
     <Compile Include="Http\TopicController.cs" />
+    <Compile Include="IMessageJournalingService.cs" />
     <Compile Include="InMemory\InMemoryQueuedMessageContext.cs" />
     <Compile Include="InMemory\InMemoryMessageQueueingService.cs" />
     <Compile Include="InMemory\InMemoryQueue.cs" />

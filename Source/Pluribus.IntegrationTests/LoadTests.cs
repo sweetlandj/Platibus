@@ -49,6 +49,7 @@ namespace Pluribus.IntegrationTests
         }
 
         [Test]
+        [Explicit]
         public async Task When_Sending_1000_Test_Messages_1000_Replies_Should_Be_Handled_Within_10s()
         {
             var elapsed = await RunTest(1000);
@@ -56,6 +57,7 @@ namespace Pluribus.IntegrationTests
         }
 
         [Test]
+        [Explicit]
         public async Task When_Sending_1100_Test_Messages_1100_Replies_Should_Be_Handled_Within_10s()
         {
             var elapsed = await RunTest(1100);
@@ -63,6 +65,7 @@ namespace Pluribus.IntegrationTests
         }
 
         [Test]
+        [Explicit]
         public async Task When_Sending_1500_Test_Messages_1500_Replies_Should_Be_Handled_Within_10s()
         {
             var elapsed = await RunTest(1500);
@@ -70,6 +73,7 @@ namespace Pluribus.IntegrationTests
         }
 
         [Test]
+        [Explicit]
         public async Task When_Sending_2000_Test_Messages_2000_Replies_Should_Be_Handled_Within_10s()
         {
             var elapsed = await RunTest(2000);

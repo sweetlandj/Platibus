@@ -52,6 +52,7 @@ namespace Pluribus.Config
 
         public IMessageNamingService MessageNamingService { get; set; }
         public ISerializationService SerializationService { get; set; }
+        public IMessageJournalingService MessageJournalingService { get; set; }
         public IMessageQueueingService MessageQueueingService { get; set; }
         public ISubscriptionTrackingService SubscriptionTrackingService { get; set; }
 

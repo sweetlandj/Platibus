@@ -22,25 +22,16 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Pluribus
 {
-    public interface IMessageHeaders : IEnumerable<KeyValuePair<HeaderName, string>>
+    public interface IMessageJournalingService
     {
-        string this[HeaderName header] { get; }
-        MessageId MessageId { get; }
-        MessageName MessageName { get; }
-        DateTime Expires { get; }
-        Uri Origination { get; }
-        Uri ReplyTo { get; }
-        Uri Destination { get; }
-        MessageId RelatedTo { get; }
-        DateTime Published { get; }
-        TopicName Topic { get; }
-        DateTime Sent { get; }
-        DateTime Received { get; }
-        string ContentType { get; }
-        Uri GetUri(HeaderName headerName);
-        DateTime? GetDateTime(HeaderName headerName);
+        Task MessageReceived(Message message);
+        Task MessageSent(Message message);
+        Task MessagePublished(Message message);
     }
 }

@@ -65,6 +65,18 @@ namespace Pluribus.Config
                 configuration.AddTopic(topic.Name);
             }
 
+            var journaling = configSection.Journaling ?? new JournalingElement();
+            switch (journaling.Type)
+            {
+                case JournalingType.Filesystem:
+                    var fsJournaling = journaling.Filesystem ?? new FilesystemJournalingElement();
+                    var fsJournalingBaseDir = new DirectoryInfo(GetRootedPath(fsJournaling.Path));
+                    var fsJournalingService = new FilesystemMessageJournalingService(fsJournalingBaseDir);
+                    fsJournalingService.Init();
+                    configuration.MessageJournalingService = fsJournalingService;
+                    break;
+            }
+
             var queueing = configSection.Queueing ?? new QueueingElement();
             switch (queueing.Type)
             {
