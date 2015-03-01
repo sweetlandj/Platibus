@@ -69,12 +69,9 @@ Example configuration:
 
 <pluribus baseUri="http://localhost:52180/pluribus/">
   <timeouts replyTimeout="00:00:30" />
-  <queueing type="Filesystem">
-    <filesystem path="pluribus\queues" />
-  </queueing>
-  <subscriptionTracking type="Filesystem">
-    <filesystem path="pluribus\subscriptions" />
-  </subscriptionTracking>
+  <queueing provider="Filesystem" path="pluribus\queues" />
+  <journaling provider="Filesystem" path="pluribus\journal" />
+  <subscriptionTracking provider="Filesystem" path="pluribus\subscriptions" />
   <endpoints>
     <add name="pluribus" address="http://localhost:52180/pluribus/" />
   </endpoints>
@@ -100,19 +97,15 @@ Specifies the various timeouts for the application.  The `replyTimeout` specifie
 
 #### `<queueing>`
 
-Overrides the default queueing configuration.  The value of the `type` attribute indicates which queuing service will be used and which nested configuration element is expected.  (Currently the only supported `type` is `Filesystem`.)
+Overrides the default queueing configuration.  The value of the `provider` attribute indicates the `IMessageQueueingServiceProvider` implementation that will provide the `IMessageQueueingService` implementation (by assembly qualified name or the name specified in the `ProviderAttribute` on the concrete type).  Additional provider-specific attributes (such as `path`) can also be specified on this element to influence how the `IMessageQueueingService` is initialized.
 
-##### `<filesystem>`
+#### `<journaling>`
 
-Configures filesystem based queueing.  The `path` attribute specifies the path in which queues and message files will be written.  If the specified path is not rooted, then it will be considered relative to the app domain base directory.
+Overrides the default journaling configuration.  The value of the `provider` attribute indicates the `IMessageJournalingServiceProvider` implementation that will provide the `IMessageJournalingService` implementation (by assembly qualified name or the name specified in the `ProviderAttribute` on the concrete type).  Additional provider-specific attributes (such as `path`) can also be specified on this element to influence how the `IMessageJournalingService` is initialized.
 
 #### `<subscriptionTracking>`
 
-Overrides the default subscription tracking configuration.  The value of the `type` attribute indicates which queuing service will be used and which nested configuration element is expected.  (Currently the only supported `type` is `Filesystem`.)
-
-##### `<filesystem>`
-
-Configures filesystem based subscription tracking.  The `path` attribute specifies the path in which topic and subscriber data will be written.  If the specified path is not rooted, then it will be considered relative to the app domain base directory.
+Overrides the default subscription tracking configuration.  The value of the `provider` attribute indicates the `ISubscriptionTrackingServiceProvider` implementation that will provide the `ISubscriptionTrackingService` implementation (by assembly qualified name or the name specified in the `ProviderAttribute` on the concrete type).  Additional provider-specific attributes (such as `path`) can also be specified on this element to influence how the `ISubscriptionTrackingService` is initialized.
 
 #### `<endpoints>`
 
