@@ -29,29 +29,29 @@ namespace Pluribus
     [Serializable]
     public class TopicNotFoundException : ApplicationException
     {
-        private readonly TopicName _topicName;
+        private readonly TopicName _topic;
 
-        public TopicNotFoundException(TopicName topicName)
+        public TopicNotFoundException(TopicName topic)
         {
-            _topicName = topicName;
+            _topic = topic;
         }
 
         public TopicNotFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _topicName = info.GetString("TopicName");
+            _topic = info.GetString("topic");
         }
 
-        public TopicName TopicName
+        public TopicName Topic
         {
-            get { return _topicName; }
+            get { return _topic; }
         }
 
         [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("TopicName", _topicName);
+            info.AddValue("topic", _topic);
         }
     }
 }

@@ -16,9 +16,9 @@ namespace Pluribus.UnitTests
         }
 
         [Test]
-        public async Task Given_Configuration_Hook_When_Loading_Configuration_Then_Message_Route_Added()
+        public void Given_Configuration_Hook_When_Loading_Configuration_Then_Message_Route_Added()
         {
-            var configuration = await PluribusConfigurationManager.LoadConfiguration().ConfigureAwait(false);
+            var configuration = PluribusConfigurationManager.LoadConfiguration();
 
             var messageRoutes = configuration.HandlingRules.ToList();
             Assert.That(messageRoutes.Count, Is.EqualTo(1));

@@ -19,56 +19,58 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Security.Permissions;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Pluribus
+namespace Pluribus.Config.Extensibility
 {
     [Serializable]
-    public class ConnectionRefusedException : TransportException
+    public class MultipleProvidersFoundException : Exception
     {
-        private readonly string _host;
-        private readonly int _port;
+        private readonly string _providerName;
+        private readonly Type[] _providers;
 
-        public ConnectionRefusedException(string host, int port)
-            : base(string.Format("Connection refused to {0}:{1}", host, port))
+        public MultipleProvidersFoundException(string providerName, IEnumerable<Type> providers) : base(providerName)
         {
-            _host = host;
-            _port = port;
+            _providerName = providerName;
+            if (providers != null)
+            {
+                _providers = providers.Where(t => t != null).ToArray();
+            }
+            else
+            {
+                _providers = new Type[0];
+            }
         }
 
-        public ConnectionRefusedException(string host, int port, Exception innerException)
-            : base(string.Format("Connection refused to {0}:{1}", host, port), innerException)
-        {
-            _host = host;
-            _port = port;
-        }
-
-        public ConnectionRefusedException(SerializationInfo info, StreamingContext context)
+        public MultipleProvidersFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _host = info.GetString("host");
-            _port = info.GetInt32("port");
+            _providerName = info.GetString("providerName");
+            _providers = (Type[])info.GetValue("providers", typeof(Type[]));
         }
 
-        public string Host
+        public string ProviderName
         {
-            get { return _host; }
+            get { return _providerName; }
         }
 
-        public int Port
+        public IEnumerable<Type> Providers
         {
-            get { return _port; }
+            get { return _providers; }
         }
 
         [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("host", _host);
-            info.AddValue("port", _port);
+            info.AddValue("providerName", _providerName);
+            info.AddValue("providers", _providers);
         }
     }
 }

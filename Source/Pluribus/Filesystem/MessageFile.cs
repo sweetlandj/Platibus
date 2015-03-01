@@ -168,6 +168,7 @@ namespace Pluribus.Filesystem
             Log.DebugFormat("Deleting message file {0}...", _file);
             try
             {
+                _file.Refresh();
                 if (_file.Exists)
                 {
                     _file.Delete();

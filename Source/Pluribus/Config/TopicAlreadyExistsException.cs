@@ -39,7 +39,7 @@ namespace Pluribus.Config
         public TopicAlreadyExistsException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _topic = info.GetString("Topic");
+            _topic = info.GetString("topic");
         }
 
         public TopicName TopicName
@@ -51,7 +51,7 @@ namespace Pluribus.Config
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("Topic", _topic);
+            info.AddValue("topic", _topic);
         }
     }
 }

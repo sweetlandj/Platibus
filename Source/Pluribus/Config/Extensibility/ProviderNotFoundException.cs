@@ -19,11 +19,42 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
+using System.Security.Permissions;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Pluribus.Config
+namespace Pluribus.Config.Extensibility
 {
-    public enum SubscriptionTrackingType
+    [Serializable]
+    public class ProviderNotFoundException : Exception
     {
-        Filesystem
+        private readonly string _providerName;
+
+        public ProviderNotFoundException(string providerName) : base(providerName)
+        {
+            _providerName = providerName;
+        }
+
+        public ProviderNotFoundException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+            _providerName = info.GetString("providerName");
+        }
+
+        public string ProviderName
+        {
+            get { return _providerName; }
+        }
+
+        [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            info.AddValue("providerName", _providerName);
+        }
     }
 }

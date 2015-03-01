@@ -29,29 +29,29 @@ namespace Pluribus
     [Serializable]
     public class QueueAlreadyExistsException : ApplicationException
     {
-        private readonly QueueName _queueName;
+        private readonly QueueName _queue;
 
-        public QueueAlreadyExistsException(QueueName queueName) : base(queueName)
+        public QueueAlreadyExistsException(QueueName queue) : base(queue)
         {
-            _queueName = queueName;
+            _queue = queue;
         }
 
         public QueueAlreadyExistsException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _queueName = info.GetString("QueueName");
+            _queue = info.GetString("queue");
         }
 
-        public QueueName QueueName
+        public QueueName Queue
         {
-            get { return _queueName; }
+            get { return _queue; }
         }
 
         [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("QueueName", (string) _queueName);
+            info.AddValue("queue", (string) _queue);
         }
     }
 }

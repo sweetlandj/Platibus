@@ -24,23 +24,15 @@ using System.Configuration;
 
 namespace Pluribus.Config
 {
-    public class JournalingElement : ConfigurationElement
+    public class JournalingElement : ExtensibleConfigurationElement
     {
-        private const string TypePropertyName = "type";
-        private const string FilesystemPropertyName = "filesystem";
+        private const string ProviderPropertyName = "provider";
 
-        [ConfigurationProperty(TypePropertyName, DefaultValue = JournalingType.Filesystem)]
-        public JournalingType Type
+        [ConfigurationProperty(ProviderPropertyName, DefaultValue = "Filesystem")]
+        public string Provider
         {
-            get { return (JournalingType) base[TypePropertyName]; }
-            set { base[TypePropertyName] = value; }
-        }
-
-        [ConfigurationProperty(FilesystemPropertyName)]
-        public FilesystemJournalingElement Filesystem
-        {
-            get { return (FilesystemJournalingElement) base[FilesystemPropertyName]; }
-            set { base[FilesystemPropertyName] = value; }
+            get { return (string) base[ProviderPropertyName]; }
+            set { base[ProviderPropertyName] = value; }
         }
     }
 }

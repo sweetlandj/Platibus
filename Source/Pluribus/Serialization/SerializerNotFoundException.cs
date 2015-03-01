@@ -38,7 +38,7 @@ namespace Pluribus.Serialization
         public SerializerNotFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _contentType = info.GetString("ContentType");
+            _contentType = info.GetString("contentType");
         }
 
         public string ContentType
@@ -50,7 +50,7 @@ namespace Pluribus.Serialization
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("ContentType", _contentType);
+            info.AddValue("contentType", _contentType);
         }
     }
 }

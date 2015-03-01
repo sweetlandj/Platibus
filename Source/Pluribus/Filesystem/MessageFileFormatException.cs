@@ -49,14 +49,14 @@ namespace Pluribus.Filesystem
 
         protected MessageFileFormatException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
-            _path = info.GetString("Path");
+            _path = info.GetString("path");
         }
 
         [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("Path", _path);
+            info.AddValue("path", _path);
         }
     }
 }

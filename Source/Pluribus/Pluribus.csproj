@@ -79,19 +79,23 @@
       <Link>Properties\Copyright.cs</Link>
     </Compile>
     <Compile Include="Config\Bootstrapper.cs" />
-    <Compile Include="Config\FilesystemJournalingElement.cs" />
-    <Compile Include="Config\FilesystemSubscriptionsElement.cs" />
+    <Compile Include="Config\Extensibility\ISubscriptionTrackingServiceProvider.cs" />
+    <Compile Include="Config\Extensibility\IMessageJournalingServiceProvider.cs" />
+    <Compile Include="Config\Extensibility\IMessageQueueingServiceProvider.cs" />
+    <Compile Include="Config\Extensibility\ProviderAttribute.cs" />
+    <Compile Include="Config\Extensibility\MultipleProvidersFoundException.cs" />
+    <Compile Include="Config\Extensibility\ProviderNotFoundException.cs" />
+    <Compile Include="Config\ExtensibleConfigurationElement.cs" />
     <Compile Include="Config\ISubscription.cs" />
     <Compile Include="Config\PluribusConfigurationExtensions.cs" />
     <Compile Include="Config\PluribusConfigurationManager.cs" />
     <Compile Include="Config\IConfigurationHook.cs" />
     <Compile Include="Config\JournalingElement.cs" />
-    <Compile Include="Config\JournalingType.cs" />
+    <Compile Include="Config\ReflectionHelper.cs" />
     <Compile Include="Config\Subscription.cs" />
     <Compile Include="Config\SubscriptionElement.cs" />
     <Compile Include="Config\SubscriptionElementCollection.cs" />
     <Compile Include="Config\SubscriptionTrackingElement.cs" />
-    <Compile Include="Config\SubscriptionTrackingType.cs" />
     <Compile Include="ConnectionRefusedException.cs" />
     <Compile Include="DefaultMessageNamingService.cs" />
     <Compile Include="Bus.cs" />
@@ -102,6 +106,7 @@
     <Compile Include="DelegateMessageHandler.cs" />
     <Compile Include="Endpoint.cs" />
     <Compile Include="Filesystem\FilesystemMessageJournalingService.cs" />
+    <Compile Include="Filesystem\FilesystemServicesProvider.cs" />
     <Compile Include="Filesystem\FilesystemSubscriptionTrackingService.cs" />
     <Compile Include="Filesystem\MessageFileFormatException.cs" />
     <Compile Include="Http\HttpServerShutdownEventArgs.cs" />
@@ -164,7 +169,6 @@
     <Compile Include="Config\EndpointElementCollection.cs" />
     <Compile Include="Config\EndpointNotFoundException.cs" />
     <Compile Include="Config\EndpointRequiredException.cs" />
-    <Compile Include="Config\FilesystemQueueingElement.cs" />
     <Compile Include="Config\IMessageSpecification.cs" />
     <Compile Include="Config\IPluribusConfiguration.cs" />
     <Compile Include="Config\ISendRule.cs" />
@@ -172,7 +176,6 @@
     <Compile Include="Config\PluribusConfiguration.cs" />
     <Compile Include="Config\PluribusConfigurationSection.cs" />
     <Compile Include="Config\QueueingElement.cs" />
-    <Compile Include="Config\QueueingType.cs" />
     <Compile Include="Config\SendRule.cs" />
     <Compile Include="Config\SendRuleElement.cs" />
     <Compile Include="Config\SendRuleElementCollection.cs" />

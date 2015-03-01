@@ -38,9 +38,7 @@ namespace Pluribus.Config
         public static async Task<Bus> InitBus(string sectionName)
         {
             Log.InfoFormat("Loading configuration from section \"{0}\"...", sectionName);
-            var configuration = await PluribusConfigurationManager
-                .LoadConfiguration(sectionName)
-                .ConfigureAwait(false);
+            var configuration = PluribusConfigurationManager.LoadConfiguration(sectionName);
 
             Log.Info("Initializing bus...");
             var bus = new Bus(configuration, new HttpTransportService());

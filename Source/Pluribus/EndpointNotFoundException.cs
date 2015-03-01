@@ -29,29 +29,29 @@ namespace Pluribus
     [Serializable]
     public class EndpointNotFoundException : ApplicationException
     {
-        private readonly EndpointName _endpointName;
+        private readonly EndpointName _endpoint;
 
-        public EndpointNotFoundException(EndpointName endpointName)
+        public EndpointNotFoundException(EndpointName endpoint)
         {
-            _endpointName = endpointName;
+            _endpoint = endpoint;
         }
 
         public EndpointNotFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _endpointName = info.GetString("EndpointName");
+            _endpoint = info.GetString("endpoint");
         }
 
-        public EndpointName EndpointName
+        public EndpointName Endpoint
         {
-            get { return _endpointName; }
+            get { return _endpoint; }
         }
 
         [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("EndpointName", (string) _endpointName);
+            info.AddValue("endpoint", (string) _endpoint);
         }
     }
 }

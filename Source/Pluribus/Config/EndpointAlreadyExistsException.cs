@@ -39,7 +39,7 @@ namespace Pluribus.Config
         public EndpointAlreadyExistsException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _endpoint = info.GetString("Endpoint");
+            _endpoint = info.GetString("endpoint");
         }
 
         public EndpointName EndpointName
@@ -51,7 +51,7 @@ namespace Pluribus.Config
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("Endpoint", _endpoint);
+            info.AddValue("endpoint", _endpoint);
         }
     }
 }

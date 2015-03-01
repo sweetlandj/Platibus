@@ -30,6 +30,7 @@ using Common.Logging;
 using Pluribus.Filesystem;
 using Pluribus.Serialization;
 using System.Reflection;
+using Pluribus.Config.Extensibility;
 
 namespace Pluribus.Config
 {
@@ -37,12 +38,12 @@ namespace Pluribus.Config
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
 
-        public static Task<PluribusConfiguration> LoadConfiguration(bool processConfigurationHooks = true)
+        public static PluribusConfiguration LoadConfiguration(bool processConfigurationHooks = true)
         {
             return LoadConfiguration("pluribus", processConfigurationHooks);
         }
 
-        public static async Task<PluribusConfiguration> LoadConfiguration(string sectionName, bool processConfigurationHooks = true)
+        public static PluribusConfiguration LoadConfiguration(string sectionName, bool processConfigurationHooks = true)
         {
             var configuration = new PluribusConfiguration();
 
@@ -65,42 +66,14 @@ namespace Pluribus.Config
                 configuration.AddTopic(topic.Name);
             }
 
-            var journaling = configSection.Journaling ?? new JournalingElement();
-            switch (journaling.Type)
-            {
-                case JournalingType.Filesystem:
-                    var fsJournaling = journaling.Filesystem ?? new FilesystemJournalingElement();
-                    var fsJournalingBaseDir = new DirectoryInfo(GetRootedPath(fsJournaling.Path));
-                    var fsJournalingService = new FilesystemMessageJournalingService(fsJournalingBaseDir);
-                    fsJournalingService.Init();
-                    configuration.MessageJournalingService = fsJournalingService;
-                    break;
-            }
+            var journalingConfig = configSection.Journaling ?? new JournalingElement();
+            configuration.MessageJournalingService = InitMessageJournalingService(journalingConfig);
 
-            var queueing = configSection.Queueing ?? new QueueingElement();
-            switch (queueing.Type)
-            {
-                case QueueingType.Filesystem:
-                    var fsQueueing = queueing.Filesystem ?? new FilesystemQueueingElement();
-                    var fsQueueingBaseDir = new DirectoryInfo(GetRootedPath(fsQueueing.Path));
-                    var fsQueueingService = new FilesystemMessageQueueingService(fsQueueingBaseDir);
-                    fsQueueingService.Init();
-                    configuration.MessageQueueingService = fsQueueingService;
-                    break;
-            }
+            var queueingConfig = configSection.Queueing ?? new QueueingElement();
+            configuration.MessageQueueingService = InitMessageQueueingService(queueingConfig);
 
-            var subscriptionTracking = configSection.SubscriptionTracking ?? new SubscriptionTrackingElement();
-            switch (subscriptionTracking.Type)
-            {
-                case SubscriptionTrackingType.Filesystem:
-                    var fsSubscriptionTracking = subscriptionTracking.Filesystem ?? new FilesystemSubscriptionsElement();
-                    var fsSubscriptionTrackingBaseDir = new DirectoryInfo(GetRootedPath(fsSubscriptionTracking.Path));
-                    var fsSubscriptionTrackingService =
-                        new FilesystemSubscriptionTrackingService(fsSubscriptionTrackingBaseDir);
-                    await fsSubscriptionTrackingService.Init().ConfigureAwait(false);
-                    configuration.SubscriptionTrackingService = fsSubscriptionTrackingService;
-                    break;
-            }
+            var subscriptionTrackingConfig = configSection.SubscriptionTracking ?? new SubscriptionTrackingElement();
+            configuration.SubscriptionTrackingService = InitSubscriptionTrackingService(subscriptionTrackingConfig);
 
             IEnumerable<SendRuleElement> sendRules = configSection.SendRules;
             foreach (var sendRule in sendRules)
@@ -126,6 +99,78 @@ namespace Pluribus.Config
             return configuration;
         }
 
+        public static IMessageQueueingService InitMessageQueueingService(QueueingElement config)
+        {
+            var providerName = config.Provider;
+            IMessageQueueingServiceProvider provider;
+            if (string.IsNullOrWhiteSpace(providerName))
+            {
+                Log.Debug("No message queueing service provider specified; using default provider...");
+                provider = new FilesystemServicesProvider();
+            }
+            else
+            {
+                provider = GetProvider<IMessageQueueingServiceProvider>(providerName);
+            }
+
+            Log.Debug("Initializing message queueing service...");
+            return provider.CreateMessageQueueingService(config);
+        }
+
+        public static IMessageJournalingService InitMessageJournalingService(JournalingElement config)
+        {
+            var providerName = config.Provider;
+            if (string.IsNullOrWhiteSpace(providerName))
+            {
+                Log.Debug("No message journaling service provider specified; journaling will be disabled");
+                return null;
+            }
+            
+            var provider = GetProvider<IMessageJournalingServiceProvider>(providerName);
+            
+            Log.Debug("Initializing message journaling service...");
+            return provider.CreateMessageJournalingService(config);
+        }
+
+        public static ISubscriptionTrackingService InitSubscriptionTrackingService(SubscriptionTrackingElement config)
+        {
+            var providerName = config.Provider;
+            ISubscriptionTrackingServiceProvider provider;
+            if (string.IsNullOrWhiteSpace(providerName))
+            {
+                Log.Debug("No subscription tracking service provider specified; using default provider...");
+                provider = new FilesystemServicesProvider();
+            }
+            else
+            {
+                provider = GetProvider<ISubscriptionTrackingServiceProvider>(providerName);
+            }
+
+            Log.Debug("Initializing subscription tracking service...");
+            return provider.CreateSubscriptionTrackingService(config);
+        }
+
+        public static TProvider GetProvider<TProvider>(string providerName)
+        {
+            var providerType = Type.GetType(providerName);
+            if (providerType == null)
+            {
+                Log.DebugFormat("Looking for provider \"{0}\"...", providerName);
+                var providers = ReflectionHelper
+                    .FindConcreteSubtypes<TProvider>()
+                    .With<ProviderAttribute>(a => string.Equals(providerName, a.Name, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (!providers.Any()) throw new ProviderNotFoundException(providerName);
+                if (providers.Count > 1) throw new MultipleProvidersFoundException(providerName, providers);
+
+                providerType = providers.First();
+            }
+
+            Log.DebugFormat("Found provider type \"{0}\"", providerType.FullName);
+            return (TProvider)Activator.CreateInstance(providerType);
+        }
+
         public static string GetRootedPath(string path)
         {
             if (Path.IsPathRooted(path)) return path;
@@ -138,41 +183,7 @@ namespace Pluribus.Config
         {
             if (configuration == null) return;
 
-            var appDomainBaseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            var directories = new []
-            {
-                new DirectoryInfo(appDomainBaseDirectory),
-                new DirectoryInfo(Path.Combine(appDomainBaseDirectory, "bin"))
-            };
-
-            var filenamePatterns = new [] { "*.dll", "*.exe" };
-            var assemblyFiles = directories
-                .SelectMany(dir => filenamePatterns, (dir, pattern) => new
-                {
-                    Directory = dir,
-                    FilenamePattern = pattern
-                })
-                .Where(dir => dir.Directory.Exists)
-                .SelectMany(x => x.Directory.GetFiles(x.FilenamePattern, SearchOption.TopDirectoryOnly));
-
-            var hookTypes = new List<Type>();
-            foreach (var assemblyFile in assemblyFiles)
-            {
-                try
-                {
-                    var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyFile.FullName);
-                    Log.DebugFormat("Scanning assembly {0} for configuration hooks...", assembly.GetName().FullName);
-                    hookTypes.AddRange(AppDomain.CurrentDomain.Load(assembly.GetName())
-                        .GetTypes()
-                        .Where(typeof(IConfigurationHook).IsAssignableFrom)
-                        .Where(t => !t.IsInterface && !t.IsAbstract));
-                }
-                catch(Exception ex)
-                {
-                    Log.WarnFormat("Error scanning assembly file {0}", ex, assemblyFile);
-                }
-            }
-
+            var hookTypes = ReflectionHelper.FindConcreteSubtypes<IConfigurationHook>();
             foreach (var hookType in hookTypes.Distinct())
             {
                 try

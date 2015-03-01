@@ -20,27 +20,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Configuration;
 
 namespace Pluribus.Config
 {
-    public class QueueingElement : ConfigurationElement
+    public class QueueingElement : ExtensibleConfigurationElement
     {
-        private const string TypePropertyName = "type";
-        private const string FilesystemPropertyName = "filesystem";
+        private const string ProviderPropertyName = "provider";
 
-        [ConfigurationProperty(TypePropertyName, DefaultValue = QueueingType.Filesystem)]
-        public QueueingType Type
+        [ConfigurationProperty(ProviderPropertyName, DefaultValue = "Filesystem")]
+        public string Provider
         {
-            get { return (QueueingType) base[TypePropertyName]; }
-            set { base[TypePropertyName] = value; }
-        }
-
-        [ConfigurationProperty(FilesystemPropertyName)]
-        public FilesystemQueueingElement Filesystem
-        {
-            get { return (FilesystemQueueingElement) base[FilesystemPropertyName]; }
-            set { base[FilesystemPropertyName] = value; }
+            get { return (string) base[ProviderPropertyName]; }
+            set { base[ProviderPropertyName] = value; }
         }
     }
 }

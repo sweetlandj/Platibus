@@ -24,23 +24,15 @@ using System.Configuration;
 
 namespace Pluribus.Config
 {
-    public class SubscriptionTrackingElement : ConfigurationElement
+    public class SubscriptionTrackingElement : ExtensibleConfigurationElement
     {
-        private const string TypePropertyName = "type";
-        private const string FilesystemPropertyName = "filesystem";
+        private const string ProviderPropertyName = "provider";
 
-        [ConfigurationProperty(TypePropertyName, DefaultValue = SubscriptionTrackingType.Filesystem)]
-        public SubscriptionTrackingType Type
+        [ConfigurationProperty(ProviderPropertyName, DefaultValue = "Filesystem")]
+        public string Provider
         {
-            get { return (SubscriptionTrackingType) base[TypePropertyName]; }
-            set { base[TypePropertyName] = value; }
-        }
-
-        [ConfigurationProperty(FilesystemPropertyName)]
-        public FilesystemSubscriptionsElement Filesystem
-        {
-            get { return (FilesystemSubscriptionsElement) base[FilesystemPropertyName]; }
-            set { base[FilesystemPropertyName] = value; }
+            get { return (string) base[ProviderPropertyName]; }
+            set { base[ProviderPropertyName] = value; }
         }
     }
 }

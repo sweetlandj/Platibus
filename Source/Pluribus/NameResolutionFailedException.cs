@@ -39,7 +39,7 @@ namespace Pluribus
         public NameResolutionFailedException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _hostname = info.GetString("Hostname");
+            _hostname = info.GetString("hostname");
         }
 
         public string Hostname
@@ -51,7 +51,7 @@ namespace Pluribus
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("Hostname", _hostname);
+            info.AddValue("hostname", _hostname);
         }
     }
 }

@@ -19,20 +19,25 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-using System.Configuration;
-
-namespace Pluribus.Config
+namespace Pluribus.Config.Extensibility
 {
-    public class FilesystemSubscriptionsElement : ConfigurationElement
+    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+    public class ProviderAttribute : Attribute
     {
-        private const string PathPropertyName = "path";
+        private readonly string _name;
 
-        [ConfigurationProperty(PathPropertyName, IsRequired = true)]
-        public string Path
+        public string Name { get { return _name; } }
+
+        public ProviderAttribute(string name)
         {
-            get { return (string) base[PathPropertyName]; }
-            set { base[PathPropertyName] = value; }
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
+            _name = name;
         }
     }
 }
