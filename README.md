@@ -45,7 +45,7 @@ Topics are named streams of publications to which consumers may subscribe.  All 
 
 ### Endpoints
 
-Endpoints are name references the base URI of another Pluribus server.  Send and subscription rules reference these names rather than the base URIs themselves to minimize changes needed i.e. when reconfiguring applications for other environments.  (In declarative style configurations XDT transforms can be used to replace the endpoint URIs without having to modify send and subscription rules.)
+Endpoints are named references to the base URIs of other Pluribus servers.  Send and subscription rules reference these names rather than the base URIs themselves to minimize changes needed i.e. when reconfiguring applications for other environments.  (In declarative style configurations XDT transforms can be used to replace the endpoint URIs without having to modify send and subscription rules.)
 
 ### Send Rules
 
