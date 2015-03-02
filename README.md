@@ -33,6 +33,9 @@ An `IPluribus.IMessageNamingService` implementation used to map the `System.Type
 ### Message Queueing Service
 An `IPluribus.IMessageQueueingService` implementation used to enqueue messages.  The default implementation writes messaages to the filesystem and deletes them after they have been acknowledged.
 
+### Message Journaling Service
+An `IPluribus.IMessageJournalingService` implementation used to record copies of messages that are received, sent, and published.  The default implementation writes messaages to the filesystem in a date-based directory hierarchy.
+
 ### Subscription Tracking Service
 As `IPluribus.SubscriptionTrackingService` implementation used to store and retrieve information about remote subscribers.  The default implementation stores subscriber information on the filesystem using a file per topic.
 
