@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Pluribus.IIS;
+using Pluribus.SampleWebApp.Models;
+using System;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using Pluribus.IIS;
-using Pluribus.SampleWebApp.Models;
 
 namespace Pluribus.SampleWebApp.Controllers
 {

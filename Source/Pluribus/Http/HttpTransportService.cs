@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Common.Logging;
 using System;
 using System.Net;
 using System.Net.Http;
@@ -29,7 +30,6 @@ using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using Common.Logging;
 
 namespace Pluribus.Http
 {

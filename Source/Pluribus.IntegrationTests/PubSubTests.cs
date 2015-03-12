@@ -22,8 +22,6 @@
 // THE SOFTWARE.
 
 using NUnit.Framework;
-using Pluribus.Config;
-using Pluribus.Http;
 using System;
 using System.Threading.Tasks;
 

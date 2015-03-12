@@ -1,12 +1,12 @@
-﻿using System;
+﻿using Common.Logging;
+using Pluribus.SampleWebApp.Models;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.Common;
 using System.Threading.Tasks;
 using System.Transactions;
-using Common.Logging;
-using Pluribus.SampleWebApp.Models;
 
 namespace Pluribus.SampleWebApp.Controllers
 {

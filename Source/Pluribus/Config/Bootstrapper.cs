@@ -20,9 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Threading.Tasks;
 using Common.Logging;
 using Pluribus.Http;
+using System.Threading.Tasks;
 
 namespace Pluribus.Config
 {

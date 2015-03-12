@@ -20,15 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Common.Logging;
+using Pluribus.Config;
+using Pluribus.Security;
+using Pluribus.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Common.Logging;
-using Pluribus.Config;
-using Pluribus.Serialization;
-using Pluribus.Security;
 
 namespace Pluribus
 {

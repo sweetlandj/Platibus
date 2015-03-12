@@ -1,9 +1,9 @@
-﻿using System;
+﻿using NUnit.Framework;
+using Pluribus.Filesystem;
+using System;
 using System.IO;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using NUnit.Framework;
-using Pluribus.Filesystem;
 
 namespace Pluribus.UnitTests
 {

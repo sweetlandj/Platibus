@@ -21,13 +21,11 @@
 // THE SOFTWARE.
 
 using NUnit.Framework;
-using Pluribus.Config;
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using Pluribus.Http;
 
 namespace Pluribus.IntegrationTests
 {
