@@ -72,12 +72,6 @@ namespace Pluribus.Filesystem
             });
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
         public async Task Enqueue(Message message, IPrincipal senderPrincipal)
         {
             CheckDisposed();
@@ -222,16 +216,22 @@ namespace Pluribus.Filesystem
             Dispose(false);
         }
 
-        protected virtual void Dispose(bool disposing)
+        public void Dispose()
         {
             if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
             _cancellationTokenSource.Cancel();
             if (disposing)
             {
                 _concurrentMessageProcessingSlot.Dispose();
                 _cancellationTokenSource.Dispose();
             }
-            _disposed = true;
         }
     }
 }

@@ -78,12 +78,6 @@ namespace Pluribus.Http
             get { return _baseUri; }
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
         public event HttpServerShutdownHandler Shutdown;
 
         private static IHttpResourceRouter InitDefaultRouter(Bus bus)
@@ -180,10 +174,16 @@ namespace Pluribus.Http
             Dispose(false);
         }
 
-        protected virtual void Dispose(bool disposing)
+        public void Dispose()
         {
             if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
 
+        protected virtual void Dispose(bool disposing)
+        {
             _cancellationTokenSource.Cancel();
 
             Log.Info("Stopping HTTP server...");
@@ -211,8 +211,7 @@ namespace Pluribus.Http
                     Log.Warn("Unhandled exception invoking HTTP server shutdown handlers during dispose", e);
                 }
             }
-
-            _disposed = true;
+            _cancellationTokenSource.Dispose();
         }
     }
 }

@@ -245,12 +245,7 @@ namespace Pluribus
             await Task.WhenAll(transportTasks).ConfigureAwait(false);
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
+        
         private IEndpoint GetEndpoint(EndpointName endpointName)
         {
             IEndpoint endpoint;
@@ -508,16 +503,22 @@ namespace Pluribus
             Dispose(false);
         }
 
-        protected virtual void Dispose(bool disposing)
+        public void Dispose()
         {
             if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
             _cancellationTokenSource.Cancel();
             if (disposing)
             {
                 _cancellationTokenSource.Dispose();
                 _replyHub.Dispose();
             }
-            _disposed = true;
         }
 
         private class OutboundQueueListener : IQueueListener

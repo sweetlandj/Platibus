@@ -37,12 +37,6 @@ namespace Pluribus
             _replyTimeout = (replyTimeout <= TimeSpan.Zero) ? TimeSpan.FromMinutes(5) : replyTimeout;
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
         public ISentMessage CreateSentMessage(Message message)
         {
             CheckDisposed();
@@ -99,14 +93,20 @@ namespace Pluribus
             Dispose(false);
         }
 
-        protected virtual void Dispose(bool disposing)
+        public void Dispose()
         {
             if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
             if (disposing)
             {
                 _cache.Dispose();
             }
-            _disposed = true;
         }
     }
 }

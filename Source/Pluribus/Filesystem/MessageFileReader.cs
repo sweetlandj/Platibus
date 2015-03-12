@@ -34,6 +34,8 @@ namespace Pluribus.Filesystem
         private readonly bool _leaveOpen;
         private readonly TextReader _reader;
 
+        private bool _disposed;
+
         public MessageFileReader(TextReader reader, bool leaveOpen = false)
         {
             if (reader == null) throw new ArgumentNullException("reader");
@@ -46,14 +48,6 @@ namespace Pluribus.Filesystem
             if (stream == null) throw new ArgumentNullException("stream");
             _reader = new StreamReader(stream, encoding ?? Encoding.UTF8);
             _leaveOpen = leaveOpen;
-        }
-
-        protected bool IsDisposed { get; private set; }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
         }
 
         public async Task<IPrincipal> ReadPrincipal()
@@ -155,9 +149,16 @@ namespace Pluribus.Filesystem
             Dispose(false);
         }
 
+        public void Dispose()
+        {
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
         protected virtual void Dispose(bool disposing)
         {
-            if (IsDisposed) return;
             if (disposing)
             {
                 if (!_leaveOpen)
@@ -165,7 +166,6 @@ namespace Pluribus.Filesystem
                     _reader.Dispose();
                 }
             }
-            IsDisposed = true;
         }
     }
 }

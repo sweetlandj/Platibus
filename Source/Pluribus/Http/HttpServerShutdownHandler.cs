@@ -22,5 +22,5 @@
 
 namespace Pluribus.Http
 {
-    public delegate void HttpServerShutdownHandler(object source, HttpServerShutdownEventArgs e);
+    public delegate void HttpServerShutdownHandler(object sender, HttpServerShutdownEventArgs e);
 }

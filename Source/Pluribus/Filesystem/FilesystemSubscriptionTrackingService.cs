@@ -50,12 +50,6 @@ namespace Pluribus.Filesystem
             _baseDirectory = baseDirectory;
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
         public Task AddSubscription(TopicName topic, Uri subscriber, TimeSpan ttl = default(TimeSpan),
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -167,14 +161,20 @@ namespace Pluribus.Filesystem
             Dispose(false);
         }
 
-        protected virtual void Dispose(bool disposing)
+        public void Dispose()
         {
             if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
             if (disposing)
             {
                 _writeAccess.Dispose();
             }
-            _disposed = true;
         }
 
         private void CheckDisposed()

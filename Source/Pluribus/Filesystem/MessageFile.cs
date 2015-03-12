@@ -51,12 +51,6 @@ namespace Pluribus.Filesystem
             _file = file;
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
         public static async Task<MessageFile> Create(DirectoryInfo directory, Message message, IPrincipal senderPrincipal)
         {
             FileInfo file;
@@ -195,14 +189,20 @@ namespace Pluribus.Filesystem
             Dispose(false);
         }
 
-        protected virtual void Dispose(bool disposing)
+        public void Dispose()
         {
             if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
             if (disposing)
             {
                 _fileAccess.Dispose();
             }
-            _disposed = true;
         }
     }
 }

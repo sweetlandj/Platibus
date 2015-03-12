@@ -26,9 +26,11 @@ using System.Runtime.Caching;
 
 namespace Pluribus
 {
-    public class DefaultMessageNamingService : IMessageNamingService
+    public class DefaultMessageNamingService : IMessageNamingService, IDisposable
     {
         private readonly MemoryCache _nameTypeCache = new MemoryCache("DefaultMessageNamingService");
+
+        protected bool _disposed;
 
         public MessageName GetNameForType(Type messageType)
         {
@@ -56,6 +58,21 @@ namespace Pluribus
                 }
             }
             return type;
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _nameTypeCache.Dispose();
+            }
         }
     }
 }

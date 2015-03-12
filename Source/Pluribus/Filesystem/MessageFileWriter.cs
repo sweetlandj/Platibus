@@ -34,6 +34,8 @@ namespace Pluribus.Filesystem
         private readonly bool _leaveOpen;
         private readonly TextWriter _writer;
 
+        protected bool _disposed;
+
         public MessageFileWriter(TextWriter writer, bool leaveOpen = false)
         {
             if (writer == null) throw new ArgumentNullException("writer");
@@ -47,15 +49,7 @@ namespace Pluribus.Filesystem
             _writer = new StreamWriter(stream, encoding ?? Encoding.UTF8);
             _leaveOpen = leaveOpen;
         }
-
-        protected bool IsDisposed { get; private set; }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
+        
         public async Task WritePrincipal(IPrincipal principal)
         {
             if (principal != null)
@@ -121,9 +115,16 @@ namespace Pluribus.Filesystem
             Dispose(false);
         }
 
+        public void Dispose()
+        {
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
         protected virtual void Dispose(bool disposing)
         {
-            if (IsDisposed) return;
             if (disposing)
             {
                 if (!_leaveOpen)
@@ -131,7 +132,6 @@ namespace Pluribus.Filesystem
                     _writer.Dispose();
                 }
             }
-            IsDisposed = true;
         }
     }
 }

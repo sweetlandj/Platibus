@@ -29,7 +29,7 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Pluribus.InMemory
 {
-    class InMemoryQueue
+    class InMemoryQueue : IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Filesystem);
         private bool _disposed;
@@ -55,12 +55,6 @@ namespace Pluribus.InMemory
                 ? QueueOptions.DefaultConcurrencyLimit
                 : options.ConcurrencyLimit;
             _concurrentMessageProcessingSlot = new SemaphoreSlim(concurrencyLimit);
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
         }
 
         public Task Enqueue(Message message, IPrincipal senderPrincipal)
@@ -150,16 +144,22 @@ namespace Pluribus.InMemory
             Dispose(false);
         }
 
-        protected virtual void Dispose(bool disposing)
+        public void Dispose()
         {
             if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
             _cancellationTokenSource.Cancel();
             if (disposing)
             {
                 _concurrentMessageProcessingSlot.Dispose();
                 _cancellationTokenSource.Dispose();
             }
-            _disposed = true;
         }
 
         private class QueuedMessage
