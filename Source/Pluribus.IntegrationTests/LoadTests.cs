@@ -58,56 +58,47 @@ namespace Pluribus.IntegrationTests
 
         [Test]
         [Explicit]
-        public async Task When_Sending_1100_Test_Messages_1100_Replies_Should_Be_Handled_Within_10s()
+        public async Task When_Sending_1100_Test_Messages_1100_Replies_Should_Be_Handled_Within_11s()
         {
             var elapsed = await RunTest(1100);
-            Assert.That(elapsed, Is.LessThan(TimeSpan.FromSeconds(10)));
+            Assert.That(elapsed, Is.LessThan(TimeSpan.FromSeconds(11)));
         }
 
         [Test]
         [Explicit]
-        public async Task When_Sending_1500_Test_Messages_1500_Replies_Should_Be_Handled_Within_10s()
+        public async Task When_Sending_1500_Test_Messages_1500_Replies_Should_Be_Handled_Within_15s()
         {
             var elapsed = await RunTest(1500);
-            Assert.That(elapsed, Is.LessThan(TimeSpan.FromSeconds(10)));
+            Assert.That(elapsed, Is.LessThan(TimeSpan.FromSeconds(15)));
         }
 
         [Test]
         [Explicit]
-        public async Task When_Sending_2000_Test_Messages_2000_Replies_Should_Be_Handled_Within_10s()
+        public async Task When_Sending_2000_Test_Messages_2000_Replies_Should_Be_Handled_Within_20s()
         {
             var elapsed = await RunTest(2000);
-            Assert.That(elapsed, Is.LessThan(TimeSpan.FromSeconds(10)));
+            Assert.That(elapsed, Is.LessThan(TimeSpan.FromSeconds(20)));
         }
 
         private async Task<TimeSpan> RunTest(int messageCount, bool durable = false)
         {
-            var pluribus0 = await Bootstrapper.InitBus("pluribus0").ConfigureAwait(false);
-            var pluribus1 = await Bootstrapper.InitBus("pluribus1").ConfigureAwait(false);
+            return await With.HttpHostedBusInstances(async (pluribus0, pluribus1) =>
+            {
+                var sw = Stopwatch.StartNew();
+                var sendOptions = new SendOptions { UseDurableTransport = durable };
+                var repliesReceieved = Enumerable.Range(0, messageCount)
+                    .Select(async i =>
+                    {
+                        var message = new TestMessage { IntData = i };
+                        var sentMessage = await pluribus0.Send(message, sendOptions);
+                        return await sentMessage.GetReply();
+                    });
 
-            var server0 = new HttpServer(pluribus0);
-            var server1 = new HttpServer(pluribus1);
-
-            server0.Start();
-            server1.Start();
-
-            // Give HTTP listeners time to initialize
-            await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
-
-            var sw = Stopwatch.StartNew();
-            var sendOptions = new SendOptions { UseDurableTransport = durable };
-            var repliesReceieved = Enumerable.Range(0, messageCount)
-                .Select(async i =>
-                {
-                    var message = new TestMessage { IntData = i };
-                    var sentMessage = await pluribus0.Send(message, sendOptions);
-                    return await sentMessage.GetReply();
-                });
-
-            var replies = await Task.WhenAll(repliesReceieved);
-            sw.Stop();
-            Console.WriteLine("{0} messages sent and replies received in {1}", messageCount, sw.Elapsed);
-            return sw.Elapsed;
+                var replies = await Task.WhenAll(repliesReceieved);
+                sw.Stop();
+                Console.WriteLine("{0} messages sent and replies received in {1}", messageCount, sw.Elapsed);
+                return sw.Elapsed;
+            });
         }
     }
 }

@@ -37,7 +37,12 @@ namespace Pluribus
 
         public Type GetTypeForName(MessageName messageName)
         {
-            var type = _nameTypeCache.Get(messageName) as Type;
+            Type type = null;
+            if (messageName != null)
+            {
+                type = _nameTypeCache.Get(messageName) as Type;
+            }
+
             if (type == null)
             {
                 type = Type.GetType(messageName) ?? AppDomain.CurrentDomain

@@ -38,54 +38,39 @@ namespace Pluribus.IntegrationTests
         [Test]
         public async Task Given_Message_When_Sending_Then_Reply_Should_Be_Observed()
         {
-            var pluribus0 = await Bootstrapper.InitBus("pluribus0").ConfigureAwait(false);
-            var pluribus1 = await Bootstrapper.InitBus("pluribus1").ConfigureAwait(false);
-
-            var server0 = new HttpServer(pluribus0);
-            var server1 = new HttpServer(pluribus1);
-
-            server0.Start();
-            server1.Start();
-
-            // Give HTTP listeners time to initialize
-            await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
-
-            var replyReceivedEvent = new ManualResetEvent(false);
-            var repliesCompletedEvent = new ManualResetEvent(false);
-            var replies = new ConcurrentQueue<object>();
-            var message = new TestMessage
+            await With.HttpHostedBusInstances(async (pluribus0, pluribus1) =>
             {
-                GuidData = Guid.NewGuid(),
-                IntData = RNG.Next(0, int.MaxValue),
-                StringData = "Hello, world!",
-                DateData = DateTime.UtcNow
-            };
-
-            var sentMessage = await pluribus0.Send(message);
-            var subscription = sentMessage
-                .ObserveReplies()
-                .Subscribe(r => 
+                var replyReceivedEvent = new ManualResetEvent(false);
+                var repliesCompletedEvent = new ManualResetEvent(false);
+                var replies = new ConcurrentQueue<object>();
+                var message = new TestMessage
                 {
-                    replies.Enqueue(r);
-                    replyReceivedEvent.Set();
-                }, () => repliesCompletedEvent.Set());
+                    GuidData = Guid.NewGuid(),
+                    IntData = RNG.Next(0, int.MaxValue),
+                    StringData = "Hello, world!",
+                    DateData = DateTime.UtcNow
+                };
 
-            var replyReceived = await replyReceivedEvent.WaitOneAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
-            var repliesCompleted = await repliesCompletedEvent.WaitOneAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
-            subscription.Dispose();
+                var sentMessage = await pluribus0.Send(message);
+                var subscription = sentMessage
+                    .ObserveReplies()
+                    .Subscribe(r =>
+                    {
+                        replies.Enqueue(r);
+                        replyReceivedEvent.Set();
+                    }, () => repliesCompletedEvent.Set());
 
-            Assert.That(replyReceived, Is.True);
-            Assert.That(repliesCompleted, Is.True);
-            Assert.That(replies.Count, Is.EqualTo(1));
+                var replyReceived = await replyReceivedEvent.WaitOneAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+                var repliesCompleted = await repliesCompletedEvent.WaitOneAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+                subscription.Dispose();
 
-            var reply = replies.First();
-            Assert.That(reply, Is.InstanceOf<TestReply>());
+                Assert.That(replyReceived, Is.True);
+                Assert.That(repliesCompleted, Is.True);
+                Assert.That(replies.Count, Is.EqualTo(1));
 
-            server0.Dispose();
-            server1.Dispose();
-
-            pluribus0.Dispose();
-            pluribus1.Dispose();
+                var reply = replies.First();
+                Assert.That(reply, Is.InstanceOf<TestReply>());
+            });
         }
     }
 }

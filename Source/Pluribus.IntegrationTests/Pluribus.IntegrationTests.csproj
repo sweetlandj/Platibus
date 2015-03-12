@@ -87,6 +87,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="With.cs" />
     <Compile Include="IntegrationTestConfigurationHook.cs" />
     <Compile Include="LoadTests.cs" />
     <Compile Include="TestPublicationHandler.cs" />

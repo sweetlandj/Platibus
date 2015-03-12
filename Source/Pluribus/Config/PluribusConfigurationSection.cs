@@ -52,7 +52,7 @@ namespace Pluribus.Config
             set { base[BaseUriPropertyName] = value; }
         }
 
-        [ConfigurationProperty(JournalingPropertyName)]
+        [ConfigurationProperty(JournalingPropertyName, IsRequired=false, DefaultValue=null)]
         public JournalingElement Journaling
         {
             get { return (JournalingElement)base[JournalingPropertyName]; }

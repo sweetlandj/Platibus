@@ -66,14 +66,18 @@ namespace Pluribus.Config
                 configuration.AddTopic(topic.Name);
             }
 
-            var journalingConfig = configSection.Journaling ?? new JournalingElement();
-            configuration.MessageJournalingService = InitMessageJournalingService(journalingConfig);
+            // Journaling is optional
+            var journaling = configSection.Journaling;
+            if (journaling != null && journaling.IsEnabled && !string.IsNullOrWhiteSpace(journaling.Provider))
+            {
+                configuration.MessageJournalingService = InitMessageJournalingService(journaling);
+            }
 
-            var queueingConfig = configSection.Queueing ?? new QueueingElement();
-            configuration.MessageQueueingService = InitMessageQueueingService(queueingConfig);
+            var queueing = configSection.Queueing ?? new QueueingElement();
+            configuration.MessageQueueingService = InitMessageQueueingService(queueing);
 
-            var subscriptionTrackingConfig = configSection.SubscriptionTracking ?? new SubscriptionTrackingElement();
-            configuration.SubscriptionTrackingService = InitSubscriptionTrackingService(subscriptionTrackingConfig);
+            var subscriptionTracking = configSection.SubscriptionTracking ?? new SubscriptionTrackingElement();
+            configuration.SubscriptionTrackingService = InitSubscriptionTrackingService(subscriptionTracking);
 
             IEnumerable<SendRuleElement> sendRules = configSection.SendRules;
             foreach (var sendRule in sendRules)

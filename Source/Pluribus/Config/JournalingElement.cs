@@ -26,9 +26,17 @@ namespace Pluribus.Config
 {
     public class JournalingElement : ExtensibleConfigurationElement
     {
+        private const string EnabledPropertyName = "enabled";
         private const string ProviderPropertyName = "provider";
 
-        [ConfigurationProperty(ProviderPropertyName, DefaultValue = "Filesystem")]
+        [ConfigurationProperty(EnabledPropertyName, DefaultValue = true)]
+        public bool IsEnabled
+        {
+            get { return (bool)base[EnabledPropertyName]; }
+            set { base[EnabledPropertyName] = value; }
+        }
+
+        [ConfigurationProperty(ProviderPropertyName)]
         public string Provider
         {
             get { return (string) base[ProviderPropertyName]; }

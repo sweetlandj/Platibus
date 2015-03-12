@@ -36,35 +36,20 @@ namespace Pluribus.IntegrationTests
         [Test]
         public async Task Given_Subscriber_When_Message_Published_Then_Subscriber_Should_Receive_It()
         {
-            var pluribus0 = await Bootstrapper.InitBus("pluribus0").ConfigureAwait(false);
-            var pluribus1 = await Bootstrapper.InitBus("pluribus1").ConfigureAwait(false);
-
-            var server0 = new HttpServer(pluribus0);
-            var server1 = new HttpServer(pluribus1);
-
-            server0.Start();
-            server1.Start();
-
-            // Give HTTP listeners time to initialize
-            await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
-
-            var publication = new TestPublication
+            await With.HttpHostedBusInstances(async (pluribus0, pluribus1) =>
             {
-                GuidData = Guid.NewGuid(),
-                IntData = RNG.Next(0, int.MaxValue),
-                StringData = "Hello, world!",
-                DateData = DateTime.UtcNow
-            };
+                var publication = new TestPublication
+                {
+                    GuidData = Guid.NewGuid(),
+                    IntData = RNG.Next(0, int.MaxValue),
+                    StringData = "Hello, world!",
+                    DateData = DateTime.UtcNow
+                };
 
-            await pluribus0.Publish(publication, "Topic0").ConfigureAwait(false);
+                await pluribus0.Publish(publication, "Topic0").ConfigureAwait(false);
 
-            var publicationReceived = await TestPublicationHandler.WaitHandle.WaitOneAsync(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
-
-            server0.Dispose();
-            server1.Dispose();
-
-            pluribus0.Dispose();
-            pluribus1.Dispose();
+                var publicationReceived = await TestPublicationHandler.WaitHandle.WaitOneAsync(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+            });
         }
     }
 }
