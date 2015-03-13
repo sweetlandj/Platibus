@@ -2,19 +2,106 @@
 
 Platibus is a decentralized asynchronous messaging framework designed to be platform and language agnostic.  The goal of this project is to make durable asynchronous transmission and processing of messages as simple as possible.
 
-# Overview
+## Package Installation
 
-Platibus currently supports an HTTP transport layer in which senders POST message resources directly to their intended destinations.  Replies are simply the same thing in reverse; the recipient POSTs a message resource back to the sender.  Queuing on either the sending or receiving side is optional; durable transport can be requested when sending each message.  (One of the goals of this project is to enable senders to receive immediate feedback on the success or failure of the message delivery.) 
+Platibus is distributed as a set of NuGet packages hosted on nuget.org.  To install the base library, search for and install the package `Pluribus` in the NuGet package manager or run the following PowerShell command from the NuGet Package Manager Console:
 
-Pub/sub is also implemented via direct HTTP requests.  Subscribers can POST or DELETE subscription requests to subscribe or unsubscribe to a topic.  When a message is published, publishers then POST a copy of the message to all subscribers like any other message.
+```PM> Install-Package Platibus```
 
-Queuing and subscription tracking are currently implemented via files on the fileystem.  The file formats are text-based and are designed easy to read and edit, if necessary.
+This package includes the standalone HTTP server and basic functionality including JSON and XML serialization, HTTP transport, and filesystem based queueing and journaling.  To add support for IIS hosting, install the `Platibus.IIS` package via the NuGet Package Manager or Package Manager Console:
 
-# Configuration
+```PM> Install-Package Platibus.IIS```
+
+## Configuration Manager and Bootstrapping
+
+A static `InitBus` method is provided in the `Platibus.Config.Bootstrapper` class to initialize a bus instance using any declarative configuration elements and configuration hooks that are available in the current app domain.  This method uses the `Platibus.Config.PlatibusConfigurationManager` class to load the configuration section and map it onto a `Platibus.Config.PlatibusConfiguration` object.  These two classes are available for use if more control is needed when configuring and initializing a bus instance.
+
+## Hosting
+
+Once an `Platibus.IBus` instance has been initialized, there are some final steps required to route incoming messages to it.  This is accomplished by hosting the bus in a server of some kind. 
+
+### IIS HTTP Handler
+
+TODO
+
+### Standalone HTTP Server
+
+TODO
+
+## Configuration
 
 Platibus can be configured programmatically, declaratively, or with a mixture of both styles.
 
-## Programmatic Configuration
+### Declarative Configuration (app.config or web.config)
+
+To configure Platibus in your application's configuration file, you must first define a configuration section:
+
+```
+<configSections>
+  <section name="platibus" type="Platibus.Config.PlatibusConfigurationSection, Platibus" />
+</configSections>
+```
+
+By convention the default name for the configuration section is `platibus`, but any name can be specified.  Multiple configuration sections can be declared with different names to create multiple configurations either for hosting multiple bus instances or for selecting a specific configuration during application initialization.
+
+Once the configuration section is declared the configuration can be added to the application configuration file.  Here is an example configuration:
+
+```
+<configSections>
+  <section name="platibus" type="Platibus.Config.PlatibusConfigurationSection, Platibus" />
+</configSections>
+
+<platibus baseUri="http://crm-app.example.com/platibus/">
+  <timeouts replyTimeout="00:00:30" />
+  <queueing provider="Filesystem" path="platibus\queues" />
+  <journaling provider="Filesystem" path="platibus\journal" enabled="true" />
+  <subscriptionTracking provider="Filesystem" path="platibus\subscriptions" />
+  <endpoints>
+    <add name="crm-app" address="http://crm-app.example.com/platibus/" />
+    <add name="prv-app" address="http://prv-app.example.com/platibus/" />
+  </endpoints>
+  <topics>
+    <add name="customer-events" />
+    <add name="order-events" />
+  </topics>
+  <sendRules>
+    <!-- Send a copy of all messages in the CRM customer and order namespace to the local bus instance -->
+    <add namePattern="http://company/crm/customers:.*" endpoint="crm-app" />
+    <add namePattern="http://company/crm/orders:.*" endpoint="crm-app" />
+    
+    <!-- Send all messages in the provisioning namespace to the remote provisioning app -->
+    <add namePattern="http://company/prv/.*" endpoint="prv-app"/>
+  </sendRules>
+  <subscriptions>
+    <!-- Subscribe to provisioning events published by the remote provisioning app -->
+    <add endpoint="prv-app" topic="provisioning-events" ttl="12:00:00"/>
+  </subscriptions>
+</platibus>
+```
+
+In this example configuration a bus instance is being configured with the base URI `http://crm-app.example.com/platibus`.  This is the URL by which this application will be addressed by other applications.  If the standalone HTTP server is used, this is the address that the HTTP listener is configured to listen on.
+
+The `timeouts` element (optional) defines global timeouts for the application.  In this case the application will cache sent messages for up to 30 minutes awaiting a correlated reply message from the recipient.
+
+The `queueing` element determines which `IMessageQueueingService` implementation will be used to ensure durable transport (store-and-forward) for messages that request it.  In the example a filesystem based implementation is initialized with the path `platibus\queues` relative to the app domain base directory.  Rooted (absolute) paths may also be specified.
+
+Likewise, the `journaling` element controls whether and how messages will be journaled.  This example shows a basic filesystem based journal that stores copies of the messages in subfolders beneath the specified relative path `platibus\journal`.
+
+The `subscriptionTracking` element influences how subscription requests are tracked.  When remote applications subscribe to topics in this application, the topic being subscribed to, the subscribers base URI, and the subscription expiration date will be stored in a file within the `platibus\subscriptions` directory relative to the app domain base directory.
+
+In order to send messages and subscription requests, this application must know the base URIs of the other applications with which it will communicate.  The `endpoints` collection defines a set of named endpoints and their corresponding URIs.  The endpoint names are used in other configuration elements to refer to the URIs indirectly.  This minimizes the configuration that must be changed i.e. when URIs are updated or an application is promoted from environment to environment.
+
+The `sendRules` element is a collection of criteria that determines the endpoints to which messages will initially be sent (they do not affect subscriptions or replies).  Each element consists of a `namePattern`, which is regular expression that matches the message name header, and an `endpoint` which is the name of the endpoint to which matching messages should be sent.
+
+Finally, the `subscriptionRules` element specifies the applications and topics to which this application subscribes.  For each of these rules a subscription request will be sent to the specified `endpoint` requesting receipt of messages published to the specified `topic`.  An optional `ttl` (Time To Live) can be specified which caused the subscription to lapse and expire after a certain period of time.  If a TTL is specified, renewal subscription requests will be sent well in advance of the projected expiration date unless and until the subscription rule is removed.  (This prevents permanent publication of events to defunct applications.)
+
+### Handling Incoming Messages
+
+When using declarative stule configuration, handling rules must be added using an `Platibus.Config.IConfigurationHook` implementation.  Platibus will automatically scan assemblies in the app domain base directory for implementations of `Platibus.Config.IConfigurationHook` and invoke each of them.  The order in which they are invoked is not specified and should not be counted upon.  Best practice is to use a single configuration hook that calls out to other modules as needed.
+
+Each configuration hook is provided with the current `Platibus.Config.PlatibusConfiguration` object built up by the `Platibus.Config.PlatibusConfigurationManager`.  Configuration hooks may modify any aspect of the configuration.  Once all configuration hooks have executed, the resulting configuration object is then used to initialize the bus. 
+
+### Programmatic Configuration
 
 The `Platibus.Bus` class takes a single argument of type `Platibus.Config.IPlatibusConfiguration` that specifies all of the configurable aspects of the bus.  The `Platibus.Config.PlatibusConfiguration` class is a concrete mutable implementation of this class that can be used to build of the bus configuration programmatically.  
 
@@ -23,21 +110,27 @@ The `Platibus.Bus` class takes a single argument of type `Platibus.Config.IPlati
 The `Platibus.Config.PlatibusConfiguration` object exposes the following configurable features:
 
 ### Base URI
+
 The base URI for the hosted platibus instance.  This is the value that will be sent in the `Platibus-Origination` header for messages sent from this instance.  URIs for messages, topics, subscribers, and other resources will be based on this URI.
 
 ### Serialization Service
+
 An `Platibus.ISerializationService` implementation used to serialize message content.  This service provides `IPlatibus.ISerializer` implementations for various content types.  The default implementation provides support for JSON and XML
 
 ### Message Naming Service
+
 An `IPlatibus.IMessageNamingService` implementation used to map the `System.Type` of the message content object onto a value for the `Platibus-MessageName` header.  This is used to identify the appropriate `System.Type` when deserializing message content.  It is also one of the primary means by which messages can be routed to handlers.  The default implementation uses the full name of the `System.Type`.  Other implementations might look for special type attributes or use other conventions to name messages.
 
 ### Message Queueing Service
+
 An `IPlatibus.IMessageQueueingService` implementation used to enqueue messages.  The default implementation writes messaages to the filesystem and deletes them after they have been acknowledged.
 
 ### Message Journaling Service
+
 An `IPlatibus.IMessageJournalingService` implementation used to record copies of messages that are received, sent, and published.  The default implementation writes messaages to the filesystem in a date-based directory hierarchy.
 
 ### Subscription Tracking Service
+
 As `IPlatibus.SubscriptionTrackingService` implementation used to store and retrieve information about remote subscribers.  The default implementation stores subscriber information on the filesystem using a file per topic.
 
 ### Topics
@@ -59,91 +152,6 @@ Subscription rules indicate the remote topics to which the Platibus bus should s
 ### Handling Rules
 
 Handling rules specify which handlers should process certain messages by mapping `Platibus.Config.IMessageSpecification`s onto `IPlatibus.IMessageHandler` implementations.  A message specification can be anything, but typically send rules are based on the message name (see: `Platibus.Config.MessageNamePatternSpecification`).
-
-## Declarative Configuration
-
-The `Platibus.Config.PlatibusConfigurationSection` class provided in the main `Platibus` package can be used to declaratively configure all features except handling rules.  (Handling rules involve strong references to caller code and must be added via Configuration Hooks.  See below.)  This is particularly useful when an application is deployed to multiple environments in which endpoint URIs might vary; configuration transforms can be used to replace portions of the configuration section when building for different configurations. 
-
-Example configuration:
-
-```
-<configSections>
-  <section name="platibus" type="Platibus.Config.PlatibusConfigurationSection, Platibus" />
-</configSections>
-
-<platibus baseUri="http://localhost:52180/platibus/">
-  <timeouts replyTimeout="00:00:30" />
-  <queueing provider="Filesystem" path="platibus\queues" />
-  <journaling provider="Filesystem" path="platibus\journal" />
-  <subscriptionTracking provider="Filesystem" path="platibus\subscriptions" />
-  <endpoints>
-    <add name="platibus" address="http://localhost:52180/platibus/" />
-  </endpoints>
-  <topics>
-    <add name="Topic0" />
-  </topics>
-  <sendRules>
-    <add namePattern=".*" endpoint="platibus" />
-  </sendRules>
-  <subscriptions>
-    <add endpoint="platibus" topic="Topic0" />
-  </subscriptions>
-</platibus>
-```
-
-### `<platibus>`
-
-This is the top level configuration element.  The `baseUri` attribute is required and specifies the base URI for this instance.  All nested elements are optional.
-
-#### `<timeouts>`
-
-Specifies the various timeouts for the application.  The `replyTimeout` specifies the maximum amount of time a reply observer will be held open waiting for correlated messages to arrive.
-
-#### `<queueing>`
-
-Overrides the default queueing configuration.  The value of the `provider` attribute indicates the `IMessageQueueingServiceProvider` implementation that will provide the `IMessageQueueingService` implementation (by assembly qualified name or the name specified in the `ProviderAttribute` on the concrete type).  Additional provider-specific attributes (such as `path`) can also be specified on this element to influence how the `IMessageQueueingService` is initialized.
-
-#### `<journaling>`
-
-Overrides the default journaling configuration.  The value of the `provider` attribute indicates the `IMessageJournalingServiceProvider` implementation that will provide the `IMessageJournalingService` implementation (by assembly qualified name or the name specified in the `ProviderAttribute` on the concrete type).  Additional provider-specific attributes (such as `path`) can also be specified on this element to influence how the `IMessageJournalingService` is initialized.
-
-#### `<subscriptionTracking>`
-
-Overrides the default subscription tracking configuration.  The value of the `provider` attribute indicates the `ISubscriptionTrackingServiceProvider` implementation that will provide the `ISubscriptionTrackingService` implementation (by assembly qualified name or the name specified in the `ProviderAttribute` on the concrete type).  Additional provider-specific attributes (such as `path`) can also be specified on this element to influence how the `ISubscriptionTrackingService` is initialized.
-
-#### `<endpoints>`
-
-A collection of endpoint configuration elements.  Each endpoint requires a `name` and `address` (URI).
-
-#### `<sendRules>`
-
-A collection of send rule configuration elements.  Each rule requires a `namePattern` and the name of the `endpoint` to which matching messages will be sent.  The `namePattern` is a regular expression used to match message names.
-
-#### `<subscriptionRules>`
-
-A collection of subscription rule configuration elements.  Each rule requires an `endpoint` name and the name of the `topic` at that endpoint being subscribed to.  A `ttl` (time to live) may also be specified to limit how long the subscription should remain on the remote server after the last renewal.
-
-## Configuration Hooks
-
-When using declarative stule configuration, handling rules must be added using an `Platibus.Config.IConfigurationHook` implementation.  Platibus will automatically scan assemblies in the app domain base directory for implementations of `Platibus.Config.IConfigurationHook` and invoke each of them.  The order in which they are invoked is not specified and should not be counted upon.  Best practice is to use a single configuration hook that calls out to other modules as needed.
-
-Each configuration hook is provided with the current `Platibus.Config.PlatibusConfiguration` object built up by the `Platibus.Config.PlatibusConfigurationManager`.  Configuration hooks may modify any aspect of the configuration.  Once all configuration hooks have executed, the resulting configuration object is then used to initialize the bus. 
-
-## Configuration Manager and Bootstrapping
-
-A static `InitBus` method is provided in the `Platibus.Config.Bootstrapper` class to initialize a bus instance using any declarative configuration elements and configuration hooks that are available in the current app domain.  This method uses the `Platibus.Config.PlatibusConfigurationManager` class to load the configuration section and map it onto a `Platibus.Config.PlatibusConfiguration` object.  These two classes are available for use if more control is needed when configuring and initializing a bus instance.
-
-# Hosting
-
-TODO
-
-## IIS HTTP Handler
-
-TODO
-
-## Standalone HTTP Server
-
-TODO
 
 # Usage
 
