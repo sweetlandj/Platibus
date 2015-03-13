@@ -27,6 +27,7 @@ using System.Runtime.InteropServices;
 // associated with an assembly.
 [assembly: AssemblyTitle("Pluribus.IIS")]
 [assembly: AssemblyDescription("IIS hosting support for the Pluribus decentralized asynchronous messaging framework")]
+[assembly: AssemblyVersion("1.0.1")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 

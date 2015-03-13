@@ -84,9 +84,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\ApiVersion.cs">
-      <Link>Properties\ApiVersion.cs</Link>
-    </Compile>
     <Compile Include="..\Copyright.cs">
       <Link>Properties\Copyright.cs</Link>
     </Compile>
