@@ -177,7 +177,7 @@
     <Compile Include="Config\EndpointNotFoundException.cs" />
     <Compile Include="Config\EndpointRequiredException.cs" />
     <Compile Include="Config\IMessageSpecification.cs" />
-    <Compile Include="Config\IPluribusConfiguration.cs" />
+    <Compile Include="Config\IPlatibusConfiguration.cs" />
     <Compile Include="Config\ISendRule.cs" />
     <Compile Include="Config\MessageNamePatternSpecification.cs" />
     <Compile Include="Config\PlatibusConfiguration.cs" />
