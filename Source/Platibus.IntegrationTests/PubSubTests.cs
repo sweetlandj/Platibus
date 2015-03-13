@@ -1,3 +1,4 @@
+ï»¿
 // The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
@@ -20,11 +21,33 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using NUnit.Framework;
+using System;
+using System.Threading.Tasks;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.IntegrationTests
+{
+    class PubSubTests
+    {
+        private static readonly Random RNG = new Random();
+
+        [Test]
+        public async Task Given_Subscriber_When_Message_Published_Then_Subscriber_Should_Receive_It()
+        {
+            await With.HttpHostedBusInstances(async (platibus0, platibus1) =>
+            {
+                var publication = new TestPublication
+                {
+                    GuidData = Guid.NewGuid(),
+                    IntData = RNG.Next(0, int.MaxValue),
+                    StringData = "Hello, world!",
+                    DateData = DateTime.UtcNow
+                };
+
+                await platibus0.Publish(publication, "Topic0").ConfigureAwait(false);
+
+                var publicationReceived = await TestPublicationHandler.WaitHandle.WaitOneAsync(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+            });
+        }
+    }
+}

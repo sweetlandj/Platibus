@@ -1,0 +1,48 @@
+﻿@using Platibus.SampleWebApp.Models;
+@model ViewReceivedMessages
+
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/_Layout.cshtml";
+}
+
+<h2>Received Messages</h2>
+
+@using (Html.BeginForm("Index", "ViewReceivedMessages", FormMethod.Post, new {@class = "form-horizontal"}))
+{
+    <table class="table table-condensed table-striped">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Received</th>
+            <th>From</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var receivedMessage in Model.ReceivedMessages)
+        {
+            <tr>
+                <td>@receivedMessage.MessageId</td>
+                <td>@receivedMessage.MessageName</td>
+                <td>@receivedMessage.Received.ToString("o")</td>
+                <td>@receivedMessage.Origination</td>
+                <td>
+                    <div class="btn-group btn-group-xs">
+                        <input type="submit" formaction="@Url.Action("ViewReceivedMessageDetail", "ViewReceivedMessages", new {messageId = receivedMessage.MessageId})" class="btn btn-xs btn-default" value="View"/>
+                        <input type="submit" formaction="@Url.Action("RemoveReceivedMessage", "ViewReceivedMessages", new {messageId = receivedMessage.MessageId})" class="btn btn-xs btn-danger" value="Clear"/>
+                    </div>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <div class="row">
+        <a href="@Url.Action("Index", "SendTestMessage")" class="btn btn-primary">
+            <span class="glyphicon glyphicon-arrow-left"></span>
+            Send Test Message
+        </a>
+        <input type="submit" formaction="@Url.Action("ClearReceivedMessages", "ViewReceivedMessages")" value="Clear All Messages" class="btn btn-danger" />    
+    </div>
+}

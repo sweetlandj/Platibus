@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System.Configuration;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Config
+{
+    public class SendRuleElement : ConfigurationElement
+    {
+        private const string NamePatternPropertyName = "namePattern";
+        private const string EndpointPropertyName = "endpoint";
+
+        [ConfigurationProperty(NamePatternPropertyName)]
+        public string NamePattern
+        {
+            get { return (string) base[NamePatternPropertyName]; }
+            set { base[NamePatternPropertyName] = value; }
+        }
+
+        [ConfigurationProperty(EndpointPropertyName, IsRequired = true)]
+        public string Endpoint
+        {
+            get { return (string) base[EndpointPropertyName]; }
+            set { base[EndpointPropertyName] = value; }
+        }
+    }
+}

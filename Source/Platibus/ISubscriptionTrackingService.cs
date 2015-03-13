@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus
+{
+    public interface ISubscriptionTrackingService
+    {
+        Task AddSubscription(TopicName topic, Uri subscriber, TimeSpan ttl = default(TimeSpan),
+            CancellationToken cancellationToken = default(CancellationToken));
+
+        Task RemoveSubscription(TopicName topic, Uri subscriber, TimeSpan ttl = default(TimeSpan),
+            CancellationToken cancellationToken = default(CancellationToken));
+
+        IEnumerable<Uri> GetSubscribers(TopicName topic);
+    }
+}

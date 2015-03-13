@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -19,12 +19,30 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System.Threading;
+using System.Threading.Tasks;
 
-using System.Reflection;
+namespace Platibus.IntegrationTests
+{
+    public class TestPublicationHandler : IMessageHandler
+    {
+        private static readonly AutoResetEvent MessageReceivedEvent = new AutoResetEvent(false);
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+        public static WaitHandle WaitHandle
+        {
+            get { return MessageReceivedEvent; }
+        }
+
+        public string Name
+        {
+            get { return "PublicationHandler"; }
+        }
+
+        public Task HandleMessage(object message, IMessageContext messageContext, CancellationToken cancellationToken)
+        {
+            MessageReceivedEvent.Set();
+            messageContext.Acknowledge();
+            return Task.FromResult(true);
+        }
+    }
+}

@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System;
+using System.Security.Principal;
+using System.Threading;
+using System.Threading.Tasks;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus
+{
+    public interface ITransportService
+    {
+        event MessageReceivedHandler MessageReceived;
+        event SubscriptionRequestReceivedHandler SubscriptionRequestReceived;
+        Task SendMessage(Message message, CancellationToken cancellationToken = default(CancellationToken));
+
+        Task SendSubscriptionRequest(SubscriptionRequestType requestType, Uri publisher, TopicName topic, Uri subscriber,
+            TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken));
+
+        Task AcceptMessage(Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken));
+
+        Task AcceptSubscriptionRequest(SubscriptionRequestType requestType, TopicName topic, Uri subscriber, TimeSpan ttl, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken));
+    }
+}

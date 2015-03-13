@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System;
+using System.Collections.Generic;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus
+{
+    public interface IMessageHeaders : IEnumerable<KeyValuePair<HeaderName, string>>
+    {
+        string this[HeaderName header] { get; }
+        MessageId MessageId { get; }
+        MessageName MessageName { get; }
+        DateTime Expires { get; }
+        Uri Origination { get; }
+        Uri ReplyTo { get; }
+        Uri Destination { get; }
+        MessageId RelatedTo { get; }
+        DateTime Published { get; }
+        TopicName Topic { get; }
+        DateTime Sent { get; }
+        DateTime Received { get; }
+        string ContentType { get; }
+        Uri GetUri(HeaderName headerName);
+        DateTime? GetDateTime(HeaderName headerName);
+    }
+}

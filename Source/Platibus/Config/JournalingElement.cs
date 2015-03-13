@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System.Configuration;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Config
+{
+    public class JournalingElement : ExtensibleConfigurationElement
+    {
+        private const string EnabledPropertyName = "enabled";
+        private const string ProviderPropertyName = "provider";
+
+        [ConfigurationProperty(EnabledPropertyName, DefaultValue = true)]
+        public bool IsEnabled
+        {
+            get { return (bool)base[EnabledPropertyName]; }
+            set { base[EnabledPropertyName] = value; }
+        }
+
+        [ConfigurationProperty(ProviderPropertyName)]
+        public string Provider
+        {
+            get { return (string) base[ProviderPropertyName]; }
+            set { base[ProviderPropertyName] = value; }
+        }
+    }
+}

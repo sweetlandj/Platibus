@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -19,12 +19,31 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System;
+using System.Runtime.Serialization;
 
-using System.Reflection;
+namespace Platibus
+{
+    [Serializable]
+    public class TransportException : ApplicationException
+    {
+        public TransportException()
+        {
+        }
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+        public TransportException(string message)
+            : base(message)
+        {
+        }
+
+        public TransportException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+
+        public TransportException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
+    }
+}

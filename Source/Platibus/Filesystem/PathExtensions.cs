@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,29 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Filesystem
+{
+    internal static class PathExtensions
+    {
+        public static string WithInvalidCharsReplaced(this string path, char replacement = '_')
+        {
+            var pathChars = path.ToCharArray();
+            var pathCharsWithInvalidCharsReplaced = pathChars.WithInvalidCharsReplaced(replacement);
+            return new string(pathCharsWithInvalidCharsReplaced.ToArray());
+        }
+
+        public static IEnumerable<char> WithInvalidCharsReplaced(this IEnumerable<char> chars, char replacement = '_')
+        {
+            var invalidChars = Path.GetInvalidFileNameChars();
+            foreach (var c in chars)
+            {
+                if (invalidChars.Contains(c)) yield return replacement;
+                else yield return c;
+            }
+        }
+    }
+}

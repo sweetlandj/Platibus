@@ -1,0 +1,247 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{73863B52-5751-4F75-8436-1CD3E6AC0D50}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Platibus</RootNamespace>
+    <AssemblyName>Platibus</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <BuildPackage>true</BuildPackage>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>Platibus.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Common.Logging, Version=3.0.0.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Common.Logging.3.0.0\lib\net40\Common.Logging.dll</HintPath>
+    </Reference>
+    <Reference Include="Common.Logging.Core, Version=3.0.0.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Common.Logging.Core.3.0.0\lib\net40\Common.Logging.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Interfaces, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Rx-Interfaces.2.2.5\lib\net45\System.Reactive.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Linq">
+      <HintPath>..\packages\Rx-Linq.2.2.5\lib\net45\System.Reactive.Linq.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.PlatformServices">
+      <HintPath>..\packages\Rx-PlatformServices.2.2.5\lib\net45\System.Reactive.PlatformServices.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.Caching" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Threading.Tasks.Dataflow, Version=4.5.24.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.Tpl.Dataflow.4.5.24\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web" />
+    <Reference Include="System.XML" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\Copyright.cs">
+      <Link>Properties\Copyright.cs</Link>
+    </Compile>
+    <Compile Include="Config\Bootstrapper.cs" />
+    <Compile Include="Config\Extensibility\ISubscriptionTrackingServiceProvider.cs" />
+    <Compile Include="Config\Extensibility\IMessageJournalingServiceProvider.cs" />
+    <Compile Include="Config\Extensibility\IMessageQueueingServiceProvider.cs" />
+    <Compile Include="Config\Extensibility\ProviderAttribute.cs" />
+    <Compile Include="Config\Extensibility\MultipleProvidersFoundException.cs" />
+    <Compile Include="Config\Extensibility\ProviderNotFoundException.cs" />
+    <Compile Include="Config\ExtensibleConfigurationElement.cs" />
+    <Compile Include="Config\ISubscription.cs" />
+    <Compile Include="Config\PlatibusConfigurationExtensions.cs" />
+    <Compile Include="Config\PlatibusConfigurationManager.cs" />
+    <Compile Include="Config\IConfigurationHook.cs" />
+    <Compile Include="Config\JournalingElement.cs" />
+    <Compile Include="Config\ReflectionHelper.cs" />
+    <Compile Include="Config\Subscription.cs" />
+    <Compile Include="Config\SubscriptionElement.cs" />
+    <Compile Include="Config\SubscriptionElementCollection.cs" />
+    <Compile Include="Config\SubscriptionTrackingElement.cs" />
+    <Compile Include="ConnectionRefusedException.cs" />
+    <Compile Include="DefaultMessageNamingService.cs" />
+    <Compile Include="Bus.cs" />
+    <Compile Include="BusMessageContext.cs" />
+    <Compile Include="Config\IHandlingRule.cs" />
+    <Compile Include="Config\HandlingRule.cs" />
+    <Compile Include="Config\TopicAlreadyExistsException.cs" />
+    <Compile Include="DelegateMessageHandler.cs" />
+    <Compile Include="Endpoint.cs" />
+    <Compile Include="Filesystem\FilesystemMessageJournalingService.cs" />
+    <Compile Include="Filesystem\FilesystemServicesProvider.cs" />
+    <Compile Include="Filesystem\FilesystemSubscriptionTrackingService.cs" />
+    <Compile Include="Filesystem\MessageFileFormatException.cs" />
+    <Compile Include="Http\HttpServerShutdownEventArgs.cs" />
+    <Compile Include="Http\HttpServerShutdownHandler.cs" />
+    <Compile Include="Http\ResourceTypeDictionaryRouter.cs" />
+    <Compile Include="Http\HttpListenerResponseAdapter.cs" />
+    <Compile Include="Http\HttpRequestExtensions.cs" />
+    <Compile Include="Http\HttpListenerRequestAdapter.cs" />
+    <Compile Include="Http\ResourceType.cs" />
+    <Compile Include="Http\HttpServer.cs" />
+    <Compile Include="Http\HttpTransportService.cs" />
+    <Compile Include="Http\IHttpResourceRequest.cs" />
+    <Compile Include="Http\IHttpResourceController.cs" />
+    <Compile Include="Http\IHttpResourceRouter.cs" />
+    <Compile Include="Http\IHttpResourceResponse.cs" />
+    <Compile Include="Http\MessageController.cs" />
+    <Compile Include="Http\TopicController.cs" />
+    <Compile Include="IMessageJournalingService.cs" />
+    <Compile Include="InMemory\InMemoryQueuedMessageContext.cs" />
+    <Compile Include="InMemory\InMemoryMessageQueueingService.cs" />
+    <Compile Include="InMemory\InMemoryQueue.cs" />
+    <Compile Include="InvalidRequestException.cs" />
+    <Compile Include="ISubscriptionTrackingService.cs" />
+    <Compile Include="LoopbackTransportService.cs" />
+    <Compile Include="Message.cs" />
+    <Compile Include="IReplyHub.cs" />
+    <Compile Include="ITransportService.cs" />
+    <Compile Include="IMessageNamingService.cs" />
+    <Compile Include="MessageEqualityComparer.cs" />
+    <Compile Include="MessageHeadersEqualityComparer.cs" />
+    <Compile Include="MessageName.cs" />
+    <Compile Include="MessageReceivedEventArgs.cs" />
+    <Compile Include="MessageReceivedHandler.cs" />
+    <Compile Include="Filesystem\MessageFileReader.cs" />
+    <Compile Include="IQueueListener.cs" />
+    <Compile Include="MessageHandlingListener.cs" />
+    <Compile Include="Filesystem\MessageFileWriter.cs" />
+    <Compile Include="Filesystem\PathExtensions.cs" />
+    <Compile Include="Filesystem\MessageFile.cs" />
+    <Compile Include="Filesystem\FilesystemQueue.cs" />
+    <Compile Include="Filesystem\FilesystemMessageQueueingService.cs" />
+    <Compile Include="Filesystem\FilesystemQueuedMessageContext.cs" />
+    <Compile Include="IQueuedMessageContext.cs" />
+    <Compile Include="NameResolutionFailedException.cs" />
+    <Compile Include="InMemory\InMemorySubscriptionTrackingService.cs" />
+    <Compile Include="PrincipalExtensions.cs" />
+    <Compile Include="Security\SenderPrincipal.cs" />
+    <Compile Include="Security\SenderIdentity.cs" />
+    <Compile Include="Security\SenderRole.cs" />
+    <Compile Include="SentMessageExtensions.cs" />
+    <Compile Include="SentMessageWithCachedReplies.cs" />
+    <Compile Include="QueueNotFoundException.cs" />
+    <Compile Include="QueueAlreadyExistsException.cs" />
+    <Compile Include="QueueName.cs" />
+    <Compile Include="IMessageQueueingService.cs" />
+    <Compile Include="QueueOptions.cs" />
+    <Compile Include="Config\DelegateMessageSpecification.cs" />
+    <Compile Include="Config\EndpointAlreadyExistsException.cs" />
+    <Compile Include="Config\EndpointElement.cs" />
+    <Compile Include="Config\EndpointElementCollection.cs" />
+    <Compile Include="Config\EndpointNotFoundException.cs" />
+    <Compile Include="Config\EndpointRequiredException.cs" />
+    <Compile Include="Config\IMessageSpecification.cs" />
+    <Compile Include="Config\IPluribusConfiguration.cs" />
+    <Compile Include="Config\ISendRule.cs" />
+    <Compile Include="Config\MessageNamePatternSpecification.cs" />
+    <Compile Include="Config\PlatibusConfiguration.cs" />
+    <Compile Include="Config\PlatibusConfigurationSection.cs" />
+    <Compile Include="Config\QueueingElement.cs" />
+    <Compile Include="Config\SendRule.cs" />
+    <Compile Include="Config\SendRuleElement.cs" />
+    <Compile Include="Config\SendRuleElementCollection.cs" />
+    <Compile Include="Config\TimeoutsElement.cs" />
+    <Compile Include="Config\TopicElement.cs" />
+    <Compile Include="Config\TopicElementCollection.cs" />
+    <Compile Include="EndpointName.cs" />
+    <Compile Include="IMessageHeaders.cs" />
+    <Compile Include="ISentMessage.cs" />
+    <Compile Include="LoggingCategories.cs" />
+    <Compile Include="MemoryCacheReplyHub.cs" />
+    <Compile Include="EndpointNotFoundException.cs" />
+    <Compile Include="ReplyStream.cs" />
+    <Compile Include="Serialization\Base64ObjectSerializer.cs" />
+    <Compile Include="Serialization\DefaultSerializationService.cs" />
+    <Compile Include="Serialization\ISerializer.cs" />
+    <Compile Include="Serialization\ISerializationService.cs" />
+    <Compile Include="Serialization\NewtonsoftJsonSerializer.cs" />
+    <Compile Include="Serialization\SerializerNotFoundException.cs" />
+    <Compile Include="Serialization\DataContractSerializerAdapter.cs" />
+    <Compile Include="Serialization\StringSerializer.cs" />
+    <Compile Include="Serialization\XmlSerializerAdapter.cs" />
+    <Compile Include="SubscriptionRequestReceivedEventArgs.cs" />
+    <Compile Include="SubscriptionRequestReceivedHandler.cs" />
+    <Compile Include="SubscriptionRequestType.cs" />
+    <Compile Include="TopicNotFoundException.cs" />
+    <Compile Include="HeaderName.cs" />
+    <Compile Include="MessageHeaders.cs" />
+    <Compile Include="ITopic.cs" />
+    <Compile Include="IMessageContext.cs" />
+    <Compile Include="IMessageHandler.cs" />
+    <Compile Include="IEndpoint.cs" />
+    <Compile Include="IBus.cs" />
+    <Compile Include="MessageId.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SendOptions.cs" />
+    <Compile Include="TopicName.cs" />
+    <Compile Include="TransportException.cs" />
+    <Compile Include="WaitHandleExtensions.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="Platibus.licenseheader" />
+    <None Include="Platibus.nuspec" />
+    <None Include="Platibus.snk" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
+  </Target>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

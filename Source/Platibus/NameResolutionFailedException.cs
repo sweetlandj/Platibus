@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System;
+using System.Runtime.Serialization;
+using System.Security.Permissions;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus
+{
+    [Serializable]
+    public class NameResolutionFailedException : TransportException
+    {
+        private readonly string _hostname;
+
+        public NameResolutionFailedException(string hostname)
+            : base(string.Format("Failed to resolve hostname: {0}", hostname))
+        {
+        }
+
+        public NameResolutionFailedException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+            _hostname = info.GetString("hostname");
+        }
+
+        public string Hostname
+        {
+            get { return _hostname; }
+        }
+
+        [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            info.AddValue("hostname", _hostname);
+        }
+    }
+}

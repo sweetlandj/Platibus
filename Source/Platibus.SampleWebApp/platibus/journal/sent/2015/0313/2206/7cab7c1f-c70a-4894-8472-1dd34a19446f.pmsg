@@ -1,0 +1,8 @@
+﻿
+Platibus-MessageId: 7cab7c1f-c70a-4894-8472-1dd34a19446f
+Platibus-MessageName: Platibus.SampleWebApp.Controllers.TestMessage
+Platibus-Origination: http://localhost:52180/platibus/
+Content-Type: application/json
+Platibus-Destination: http://localhost:52180/platibus/
+
+{"Text":"sdfwef"}

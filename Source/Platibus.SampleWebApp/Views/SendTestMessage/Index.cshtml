@@ -1,0 +1,61 @@
+﻿
+@using Platibus.SampleWebApp.Models;
+@model SendTestMessage
+
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/_Layout.cshtml";
+}
+
+@if (Model.MessageSent)
+{
+    <div class="alert alert-success">
+        <a href="#" class="close" data-dismiss="alert">&times;</a>
+        Message sent successfully (ID @Model.SentMessageId)
+    </div>
+}
+
+@if (Model.ErrorsOccurred)
+{
+    <div class="alert alert-warning">
+        <a href="#" class="close" data-dismiss="alert">&times;</a>
+        <strong>Error!</strong> @Model.ErrorMessage
+    </div>
+}
+
+<h2>Send Test Message</h2>
+
+@using (Html.BeginForm("SendTestMessage", "SendTestMessage", FormMethod.Post))
+{
+    <fieldset>
+        <div class="form-group">
+            @Html.LabelFor(model => model.Destination, "Destination", new {@class = "control-label"})
+            @Html.TextBoxFor(model => model.Destination, new {@class = "form-control"})
+        </div>
+        <div class="checkbox">
+            <label>
+                @Html.CheckBoxFor(model => model.UseDurableTransport)
+                Use Durable Transport
+            </label>
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.ContentType, "Content Type", new {@class = "control-label"})
+            @{
+                var contentTypeSelectItems = Model.ContentTypeOptions
+                    .Select(ct => new SelectListItem {Text = ct, Value = ct});
+            }
+            @Html.DropDownListFor(model => model.ContentType, contentTypeSelectItems, new {@class = "form-control"})
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(tstMsg => tstMsg.MessageText, "Message Text", new {@class = "control-label"})
+            @Html.TextAreaFor(tstMsg => tstMsg.MessageText, new {@class = "form-control"})
+        </div>
+        <div class="form-group">
+            <input type="submit" value="Send" class="btn btn-primary" />
+            <a href="@Url.Action("Index", "ViewReceivedMessages")" class="btn btn-default">
+                View Received Messages
+                <span class="glyphicon glyphicon-arrow-right"></span>
+            </a>    
+        </div>
+    </fieldset>
+}

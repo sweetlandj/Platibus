@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,29 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Http
+{
+    public static class HttpResourceRequestExtensions
+    {
+        public static bool IsPost(this IHttpResourceRequest request)
+        {
+            return request != null && "POST".Equals(request.HttpMethod, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static async Task<string> ReadContentAsString(this IHttpResourceRequest request)
+        {
+            if (request == null) return null;
+
+            var contentStream = request.InputStream;
+            var contentEncoding = request.ContentEncoding;
+            using (var contentReader = new StreamReader(contentStream, contentEncoding))
+            {
+                return await contentReader.ReadToEndAsync().ConfigureAwait(false);
+            }
+        }
+    }
+}

@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -19,12 +19,25 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System.Threading;
+using System.Threading.Tasks;
 
-using System.Reflection;
+namespace Platibus.IntegrationTests
+{
+    public class TestHandler
+    {
+        public static async Task HandleMessage(TestMessage message, IMessageContext messageContext, CancellationToken cancellationToken)
+        {
+            await messageContext.SendReply(new TestReply
+            {
+                GuidData = message.GuidData,
+                IntData = message.IntData,
+                StringData = message.StringData,
+                DateData = message.DateData
+            }, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+            messageContext.Acknowledge();
+        }
+    }
+}

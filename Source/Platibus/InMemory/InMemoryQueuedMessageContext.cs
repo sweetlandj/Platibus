@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,40 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System;
+using System.Security.Principal;
+using System.Threading.Tasks;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.InMemory
+{
+    internal class InMemoryQueuedMessageContext : IQueuedMessageContext
+    {
+        private readonly Message _message;
+        private readonly IPrincipal _senderPrincipal;
+
+        public InMemoryQueuedMessageContext(Message message, IPrincipal senderPrincipal)
+        {
+            if (message == null) throw new ArgumentNullException("message");
+            _message = message;
+            _senderPrincipal = senderPrincipal;
+        }
+
+        public bool Acknowledged { get; private set; }
+
+        public IMessageHeaders Headers
+        {
+            get { return _message.Headers; }
+        }
+
+        public IPrincipal SenderPrincipal
+        {
+            get { return _senderPrincipal; }
+        }
+
+        public Task Acknowledge()
+        {
+            Acknowledged = true;
+            return Task.FromResult(true);
+        }
+    }
+}

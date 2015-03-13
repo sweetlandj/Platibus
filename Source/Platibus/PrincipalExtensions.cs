@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System.Security.Principal;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus
+{
+    public static class PrincipalExtensions
+    {
+        public const string AnonymousPrincipalName = "(Unknown)";
+
+        public static string GetName(this IPrincipal principal)
+        {
+            if (principal == null || principal.Identity == null)
+            {
+                return AnonymousPrincipalName;
+            }
+
+            return string.IsNullOrWhiteSpace(principal.Identity.Name) 
+                ? AnonymousPrincipalName 
+                : principal.Identity.Name;
+        }
+    }
+}

@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using Platibus.Serialization;
+using System;
+using System.Collections.Generic;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Config
+{
+    public interface IPlatibusConfiguration
+    {
+        Uri BaseUri { get; }
+        ISerializationService SerializationService { get; }
+        IMessageNamingService MessageNamingService { get; }
+        IMessageJournalingService MessageJournalingService { get; }
+        IMessageQueueingService MessageQueueingService { get; }
+        ISubscriptionTrackingService SubscriptionTrackingService { get; }
+        IEnumerable<TopicName> Topics { get; }
+        IEnumerable<KeyValuePair<EndpointName, IEndpoint>> Endpoints { get; }
+        IEnumerable<ISendRule> SendRules { get; }
+        IEnumerable<IHandlingRule> HandlingRules { get; }
+        IEnumerable<ISubscription> Subscriptions { get; }
+    }
+}

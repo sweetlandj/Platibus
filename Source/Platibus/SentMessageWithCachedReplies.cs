@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,32 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus
+{
+    internal class SentMessageWithCachedReplies : ISentMessage
+    {
+        private readonly MessageId _messageId;
+        private readonly MemoryCacheReplyHub _replyHub;
+
+        public SentMessageWithCachedReplies(MemoryCacheReplyHub repluHub, MessageId messageId)
+        {
+            if (repluHub == null) throw new ArgumentNullException("repluHub");
+            if (messageId == null) throw new ArgumentNullException("messageId");
+
+            _replyHub = repluHub;
+            _messageId = messageId;
+        }
+
+        public MessageId MessageId
+        {
+            get { return _messageId; }
+        }
+
+        public IObservable<object> ObserveReplies()
+        {
+            return _replyHub.ObserveReplies(_messageId);
+        }
+    }
+}

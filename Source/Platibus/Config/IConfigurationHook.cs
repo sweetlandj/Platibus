@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
-
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Config
+{
+    /// <summary>
+    ///     Interface used by application developers to provide programmatic configuration
+    ///     during bus initialization.
+    /// </summary>
+    public interface IConfigurationHook
+    {
+        /// <summary>
+        ///     Called during bus initialization to allow application developers an
+        ///     opportunity to modify the configuration before the bus is initialized.
+        /// </summary>
+        /// <param name="configuration">The bus configuration.</param>
+        void Configure(PlatibusConfiguration configuration);
+    }
+}

@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System;
+using System.Configuration;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Config
+{
+    public class TimeoutsElement : ConfigurationElement
+    {
+        private const string ReplyTimemoutPropertyName = "replyTimeout";
+
+        [ConfigurationProperty(ReplyTimemoutPropertyName, DefaultValue = "00:05:00")]
+        [TimeSpanValidator(MinValueString = "00:00:00")]
+        public TimeSpan ReplyTimeout
+        {
+            get { return (TimeSpan) base[ReplyTimemoutPropertyName]; }
+            set { base[ReplyTimemoutPropertyName] = value; }
+        }
+    }
+}

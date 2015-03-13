@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -19,12 +19,22 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
-using System.Reflection;
+namespace Platibus
+{
+    public static class WaitHandleExtensions
+    {
+        public static Task<bool> WaitOneAsync(this WaitHandle waitHandle, TimeSpan timeout = default(TimeSpan))
+        {
+            var tcs = new TaskCompletionSource<bool>(false);
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+            ThreadPool.RegisterWaitForSingleObject(waitHandle, (o, timedOut) => { tcs.SetResult(!timedOut); }, null,
+                timeout, true);
+
+            return tcs.Task;
+        }
+    }
+}

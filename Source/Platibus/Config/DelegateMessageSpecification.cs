@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Config
+{
+    public class DelegateMessageSpecification : IMessageSpecification
+    {
+        private readonly Func<Message, bool> _delegate;
+
+        public DelegateMessageSpecification(Func<Message, bool> @delegate)
+        {
+            if (@delegate == null) throw new ArgumentNullException("delegate");
+            _delegate = @delegate;
+        }
+
+        public bool IsSatisfiedBy(Message message)
+        {
+            return _delegate(message);
+        }
+
+        public static implicit operator DelegateMessageSpecification(Func<Message, bool> @delegate)
+        {
+            return @delegate == null ? null : new DelegateMessageSpecification(@delegate);
+        }
+    }
+}

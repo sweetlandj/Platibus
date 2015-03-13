@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,34 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System.Collections;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Linq;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Config
+{
+    public class SendRuleElementCollection : ConfigurationElementCollection, IEnumerable<SendRuleElement>
+    {
+        IEnumerator<SendRuleElement> IEnumerable<SendRuleElement>.GetEnumerator()
+        {
+            return this.OfType<SendRuleElement>().GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        protected override ConfigurationElement CreateNewElement()
+        {
+            return new SendRuleElement();
+        }
+
+        protected override object GetElementKey(ConfigurationElement element)
+        {
+            var sendRuleElement = (SendRuleElement) element;
+            return sendRuleElement.NamePattern;
+        }
+    }
+}

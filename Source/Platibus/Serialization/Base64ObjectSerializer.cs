@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,39 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Serialization
+{
+    public class Base64ObjectSerializer : ISerializer
+    {
+        public string Serialize(object obj)
+        {
+            using (var stream = new MemoryStream())
+            {
+                var formatter = new BinaryFormatter();
+                formatter.Serialize(stream, obj);
+                return Convert.ToBase64String(stream.GetBuffer());
+            }
+        }
+
+        public object Deserialize(string str, Type type)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return null;
+            var bytes = Convert.FromBase64String(str);
+            using (var stream = new MemoryStream(bytes))
+            {
+                var formatter = new BinaryFormatter();
+                return formatter.Deserialize(stream);
+            }
+        }
+
+        public T Deserialize<T>(string str)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return default(T);
+            return (T) Deserialize(str, typeof(T));
+        }
+    }
+}

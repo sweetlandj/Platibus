@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System;
+using System.Collections.Specialized;
+using System.IO;
+using System.Security.Principal;
+using System.Text;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Http
+{
+    public interface IHttpResourceRequest
+    {
+        Uri Url { get; }
+        string HttpMethod { get; }
+        NameValueCollection Headers { get; }
+        NameValueCollection QueryString { get; }
+        string ContentType { get; }
+        Encoding ContentEncoding { get; }
+        Stream InputStream { get; }
+        IPrincipal Principal { get; }
+    }
+}

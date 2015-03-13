@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System.Collections.Generic;
+using System.Linq;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus
+{
+    public class MessageHeadersEqualityComparer : IEqualityComparer<IMessageHeaders>
+    {
+        public bool Equals(IMessageHeaders x, IMessageHeaders y)
+        {
+            if (ReferenceEquals(x, y)) return true;
+            if (ReferenceEquals(null, x) || ReferenceEquals(null, y)) return false;
+
+            return x.Count() == y.Count() && x.All(xel => Equals(xel.Value, y[xel.Key]));
+        }
+
+        public int GetHashCode(IMessageHeaders obj)
+        {
+            return obj == null ? 0 : obj.Aggregate(0, (current, entry) => (current*397) ^ entry.Key.GetHashCode());
+        }
+    }
+}

@@ -1,0 +1,12 @@
+﻿
+Content-Length: 17
+Content-Type: application/json
+Authorization: Negotiate oXcwdaADCgEBoloEWE5UTE1TU1AAAwAAAAAAAABYAAAAAAAAAFgAAAAAAAAAWAAAAAAAAABYAAAAAAAAAFgAAAAAAAAAWAAAABXCiOIGA4AlAAAAD6HFSciA8Sf5TkRnmb3q3CKjEgQQAQAAAPUXp1AtIpqEAAAAAA==
+Expect: 100-continue
+Host: localhost:52180
+Platibus-MessageId: 7cab7c1f-c70a-4894-8472-1dd34a19446f
+Platibus-MessageName: Platibus.SampleWebApp.Controllers.TestMessage
+Platibus-Origination: http://localhost:52180/platibus/
+Platibus-Destination: http://localhost:52180/platibus/
+
+{"Text":"sdfwef"}

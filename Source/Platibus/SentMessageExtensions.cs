@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus
+{
+    public static class SentMessageExtensions
+    {
+        public static async Task<object> GetReply(this ISentMessage sentMessage, TimeSpan timeout = default(TimeSpan))
+        {
+            object reply = null;
+            var replyReceivedEvent = new ManualResetEvent(false);
+            var subscription = sentMessage.ObserveReplies().Subscribe(r =>
+            {
+                reply = r;
+                // ReSharper disable once AccessToDisposedClosure
+                replyReceivedEvent.Set();
+            });
+
+            await replyReceivedEvent.WaitOneAsync(timeout).ConfigureAwait(false);
+
+            subscription.Dispose();
+            replyReceivedEvent.Dispose();
+
+            return reply;
+        }
+    }
+}

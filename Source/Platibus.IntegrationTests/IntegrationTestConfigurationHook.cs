@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -19,12 +19,16 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using Platibus.Config;
 
-using System.Reflection;
-
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.IntegrationTests
+{
+    public class IntegrationTestConfigurationHook : IConfigurationHook
+    {
+        public void Configure(PlatibusConfiguration configuration)
+        {
+            configuration.AddHandlingRule<TestMessage>(".*TestMessage", TestHandler.HandleMessage);
+            configuration.AddHandlingRule(".*TestPublication", new TestPublicationHandler());
+        }
+    }
+}

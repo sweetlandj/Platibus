@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System.Text.RegularExpressions;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Config
+{
+    public class MessageNamePatternSpecification : IMessageSpecification
+    {
+        private readonly Regex _nameRegex;
+
+        public MessageNamePatternSpecification(string namePattern)
+        {
+            _nameRegex = string.IsNullOrWhiteSpace(namePattern) ? null : new Regex(namePattern, RegexOptions.Compiled);
+        }
+
+        public Regex NameRegex
+        {
+            get { return _nameRegex; }
+        }
+
+        public bool IsSatisfiedBy(Message message)
+        {
+            var messageName = message.Headers.MessageName;
+            return (_nameRegex == null || _nameRegex.IsMatch(messageName));
+        }
+    }
+}

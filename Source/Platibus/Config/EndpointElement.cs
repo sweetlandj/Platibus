@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,35 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System;
+using System.Configuration;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Config
+{
+    public class EndpointElement : ConfigurationElement
+    {
+        private const string NamePropertyName = "name";
+        private const string AddressPropertyName = "address";
+
+        [ConfigurationProperty(NamePropertyName, IsRequired = true, IsKey = true)]
+        public string Name
+        {
+            get { return (string) base[NamePropertyName]; }
+            set { base[NamePropertyName] = value; }
+        }
+
+        [ConfigurationProperty(AddressPropertyName, IsRequired = true)]
+        public Uri Address
+        {
+            get
+            {
+                var baseValue = base[AddressPropertyName];
+                if (baseValue == null) return null;
+                var uri = baseValue as Uri;
+                if (uri != null) return uri;
+                return new Uri(baseValue.ToString());
+            }
+            set { base[AddressPropertyName] = value; }
+        }
+    }
+}

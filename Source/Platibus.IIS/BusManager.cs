@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,40 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using Platibus.Config;
+using System.Threading;
+using System.Threading.Tasks;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.IIS
+{
+    public static class BusManager
+    {
+        private static readonly SemaphoreSlim SingletonWriteAccess = new SemaphoreSlim(1);
+        private static volatile Bus _instance;
+
+        public static async Task<Bus> GetInstance()
+        {
+            if (_instance != null) return _instance;
+            await SingletonWriteAccess.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                if (_instance != null) return _instance;
+                var tempInstance = await Bootstrapper.InitBus().ConfigureAwait(false);
+                _instance = tempInstance;
+            }
+            finally
+            {
+                SingletonWriteAccess.Release();
+            }
+            return _instance;
+        }
+
+        public static void Shutdown()
+        {
+            if (_instance != null)
+            {
+                _instance.Dispose();
+            }
+        }
+    }
+}

@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System;
+using System.Runtime.Serialization;
+using System.Security.Permissions;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Config
+{
+    [Serializable]
+    public class EndpointAlreadyExistsException : ApplicationException
+    {
+        private readonly EndpointName _endpoint;
+
+        public EndpointAlreadyExistsException(EndpointName endpoint)
+        {
+            _endpoint = endpoint;
+        }
+
+        public EndpointAlreadyExistsException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+            _endpoint = info.GetString("endpoint");
+        }
+
+        public EndpointName EndpointName
+        {
+            get { return _endpoint; }
+        }
+
+        [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            info.AddValue("endpoint", _endpoint);
+        }
+    }
+}

@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,34 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System.Collections.Concurrent;
+using System.Security.Principal;
+using System.Threading.Tasks;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.InMemory
+{
+    public class InMemoryMessageQueueingService : IMessageQueueingService
+    {
+        private readonly ConcurrentDictionary<QueueName, InMemoryQueue> _queues = new ConcurrentDictionary<QueueName, InMemoryQueue>(); 
+
+        public Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
+        {
+            if (!_queues.TryAdd(queueName, new InMemoryQueue(listener, options)))
+            {
+                throw new QueueAlreadyExistsException(queueName);
+            }
+            return Task.FromResult(true);
+        }
+
+        public Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal)
+        {
+            InMemoryQueue queue;
+            if (!_queues.TryGetValue(queueName, out queue))
+            {
+                throw new QueueNotFoundException(queueName);
+            }
+            return queue.Enqueue(message, senderPrincipal);
+        }
+
+    }
+}

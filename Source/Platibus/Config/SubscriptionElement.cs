@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,36 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using System;
+using System.Configuration;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Config
+{
+    public class SubscriptionElement : ConfigurationElement
+    {
+        public const string EndpointPropertyName = "endpoint";
+        public const string TopicPropertyName = "topic";
+        public const string TTLPropertyName = "ttl";
+
+        [ConfigurationProperty(EndpointPropertyName, IsRequired = true)]
+        public string Endpoint
+        {
+            get { return (string) base[EndpointPropertyName]; }
+            set { base[EndpointPropertyName] = value; }
+        }
+
+        [ConfigurationProperty(TopicPropertyName, IsRequired = true)]
+        public string Topic
+        {
+            get { return (string) base[TopicPropertyName]; }
+            set { base[TopicPropertyName] = value; }
+        }
+
+        [ConfigurationProperty(TTLPropertyName, DefaultValue = "24:00:00")]
+        public TimeSpan TTL
+        {
+            get { return (TimeSpan) base[TTLPropertyName]; }
+            set { base[TTLPropertyName] = value; }
+        }
+    }
+}

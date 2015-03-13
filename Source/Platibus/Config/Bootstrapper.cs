@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -20,11 +20,32 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
+using Common.Logging;
+using Platibus.Http;
+using System.Threading.Tasks;
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+namespace Platibus.Config
+{
+    public static class Bootstrapper
+    {
+        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
+
+        public static Task<Bus> InitBus()
+        {
+            return InitBus("platibus");
+        }
+
+        public static async Task<Bus> InitBus(string sectionName)
+        {
+            Log.InfoFormat("Loading configuration from section \"{0}\"...", sectionName);
+            var configuration = PlatibusConfigurationManager.LoadConfiguration(sectionName);
+
+            Log.Info("Initializing bus...");
+            var bus = new Bus(configuration, new HttpTransportService());
+            await bus.Init().ConfigureAwait(false);
+
+            Log.Info("Bus initialized successfully");
+            return bus;
+        }
+    }
+}

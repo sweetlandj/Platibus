@@ -1,4 +1,4 @@
-// The MIT License (MIT)
+ï»¿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -19,12 +19,26 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System;
 
-using System.Reflection;
+namespace Platibus.Serialization
+{
+    public class StringSerializer : ISerializer
+    {
+        public string Serialize(object obj)
+        {
+            if (obj == null) return "";
+            return obj.ToString();
+        }
 
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+        public object Deserialize(string str, Type type)
+        {
+            return str;
+        }
+
+        public T Deserialize<T>(string str)
+        {
+            return (T)Deserialize(str, typeof(T));
+        }
+    }
+}
