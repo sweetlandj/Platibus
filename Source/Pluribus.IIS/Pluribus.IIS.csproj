@@ -13,7 +13,6 @@
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
-    <BuildPackage>true</BuildPackage>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -32,6 +31,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <BuildPackage>true</BuildPackage>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
@@ -92,6 +92,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\ApiVersion.cs">
+      <Link>Properties\ApiVersion.cs</Link>
+    </Compile>
+    <Compile Include="..\Copyright.cs">
+      <Link>Properties\Copyright.cs</Link>
+    </Compile>
     <Compile Include="BusManager.cs" />
     <Compile Include="IISLoggingCategories.cs" />
     <Compile Include="PluribusHttpHandler.cs" />
