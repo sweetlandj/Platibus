@@ -238,7 +238,7 @@ var endpointUri = new Uri("http://crm-app.example.com/platibus");
 await bus.Send(message, endpointUri);
 ```
 
-### Replying to a message
+### Replying to a Message
 
 Replies can be sent to the sender of a message from within the `IMessageHandler` by invoking the `SendReply` method on the supplied `IMessageContext`:
 
@@ -279,8 +279,104 @@ var reply = await sentMessage.GetReply(timeout);
 
 ## Publishing Messages
 
-TODO
+Messages can be broadcast to all current subscribers using the `IBus.Publish` method:
+
+```
+var evt = new MyEvent
+{
+    Date = DateTime.UtcNow,
+    Text = "Something happened"
+};
+var topic = "my-events";
+await bus.Publish(myEvent, topic);
+```
+
+When a message is published the configured `ISubscriptionTrackingService` will be queried for all active subscribers and a copy of the message will be delivered to each subscribed endpoint.
 
 ## Handling Messages
 
-TODO
+Incoming messages are handled by adding handling rules to the `PlatibusConfiguration` before initializing the bus instance.  Handling rules consist of an `IMessageSpecification` that identifies the messages to which the rule pertains, and a message handler.
+
+### Message Specifications
+
+The `IMessageSpecification` inteface consists of a single method named `IsSatisfiedBy` that accepts a raw `Message` instance and returns `true` or `false` depending on whether the message satisfies the specification.  Two implementations are supplied in the `Platibus` package: the `MessageNamePatternSpecification`, which compares the value of the message name with a supplied regular expression; and `DelegateMessageSpecification`, which passes the message to the supplied delegate and returns the result.  The `PlatibusConfigurationExtensions` class features several extension methods that use these implementations behind the scenes:
+
+```
+public class MyConfigurationHook : IConfigurationHook
+{
+    void Configure(PlatibusConfiguration config)
+    {
+        // Adds a handling rule using a MessageNamePatternSpecification with the regex "^CreateCustomer$"
+        config.AddHandlingRule("^CreateCustomer$", new CreateCustomerHandler());
+        
+        // Adds a handling rule using a DelegateMessageSpecification with the specified lambda expression
+        config.AddHandlingRule(msg => msg.Headers.MessageName == "DeleteCustomer", new DeleteCustomerHandler());
+    }
+}
+```
+
+### Message Handlers
+
+Message handlers implement the `IMessageHandler` interface:
+
+```
+public class MyMessageHandler : IMessageHandler
+{
+    public async Task HandleMessage(object message, IMessageContext context, CancellationToken token)
+    {
+        // Gather metadata from the context
+        var senderPrincipal = context.SenderPrincipal;
+        var messageName = context.Headers.MessageName;
+        var sent = context.Headers.Sent;
+        
+        // Check to see if this is the type of message we expected
+        var myMessage = message as MyMessage;
+        if (myMessage != null)
+        {
+            Console.WriteLine("{0} sent a message with the text \"{1}\" on {2}", 
+                senderPrincipal.Name, myMessage.Text, sent);
+            
+            // Check to see if cancelation has been requested before proceeding with
+            // long-running operation.  This might also be done at the top of a loop.
+            token.ThrowIfCancellationRequested();
+            
+            // Long-running operation
+            
+            // Send a reply to the sender
+            await context.SendReply(new MyReply { Text = "Got it, thanks!" });
+        }
+        
+        // Acknowledge receipt of the message and remove it from the queue
+        context.Acknowledge();
+    }
+}
+```
+
+The `HandleMessage` method is called every time a new message arrives.  It receives the deserialized message and a new `IMessageContext` that contains metadata and callbacks for interacting with the bus instance in which the message was received.  In addition, a `CancellationToken` is provided to notify the handler when cancelation has been requested, typically in response to the application being shut down.  
+
+In an effort to sidestep the complexity and overhead of coordinating message transactions with handler transactions, Platibus does not use transactions to determine the success or failure of a handler execution.  Instead, it relies on explicit acknowledgement from within the handler to indicate that the message has been processed and may be removed from the handler queue.  This frees up the handler to initiate, commit, and roll back its own transactions without concern for its effects on any ambient bus transations.
+
+By default the handler queues are not configured to automatically acknowledge receipt of messages.  To avoid reprocessing the same message, the message must acknowledged by calling `IMessageContext.Acknowledge` before returning.  Otherwise the message will be retried up to the configured retry limit on the handler queue.  However, the handler transaction can be configured to acknowlwedge the message upon completion if desired:
+
+```
+public class MyMessageHandler : IMessageHandler
+{
+    public async Task HandleMessage(object message, IMessageContext context, CancellationToken token)
+    {
+        using (var scope = new TransactionScope())
+        {
+            Transaction.Current.TransactionCompleted += (sender, args) => 
+            {
+                if (args.Transaction.TransactionInformation.Status == TransactionStatus.Committed)
+                {
+                    context.Acknowledge();
+                }
+            };
+            
+            // Execute database calls
+            
+            scope.Complete();
+        }
+    }
+}
+```
