@@ -238,7 +238,22 @@ await bus.Send(message, endpointUri);
 
 ### Replying to a message
 
-TODO
+Replies can be sent to the sender of a message from within the `IMessageHandler` by invoking the `SendReply` method on the supplied `IMessageContext`:
+
+```
+public class MyHandler : IMessageHandler
+{
+    public Task HandleMessage(object message, IMessageContext context, CancellationToken token)
+    {
+        await context.SendReply(new ReplyMessage
+        {
+            Text = "Got your message!"
+        }, token);
+    }
+}
+```
+
+Like `IBus.Send`, the `IMessageContext.SendReply` method accepts `SendOptions` overrides.  However, it does not allow the caller to override the destination, as all replies are directed back to the original sender.
 
 ### Observing Replies
 
