@@ -36,6 +36,8 @@ The path can be anything you like, but it must agree with the `baseUri` specifie
 
 Due to the inability to specify extra configuration parameters in the `handler` element, only a single Platibus instance can be hosted.  Further, the Platibus configuration must use the default section name `platibus` in order to be recognized and honored by the HTTP handler.
 
+For more IIS hosting examples, see The `Platibus.SampleWebApp` project provided in the GitHub repository (https://github.com/sweetlandj/Platibus/tree/master/Source/Platibus.SampleWebApp).  This is a very basic application that demonstrates how to configure and use Platibus in an ASP.Net MVC 5 application (.NET 4.5.1 runtime required).
+
 ### Standalone HTTP Server
 
 A rudimentary HTTP server is for self-hosting Platibus instances.  The following code is used to initialize and start the HTTP server:
