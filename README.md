@@ -32,7 +32,7 @@ A Platibus instance can be hosted in IIS using the `Platibus.IIS.PlatibusHttpHan
   </system.webServer>
 ```
 
-The path can be anything you like, but it must agree with the `baseUri` specified in the `<platibus>` configuration section.  In the above example, the configured `baseUri` would be `http://<host>:<port>/platibus` where /host/ and /port/ are the hostname and port specified in the `http` protocol binding in the web site configuration.
+The path can be anything you like, but it must agree with the `baseUri` specified in the `<platibus>` configuration section.  In the above example, the configured `baseUri` would be `http://<host>:<port>/platibus` where _host_ and _port_ are the hostname and port specified in the `http` protocol binding in the web site configuration.
 
 Due to the inability to specify extra configuration parameters in the `handler` element, only a single Platibus instance can be hosted.  Further, the Platibus configuration must use the default section name `platibus` in order to be recognized and honored by the HTTP handler.
 
