@@ -22,11 +22,57 @@ Once an `Platibus.IBus` instance has been initialized, there are some final step
 
 ### IIS HTTP Handler
 
-TODO
+A Platibus instance can be hosted in IIS using the `Platibus.IIS.PlatibusHttpHandler` supplied in the `Platibus.IIS` package.  To register the handler, add the following to your web.config:
+
+```
+ <system.webServer>
+    <handlers>
+      <add name="platibus" verb="*" path="platibus" type="Platibus.IIS.PlatibusHttpHandler, Platibus.IIS" />
+    </handlers>
+  </system.webServer>
+```
+
+The path can be anything you like, but it must agree with the `baseUri` specified in the `<platibus>` configuration section.  In the above example, the configured `baseUri` would be `http://<host>:<port>/platibus` where /host/ and /port/ are the hostname and port specified in the `http` protocol binding in the web site configuration.
+
+Due to the inability to specify extra configuration parameters in the `handler` element, only a single Platibus instance can be hosted.  Further, the Platibus configuration must use the default section name `platibus` in order to be recognized and honored by the HTTP handler.
 
 ### Standalone HTTP Server
 
-TODO
+A rudimentary HTTP server is for self-hosting Platibus instances.  The following code is used to initialize and start the HTTP server:
+
+```
+// Start a new HTTP server based on the Platibus configuration
+// found in the application configuration under the default section
+// name "platibus"
+var httpServer = new HttpServer();
+httpServer.Start();
+```
+
+An alternate configuration section name can also be specified:
+
+```
+// Custom configuration section, for example nested in another
+// configuration section group
+var configSectionName = "mySectionGroup/myPlatibusConfig";
+var httpServer = new HttpServer(configSectionName);
+httpServer.Start();
+```
+
+The HTTP server stops listening when the `Dispose` method is invoked on the `HttpServer` instance.  The following is a basic console application that will start the HTTP server and wait for console input before shutting down:
+
+```
+public class MyHttpServer
+{
+    public static void Main(string[] args)
+    {
+        using (new HttpServer())
+        {
+            Console.WriteLine("Press any key to stop server...");
+            Console.ReadKey();
+        }
+    }
+}
+```
 
 ## Configuration
 
