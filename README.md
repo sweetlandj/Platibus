@@ -365,13 +365,7 @@ public class MyMessageHandler : IMessageHandler
     {
         using (var scope = new TransactionScope())
         {
-            Transaction.Current.TransactionCompleted += (sender, args) => 
-            {
-                if (args.Transaction.TransactionInformation.Status == TransactionStatus.Committed)
-                {
-                    context.Acknowledge();
-                }
-            };
+            context.EnlistInCurrentTransaction();
             
             // Execute database calls
             
