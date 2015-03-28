@@ -114,8 +114,14 @@ namespace Platibus
                     .ConfigureAwait(false);
             }
 
+            var outboundQueueListener = new OutboundQueueListener(_transportService, _messageJournalingService, uri =>
+            {
+                IEndpoint endpoint;
+                return TryGetEndpointByUri(uri, out endpoint) ? endpoint.Credentials : null;
+            });
+
             await _messageQueueingService
-                .CreateQueue(_outboundQueueName, new OutboundQueueListener(_transportService, _messageJournalingService))
+                .CreateQueue(_outboundQueueName, outboundQueueListener)
                 .ConfigureAwait(false);
 
             foreach (var subscription in _subscriptions)
@@ -144,6 +150,7 @@ namespace Platibus
             {
                 var endpointName = kvp.Key;
                 var endpoint = kvp.Value;
+                var credentials = endpoint.Credentials;
                 var perEndpointHeaders = new MessageHeaders(prototypicalMessage.Headers)
                 {
                     Destination = endpoint.Address
@@ -153,7 +160,7 @@ namespace Platibus
                     prototypicalMessage.Headers.MessageId, endpointName, endpoint.Address);
 
                 var addressedMessage = new Message(perEndpointHeaders, prototypicalMessage.Content);
-                transportTasks.Add(TransportMessage(addressedMessage, options, cancellationToken));
+                transportTasks.Add(TransportMessage(addressedMessage, credentials, options, cancellationToken));
             }
             await Task.WhenAll(transportTasks).ConfigureAwait(false);
             return _replyHub.CreateSentMessage(prototypicalMessage);
@@ -166,8 +173,9 @@ namespace Platibus
 
             if (content == null) throw new ArgumentNullException("content");
             if (endpointName == null) throw new ArgumentNullException("endpointName");
-            
-            var endpoint = _endpoints[endpointName];
+
+            var endpoint = GetEndpoint(endpointName);
+            var credentials = endpoint.Credentials;
             var headers = new MessageHeaders
             {
                 Destination = endpoint.Address
@@ -177,11 +185,11 @@ namespace Platibus
             Log.DebugFormat("Sending message ID {0} to endpoint \"{1}\" ({2})...", 
                 message.Headers.MessageId, endpointName, endpoint.Address);
 
-            await TransportMessage(message, options, cancellationToken).ConfigureAwait(false);
+            await TransportMessage(message, credentials, options, cancellationToken).ConfigureAwait(false);
             return _replyHub.CreateSentMessage(message);
         }
 
-        public async Task<ISentMessage> Send(object content, Uri endpointUri, SendOptions options = default(SendOptions),
+        public async Task<ISentMessage> Send(object content, Uri endpointUri, IEndpointCredentials credentials = null, SendOptions options = default(SendOptions),
             CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
@@ -193,12 +201,13 @@ namespace Platibus
             {
                 Destination = endpointUri
             };
+
             var message = BuildMessage(content, headers, options);
 
             Log.DebugFormat("Sending message ID {0} to \"{2}\"...",
                 message.Headers.MessageId, endpointUri);
             
-            await TransportMessage(message, options, cancellationToken).ConfigureAwait(false);
+            await TransportMessage(message, credentials, options, cancellationToken).ConfigureAwait(false);
             return _replyHub.CreateSentMessage(message);
         }
 
@@ -233,25 +242,47 @@ namespace Platibus
             // ReSharper disable once LoopCanBeConvertedToQuery
             foreach (var subscriber in subscribers)
             {
+                IEndpoint endpoint;
+                IEndpointCredentials credentials = null;
+                if (TryGetEndpointByUri(subscriber, out endpoint) && endpoint != null)
+                {
+                    credentials = endpoint.Credentials;
+                }
+
                 var perEndpointHeaders = new MessageHeaders(prototypicalMessage.Headers)
                 {
                     Destination = subscriber
                 };
 
                 var addressedMessage = new Message(perEndpointHeaders, prototypicalMessage.Content);
-                transportTasks.Add(TransportMessage(addressedMessage, publishSendOptions, cancellationToken));
+                transportTasks.Add(TransportMessage(addressedMessage, credentials, publishSendOptions, cancellationToken));
             }
 
             await Task.WhenAll(transportTasks).ConfigureAwait(false);
         }
 
-        
         private IEndpoint GetEndpoint(EndpointName endpointName)
         {
             IEndpoint endpoint;
             if (!_endpoints.TryGetValue(endpointName, out endpoint))
             {
                 throw new EndpointNotFoundException(endpointName);
+            }
+            return endpoint;
+        }
+
+        private bool TryGetEndpointByUri(Uri uri, out IEndpoint endpoint)
+        {
+            endpoint = _endpoints.Values.FirstOrDefault(e => Equals(uri, e.Address));
+            return endpoint != null;
+        }
+
+        private IEndpoint GetEndpointByUri(Uri uri)
+        {
+            IEndpoint endpoint;
+            if (!TryGetEndpointByUri(uri, out endpoint) || endpoint == null)
+            {
+                throw new EndpointNotFoundException(uri);
             }
             return endpoint;
         }
@@ -263,9 +294,12 @@ namespace Platibus
             while (!cancellationToken.IsCancellationRequested)
             {
                 Uri publisher;
+                IEndpointCredentials credentials;
                 try
                 {
-                    publisher = GetEndpoint(subscription.Publisher).Address;
+                    var publisherEndpoint = GetEndpoint(subscription.Publisher);
+                    publisher = publisherEndpoint.Address;
+                    credentials = publisherEndpoint.Credentials;
                 }
                 catch (EndpointNotFoundException enfe)
                 {
@@ -283,7 +317,7 @@ namespace Platibus
                     Log.DebugFormat("Sending subscription request for topic {0} to {1}...", subscription.Topic,
                         publisher);
 
-                    await _transportService.SendSubscriptionRequest(SubscriptionRequestType.Add, publisher,
+                    await _transportService.SendSubscriptionRequest(SubscriptionRequestType.Add, publisher, credentials,
                         subscription.Topic, _baseUri, subscription.TTL, cancellationToken).ConfigureAwait(false);
 
                     if (subscription.TTL <= TimeSpan.Zero)
@@ -392,32 +426,46 @@ namespace Platibus
             if (messageContext == null) throw new ArgumentNullException("messageContext");
             if (replyContent == null) throw new ArgumentNullException("replyContent");
 
+            IEndpoint replyToEndpoint;
+            IEndpointCredentials credentials = null;
+            var replyTo = messageContext.Headers.ReplyTo ?? messageContext.Headers.Origination;
+            if (TryGetEndpointByUri(replyTo, out replyToEndpoint))
+            {
+                credentials = replyToEndpoint.Credentials;
+            }
+
             var headers = new MessageHeaders
             {
                 Destination = messageContext.Headers.Origination,
                 RelatedTo = messageContext.Headers.MessageId
             };
-            var replyMessage = BuildMessage(replyContent,headers, options);
-            await TransportMessage(replyMessage, options, cancellationToken).ConfigureAwait(false);
+            var replyMessage = BuildMessage(replyContent, headers, options);
+            await TransportMessage(replyMessage, credentials, options, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task TransportMessage(Message message, SendOptions options = default(SendOptions),
+        private async Task TransportMessage(Message message, IEndpointCredentials credentials = null, SendOptions options = default(SendOptions),
             CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (options.UseDurableTransport)
             {
+                // For now we'll look up the credentials again by endpoint
+                // in the outbound queue listener.  We'll keep the sender
+                // principal as-is until we can revisit this and improve
+                // as needed.
                 var senderPrincipal = Thread.CurrentPrincipal;
+
                 Log.DebugFormat("Durable transport requested.  Enqueueing message ID {0} in outbound queue \"{1}\"...", message.Headers.MessageId, _outboundQueueName);
                 await _messageQueueingService
                     .EnqueueMessage(_outboundQueueName, message, senderPrincipal)
                     .ConfigureAwait(false);
+
                 Log.DebugFormat("Message ID {0} enqueued successfully", message.Headers.MessageId);
             }
             else
             {
                 Log.DebugFormat("Durable transport not requested.  Attempting to transport message ID {0} directly to destination \"{1}\"...", message.Headers.MessageId, message.Headers.Destination);
-                await _transportService.SendMessage(message, cancellationToken).ConfigureAwait(false);
+                await _transportService.SendMessage(message, credentials, cancellationToken).ConfigureAwait(false);
                 Log.DebugFormat("Message ID {0} transported successfully", message.Headers.MessageId);
 
                 if (_messageJournalingService != null)
@@ -525,12 +573,18 @@ namespace Platibus
         {
             private readonly ITransportService _transportService;
             private readonly IMessageJournalingService _messageJournalingService;
+            private readonly Func<Uri, IEndpointCredentials> _credentialsFactory;
 
-            public OutboundQueueListener(ITransportService transportService, IMessageJournalingService messageJournalingService)
+            public OutboundQueueListener(ITransportService transportService, IMessageJournalingService messageJournalingService, Func<Uri, IEndpointCredentials> credentialsFactory)
             {
-                if (transportService == null) throw new ArgumentNullException("transportService");
+                if (transportService == null) 
+                {
+                    throw new ArgumentNullException("transportService");
+                }
                 _transportService = transportService;
                 _messageJournalingService = messageJournalingService;
+                _credentialsFactory = credentialsFactory ?? 
+                    new Func<Uri, IEndpointCredentials>(uri => null);
             }
 
             public async Task MessageReceived(Message message, IQueuedMessageContext context,
@@ -543,7 +597,9 @@ namespace Platibus
                     return;
                 }
 
-                await _transportService.SendMessage(message, cancellationToken).ConfigureAwait(false);
+                var credentials = _credentialsFactory(message.Headers.Destination);
+
+                await _transportService.SendMessage(message, credentials, cancellationToken).ConfigureAwait(false);
                 await context.Acknowledge().ConfigureAwait(false);
 
                 if (_messageJournalingService != null)

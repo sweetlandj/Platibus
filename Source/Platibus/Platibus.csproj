@@ -56,6 +56,7 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Net" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -86,6 +87,9 @@
     <Compile Include="..\Copyright.cs">
       <Link>Properties\Copyright.cs</Link>
     </Compile>
+    <Compile Include="Config\ClientCredentialType.cs" />
+    <Compile Include="Http\HttpEndpointCredentialsVisitor.cs" />
+    <Compile Include="Security\BasicAuthCredentials.cs" />
     <Compile Include="Config\Bootstrapper.cs" />
     <Compile Include="Config\Extensibility\ISubscriptionTrackingServiceProvider.cs" />
     <Compile Include="Config\Extensibility\IMessageJournalingServiceProvider.cs" />
@@ -111,6 +115,7 @@
     <Compile Include="Config\IHandlingRule.cs" />
     <Compile Include="Config\HandlingRule.cs" />
     <Compile Include="Config\TopicAlreadyExistsException.cs" />
+    <Compile Include="Security\DefaultNetworkCredentials.cs" />
     <Compile Include="DelegateMessageHandler.cs" />
     <Compile Include="Endpoint.cs" />
     <Compile Include="Filesystem\FilesystemMessageJournalingService.cs" />
@@ -132,6 +137,8 @@
     <Compile Include="Http\IHttpResourceResponse.cs" />
     <Compile Include="Http\MessageController.cs" />
     <Compile Include="Http\TopicController.cs" />
+    <Compile Include="IEndpointCredentials.cs" />
+    <Compile Include="IEndpointCredentialsVisitor.cs" />
     <Compile Include="IMessageJournalingService.cs" />
     <Compile Include="InMemory\InMemoryQueuedMessageContext.cs" />
     <Compile Include="InMemory\InMemoryMessageQueueingService.cs" />

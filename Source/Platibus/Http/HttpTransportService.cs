@@ -39,7 +39,28 @@ namespace Platibus.Http
         public event MessageReceivedHandler MessageReceived;
         public event SubscriptionRequestReceivedHandler SubscriptionRequestReceived;
 
-        public async Task SendMessage(Message message, CancellationToken cancellationToken = default(CancellationToken))
+        private HttpClient GetClient(Uri uri, IEndpointCredentials credentials)
+        {
+            var clientHandler = new HttpClientHandler
+            {
+                AllowAutoRedirect = true,
+                UseProxy = false
+            };
+
+            if (credentials != null)
+            {
+                credentials.Accept(new HttpEndpointCredentialsVisitor(clientHandler));
+            }
+
+            var httpClient = new HttpClient(clientHandler)
+            {
+                BaseAddress = uri
+            };
+
+            return httpClient;
+        }
+
+        public async Task SendMessage(Message message, IEndpointCredentials credentials = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (message == null) throw new ArgumentNullException("message");
             if (message.Headers.Destination == null) throw new ArgumentException("Message has no destination");
@@ -48,17 +69,8 @@ namespace Platibus.Http
                 var httpContent = new StringContent(message.Content);
                 WriteHttpContentHeaders(message, httpContent);
                 var endpointBaseUri = message.Headers.Destination;
-                var httpClientHandler = new HttpClientHandler 
-                { 
-                    AllowAutoRedirect = true,
-                    UseProxy = false,
-                    UseDefaultCredentials = true
-                };
 
-                var httpClient = new HttpClient(httpClientHandler)
-                {
-                    BaseAddress = endpointBaseUri
-                };
+                var httpClient = GetClient(endpointBaseUri, credentials);
 
                 var messageId = message.Headers.MessageId;
                 var urlEncondedMessageId = HttpUtility.UrlEncode(messageId);
@@ -88,29 +100,19 @@ namespace Platibus.Http
             }
         }
 
-        public async Task SendSubscriptionRequest(SubscriptionRequestType requestType, Uri publisher, TopicName topic,
-            Uri subscriber, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task SendSubscriptionRequest(SubscriptionRequestType requestType, Uri publisherUri, IEndpointCredentials credentials, TopicName topic,
+            Uri subscriberUri, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (publisher == null) throw new ArgumentNullException("publisher");
+            if (publisherUri == null) throw new ArgumentNullException("publisherUri");
             if (topic == null) throw new ArgumentNullException("topic");
-            if (subscriber == null) throw new ArgumentNullException("subscriber");
+            if (subscriberUri == null) throw new ArgumentNullException("subscriber");
 
             try
             {
-                var clientHandler = new HttpClientHandler
-                {
-                    AllowAutoRedirect = true,
-                    UseProxy = false,
-                    UseDefaultCredentials = true
-                };
-
-                var httpClient = new HttpClient(clientHandler)
-                {
-                    BaseAddress = publisher
-                };
+                var httpClient = GetClient(publisherUri, credentials);
 
                 var urlSafeTopicName = HttpUtility.UrlEncode(topic);
-                var relativeUri = string.Format("topic/{0}/subscriber?uri={1}", urlSafeTopicName, subscriber);
+                var relativeUri = string.Format("topic/{0}/subscriber?uri={1}", urlSafeTopicName, subscriberUri);
                 if (ttl > TimeSpan.Zero)
                 {
                     relativeUri += "&ttl=" + ttl.TotalSeconds;
@@ -143,10 +145,10 @@ namespace Platibus.Http
             }
             catch (Exception ex)
             {
-                var errorMessage = string.Format("Error sending subscription request for topic {0} of publisher {1}", topic, publisher);
+                var errorMessage = string.Format("Error sending subscription request for topic {0} of publisher {1}", topic, publisherUri);
                 Log.ErrorFormat(errorMessage, ex);
 
-                HandleCommunicationException(ex, publisher);
+                HandleCommunicationException(ex, publisherUri);
 
                 throw new TransportException(errorMessage, ex);
             }

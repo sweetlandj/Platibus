@@ -23,6 +23,7 @@
 using Common.Logging;
 using Platibus.Config.Extensibility;
 using Platibus.Filesystem;
+using Platibus.Security;
 using Platibus.Serialization;
 using System;
 using System.Collections.Generic;
@@ -52,10 +53,23 @@ namespace Platibus.Config
             configuration.MessageNamingService = new DefaultMessageNamingService();
 
             IEnumerable<EndpointElement> endpoints = configSection.Endpoints;
-            foreach (var dest in endpoints)
+            foreach (var endpointConfig in endpoints)
             {
-                var endpoint = new Endpoint(dest.Address);
-                configuration.AddEndpoint(dest.Name, endpoint);
+                IEndpointCredentials credentials = null;
+                switch (endpointConfig.ClientCredentialType)
+                {
+                    case ClientCredentialType.Basic:
+                        var un = endpointConfig.Username;
+                        var pw = endpointConfig.Password;
+                        credentials = new BasicAuthCredentials(un, pw);
+                        break;
+                    case ClientCredentialType.Windows:
+                        credentials = new DefaultCredentials();
+                        break;
+                }
+
+                var endpoint = new Endpoint(endpointConfig.Address, credentials);
+                configuration.AddEndpoint(endpointConfig.Name, endpoint);
             }
 
             IEnumerable<TopicElement> topics = configSection.Topics;

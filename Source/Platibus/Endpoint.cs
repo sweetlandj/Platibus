@@ -29,11 +29,13 @@ namespace Platibus
     public class Endpoint : IEndpoint, IEquatable<Endpoint>
     {
         private readonly Uri _uri;
+        private readonly IEndpointCredentials _credentials;
 
-        public Endpoint(Uri uri)
+        public Endpoint(Uri uri, IEndpointCredentials credentials = null)
         {
             if (uri == null) throw new ArgumentNullException("uri");
             _uri = uri;
+            _credentials = credentials;
         }
 
         public Uri Address
@@ -41,9 +43,9 @@ namespace Platibus
             get { return _uri; }
         }
 
-        public bool Equals(Endpoint endpoint)
+        public IEndpointCredentials Credentials
         {
-            return endpoint != null && _uri.Equals(endpoint.Address);
+            get { return _credentials; }
         }
 
         public override string ToString()
@@ -54,6 +56,12 @@ namespace Platibus
         public override int GetHashCode()
         {
             return _uri.GetHashCode();
+        }
+
+        public virtual bool Equals(Endpoint endpoint)
+        {
+            if (ReferenceEquals(null, endpoint)) return false;
+            return _uri.Equals(endpoint._uri);
         }
 
         public override bool Equals(object obj)

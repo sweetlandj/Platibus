@@ -29,6 +29,9 @@ namespace Platibus.Config
     {
         private const string NamePropertyName = "name";
         private const string AddressPropertyName = "address";
+        private const string ClientCredentialTypePropertyName = "clientCredentialType";
+        private const string UsernamePropertyName = "username";
+        private const string PasswordPropertyName = "password";
 
         [ConfigurationProperty(NamePropertyName, IsRequired = true, IsKey = true)]
         public string Name
@@ -49,6 +52,27 @@ namespace Platibus.Config
                 return new Uri(baseValue.ToString());
             }
             set { base[AddressPropertyName] = value; }
+        }
+
+        [ConfigurationProperty(ClientCredentialTypePropertyName, IsRequired = false, DefaultValue = ClientCredentialType.None)]
+        public ClientCredentialType ClientCredentialType
+        {
+            get { return (ClientCredentialType)base[ClientCredentialTypePropertyName]; }
+            set { base[ClientCredentialTypePropertyName] = value; }
+        }
+
+        [ConfigurationProperty(UsernamePropertyName, IsRequired = false)]
+        public string Username
+        {
+            get { return (string)base[UsernamePropertyName]; }
+            set { base[UsernamePropertyName] = value; }
+        }
+
+        [ConfigurationProperty(PasswordPropertyName, IsRequired = false)]
+        public string Password
+        {
+            get { return (string)base[PasswordPropertyName]; }
+            set { base[PasswordPropertyName] = value; }
         }
     }
 }

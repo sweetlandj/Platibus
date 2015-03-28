@@ -31,9 +31,10 @@ namespace Platibus
     {
         event MessageReceivedHandler MessageReceived;
         event SubscriptionRequestReceivedHandler SubscriptionRequestReceived;
-        Task SendMessage(Message message, CancellationToken cancellationToken = default(CancellationToken));
 
-        Task SendSubscriptionRequest(SubscriptionRequestType requestType, Uri publisher, TopicName topic, Uri subscriber,
+        Task SendMessage(Message message, IEndpointCredentials credentials = null, CancellationToken cancellationToken = default(CancellationToken));
+
+        Task SendSubscriptionRequest(SubscriptionRequestType requestType, Uri publisher, IEndpointCredentials credentials, TopicName topic, Uri subscriber,
             TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken));
 
         Task AcceptMessage(Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken));

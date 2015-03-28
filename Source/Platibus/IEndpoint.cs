@@ -20,12 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Platibus.Config;
 using System;
+using System.Security;
 
 namespace Platibus
 {
     public interface IEndpoint
     {
         Uri Address { get; }
+        IEndpointCredentials Credentials { get; }
     }
 }

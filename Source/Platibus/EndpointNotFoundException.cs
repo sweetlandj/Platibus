@@ -30,16 +30,24 @@ namespace Platibus
     public class EndpointNotFoundException : ApplicationException
     {
         private readonly EndpointName _endpoint;
+        private readonly Uri _uri;
 
-        public EndpointNotFoundException(EndpointName endpoint)
+        public EndpointNotFoundException(EndpointName endpoint) : base (endpoint)
         {
             _endpoint = endpoint;
+        }
+
+        public EndpointNotFoundException(Uri uri) : base (uri == null ? null : uri.ToString())
+        {
+            _uri = uri;
         }
 
         public EndpointNotFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
             _endpoint = info.GetString("endpoint");
+            var uriStr = info.GetString("uri");
+            _uri = string.IsNullOrWhiteSpace(uriStr) ? null : new Uri(uriStr);
         }
 
         public EndpointName Endpoint
@@ -47,11 +55,17 @@ namespace Platibus
             get { return _endpoint; }
         }
 
+        public Uri Uri
+        {
+            get { return _uri; }
+        }
+
         [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
             info.AddValue("endpoint", (string) _endpoint);
+            info.AddValue("uri", _uri == null ? null : _uri.ToString());
         }
     }
 }

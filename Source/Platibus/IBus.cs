@@ -54,9 +54,11 @@ namespace Platibus
         /// </summary>
         /// <param name="message">The message to send.</param>
         /// <param name="uri">The URI of the endpoint to which the message should be sent.</param>
+        /// <param name="credentrials">Optional credentials for authenticating with the endpoint
+        /// at the specified URI.</param>
         /// <param name="options">Optional settings that influence how the message is sent.</param>
         /// <param name="cancellationToken">An optional cancellation token</param>
-        Task<ISentMessage> Send(object message, Uri uri, SendOptions options = default(SendOptions),
+        Task<ISentMessage> Send(object message, Uri uri, IEndpointCredentials credentials = null, SendOptions options = default(SendOptions),
             CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>

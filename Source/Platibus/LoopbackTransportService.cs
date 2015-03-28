@@ -37,12 +37,12 @@ namespace Platibus
         public event MessageReceivedHandler MessageReceived;
         public event SubscriptionRequestReceivedHandler SubscriptionRequestReceived;
 
-        public async Task SendMessage(Message message, CancellationToken cancellationToken = new CancellationToken())
+        public async Task SendMessage(Message message, IEndpointCredentials credentials = null, CancellationToken cancellationToken = new CancellationToken())
         {
             await AcceptMessage(message, Thread.CurrentPrincipal, cancellationToken);
         }
 
-        public Task SendSubscriptionRequest(SubscriptionRequestType requestType, Uri publisher, TopicName topic, Uri subscriber,
+        public Task SendSubscriptionRequest(SubscriptionRequestType requestType, Uri publisher, IEndpointCredentials credentials, TopicName topic, Uri subscriber,
             TimeSpan ttl, CancellationToken cancellationToken = new CancellationToken())
         {
             return AcceptSubscriptionRequest(requestType, topic, subscriber, ttl, 
