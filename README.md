@@ -356,7 +356,7 @@ The `HandleMessage` method is called every time a new message arrives.  It recei
 
 In an effort to sidestep the complexity and overhead of coordinating message transactions with handler transactions, Platibus does not use transactions to determine the success or failure of a handler execution.  Instead, it relies on explicit acknowledgement from within the handler to indicate that the message has been processed and may be removed from the handler queue.  This frees up the handler to initiate, commit, and roll back its own transactions without concern for its effects on any ambient bus transations.
 
-By default the handler queues are not configured to automatically acknowledge receipt of messages.  To avoid reprocessing the same message, the message must acknowledged by calling `IMessageContext.Acknowledge` before returning.  Otherwise the message will be retried up to the configured retry limit on the handler queue.  However, the handler transaction can be configured to acknowlwedge the message upon completion if desired:
+By default the handler queues are not configured to automatically acknowledge receipt of messages.  To avoid reprocessing the same message, the message must acknowledged by calling `IMessageContext.Acknowledge` before returning.  Otherwise the message will be retried up to the configured retry limit on the handler queue.  However, the handler transaction can be configured to acknowledge the message upon completion if desired:
 
 ```
 public class MyMessageHandler : IMessageHandler
