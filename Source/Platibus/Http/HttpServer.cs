@@ -38,28 +38,26 @@ namespace Platibus.Http
         private readonly HttpListener _httpListener;
         private readonly IHttpResourceRouter _router;
 
-        public HttpServer(string sectionName = null)
+        public HttpServer(string sectionName = null, AuthenticationSchemes authenticationSchemes = AuthenticationSchemes.Anonymous)
         {
             var bus = Bootstrapper.InitBus(sectionName).ConfigureAwait(false).GetAwaiter().GetResult();
             Shutdown += (source, e) => bus.Dispose();
 
             _router = InitDefaultRouter(bus);
             _baseUri = bus.BaseUri;
-            _httpListener = InitHttpListener();
-            _httpListener.Prefixes.Add(_baseUri.ToString());
+            _httpListener = InitHttpListener(_baseUri, authenticationSchemes);
         }
 
-        public HttpServer(Bus bus)
+        public HttpServer(Bus bus, AuthenticationSchemes authenticationSchemes = AuthenticationSchemes.Anonymous)
         {
             if (bus == null) throw new ArgumentNullException("bus");
 
             _router = InitDefaultRouter(bus);
             _baseUri = bus.BaseUri;
-            _httpListener = InitHttpListener();
-            _httpListener.Prefixes.Add(_baseUri.ToString());
+            _httpListener = InitHttpListener(_baseUri, authenticationSchemes);
         }
 
-        public HttpServer(Uri baseUri, IHttpResourceRouter router)
+        public HttpServer(Uri baseUri, IHttpResourceRouter router, AuthenticationSchemes authenticationSchemes = AuthenticationSchemes.Anonymous)
         {
             if (router == null) throw new ArgumentNullException("router");
             if (baseUri == null)
@@ -69,8 +67,7 @@ namespace Platibus.Http
 
             _router = router;
             _baseUri = baseUri;
-            _httpListener = InitHttpListener();
-            _httpListener.Prefixes.Add(baseUri.ToString());
+            _httpListener = InitHttpListener(_baseUri, authenticationSchemes);
         }
 
         public Uri BaseUri
@@ -89,9 +86,13 @@ namespace Platibus.Http
             };
         }
 
-        private static HttpListener InitHttpListener()
+        private static HttpListener InitHttpListener(Uri baseUri, AuthenticationSchemes authenticationSchemes)
         {
-            var httpListener = new HttpListener();
+            var httpListener = new HttpListener
+            {
+                AuthenticationSchemes = authenticationSchemes
+            };
+            httpListener.Prefixes.Add(baseUri.ToString());
             return httpListener;
         }
 
