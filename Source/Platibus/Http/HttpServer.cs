@@ -92,7 +92,12 @@ namespace Platibus.Http
             {
                 AuthenticationSchemes = authenticationSchemes
             };
-            httpListener.Prefixes.Add(baseUri.ToString());
+            var prefix = baseUri.ToString();
+            if (!prefix.EndsWith("/"))
+            {
+                prefix += "/";
+            }
+            httpListener.Prefixes.Add(prefix);
             return httpListener;
         }
 
@@ -185,6 +190,8 @@ namespace Platibus.Http
 
         protected virtual void Dispose(bool disposing)
         {
+            if (_disposed) return;
+
             _cancellationTokenSource.Cancel();
 
             Log.Info("Stopping HTTP server...");

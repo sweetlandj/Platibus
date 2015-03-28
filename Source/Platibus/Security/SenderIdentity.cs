@@ -53,7 +53,8 @@ namespace Platibus.Security
         {
             if (identity == null) throw new ArgumentNullException("identity");
             _name = identity.Name;
-
+            _authenticationType = identity.AuthenticationType;
+            _isAuthenticated = identity.IsAuthenticated;
         }
 
         protected SenderIdentity(SerializationInfo info, StreamingContext context)

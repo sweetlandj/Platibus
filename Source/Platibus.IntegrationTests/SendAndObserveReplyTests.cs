@@ -70,5 +70,43 @@ namespace Platibus.IntegrationTests
                 Assert.That(reply, Is.InstanceOf<TestReply>());
             });
         }
+
+        [Test]
+        public async Task When_Sending_And_Replying_With_Basic_Auth_Replies_Should_Be_Observed()
+        {
+            await With.HttpHostedBusInstancesBasicAuth(async (platibus0, platibus1) =>
+            {
+                var replyReceivedEvent = new ManualResetEvent(false);
+                var repliesCompletedEvent = new ManualResetEvent(false);
+                var replies = new ConcurrentQueue<object>();
+                var message = new TestMessage
+                {
+                    GuidData = Guid.NewGuid(),
+                    IntData = RNG.Next(0, int.MaxValue),
+                    StringData = "Hello, world!",
+                    DateData = DateTime.UtcNow
+                };
+
+                var sentMessage = await platibus0.Send(message);
+                var subscription = sentMessage
+                    .ObserveReplies()
+                    .Subscribe(r =>
+                    {
+                        replies.Enqueue(r);
+                        replyReceivedEvent.Set();
+                    }, () => repliesCompletedEvent.Set());
+
+                var replyReceived = await replyReceivedEvent.WaitOneAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+                var repliesCompleted = await repliesCompletedEvent.WaitOneAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+                subscription.Dispose();
+
+                Assert.That(replyReceived, Is.True);
+                Assert.That(repliesCompleted, Is.True);
+                Assert.That(replies.Count, Is.EqualTo(1));
+
+                var reply = replies.First();
+                Assert.That(reply, Is.InstanceOf<TestReply>());
+            });
+        }
     }
 }
