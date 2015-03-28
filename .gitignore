@@ -156,6 +156,5 @@ $RECYCLE.BIN/
 .DS_Store
 /Source/packages
 *.DotSettings
-Source/Pluribus.SampleWebApp/pluribus/
-Source/Pluribus.SampleWebApp/logs/
+Source/Platibus.SampleWebApp/logs/
 Source/Platibus.SampleWebApp/platibus/
