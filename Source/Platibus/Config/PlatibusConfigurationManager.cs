@@ -56,7 +56,7 @@ namespace Platibus.Config
             foreach (var endpointConfig in endpoints)
             {
                 IEndpointCredentials credentials = null;
-                switch (endpointConfig.ClientCredentialType)
+                switch (endpointConfig.CredentialType)
                 {
                     case ClientCredentialType.Basic:
                         var un = endpointConfig.Username;
