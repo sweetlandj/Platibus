@@ -30,5 +30,6 @@ namespace Platibus
         public const string Serialization = "Platibus.Serialization";
         public const string Http = "Platibus.Http";
         public const string IIS = "Platibus.IIS";
+        public const string SQL = "Platibus.SQL";
     }
 }

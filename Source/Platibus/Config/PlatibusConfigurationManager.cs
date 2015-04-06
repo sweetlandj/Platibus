@@ -126,7 +126,7 @@ namespace Platibus.Config
             }
             else
             {
-                provider = GetProvider<IMessageQueueingServiceProvider>(providerName);
+                provider = ProviderHelper.GetProvider<IMessageQueueingServiceProvider>(providerName);
             }
 
             Log.Debug("Initializing message queueing service...");
@@ -142,7 +142,7 @@ namespace Platibus.Config
                 return null;
             }
             
-            var provider = GetProvider<IMessageJournalingServiceProvider>(providerName);
+            var provider = ProviderHelper.GetProvider<IMessageJournalingServiceProvider>(providerName);
             
             Log.Debug("Initializing message journaling service...");
             return provider.CreateMessageJournalingService(config);
@@ -159,32 +159,11 @@ namespace Platibus.Config
             }
             else
             {
-                provider = GetProvider<ISubscriptionTrackingServiceProvider>(providerName);
+                provider = ProviderHelper.GetProvider<ISubscriptionTrackingServiceProvider>(providerName);
             }
 
             Log.Debug("Initializing subscription tracking service...");
             return provider.CreateSubscriptionTrackingService(config);
-        }
-
-        public static TProvider GetProvider<TProvider>(string providerName)
-        {
-            var providerType = Type.GetType(providerName);
-            if (providerType == null)
-            {
-                Log.DebugFormat("Looking for provider \"{0}\"...", providerName);
-                var providers = ReflectionHelper
-                    .FindConcreteSubtypes<TProvider>()
-                    .With<ProviderAttribute>(a => string.Equals(providerName, a.Name, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-
-                if (!providers.Any()) throw new ProviderNotFoundException(providerName);
-                if (providers.Count > 1) throw new MultipleProvidersFoundException(providerName, providers);
-
-                providerType = providers.First();
-            }
-
-            Log.DebugFormat("Found provider type \"{0}\"", providerType.FullName);
-            return (TProvider)Activator.CreateInstance(providerType);
         }
 
         public static string GetRootedPath(string path)

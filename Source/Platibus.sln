@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus.IntegrationTests",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus.SampleWebApp", "Platibus.SampleWebApp\Platibus.SampleWebApp.csproj", "{87D62B09-0F75-4AED-B6AE-C89DDEEBD1CC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus.SQLite", "Platibus.SQLite\Platibus.SQLite.csproj", "{A23BE958-6524-4C9C-8957-1C3DEBB0780C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{87D62B09-0F75-4AED-B6AE-C89DDEEBD1CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{87D62B09-0F75-4AED-B6AE-C89DDEEBD1CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{87D62B09-0F75-4AED-B6AE-C89DDEEBD1CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A23BE958-6524-4C9C-8957-1C3DEBB0780C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A23BE958-6524-4C9C-8957-1C3DEBB0780C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A23BE958-6524-4C9C-8957-1C3DEBB0780C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A23BE958-6524-4C9C-8957-1C3DEBB0780C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

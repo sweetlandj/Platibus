@@ -30,7 +30,7 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Platibus.Filesystem
 {
-    internal class FilesystemQueue : IDisposable
+    internal class FilesystemMessageQueue : IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Filesystem);
 
@@ -46,7 +46,7 @@ namespace Platibus.Filesystem
         private readonly BufferBlock<MessageFile> _queuedMessages;
         private readonly TimeSpan _retryDelay;
 
-        public FilesystemQueue(DirectoryInfo directory, IQueueListener listener,
+        public FilesystemMessageQueue(DirectoryInfo directory, IQueueListener listener,
             QueueOptions options = default(QueueOptions))
         {
             if (directory == null) throw new ArgumentNullException("directory");
@@ -211,7 +211,7 @@ namespace Platibus.Filesystem
             if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }
 
-        ~FilesystemQueue()
+        ~FilesystemMessageQueue()
         {
             Dispose(false);
         }

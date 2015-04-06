@@ -34,7 +34,7 @@ namespace Platibus.Filesystem
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Filesystem);
 
         private readonly DirectoryInfo _baseDirectory;
-        private readonly ConcurrentDictionary<QueueName, FilesystemQueue> _queues = new ConcurrentDictionary<QueueName, FilesystemQueue>();
+        private readonly ConcurrentDictionary<QueueName, FilesystemMessageQueue> _queues = new ConcurrentDictionary<QueueName, FilesystemMessageQueue>();
 
         public FilesystemMessageQueueingService(DirectoryInfo baseDirectory = null)
         {
@@ -50,7 +50,7 @@ namespace Platibus.Filesystem
             QueueOptions options = default(QueueOptions))
         {
             var queueDirectory = new DirectoryInfo(Path.Combine(_baseDirectory.FullName, queueName));
-            var queue = new FilesystemQueue(queueDirectory, listener, options);
+            var queue = new FilesystemMessageQueue(queueDirectory, listener, options);
             if (!_queues.TryAdd(queueName, queue))
             {
                 throw new QueueAlreadyExistsException(queueName);
@@ -63,7 +63,7 @@ namespace Platibus.Filesystem
 
         public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal)
         {
-            FilesystemQueue queue;
+            FilesystemMessageQueue queue;
             if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
 
             Log.DebugFormat("Enqueueing message ID {0} in filesystem queue \"{1}\"...", message.Headers.MessageId, queueName);
