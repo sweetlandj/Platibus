@@ -10,18 +10,11 @@ namespace Platibus.SQL
     {
         string CreateObjectsCommand { get; }
 
-        string InsertQueueCommand { get; }
-        string UpdateQueueCommand { get; }
-
         string InsertQueuedMessageCommand { get; }
         string SelectQueuedMessagesCommand { get; }
         string UpdateQueuedMessageCommand { get; }
 
         string QueueNameParameterName { get; }
-        string MaxConcurrencyParameterName { get; }
-        string MaxAttemptsParameterName { get; }
-        string RetryDelayParameterName { get; }
-
         string CurrentDateParameterName { get; }
         string MessageIdParameterName { get; }
         string MessageNameParameterName { get; }
@@ -30,7 +23,7 @@ namespace Platibus.SQL
         string ReplyToParameterName { get; }
         string ExpiresParameterName { get; }
         string ContentTypeParameterName { get; }
-        string MessageHeadersParameterName { get; }
+        string HeadersParameterName { get; }
         string SenderPrincipalParameterName { get; }
         string MessageContentParameterName { get; }
         string AttemptsParameterName { get; }

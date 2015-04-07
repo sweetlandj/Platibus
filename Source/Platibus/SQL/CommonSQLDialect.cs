@@ -10,16 +10,6 @@ namespace Platibus.SQL
     {
         public abstract string CreateObjectsCommand { get; }
 
-        public virtual string InsertQueueCommand
-        {
-            get { return CommonSQLCommands.InsertQueueCommand; }
-        }
-
-        public virtual string UpdateQueueCommand
-        {
-            get { return CommonSQLCommands.UpdateQueueCommand; }
-        }
-
         public virtual string InsertQueuedMessageCommand
         {
             get { return CommonSQLCommands.InsertQueuedMessageCommand; }
@@ -38,21 +28,6 @@ namespace Platibus.SQL
         public virtual string QueueNameParameterName
         {
             get { return "@QueueName"; }
-        }
-
-        public virtual string MaxConcurrencyParameterName
-        {
-            get { return "@MaxConcurrency"; }
-        }
-
-        public virtual string MaxAttemptsParameterName
-        {
-            get { return "@MaxAttempts"; }
-        }
-
-        public virtual string RetryDelayParameterName
-        {
-            get { return "@RetryDelay"; }
         }
 
         public virtual string CurrentDateParameterName
@@ -95,9 +70,9 @@ namespace Platibus.SQL
             get { return "@ContentType"; }
         }
 
-        public virtual string MessageHeadersParameterName
+        public virtual string HeadersParameterName
         {
-            get { return "@MessageHeaders"; }
+            get { return "@Headers"; }
         }
 
         public virtual string SenderPrincipalParameterName

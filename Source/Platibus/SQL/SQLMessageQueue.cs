@@ -187,7 +187,7 @@ namespace Platibus.SQL
                     command.SetParameter(_dialect.ExpiresParameterName, headers.Expires);
                     command.SetParameter(_dialect.ContentTypeParameterName, headers.ContentType);
                     command.SetParameter(_dialect.SenderPrincipalParameterName, SerializePrincipal(senderPrincipal));
-                    command.SetParameter(_dialect.MessageHeadersParameterName, SerializeHeaders(headers)); 
+                    command.SetParameter(_dialect.HeadersParameterName, SerializeHeaders(headers)); 
                     command.SetParameter(_dialect.MessageContentParameterName, message.Content);
 
                     command.ExecuteNonQuery();

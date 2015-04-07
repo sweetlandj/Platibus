@@ -61,17 +61,6 @@ namespace Platibus.SQL {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to INSERT INTO [PB_MessageQueues] ([QueueName], [MaxConcurrency], [MaxAttempts], [RetryDelay])
-        ///SELECT @QueueName, @MaxConcurrency, @MaxAttempts, @RetryDelay
-        ///WHERE NOT EXISTS (SELECT [QueueName] FROM [PB_MessageQueues] WHERE [QueueName]=@QueueName).
-        /// </summary>
-        internal static string InsertQueueCommand {
-            get {
-                return ResourceManager.GetString("InsertQueueCommand", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to INSERT INTO [PB_QueuedMessages] ([MessageId], [QueueName], [MessageName], [Origination], [Destination], [ReplyTo], [Expires], [ContentType], [SenderPrincipal], [Headers], [MessageContent])
         ///SELECT @MessageId, @QueueName, @MessageName, @Origination, @Destination, @ReplyTo, @Expires, @ContentType, @SenderPrincipal, @Headers, @MessageContent
         ///WHERE NOT EXISTS (
@@ -97,19 +86,6 @@ namespace Platibus.SQL {
         internal static string SelectQueuedMessagesCommand {
             get {
                 return ResourceManager.GetString("SelectQueuedMessagesCommand", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to UPDATE [PB_MessageQueues]
-        ///SET [MaxConcurrency]=@MaxConcurrency
-        ///, [MaxAttempts]=@MaxAttempts
-        ///, [RetryDelay]=@RetryDelay
-        ///WHERE [QueueName]=QueueName.
-        /// </summary>
-        internal static string UpdateQueueCommand {
-            get {
-                return ResourceManager.GetString("UpdateQueueCommand", resourceCulture);
             }
         }
         

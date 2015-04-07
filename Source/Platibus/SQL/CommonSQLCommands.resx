@@ -117,11 +117,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="InsertQueueCommand" xml:space="preserve">
-    <value>INSERT INTO [PB_MessageQueues] ([QueueName], [MaxConcurrency], [MaxAttempts], [RetryDelay])
-SELECT @QueueName, @MaxConcurrency, @MaxAttempts, @RetryDelay
-WHERE NOT EXISTS (SELECT [QueueName] FROM [PB_MessageQueues] WHERE [QueueName]=@QueueName)</value>
-  </data>
   <data name="InsertQueuedMessageCommand" xml:space="preserve">
     <value>INSERT INTO [PB_QueuedMessages] ([MessageId], [QueueName], [MessageName], [Origination], [Destination], [ReplyTo], [Expires], [ContentType], [SenderPrincipal], [Headers], [MessageContent])
 SELECT @MessageId, @QueueName, @MessageName, @Origination, @Destination, @ReplyTo, @Expires, @ContentType, @SenderPrincipal, @Headers, @MessageContent
@@ -138,13 +133,6 @@ WHERE [QueueName]=@QueueName
 AND [Acknowledged] IS NULL
 AND [Abandoned] IS NULL
 AND ([Expires] IS NULL OR [Expires] &gt; @CurrentDate)</value>
-  </data>
-  <data name="UpdateQueueCommand" xml:space="preserve">
-    <value>UPDATE [PB_MessageQueues]
-SET [MaxConcurrency]=@MaxConcurrency
-, [MaxAttempts]=@MaxAttempts
-, [RetryDelay]=@RetryDelay
-WHERE [QueueName]=QueueName</value>
   </data>
   <data name="UpdateQueuedMessageCommand" xml:space="preserve">
     <value>UPDATE [PB_QueuedMessages]

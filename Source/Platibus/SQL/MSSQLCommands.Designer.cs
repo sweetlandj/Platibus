@@ -61,26 +61,22 @@ namespace Platibus.SQL {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to CreateObjects	&quot;IF OBJECT_ID(&apos;[PB_MessageQueues]&apos;) IS NULL
-        ///BEGIN
-        ///	CREATE TABLE [PB_MessageQueues]
-        ///	(
-        ///		[QueueName] VARCHAR(255) NOT NULL,
-        ///		[MaxConcurrency] INT NOT NULL DEFAULT 0,
-        ///		[MaxAttempts] INT NOT NULL DEFAULT 1,
-        ///		[RetryDelay] INT NOT NULL DEFAULT 0,
-        ///
-        ///		CONSTRAINT [PB_MessageQueues_PK]
-        ///			PRIMARY KEY NONCLUSTERED ([QueueName])
-        ///	)
-        ///END
-        ///
-        ///IF OBJECT_ID(&apos;[PB_Messages]&apos;) IS NULL
+        ///   Looks up a localized string similar to IF OBJECT_ID(&apos;[PB_QueuedMessages]&apos;) IS NULL
         ///BEGIN
         ///	CREATE TABLE [PB_QueuedMessages]
         ///	(
         ///		[MessageId] UNIQUEIDENTIFIER NOT NULL,
-        ///		[QueueName] VARCHAR(255) [rest of string was truncated]&quot;;.
+        ///		[QueueName] VARCHAR(255) NOT NULL,
+        ///		[MessageName] VARCHAR(500) NULL,
+        ///		[Origination] VARCHAR(500) NULL,
+        ///		[Destination] VARCHAR(500) NULL,                            
+        ///		[ReplyTo] VARCHAR(500) NULL,
+        ///		[Expires] DATETIME NULL,
+        ///		[ContentType] VARCHAR(100) NULL,
+        ///		[SenderPrincipal] VARCHAR(MAX),
+        ///		[Headers] VARCHAR(MAX),
+        ///		[MessageContent] TEXT,
+        ///		[Attempts] INT NOT  [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string CreateObjects {
             get {

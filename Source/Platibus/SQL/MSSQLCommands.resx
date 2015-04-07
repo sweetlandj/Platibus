@@ -118,21 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="CreateObjects" xml:space="preserve">
-    <value>CreateObjects	"IF OBJECT_ID('[PB_MessageQueues]') IS NULL
-BEGIN
-	CREATE TABLE [PB_MessageQueues]
-	(
-		[QueueName] VARCHAR(255) NOT NULL,
-		[MaxConcurrency] INT NOT NULL DEFAULT 0,
-		[MaxAttempts] INT NOT NULL DEFAULT 1,
-		[RetryDelay] INT NOT NULL DEFAULT 0,
-
-		CONSTRAINT [PB_MessageQueues_PK]
-			PRIMARY KEY NONCLUSTERED ([QueueName])
-	)
-END
-
-IF OBJECT_ID('[PB_Messages]') IS NULL
+    <value>IF OBJECT_ID('[PB_QueuedMessages]') IS NULL
 BEGIN
 	CREATE TABLE [PB_QueuedMessages]
 	(
@@ -150,16 +136,13 @@ BEGIN
 		[Attempts] INT NOT NULL DEFAULT 0,
 		[Acknowledged] DATETIME NULL,
 		[Abandoned] DATETIME NULL,
-													
+					
 		CONSTRAINT [PB_QueuedMessages_PK] 
 			PRIMARY KEY NONCLUSTERED ([MessageId], [QueueName])
 	)
-END
 
-IF OBJECT_ID('[PB_QueuedMessages_IX_QueueName_Expires]') IS NULL
-BEGIN
 	CREATE CLUSTERED INDEX [PB_QueuedMessages_IX_QueueName] 
 		ON [PB_QueuedMessages]([QueueName], [Expires])
-END"</value>
+END</value>
   </data>
 </root>
