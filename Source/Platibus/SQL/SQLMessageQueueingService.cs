@@ -12,26 +12,20 @@ using System.Threading.Tasks;
 
 namespace Platibus.SQL
 {
-    public class SQLMessageQueueingService : IMessageQueueingService
+    public class SQLMessageQueueingService : IMessageQueueingService, IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.SQL);
 
-        private readonly ConnectionStringSettings _connectionStringSettings;
+        private readonly IDbConnectionProvider _connectionProvider;
         private readonly ISQLDialect _dialect;
 
         protected readonly ConcurrentDictionary<QueueName, SQLMessageQueue> Queues = new ConcurrentDictionary<QueueName, SQLMessageQueue>();
+        
+        private bool _disposed;
 
-        public ConnectionStringSettings ConnectionStringSettings
+        public IDbConnectionProvider ConnectionProvider
         {
-            get
-            {
-                return new ConnectionStringSettings
-                {
-                    Name = _connectionStringSettings.Name,
-                    ConnectionString = _connectionStringSettings.ConnectionString,
-                    ProviderName = _connectionStringSettings.ProviderName
-                };
-            }
+            get { return _connectionProvider; }
         }
 
         public ISQLDialect Dialect
@@ -42,24 +36,39 @@ namespace Platibus.SQL
         public SQLMessageQueueingService(ConnectionStringSettings connectionStringSettings, ISQLDialect dialect = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-            _connectionStringSettings = connectionStringSettings;
-            _dialect = dialect ?? _connectionStringSettings.GetSQLDialect();
+            _connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
+            _dialect = dialect ?? connectionStringSettings.GetSQLDialect();
+        }
+
+        public SQLMessageQueueingService(IDbConnectionProvider connectionProvider, ISQLDialect dialect)
+        {
+            if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
+            if (dialect == null) throw new ArgumentNullException("dialect");
+            _connectionProvider = connectionProvider;
+            _dialect = dialect;
         }
         
         public virtual void Init()
         {
-            using (var connection = OpenConnection())
-            using (var command = connection.CreateCommand())
+            var connection = _connectionProvider.GetConnection();
+            try
             {
-                command.CommandType = CommandType.Text;
-                command.CommandText = _dialect.CreateObjectsCommand;
-                command.ExecuteNonQuery();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandType = CommandType.Text;
+                    command.CommandText = _dialect.CreateObjectsCommand;
+                    command.ExecuteNonQuery();
+                }
+            }
+            finally
+            {
+                _connectionProvider.ReleaseConnection(connection);
             }
         }
 
         public virtual async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
         {
-            var queue = new SQLMessageQueue(OpenConnection, _dialect, queueName, listener, options);
+            var queue = new SQLMessageQueue(_connectionProvider, _dialect, queueName, listener, options);
             if (!Queues.TryAdd(queueName, queue))
             {
                 throw new QueueAlreadyExistsException(queueName);
@@ -80,9 +89,28 @@ namespace Platibus.SQL
             Log.DebugFormat("Message ID {0} enqueued successfully in SQL queue \"{1}\"", message.Headers.MessageId, queueName);
         }
 
-        protected virtual DbConnection OpenConnection()
+        ~SQLMessageQueueingService()
         {
-            return _connectionStringSettings.OpenConnection();
+            Dispose(false);
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            Dispose(true);
+            GC.SuppressFinalize(this);
+            _disposed = true;
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+            _connectionProvider.Dispose();
+        }
+
+        protected void CheckDisposed()
+        {
+            if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }
     }
 }

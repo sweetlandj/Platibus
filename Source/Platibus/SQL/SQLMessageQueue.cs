@@ -21,7 +21,7 @@ namespace Platibus.SQL
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.SQL);
 
-        private readonly Func<DbConnection> _connectionFactory;
+        private readonly IDbConnectionProvider _connectionProvider;
         private readonly ISQLDialect _dialect;
         private readonly QueueName _queueName;
         private readonly IQueueListener _listener;
@@ -36,14 +36,14 @@ namespace Platibus.SQL
         private bool _disposed;
         private int _initialized;
 
-        public SQLMessageQueue(Func<DbConnection> connectionFactory, ISQLDialect dialect, QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
+        public SQLMessageQueue(IDbConnectionProvider connectionProvider, ISQLDialect dialect, QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
         {
-            if (connectionFactory == null) throw new ArgumentNullException("connectionStringSettings");
+            if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
             if (dialect == null) throw new ArgumentNullException("dialect");
             if (queueName == null) throw new ArgumentNullException("queueName");
             if (listener == null) throw new ArgumentNullException("listener");
             
-            _connectionFactory = connectionFactory;
+            _connectionProvider = connectionProvider;
             _dialect = dialect;
             _queueName = queueName;
 
@@ -168,86 +168,106 @@ namespace Platibus.SQL
 
         protected SQLQueuedMessage InsertQueuedMessage(Message message, IPrincipal senderPrincipal)
         {
-            using (var connection = _connectionFactory())
-            using (var scope = new TransactionScope(TransactionScopeOption.Required))
+            var connection = _connectionProvider.GetConnection();
+            try
             {
-                using (var command = connection.CreateCommand())
+                using (var scope = new TransactionScope(TransactionScopeOption.Required))
                 {
-                    command.CommandType = CommandType.Text;
-                    command.CommandText = _dialect.InsertQueuedMessageCommand;
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandType = CommandType.Text;
+                        command.CommandText = _dialect.InsertQueuedMessageCommand;
 
-                    var headers = message.Headers;
+                        var headers = message.Headers;
 
-                    command.SetParameter(_dialect.MessageIdParameterName, (Guid)headers.MessageId); 
-                    command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName); 
-                    command.SetParameter(_dialect.MessageNameParameterName, (string)headers.MessageName);  
-                    command.SetParameter(_dialect.OriginationParameterName, headers.Origination == null ? null : headers.Origination.ToString()); 
-                    command.SetParameter(_dialect.DestinationParameterName, headers.Destination == null ? null : headers.Destination.ToString()); 
-                    command.SetParameter(_dialect.ReplyToParameterName, headers.ReplyTo == null ? null : headers.ReplyTo.ToString());
-                    command.SetParameter(_dialect.ExpiresParameterName, headers.Expires);
-                    command.SetParameter(_dialect.ContentTypeParameterName, headers.ContentType);
-                    command.SetParameter(_dialect.SenderPrincipalParameterName, SerializePrincipal(senderPrincipal));
-                    command.SetParameter(_dialect.HeadersParameterName, SerializeHeaders(headers)); 
-                    command.SetParameter(_dialect.MessageContentParameterName, message.Content);
+                        command.SetParameter(_dialect.MessageIdParameterName, (Guid)headers.MessageId); 
+                        command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName); 
+                        command.SetParameter(_dialect.MessageNameParameterName, (string)headers.MessageName);  
+                        command.SetParameter(_dialect.OriginationParameterName, headers.Origination == null ? null : headers.Origination.ToString()); 
+                        command.SetParameter(_dialect.DestinationParameterName, headers.Destination == null ? null : headers.Destination.ToString()); 
+                        command.SetParameter(_dialect.ReplyToParameterName, headers.ReplyTo == null ? null : headers.ReplyTo.ToString());
+                        command.SetParameter(_dialect.ExpiresParameterName, headers.Expires);
+                        command.SetParameter(_dialect.ContentTypeParameterName, headers.ContentType);
+                        command.SetParameter(_dialect.SenderPrincipalParameterName, SerializePrincipal(senderPrincipal));
+                        command.SetParameter(_dialect.HeadersParameterName, SerializeHeaders(headers)); 
+                        command.SetParameter(_dialect.MessageContentParameterName, message.Content);
 
-                    command.ExecuteNonQuery();
+                        command.ExecuteNonQuery();
+                    }
+                    scope.Complete();
                 }
-                scope.Complete();
+                return new SQLQueuedMessage(message, senderPrincipal);
             }
-            return new SQLQueuedMessage(message, senderPrincipal);
+            finally
+            {
+                _connectionProvider.ReleaseConnection(connection);
+            }
         }
 
         protected IEnumerable<SQLQueuedMessage> SelectQueuedMessages()
         {
-            var queuedMessages = new List<SQLQueuedMessage>();
-            using (var connection = _connectionFactory())
-            using (var scope = new TransactionScope(TransactionScopeOption.Required))
+            var connection = _connectionProvider.GetConnection();
+            try
             {
-                using (var command = connection.CreateCommand())
+                var queuedMessages = new List<SQLQueuedMessage>();
+                using (var scope = new TransactionScope(TransactionScopeOption.Required))
                 {
-                    command.CommandType = CommandType.Text;
-                    command.CommandText = _dialect.SelectQueuedMessagesCommand;
-                    command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName); 
-                    command.SetParameter(_dialect.CurrentDateParameterName, DateTime.UtcNow);
-
-                    using (var reader = command.ExecuteReader())
+                    using (var command = connection.CreateCommand())
                     {
-                        while(reader.Read())
+                        command.CommandType = CommandType.Text;
+                        command.CommandText = _dialect.SelectQueuedMessagesCommand;
+                        command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
+                        command.SetParameter(_dialect.CurrentDateParameterName, DateTime.UtcNow);
+
+                        using (var reader = command.ExecuteReader())
                         {
-                            var messageContent = reader.GetString("MessageContent");
-                            var headers = DeserializeHeaders(reader.GetString("Headers"));
-                            var senderPrincipal = DeserializePrincipal(reader.GetString("SenderPrincipal"));
-                            var message = new Message(headers, messageContent);
-                            var attempts = reader.GetInt("Attempts");
-                            var queuedMessage = new SQLQueuedMessage(message, senderPrincipal, attempts);
-                            queuedMessages.Add(queuedMessage);
+                            while (reader.Read())
+                            {
+                                var messageContent = reader.GetString("MessageContent");
+                                var headers = DeserializeHeaders(reader.GetString("Headers"));
+                                var senderPrincipal = DeserializePrincipal(reader.GetString("SenderPrincipal"));
+                                var message = new Message(headers, messageContent);
+                                var attempts = reader.GetInt("Attempts");
+                                var queuedMessage = new SQLQueuedMessage(message, senderPrincipal, attempts);
+                                queuedMessages.Add(queuedMessage);
+                            }
                         }
                     }
+                    scope.Complete();
                 }
-                scope.Complete();
+                return queuedMessages;
             }
-            
-            return queuedMessages;
+            finally
+            {
+                _connectionProvider.ReleaseConnection(connection);
+            }
         }
 
         protected virtual void UpdateQueuedMessage(SQLQueuedMessage queuedMessage, DateTime? acknowledged, DateTime? abandoned, int attempts)
         {
-            using (var connection = _connectionFactory())
-            using (var scope = new TransactionScope(TransactionScopeOption.Required))
+            var connection = _connectionProvider.GetConnection();
+            try
             {
-                using (var command = connection.CreateCommand())
+                using (var scope = new TransactionScope(TransactionScopeOption.Required))
                 {
-                    command.CommandType = CommandType.Text;
-                    command.CommandText = _dialect.UpdateQueuedMessageCommand;
-                    command.SetParameter(_dialect.MessageIdParameterName, (Guid)queuedMessage.Message.Headers.MessageId);
-                    command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
-                    command.SetParameter(_dialect.AcknowledgedParameterName, acknowledged);
-                    command.SetParameter(_dialect.AbandonedParameterName, abandoned);
-                    command.SetParameter(_dialect.AttemptsParameterName, attempts);
-                    
-                    command.ExecuteNonQuery();
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandType = CommandType.Text;
+                        command.CommandText = _dialect.UpdateQueuedMessageCommand;
+                        command.SetParameter(_dialect.MessageIdParameterName, (Guid)queuedMessage.Message.Headers.MessageId);
+                        command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
+                        command.SetParameter(_dialect.AcknowledgedParameterName, acknowledged);
+                        command.SetParameter(_dialect.AbandonedParameterName, abandoned);
+                        command.SetParameter(_dialect.AttemptsParameterName, attempts);
+
+                        command.ExecuteNonQuery();
+                    }
+                    scope.Complete();
                 }
-                scope.Complete();
+            }
+            finally
+            {
+                _connectionProvider.ReleaseConnection(connection);
             }
         }
 

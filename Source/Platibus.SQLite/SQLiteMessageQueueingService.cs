@@ -15,7 +15,7 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Platibus.SQLite
 {
-    public class SQLiteMessageQueueingService : SQLMessageQueueingService, IDisposable
+    public class SQLiteMessageQueueingService : SQLMessageQueueingService
     {
         private static readonly ILog Log = LogManager.GetLogger(SQLiteLoggingCategories.SQLite);
 
@@ -23,11 +23,10 @@ namespace Platibus.SQLite
         private readonly CancellationTokenSource _cancellationTokenSource;
         
         private Task _sqliteBackgroundWorker;
-        private DbConnection _connection;
         private bool _disposed;
 
         public SQLiteMessageQueueingService(ConnectionStringSettings connectionStringSettings)
-            : base(connectionStringSettings)
+            : base(new SingletonConnectionProvider(connectionStringSettings), connectionStringSettings.GetSQLDialect())
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _queuedOperations = new BufferBlock<Task>(new DataflowBlockOptions
@@ -39,14 +38,13 @@ namespace Platibus.SQLite
         public override void Init()
         {
             base.Init();
-            _connection = OpenConnection();
             _sqliteBackgroundWorker = ProcessOperations();
         }
 
         public override async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
         {
             CheckDisposed();
-            var queue = new SQLMessageQueue(OpenConnection, Dialect, queueName, listener, options);
+            var queue = new SQLMessageQueue(ConnectionProvider, Dialect, queueName, listener, options);
             if (!Queues.TryAdd(queueName, queue))
             {
                 throw new QueueAlreadyExistsException(queueName);
@@ -83,43 +81,12 @@ namespace Platibus.SQLite
             }
         }
 
-        protected override DbConnection OpenConnection()
-        {
-            return _connection ?? ConnectionStringSettings.OpenConnection();
-        }
-
-        ~SQLiteMessageQueueingService()
-        {
-            Dispose(false);
-        }
-
-        public void Dispose()
-        {
-            if (_disposed) return;
-            Dispose(true);
-            GC.SuppressFinalize(this);
-            _disposed = true;
-        }
-
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;
 
             _cancellationTokenSource.Cancel();
             _queuedOperations.Complete();
-
-            try
-            {
-                _connection.Close();
-            }
-            catch (Exception ex)
-            { 
-            }
-        }
-
-        private void CheckDisposed()
-        {
-            if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }
     }
 }

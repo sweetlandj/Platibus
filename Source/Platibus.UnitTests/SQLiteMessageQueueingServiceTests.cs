@@ -1,6 +1,7 @@
 ﻿using Moq;
 using NUnit.Framework;
 using Platibus.SQL;
+using Platibus.SQLite;
 using System;
 using System.Configuration;
 using System.Data;
@@ -12,20 +13,15 @@ using System.Threading.Tasks;
 
 namespace Platibus.UnitTests
 {
-    class SQLMessageQueueingServiceTests
+    class SQLiteMessageQueueingServiceTests
     {
         protected ConnectionStringSettings GetConnectionStringSettings()
         {
-            var connectionStringSettings = ConfigurationManager.ConnectionStrings["PlatibusUnitTests.LocalDB"];
+            var connectionStringSettings = ConfigurationManager.ConnectionStrings["PlatibusUnitTests.SQLite"];
             using (var connection = connectionStringSettings.OpenConnection())
             using (var command = connection.CreateCommand())
             {
-                command.CommandText = @"
-                    IF (OBJECT_ID('[PB_QueuedMessages]')) IS NOT NULL 
-                    BEGIN
-                        DELETE FROM [PB_QueuedMessages]
-                    END";
-
+                command.CommandText = @"DROP TABLE IF EXISTS [PB_QueuedMessages]";
                 command.ExecuteNonQuery();
             }
             return connectionStringSettings;
@@ -36,7 +32,7 @@ namespace Platibus.UnitTests
         {
             var listenerCalledEvent = new ManualResetEvent(false);
             var connectionStringSettings = GetConnectionStringSettings();
-            var sqlQueueingService = new SQLMessageQueueingService(connectionStringSettings);
+            var sqlQueueingService = new SQLiteMessageQueueingService(connectionStringSettings);
             sqlQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
@@ -78,7 +74,7 @@ namespace Platibus.UnitTests
             var connectionStringSettings = GetConnectionStringSettings();
             var queueName = new QueueName(Guid.NewGuid().ToString());
             
-            var sqlQueueingService = new SQLMessageQueueingService(connectionStringSettings);
+            var sqlQueueingService = new SQLiteMessageQueueingService(connectionStringSettings);
             sqlQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
@@ -128,7 +124,7 @@ namespace Platibus.UnitTests
             var listenerCalledEvent = new ManualResetEvent(false);
             var connectionStringSettings = GetConnectionStringSettings();
             var queueName = new QueueName(Guid.NewGuid().ToString());
-            var sqlQueueingService = new SQLMessageQueueingService(connectionStringSettings);
+            var sqlQueueingService = new SQLiteMessageQueueingService(connectionStringSettings);
             sqlQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
@@ -183,7 +179,7 @@ namespace Platibus.UnitTests
             var connectionStringSettings = GetConnectionStringSettings();
             var queueName = new QueueName(Guid.NewGuid().ToString());
 
-            var sqlQueueingService = new SQLMessageQueueingService(connectionStringSettings);
+            var sqlQueueingService = new SQLiteMessageQueueingService(connectionStringSettings);
             sqlQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
@@ -233,7 +229,7 @@ namespace Platibus.UnitTests
             var connectionStringSettings = GetConnectionStringSettings();
             var queueName = new QueueName(Guid.NewGuid().ToString());
          
-            var sqlQueueingService = new SQLMessageQueueingService(connectionStringSettings);
+            var sqlQueueingService = new SQLiteMessageQueueingService(connectionStringSettings);
             sqlQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
@@ -296,7 +292,7 @@ namespace Platibus.UnitTests
                 {HeaderName.MessageId, Guid.NewGuid().ToString()}
             }, "Hello, world!");
 
-            var sqlQueueingService = new SQLMessageQueueingService(connectionStringSettings);
+            var sqlQueueingService = new SQLiteMessageQueueingService(connectionStringSettings);
             sqlQueueingService.Init();
 
             // Insert a test message before creating queue
@@ -340,7 +336,7 @@ namespace Platibus.UnitTests
             var connectionStringSettings = GetConnectionStringSettings();
             var queueName = new QueueName(Guid.NewGuid().ToString());
 
-            var sqlQueueingService = new SQLMessageQueueingService(connectionStringSettings);
+            var sqlQueueingService = new SQLiteMessageQueueingService(connectionStringSettings);
             sqlQueueingService.Init();
 
             var sqlQueueInspector = new SQLMessageQueueInspector(sqlQueueingService, queueName);

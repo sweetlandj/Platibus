@@ -210,6 +210,8 @@
     </Compile>
     <Compile Include="SQL\CommonSQLDialect.cs" />
     <Compile Include="SQL\DbExtensions.cs" />
+    <Compile Include="SQL\DefaultConnectionProvider.cs" />
+    <Compile Include="SQL\IDbConnectionProvider.cs" />
     <Compile Include="SQL\ISQLDialectProvider.cs" />
     <Compile Include="SQL\MSSQLDialectProvider.cs" />
     <Compile Include="SQL\SQLQueuedMessageContext.cs" />
