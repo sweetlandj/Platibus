@@ -18,7 +18,8 @@ namespace Platibus.SQL
 
         private readonly ConnectionStringSettings _connectionStringSettings;
         private readonly ISQLDialect _dialect;
-        private readonly ConcurrentDictionary<QueueName, SQLMessageQueue> _queues = new ConcurrentDictionary<QueueName, SQLMessageQueue>();
+
+        protected readonly ConcurrentDictionary<QueueName, SQLMessageQueue> Queues = new ConcurrentDictionary<QueueName, SQLMessageQueue>();
 
         public ConnectionStringSettings ConnectionStringSettings
         {
@@ -44,10 +45,10 @@ namespace Platibus.SQL
             _connectionStringSettings = connectionStringSettings;
             _dialect = dialect ?? _connectionStringSettings.GetSQLDialect();
         }
-
-        public void Init()
+        
+        public virtual void Init()
         {
-            using (var connection = _connectionStringSettings.OpenConnection())
+            using (var connection = OpenConnection())
             using (var command = connection.CreateCommand())
             {
                 command.CommandType = CommandType.Text;
@@ -56,10 +57,10 @@ namespace Platibus.SQL
             }
         }
 
-        public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
+        public virtual async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
         {
-            var queue = new SQLMessageQueue(_connectionStringSettings, _dialect, queueName, listener, options);
-            if (!_queues.TryAdd(queueName, queue))
+            var queue = new SQLMessageQueue(OpenConnection, _dialect, queueName, listener, options);
+            if (!Queues.TryAdd(queueName, queue))
             {
                 throw new QueueAlreadyExistsException(queueName);
             }
@@ -69,14 +70,19 @@ namespace Platibus.SQL
             Log.DebugFormat("SQL queue \"{0}\" created successfully", queueName);
         }
 
-        public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal)
+        public virtual async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal)
         {
             SQLMessageQueue queue;
-            if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
+            if (!Queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
 
             Log.DebugFormat("Enqueueing message ID {0} in SQL queue \"{1}\"...", message.Headers.MessageId, queueName);
             await queue.Enqueue(message, senderPrincipal).ConfigureAwait(false);
             Log.DebugFormat("Message ID {0} enqueued successfully in SQL queue \"{1}\"", message.Headers.MessageId, queueName);
+        }
+
+        protected virtual DbConnection OpenConnection()
+        {
+            return _connectionStringSettings.OpenConnection();
         }
     }
 }

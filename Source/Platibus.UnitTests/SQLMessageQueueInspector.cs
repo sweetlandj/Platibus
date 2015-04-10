@@ -13,7 +13,7 @@ namespace Platibus.UnitTests
     class SQLMessageQueueInspector : SQLMessageQueue
     {
         public SQLMessageQueueInspector(SQLMessageQueueingService messageQueueingService, QueueName queueName)
-            : base(messageQueueingService.ConnectionStringSettings, messageQueueingService.Dialect, queueName, new NoopQueueListener())
+            : base(messageQueueingService.ConnectionStringSettings.OpenConnection, messageQueueingService.Dialect, queueName, new NoopQueueListener())
         {
         }
 

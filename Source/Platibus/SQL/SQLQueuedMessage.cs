@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Platibus.SQL
 {
-    class SQLQueuedMessage
+    public class SQLQueuedMessage
     {
         private readonly Message _message;
         private readonly IPrincipal _senderPrincipal;

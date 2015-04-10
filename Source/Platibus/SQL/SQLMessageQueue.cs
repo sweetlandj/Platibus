@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -16,11 +17,11 @@ using System.Transactions;
 
 namespace Platibus.SQL
 {
-    class SQLMessageQueue : IDisposable
+    public class SQLMessageQueue : IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.SQL);
 
-        private readonly ConnectionStringSettings _connectionStringSettings;
+        private readonly Func<DbConnection> _connectionFactory;
         private readonly ISQLDialect _dialect;
         private readonly QueueName _queueName;
         private readonly IQueueListener _listener;
@@ -35,14 +36,14 @@ namespace Platibus.SQL
         private bool _disposed;
         private int _initialized;
 
-        public SQLMessageQueue(ConnectionStringSettings connectionStringSettings, ISQLDialect dialect, QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
+        public SQLMessageQueue(Func<DbConnection> connectionFactory, ISQLDialect dialect, QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
+            if (connectionFactory == null) throw new ArgumentNullException("connectionStringSettings");
             if (dialect == null) throw new ArgumentNullException("dialect");
             if (queueName == null) throw new ArgumentNullException("queueName");
             if (listener == null) throw new ArgumentNullException("listener");
             
-            _connectionStringSettings = connectionStringSettings;
+            _connectionFactory = connectionFactory;
             _dialect = dialect;
             _queueName = queueName;
 
@@ -87,7 +88,7 @@ namespace Platibus.SQL
         }
 
         // ReSharper disable once UnusedMethodReturnValue.Local
-        protected virtual async Task ProcessQueuedMessages(CancellationToken cancellationToken)
+        protected async Task ProcessQueuedMessages(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -105,7 +106,7 @@ namespace Platibus.SQL
         }
 
         // ReSharper disable once UnusedMethodReturnValue.Local
-        protected virtual async Task ProcessQueuedMessage(SQLQueuedMessage queuedMessage, CancellationToken cancellationToken)
+        protected async Task ProcessQueuedMessage(SQLQueuedMessage queuedMessage, CancellationToken cancellationToken)
         {
             var messageId = queuedMessage.Message.Headers.MessageId;
             var attemptCount = queuedMessage.Attempts;
@@ -114,8 +115,7 @@ namespace Platibus.SQL
             {
                 attemptCount++;
 
-                Log.DebugFormat("Processing queued message {0} (attempt {1} of {2})...",
-                    messageId, attemptCount, _maxAttempts);
+                Log.DebugFormat("Processing queued message {0} (attempt {1} of {2})...", messageId, attemptCount, _maxAttempts);
 
                 var context = new SQLQueuedMessageContext(queuedMessage);
                 cancellationToken.ThrowIfCancellationRequested();
@@ -166,9 +166,9 @@ namespace Platibus.SQL
             }
         }
 
-        protected virtual SQLQueuedMessage InsertQueuedMessage(Message message, IPrincipal senderPrincipal)
+        protected SQLQueuedMessage InsertQueuedMessage(Message message, IPrincipal senderPrincipal)
         {
-            using (var connection = _connectionStringSettings.OpenConnection())
+            using (var connection = _connectionFactory())
             using (var scope = new TransactionScope(TransactionScopeOption.Required))
             {
                 using (var command = connection.CreateCommand())
@@ -197,11 +197,10 @@ namespace Platibus.SQL
             return new SQLQueuedMessage(message, senderPrincipal);
         }
 
-        protected virtual IEnumerable<SQLQueuedMessage> SelectQueuedMessages()
+        protected IEnumerable<SQLQueuedMessage> SelectQueuedMessages()
         {
             var queuedMessages = new List<SQLQueuedMessage>();
-
-            using (var connection = _connectionStringSettings.OpenConnection())
+            using (var connection = _connectionFactory())
             using (var scope = new TransactionScope(TransactionScopeOption.Required))
             {
                 using (var command = connection.CreateCommand())
@@ -233,7 +232,7 @@ namespace Platibus.SQL
 
         protected virtual void UpdateQueuedMessage(SQLQueuedMessage queuedMessage, DateTime? acknowledged, DateTime? abandoned, int attempts)
         {
-            using (var connection = _connectionStringSettings.OpenConnection())
+            using (var connection = _connectionFactory())
             using (var scope = new TransactionScope(TransactionScopeOption.Required))
             {
                 using (var command = connection.CreateCommand())
