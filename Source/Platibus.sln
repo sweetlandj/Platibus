@@ -27,6 +27,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus.SampleWebApp", "Pl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus.SQLite", "Platibus.SQLite\Platibus.SQLite.csproj", "{A23BE958-6524-4C9C-8957-1C3DEBB0780C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{51BBF662-851D-477B-9885-E668F832B2E7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{FB5FBD26-C232-41B4-88E9-6AFE2D43966E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,5 +64,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DF55E713-FCF5-439A-ACE8-81F3A2100C23} = {FB5FBD26-C232-41B4-88E9-6AFE2D43966E}
+		{6C6C810F-5E72-43E0-A79A-776382A047D1} = {FB5FBD26-C232-41B4-88E9-6AFE2D43966E}
+		{87D62B09-0F75-4AED-B6AE-C89DDEEBD1CC} = {51BBF662-851D-477B-9885-E668F832B2E7}
 	EndGlobalSection
 EndGlobal
