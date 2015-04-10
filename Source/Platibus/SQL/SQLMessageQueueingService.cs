@@ -20,9 +20,22 @@ namespace Platibus.SQL
         private readonly ISQLDialect _dialect;
         private readonly ConcurrentDictionary<QueueName, SQLMessageQueue> _queues = new ConcurrentDictionary<QueueName, SQLMessageQueue>();
 
-        protected ConnectionStringSettings ConnectionStringSettings
+        public ConnectionStringSettings ConnectionStringSettings
         {
-            get { return _connectionStringSettings; }
+            get
+            {
+                return new ConnectionStringSettings
+                {
+                    Name = _connectionStringSettings.Name,
+                    ConnectionString = _connectionStringSettings.ConnectionString,
+                    ProviderName = _connectionStringSettings.ProviderName
+                };
+            }
+        }
+
+        public ISQLDialect Dialect
+        {
+            get { return _dialect; }
         }
 
         public SQLMessageQueueingService(ConnectionStringSettings connectionStringSettings, ISQLDialect dialect = null)

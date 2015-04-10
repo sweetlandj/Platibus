@@ -51,7 +51,7 @@ namespace Platibus.SQL
         public static string GetString(this IDataRecord record, string name, string defaultValue = null)
         {
             var ordinal = record.GetOrdinal(name);
-            return record.IsDBNull(ordinal) ? defaultValue : record.GetString(name);
+            return record.IsDBNull(ordinal) ? defaultValue : record.GetString(ordinal);
         }
 
         public static int GetInt(this IDataRecord record, string name, int defaultValue = default(int))
@@ -69,13 +69,13 @@ namespace Platibus.SQL
         public static bool GetBoolean(this IDataRecord record, string name, bool defaultValue = default(bool))
         {
             var ordinal = record.GetOrdinal(name);
-            return record.IsDBNull(ordinal) ? defaultValue : record.GetBoolean(name);
+            return record.IsDBNull(ordinal) ? defaultValue : record.GetBoolean(ordinal);
         }
 
         public static DateTime GetDateTime(this IDataRecord record, string name, DateTime defaultValue = default(DateTime))
         {
             var ordinal = record.GetOrdinal(name);
-            return record.IsDBNull(ordinal) ? defaultValue : record.GetDateTime(name);
+            return record.IsDBNull(ordinal) ? defaultValue : record.GetDateTime(ordinal);
         }
 
         public static TimeSpan GetTimeSpan(this IDataRecord record, string name, TimeSpan defaultValue = default(TimeSpan))

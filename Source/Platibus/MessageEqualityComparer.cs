@@ -33,7 +33,10 @@ namespace Platibus
             if (ReferenceEquals(x, y)) return true;
             if (ReferenceEquals(null, x) || ReferenceEquals(null, y)) return false;
 
-            if (!_headersEqualityComparer.Equals(x.Headers, y.Headers)) return false;
+            if (!_headersEqualityComparer.Equals(x.Headers, y.Headers))
+            {
+                return false;
+            }
             return string.Equals(x.Content, y.Content);
         }
 

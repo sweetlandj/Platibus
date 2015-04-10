@@ -87,7 +87,7 @@ namespace Platibus.SQL
         }
 
         // ReSharper disable once UnusedMethodReturnValue.Local
-        private async Task ProcessQueuedMessages(CancellationToken cancellationToken)
+        protected virtual async Task ProcessQueuedMessages(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -105,10 +105,10 @@ namespace Platibus.SQL
         }
 
         // ReSharper disable once UnusedMethodReturnValue.Local
-        private async Task ProcessQueuedMessage(SQLQueuedMessage queuedMessage, CancellationToken cancellationToken)
+        protected virtual async Task ProcessQueuedMessage(SQLQueuedMessage queuedMessage, CancellationToken cancellationToken)
         {
             var messageId = queuedMessage.Message.Headers.MessageId;
-            var attemptCount = 0;
+            var attemptCount = queuedMessage.Attempts;
             var abandoned = false;
             while (!abandoned)
             {
@@ -145,7 +145,7 @@ namespace Platibus.SQL
                 {
                     Log.DebugFormat("Message acknowledged.  Marking message {0} as acknowledged...", messageId);
                     // TODO: Implement journaling
-                    UpdateQueuedMessage(queuedMessage, DateTime.UtcNow, null);
+                    UpdateQueuedMessage(queuedMessage, DateTime.UtcNow, null, attemptCount);
                     Log.DebugFormat("Message {0} acknowledged successfully", messageId);
                     return;
                 }
@@ -153,12 +153,12 @@ namespace Platibus.SQL
                 {
                     Log.WarnFormat("Maximum attempts to proces message {0} exceeded", messageId);
                     abandoned = true;
-                }
-
-                if (abandoned)
-                {
-                    UpdateQueuedMessage(queuedMessage, null, DateTime.UtcNow);
+                    UpdateQueuedMessage(queuedMessage, null, DateTime.UtcNow, attemptCount);
                     return;
+                }
+                else
+                {
+                    UpdateQueuedMessage(queuedMessage, null, null, attemptCount);
                 }
 
                 Log.DebugFormat("Message not acknowledged.  Retrying in {0}...", _retryDelay);
@@ -166,7 +166,7 @@ namespace Platibus.SQL
             }
         }
 
-        private SQLQueuedMessage InsertQueuedMessage(Message message, IPrincipal senderPrincipal)
+        protected virtual SQLQueuedMessage InsertQueuedMessage(Message message, IPrincipal senderPrincipal)
         {
             using (var connection = _connectionStringSettings.OpenConnection())
             using (var scope = new TransactionScope(TransactionScopeOption.Required))
@@ -197,7 +197,7 @@ namespace Platibus.SQL
             return new SQLQueuedMessage(message, senderPrincipal);
         }
 
-        private IEnumerable<SQLQueuedMessage> SelectQueuedMessages()
+        protected virtual IEnumerable<SQLQueuedMessage> SelectQueuedMessages()
         {
             var queuedMessages = new List<SQLQueuedMessage>();
 
@@ -219,7 +219,8 @@ namespace Platibus.SQL
                             var headers = DeserializeHeaders(reader.GetString("Headers"));
                             var senderPrincipal = DeserializePrincipal(reader.GetString("SenderPrincipal"));
                             var message = new Message(headers, messageContent);
-                            var queuedMessage = new SQLQueuedMessage(message, senderPrincipal);
+                            var attempts = reader.GetInt("Attempts");
+                            var queuedMessage = new SQLQueuedMessage(message, senderPrincipal, attempts);
                             queuedMessages.Add(queuedMessage);
                         }
                     }
@@ -230,7 +231,7 @@ namespace Platibus.SQL
             return queuedMessages;
         }
 
-        private void UpdateQueuedMessage(SQLQueuedMessage queuedMessage, DateTime? acknowledged, DateTime? abandoned)
+        protected virtual void UpdateQueuedMessage(SQLQueuedMessage queuedMessage, DateTime? acknowledged, DateTime? abandoned, int attempts)
         {
             using (var connection = _connectionStringSettings.OpenConnection())
             using (var scope = new TransactionScope(TransactionScopeOption.Required))
@@ -240,8 +241,10 @@ namespace Platibus.SQL
                     command.CommandType = CommandType.Text;
                     command.CommandText = _dialect.UpdateQueuedMessageCommand;
                     command.SetParameter(_dialect.MessageIdParameterName, (Guid)queuedMessage.Message.Headers.MessageId);
+                    command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
                     command.SetParameter(_dialect.AcknowledgedParameterName, acknowledged);
                     command.SetParameter(_dialect.AbandonedParameterName, abandoned);
+                    command.SetParameter(_dialect.AttemptsParameterName, attempts);
                     
                     command.ExecuteNonQuery();
                 }
@@ -259,7 +262,7 @@ namespace Platibus.SQL
             }
         }
 
-        private string SerializePrincipal(IPrincipal principal)
+        protected virtual string SerializePrincipal(IPrincipal principal)
         {
             if (principal == null) return null;
 
@@ -273,7 +276,7 @@ namespace Platibus.SQL
             }
         }
 
-        private string SerializeHeaders(IMessageHeaders headers)
+        protected virtual string SerializeHeaders(IMessageHeaders headers)
         {
             if (headers == null) return null;
 
@@ -384,6 +387,12 @@ namespace Platibus.SQL
 
                     currentHeaderName = currentLine.Substring(0, separatorPos);
                     currentHeaderValue.Write(currentLine.Substring(separatorPos + 1).Trim());
+                }
+
+                // Make sure we set the last header we were working on, if there is one
+                if (currentHeaderName != null)
+                {
+                    headers[currentHeaderName] = currentHeaderValue.ToString();
                 }
             }
 
