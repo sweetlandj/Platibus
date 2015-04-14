@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Security.Principal;
@@ -39,7 +40,23 @@ namespace Platibus.SQLite
                 ConnectionString = "Data Source=" + dbpath + "; Version=3",
                 ProviderName = "System.Data.SQLite"
             };
-            return new SingletonConnectionProvider(connectionStringSettings);
+            
+            var connectionProvider = new SingletonConnectionProvider(connectionStringSettings);
+            var connection = connectionProvider.GetConnection();
+            try
+            {
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandType = CommandType.Text;
+                    command.CommandText = SQLiteCommands.CreateObjectsCommand;
+                    command.ExecuteNonQuery();
+                }
+            }
+            finally
+            {
+                connectionProvider.ReleaseConnection(connection);
+            }
+            return connectionProvider;
         }
 
         protected override Task<SQLQueuedMessage> InsertQueuedMessage(Message message, IPrincipal senderPrincipal)
