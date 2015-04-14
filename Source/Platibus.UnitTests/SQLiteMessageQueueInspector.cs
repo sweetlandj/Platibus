@@ -1,7 +1,9 @@
 ﻿using Platibus.SQL;
+using Platibus.SQLite;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.IO;
 using System.Linq;
 using System.Security.Principal;
 using System.Text;
@@ -10,10 +12,10 @@ using System.Threading.Tasks;
 
 namespace Platibus.UnitTests
 {
-    class SQLMessageQueueInspector : SQLMessageQueue
+    class SQLiteMessageQueueInspector : SQLiteMessageQueue
     {
-        public SQLMessageQueueInspector(SQLMessageQueueingService messageQueueingService, QueueName queueName)
-            : base(messageQueueingService.ConnectionProvider, messageQueueingService.Dialect, queueName, new NoopQueueListener())
+        public SQLiteMessageQueueInspector(DirectoryInfo baseDirectory, QueueName queueName)
+            : base(baseDirectory, queueName, new NoopQueueListener())
         {
         }
 

@@ -32,7 +32,7 @@ namespace Platibus.InMemory
     /// <summary>
     /// Tracks subscriptions using data structures in memory.
     /// </summary>
-    public class BasicSubscriptionTrackingService : ISubscriptionTrackingService
+    public class InMemorySubscriptionTrackingService : ISubscriptionTrackingService
     {
         private readonly ConcurrentDictionary<TopicName, IEnumerable<ExpiringSubscription>> _subscriptions =
             new ConcurrentDictionary<TopicName, IEnumerable<ExpiringSubscription>>();

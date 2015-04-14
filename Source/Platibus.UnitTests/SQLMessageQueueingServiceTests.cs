@@ -117,7 +117,7 @@ namespace Platibus.UnitTests
             mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
             var sqlQueueInspector = new SQLMessageQueueInspector(sqlQueueingService, queueName);
-            var queuedMessages = sqlQueueInspector.EnumerateMessages().ToList();
+            var queuedMessages = (await sqlQueueInspector.EnumerateMessages()).ToList();
 
             Assert.That(queuedMessages, Is.Empty);
         }
@@ -170,7 +170,7 @@ namespace Platibus.UnitTests
             mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
             var sqlQueueInspector = new SQLMessageQueueInspector(sqlQueueingService, queueName);
-            var queuedMessages = sqlQueueInspector.EnumerateMessages().ToList();
+            var queuedMessages = (await sqlQueueInspector.EnumerateMessages()).ToList();
 
             Assert.That(queuedMessages.Count, Is.EqualTo(1));
             Assert.That(queuedMessages[0].Message, Is.EqualTo(message).Using(messageEqualityComparer));
@@ -221,7 +221,7 @@ namespace Platibus.UnitTests
             mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
             var sqlQueueInspector = new SQLMessageQueueInspector(sqlQueueingService, queueName);
-            var queuedMessages = sqlQueueInspector.EnumerateMessages().ToList();
+            var queuedMessages = (await sqlQueueInspector.EnumerateMessages()).ToList();
 
             Assert.That(queuedMessages, Is.Empty);
         }
@@ -278,7 +278,7 @@ namespace Platibus.UnitTests
             mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
             var sqlQueueInspector = new SQLMessageQueueInspector(sqlQueueingService, queueName);
-            var queuedMessages = sqlQueueInspector.EnumerateMessages().ToList();
+            var queuedMessages = (await sqlQueueInspector.EnumerateMessages()).ToList();
 
             Assert.That(queuedMessages[0].Message, Is.EqualTo(message).Using(messageEqualityComparer));
         }
@@ -301,7 +301,7 @@ namespace Platibus.UnitTests
 
             // Insert a test message before creating queue
             var sqlQueueInspector = new SQLMessageQueueInspector(sqlQueueingService, queueName);
-            sqlQueueInspector.InsertMessage(message, Thread.CurrentPrincipal);
+            await sqlQueueInspector.InsertMessage(message, Thread.CurrentPrincipal);
 
             var mockListener = new Mock<IQueueListener>();
             mockListener.Setup(x => x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()))
@@ -346,7 +346,7 @@ namespace Platibus.UnitTests
             var sqlQueueInspector = new SQLMessageQueueInspector(sqlQueueingService, queueName);
             foreach(var msg in existingMessages)
             {
-                sqlQueueInspector.InsertMessage(msg, Thread.CurrentPrincipal);
+                await sqlQueueInspector.InsertMessage(msg, Thread.CurrentPrincipal);
             }
 
             var newMessages = Enumerable.Range(1, 10)

@@ -79,9 +79,7 @@ namespace Platibus.SQL
         {
             CheckDisposed();
 
-            // SQL calls are not async to avoid the need for TransactionAsyncFlowOption
-            // and dependency on .NET 4.5.1 and later
-            var queuedMessage = InsertQueuedMessage(message, senderPrincipal);
+            var queuedMessage = await InsertQueuedMessage(message, senderPrincipal);
 
             await _queuedMessages.SendAsync(queuedMessage).ConfigureAwait(false);
             // TODO: handle accepted == false
@@ -145,7 +143,7 @@ namespace Platibus.SQL
                 {
                     Log.DebugFormat("Message acknowledged.  Marking message {0} as acknowledged...", messageId);
                     // TODO: Implement journaling
-                    UpdateQueuedMessage(queuedMessage, DateTime.UtcNow, null, attemptCount);
+                    await UpdateQueuedMessage(queuedMessage, DateTime.UtcNow, null, attemptCount);
                     Log.DebugFormat("Message {0} acknowledged successfully", messageId);
                     return;
                 }
@@ -153,12 +151,12 @@ namespace Platibus.SQL
                 {
                     Log.WarnFormat("Maximum attempts to proces message {0} exceeded", messageId);
                     abandoned = true;
-                    UpdateQueuedMessage(queuedMessage, null, DateTime.UtcNow, attemptCount);
+                    await UpdateQueuedMessage(queuedMessage, null, DateTime.UtcNow, attemptCount);
                     return;
                 }
                 else
                 {
-                    UpdateQueuedMessage(queuedMessage, null, null, attemptCount);
+                    await UpdateQueuedMessage(queuedMessage, null, null, attemptCount);
                 }
 
                 Log.DebugFormat("Message not acknowledged.  Retrying in {0}...", _retryDelay);
@@ -166,8 +164,9 @@ namespace Platibus.SQL
             }
         }
 
-        protected SQLQueuedMessage InsertQueuedMessage(Message message, IPrincipal senderPrincipal)
+        protected virtual Task<SQLQueuedMessage> InsertQueuedMessage(Message message, IPrincipal senderPrincipal)
         {
+            SQLQueuedMessage queuedMessage = null;
             var connection = _connectionProvider.GetConnection();
             try
             {
@@ -196,20 +195,24 @@ namespace Platibus.SQL
                     }
                     scope.Complete();
                 }
-                return new SQLQueuedMessage(message, senderPrincipal);
+                queuedMessage = new SQLQueuedMessage(message, senderPrincipal);
             }
             finally
             {
                 _connectionProvider.ReleaseConnection(connection);
             }
+
+            // SQL calls are not async to avoid the need for TransactionAsyncFlowOption
+            // and dependency on .NET 4.5.1 and later
+            return Task.FromResult(queuedMessage);
         }
 
-        protected IEnumerable<SQLQueuedMessage> SelectQueuedMessages()
+        protected virtual Task<IEnumerable<SQLQueuedMessage>> SelectQueuedMessages()
         {
+            var queuedMessages = new List<SQLQueuedMessage>();
             var connection = _connectionProvider.GetConnection();
             try
             {
-                var queuedMessages = new List<SQLQueuedMessage>();
                 using (var scope = new TransactionScope(TransactionScopeOption.Required))
                 {
                     using (var command = connection.CreateCommand())
@@ -235,15 +238,18 @@ namespace Platibus.SQL
                     }
                     scope.Complete();
                 }
-                return queuedMessages;
             }
             finally
             {
                 _connectionProvider.ReleaseConnection(connection);
             }
+
+            // SQL calls are not async to avoid the need for TransactionAsyncFlowOption
+            // and dependency on .NET 4.5.1 and later
+            return Task.FromResult(queuedMessages.AsEnumerable());
         }
 
-        protected virtual void UpdateQueuedMessage(SQLQueuedMessage queuedMessage, DateTime? acknowledged, DateTime? abandoned, int attempts)
+        protected virtual Task UpdateQueuedMessage(SQLQueuedMessage queuedMessage, DateTime? acknowledged, DateTime? abandoned, int attempts)
         {
             var connection = _connectionProvider.GetConnection();
             try
@@ -269,11 +275,15 @@ namespace Platibus.SQL
             {
                 _connectionProvider.ReleaseConnection(connection);
             }
+
+            // SQL calls are not async to avoid the need for TransactionAsyncFlowOption
+            // and dependency on .NET 4.5.1 and later
+            return Task.FromResult(true);
         }
 
         private async Task EnqueueExistingMessages()
         {
-            var queuedMessages = SelectQueuedMessages();
+            var queuedMessages = await SelectQueuedMessages();
             foreach (var queuedMessage in queuedMessages)
             {
                 Log.DebugFormat("Enqueueing existing message ID {0}...", queuedMessage.Message.Headers.MessageId);

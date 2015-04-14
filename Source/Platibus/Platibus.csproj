@@ -77,6 +77,7 @@
     <Compile Include="Config\ClientCredentialType.cs" />
     <Compile Include="Config\Extensibility\ProviderHelper.cs" />
     <Compile Include="Http\HttpEndpointCredentialsVisitor.cs" />
+    <Compile Include="InMemory\InMemoryServicesProvider.cs" />
     <Compile Include="ObservableExtensions.cs" />
     <Compile Include="Security\BasicAuthCredentials.cs" />
     <Compile Include="Config\Bootstrapper.cs" />
@@ -225,6 +226,7 @@
     <Compile Include="SQL\SQLMessageQueue.cs" />
     <Compile Include="SQL\SQLMessageQueueingService.cs" />
     <Compile Include="SQL\SQLQueuedMessage.cs" />
+    <Compile Include="SQL\SQLServicesProvider.cs" />
     <Compile Include="SubscriptionRequestReceivedEventArgs.cs" />
     <Compile Include="SubscriptionRequestReceivedHandler.cs" />
     <Compile Include="SubscriptionRequestType.cs" />

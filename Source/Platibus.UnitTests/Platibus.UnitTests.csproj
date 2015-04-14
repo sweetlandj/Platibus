@@ -106,6 +106,7 @@
     <Compile Include="MessageHandlerStub.cs" />
     <Compile Include="SentMessageExtensionTests.cs" />
     <Compile Include="MessageHandlerTests.cs" />
+    <Compile Include="SQLiteMessageQueueInspector.cs" />
     <Compile Include="SQLMessageQueueInspector.cs" />
     <Compile Include="UnitTestLoggingCategories.cs" />
     <Compile Include="TopicControllerTests.cs" />

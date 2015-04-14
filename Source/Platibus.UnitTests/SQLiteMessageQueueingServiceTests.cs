@@ -15,24 +15,23 @@ namespace Platibus.UnitTests
 {
     class SQLiteMessageQueueingServiceTests
     {
-        protected ConnectionStringSettings GetConnectionStringSettings()
+        protected DirectoryInfo GetTempDirectory()
         {
-            var connectionStringSettings = ConfigurationManager.ConnectionStrings["PlatibusUnitTests.SQLite"];
-            using (var connection = connectionStringSettings.OpenConnection())
-            using (var command = connection.CreateCommand())
+            var tempPath = Path.Combine(Path.GetTempPath(), "Platibus.UnitTests", DateTime.Now.ToString("yyyyMMddHHmmss"));
+            var tempDir = new DirectoryInfo(tempPath);
+            if (!tempDir.Exists)
             {
-                command.CommandText = @"DROP TABLE IF EXISTS [PB_QueuedMessages]";
-                command.ExecuteNonQuery();
+                tempDir.Create();
             }
-            return connectionStringSettings;
+            return tempDir;
         }
 
         [Test]
         public async Task When_New_Message_Queued_Then_Listener_Should_Fire()
         {
             var listenerCalledEvent = new ManualResetEvent(false);
-            var connectionStringSettings = GetConnectionStringSettings();
-            var sqlQueueingService = new SQLiteMessageQueueingService(connectionStringSettings);
+            var baseDirectory = GetTempDirectory();
+            var sqlQueueingService = new SQLiteMessageQueueingService(baseDirectory);
             sqlQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
@@ -71,10 +70,10 @@ namespace Platibus.UnitTests
         public async Task Given_Queued_Message_When_Context_Acknowledged_Then_Message_Should_Be_Acknowledged()
         {
             var listenerCalledEvent = new ManualResetEvent(false);
-            var connectionStringSettings = GetConnectionStringSettings();
+            var baseDirectory = GetTempDirectory();
             var queueName = new QueueName(Guid.NewGuid().ToString());
             
-            var sqlQueueingService = new SQLiteMessageQueueingService(connectionStringSettings);
+            var sqlQueueingService = new SQLiteMessageQueueingService(baseDirectory);
             sqlQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
@@ -112,8 +111,8 @@ namespace Platibus.UnitTests
             var messageEqualityComparer = new MessageEqualityComparer();
             mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
-            var sqlQueueInspector = new SQLMessageQueueInspector(sqlQueueingService, queueName);
-            var queuedMessages = sqlQueueInspector.EnumerateMessages().ToList();
+            var sqlQueueInspector = new SQLiteMessageQueueInspector(baseDirectory, queueName);
+            var queuedMessages = (await sqlQueueInspector.EnumerateMessages()).ToList();
 
             Assert.That(queuedMessages, Is.Empty);
         }
@@ -122,9 +121,9 @@ namespace Platibus.UnitTests
         public async Task Given_Queued_Message_When_Context_Not_Acknowledged_Then_Message_Should_Not_Be_Acknowledged()
         {
             var listenerCalledEvent = new ManualResetEvent(false);
-            var connectionStringSettings = GetConnectionStringSettings();
+            var baseDirectory = GetTempDirectory();
             var queueName = new QueueName(Guid.NewGuid().ToString());
-            var sqlQueueingService = new SQLiteMessageQueueingService(connectionStringSettings);
+            var sqlQueueingService = new SQLiteMessageQueueingService(baseDirectory);
             sqlQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
@@ -165,8 +164,8 @@ namespace Platibus.UnitTests
             var messageEqualityComparer = new MessageEqualityComparer();
             mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
-            var sqlQueueInspector = new SQLMessageQueueInspector(sqlQueueingService, queueName);
-            var queuedMessages = sqlQueueInspector.EnumerateMessages().ToList();
+            var sqlQueueInspector = new SQLiteMessageQueueInspector(baseDirectory, queueName);
+            var queuedMessages = (await sqlQueueInspector.EnumerateMessages()).ToList();
 
             Assert.That(queuedMessages.Count, Is.EqualTo(1));
             Assert.That(queuedMessages[0].Message, Is.EqualTo(message).Using(messageEqualityComparer));
@@ -176,10 +175,10 @@ namespace Platibus.UnitTests
         public async Task Given_Auto_Acknowledge_Queue_When_Context_Not_Acknowledged_Then_Message_Should_Be_Acknowledged()
         {
             var listenerCalledEvent = new ManualResetEvent(false);
-            var connectionStringSettings = GetConnectionStringSettings();
+            var baseDirectory = GetTempDirectory();
             var queueName = new QueueName(Guid.NewGuid().ToString());
 
-            var sqlQueueingService = new SQLiteMessageQueueingService(connectionStringSettings);
+            var sqlQueueingService = new SQLiteMessageQueueingService(baseDirectory);
             sqlQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
@@ -216,8 +215,8 @@ namespace Platibus.UnitTests
             var messageEqualityComparer = new MessageEqualityComparer();
             mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
-            var sqlQueueInspector = new SQLMessageQueueInspector(sqlQueueingService, queueName);
-            var queuedMessages = sqlQueueInspector.EnumerateMessages().ToList();
+            var sqlQueueInspector = new SQLiteMessageQueueInspector(baseDirectory, queueName);
+            var queuedMessages = (await sqlQueueInspector.EnumerateMessages()).ToList();
 
             Assert.That(queuedMessages, Is.Empty);
         }
@@ -226,10 +225,10 @@ namespace Platibus.UnitTests
         public async Task Given_Auto_Acknowledge_Queue_When_Listener_Throws_Then_Message_Should_Not_Be_Acknowledged()
         {
             var listenerCalledEvent = new ManualResetEvent(false);
-            var connectionStringSettings = GetConnectionStringSettings();
+            var baseDirectory = GetTempDirectory();
             var queueName = new QueueName(Guid.NewGuid().ToString());
          
-            var sqlQueueingService = new SQLiteMessageQueueingService(connectionStringSettings);
+            var sqlQueueingService = new SQLiteMessageQueueingService(baseDirectory);
             sqlQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
@@ -273,8 +272,8 @@ namespace Platibus.UnitTests
             var messageEqualityComparer = new MessageEqualityComparer();
             mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
-            var sqlQueueInspector = new SQLMessageQueueInspector(sqlQueueingService, queueName);
-            var queuedMessages = sqlQueueInspector.EnumerateMessages().ToList();
+            var sqlQueueInspector = new SQLiteMessageQueueInspector(baseDirectory, queueName);
+            var queuedMessages = (await sqlQueueInspector.EnumerateMessages()).ToList();
 
             Assert.That(queuedMessages[0].Message, Is.EqualTo(message).Using(messageEqualityComparer));
         }
@@ -283,7 +282,7 @@ namespace Platibus.UnitTests
         public async Task Given_Existing_Message_When_Creating_Queue_Then_Listener_Should_Fire()
         {
             var listenerCalledEvent = new ManualResetEvent(false);
-            var connectionStringSettings = GetConnectionStringSettings();
+            var baseDirectory = GetTempDirectory();
             var queueName = new QueueName(Guid.NewGuid().ToString());
          
             var message = new Message(new MessageHeaders
@@ -292,12 +291,12 @@ namespace Platibus.UnitTests
                 {HeaderName.MessageId, Guid.NewGuid().ToString()}
             }, "Hello, world!");
 
-            var sqlQueueingService = new SQLiteMessageQueueingService(connectionStringSettings);
+            var sqlQueueingService = new SQLiteMessageQueueingService(baseDirectory);
             sqlQueueingService.Init();
 
             // Insert a test message before creating queue
-            var sqlQueueInspector = new SQLMessageQueueInspector(sqlQueueingService, queueName);
-            sqlQueueInspector.InsertMessage(message, Thread.CurrentPrincipal);
+            var sqlQueueInspector = new SQLiteMessageQueueInspector(baseDirectory, queueName);
+            await sqlQueueInspector.InsertMessage(message, Thread.CurrentPrincipal);
 
             var mockListener = new Mock<IQueueListener>();
             mockListener.Setup(x => x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()))
@@ -333,16 +332,16 @@ namespace Platibus.UnitTests
                 }, "Hello, world! (" + i + ")"))
                 .ToList();
 
-            var connectionStringSettings = GetConnectionStringSettings();
+            var baseDirectory = GetTempDirectory();
             var queueName = new QueueName(Guid.NewGuid().ToString());
 
-            var sqlQueueingService = new SQLiteMessageQueueingService(connectionStringSettings);
+            var sqlQueueingService = new SQLiteMessageQueueingService(baseDirectory);
             sqlQueueingService.Init();
 
-            var sqlQueueInspector = new SQLMessageQueueInspector(sqlQueueingService, queueName);
+            var sqlQueueInspector = new SQLiteMessageQueueInspector(baseDirectory, queueName);
             foreach(var msg in existingMessages)
             {
-                sqlQueueInspector.InsertMessage(msg, Thread.CurrentPrincipal);
+                await sqlQueueInspector.InsertMessage(msg, Thread.CurrentPrincipal);
             }
 
             var newMessages = Enumerable.Range(1, 10)

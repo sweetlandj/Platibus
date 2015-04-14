@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.Common;
+using System.IO;
 using System.Linq;
 using System.Security.Principal;
 using System.Text;
@@ -15,78 +16,86 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Platibus.SQLite
 {
-    public class SQLiteMessageQueueingService : SQLMessageQueueingService
+    public class SQLiteMessageQueueingService : IMessageQueueingService
     {
         private static readonly ILog Log = LogManager.GetLogger(SQLiteLoggingCategories.SQLite);
 
-        private readonly BufferBlock<Task> _queuedOperations;
-        private readonly CancellationTokenSource _cancellationTokenSource;
-        
-        private Task _sqliteBackgroundWorker;
+        private readonly DirectoryInfo _baseDirectory;
+        private readonly ConcurrentDictionary<QueueName, SQLiteMessageQueue> _queues = new ConcurrentDictionary<QueueName, SQLiteMessageQueue>();
+
         private bool _disposed;
 
-        public SQLiteMessageQueueingService(ConnectionStringSettings connectionStringSettings)
-            : base(new SingletonConnectionProvider(connectionStringSettings), connectionStringSettings.GetSQLDialect())
+        public SQLiteMessageQueueingService(DirectoryInfo baseDirectory)
         {
-            _cancellationTokenSource = new CancellationTokenSource();
-            _queuedOperations = new BufferBlock<Task>(new DataflowBlockOptions
+            if (baseDirectory == null)
             {
-                CancellationToken = _cancellationTokenSource.Token
-            });
+                var appdomainDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                baseDirectory = new DirectoryInfo(Path.Combine(appdomainDirectory, "platibus", "queues"));
+            }
+            _baseDirectory = baseDirectory;
         }
 
-        public override void Init()
+        public void Init()
         {
-            base.Init();
-            _sqliteBackgroundWorker = ProcessOperations();
+            _baseDirectory.Refresh();
+            if (_baseDirectory.Exists)
+            {
+                _baseDirectory.Create();
+                _baseDirectory.Refresh();
+            }
         }
 
-        public override async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
+        public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
         {
             CheckDisposed();
-            var queue = new SQLMessageQueue(ConnectionProvider, Dialect, queueName, listener, options);
-            if (!Queues.TryAdd(queueName, queue))
+            var queue = new SQLiteMessageQueue(_baseDirectory, queueName, listener, options);
+            if (!_queues.TryAdd(queueName, queue))
             {
                 throw new QueueAlreadyExistsException(queueName);
             }
 
-            Log.DebugFormat("Initializing SQLite queue named \"{0}\"...", queueName);
-            var initTask = new Task(async () =>
-            {
-                await queue.Init().ConfigureAwait(false);
-            });
-            await _queuedOperations.SendAsync(initTask);
-            await initTask;
+            await queue.Init().ConfigureAwait(false);
             Log.DebugFormat("SQLite queue \"{0}\" created successfully", queueName);
         }
 
-        public override async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal)
+        public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal)
         {
-            CheckDisposed();
-            var enqueueTask = new Task(() =>
-            {
-                base.EnqueueMessage(queueName, message, senderPrincipal);
-            });
-            await _queuedOperations.SendAsync(enqueueTask);
-            await enqueueTask;
+            SQLiteMessageQueue queue;
+            if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
+
+            Log.DebugFormat("Enqueueing message ID {0} in SQL queue \"{1}\"...", message.Headers.MessageId, queueName);
+            await queue.Enqueue(message, senderPrincipal).ConfigureAwait(false);
+            Log.DebugFormat("Message ID {0} enqueued successfully in SQL queue \"{1}\"", message.Headers.MessageId, queueName);
         }
 
-        private async Task ProcessOperations(CancellationToken cancellationToken = default(CancellationToken))
+        ~SQLiteMessageQueueingService()
         {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var nextOperation = await _queuedOperations.ReceiveAsync(cancellationToken).ConfigureAwait(false);
-                nextOperation.Start();
-            }
+            Dispose(false);
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            Dispose(true);
+            GC.SuppressFinalize(this);
+            _disposed = true;
         }
 
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;
+            if (disposing)
+            {
+                foreach(var queue in _queues.Values)
+                {
+                    queue.Dispose();
+                }
+            }
+        }
 
-            _cancellationTokenSource.Cancel();
-            _queuedOperations.Complete();
+        protected void CheckDisposed()
+        {
+            if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }
     }
 }

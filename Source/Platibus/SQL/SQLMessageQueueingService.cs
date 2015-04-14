@@ -18,8 +18,7 @@ namespace Platibus.SQL
 
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly ISQLDialect _dialect;
-
-        protected readonly ConcurrentDictionary<QueueName, SQLMessageQueue> Queues = new ConcurrentDictionary<QueueName, SQLMessageQueue>();
+        private readonly ConcurrentDictionary<QueueName, SQLMessageQueue> _queues = new ConcurrentDictionary<QueueName, SQLMessageQueue>();
         
         private bool _disposed;
 
@@ -48,7 +47,7 @@ namespace Platibus.SQL
             _dialect = dialect;
         }
         
-        public virtual void Init()
+        public void Init()
         {
             var connection = _connectionProvider.GetConnection();
             try
@@ -66,10 +65,10 @@ namespace Platibus.SQL
             }
         }
 
-        public virtual async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
+        public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
         {
             var queue = new SQLMessageQueue(_connectionProvider, _dialect, queueName, listener, options);
-            if (!Queues.TryAdd(queueName, queue))
+            if (!_queues.TryAdd(queueName, queue))
             {
                 throw new QueueAlreadyExistsException(queueName);
             }
@@ -79,10 +78,10 @@ namespace Platibus.SQL
             Log.DebugFormat("SQL queue \"{0}\" created successfully", queueName);
         }
 
-        public virtual async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal)
+        public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal)
         {
             SQLMessageQueue queue;
-            if (!Queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
+            if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
 
             Log.DebugFormat("Enqueueing message ID {0} in SQL queue \"{1}\"...", message.Headers.MessageId, queueName);
             await queue.Enqueue(message, senderPrincipal).ConfigureAwait(false);
@@ -105,7 +104,15 @@ namespace Platibus.SQL
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;
-            _connectionProvider.Dispose();
+            if (disposing)
+            {
+                foreach (var queue in _queues.Values)
+                {
+                    queue.Dispose();
+                }
+
+                _connectionProvider.Dispose();
+            }
         }
 
         protected void CheckDisposed()
