@@ -30,6 +30,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Platibus.Config
 {
@@ -37,12 +38,12 @@ namespace Platibus.Config
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
 
-        public static PlatibusConfiguration LoadConfiguration(bool processConfigurationHooks = true)
+        public static Task<PlatibusConfiguration> LoadConfiguration(bool processConfigurationHooks = true)
         {
             return LoadConfiguration("platibus", processConfigurationHooks);
         }
 
-        public static PlatibusConfiguration LoadConfiguration(string sectionName, bool processConfigurationHooks = true)
+        public static async Task<PlatibusConfiguration> LoadConfiguration(string sectionName, bool processConfigurationHooks = true)
         {
             var configuration = new PlatibusConfiguration();
 
@@ -82,14 +83,14 @@ namespace Platibus.Config
             var journaling = configSection.Journaling;
             if (journaling != null && journaling.IsEnabled && !string.IsNullOrWhiteSpace(journaling.Provider))
             {
-                configuration.MessageJournalingService = InitMessageJournalingService(journaling);
+                configuration.MessageJournalingService = await InitMessageJournalingService(journaling);
             }
 
             var queueing = configSection.Queueing ?? new QueueingElement();
-            configuration.MessageQueueingService = InitMessageQueueingService(queueing);
+            configuration.MessageQueueingService = await InitMessageQueueingService(queueing);
 
             var subscriptionTracking = configSection.SubscriptionTracking ?? new SubscriptionTrackingElement();
-            configuration.SubscriptionTrackingService = InitSubscriptionTrackingService(subscriptionTracking);
+            configuration.SubscriptionTrackingService = await InitSubscriptionTrackingService(subscriptionTracking);
 
             IEnumerable<SendRuleElement> sendRules = configSection.SendRules;
             foreach (var sendRule in sendRules)
@@ -115,7 +116,7 @@ namespace Platibus.Config
             return configuration;
         }
 
-        public static IMessageQueueingService InitMessageQueueingService(QueueingElement config)
+        public static Task<IMessageQueueingService> InitMessageQueueingService(QueueingElement config)
         {
             var providerName = config.Provider;
             IMessageQueueingServiceProvider provider;
@@ -133,7 +134,7 @@ namespace Platibus.Config
             return provider.CreateMessageQueueingService(config);
         }
 
-        public static IMessageJournalingService InitMessageJournalingService(JournalingElement config)
+        public static Task<IMessageJournalingService> InitMessageJournalingService(JournalingElement config)
         {
             var providerName = config.Provider;
             if (string.IsNullOrWhiteSpace(providerName))
@@ -148,7 +149,7 @@ namespace Platibus.Config
             return provider.CreateMessageJournalingService(config);
         }
 
-        public static ISubscriptionTrackingService InitSubscriptionTrackingService(SubscriptionTrackingElement config)
+        public static Task<ISubscriptionTrackingService> InitSubscriptionTrackingService(SubscriptionTrackingElement config)
         {
             var providerName = config.Provider;
             ISubscriptionTrackingServiceProvider provider;

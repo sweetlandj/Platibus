@@ -20,10 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Threading.Tasks;
 namespace Platibus.Config.Extensibility
 {
     public interface IMessageQueueingServiceProvider
     {
-        IMessageQueueingService CreateMessageQueueingService(QueueingElement configuration);
+        Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration);
     }
 }

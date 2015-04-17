@@ -19,16 +19,43 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using Platibus.Config.Extensibility;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Platibus.SQLite
 {
-    static class SQLiteLoggingCategories
+    [Provider("SQLite")]
+    public class SQLiteServicesProvider : IMessageQueueingServiceProvider
     {
-        public const string SQLite = "SQLite";
+
+        public Task<IMessageQueueingService> CreateMessageQueueingService(Config.QueueingElement configuration)
+        {
+            var path = configuration.GetString("path");
+            var sqliteBaseDir = new DirectoryInfo(GetRootedPath(path));
+            var sqliteMessageQueueingService = new SQLiteMessageQueueingService(sqliteBaseDir);
+            sqliteMessageQueueingService.Init();
+            return Task.FromResult<IMessageQueueingService>(sqliteMessageQueueingService);
+        }
+
+        public static string GetRootedPath(string path)
+        {
+            var defaultRootedPath = AppDomain.CurrentDomain.BaseDirectory;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return defaultRootedPath;
+            }
+
+            if (Path.IsPathRooted(path))
+            {
+                return path;
+            }
+
+            return Path.Combine(defaultRootedPath, path);
+        }
     }
 }

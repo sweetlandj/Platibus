@@ -1,6 +1,7 @@
 ﻿using NUnit.Framework;
 using Platibus.Config;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Platibus.UnitTests
 {
@@ -15,9 +16,9 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void Given_Configuration_Hook_When_Loading_Configuration_Then_Message_Route_Added()
+        public async Task Given_Configuration_Hook_When_Loading_Configuration_Then_Message_Route_Added()
         {
-            var configuration = PlatibusConfigurationManager.LoadConfiguration();
+            var configuration = await PlatibusConfigurationManager.LoadConfiguration().ConfigureAwait(false);
 
             var messageRoutes = configuration.HandlingRules.ToList();
             Assert.That(messageRoutes.Count, Is.EqualTo(1));

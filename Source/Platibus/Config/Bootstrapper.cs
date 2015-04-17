@@ -38,7 +38,7 @@ namespace Platibus.Config
         public static async Task<Bus> InitBus(string sectionName)
         {
             Log.InfoFormat("Loading configuration from section \"{0}\"...", sectionName);
-            var configuration = PlatibusConfigurationManager.LoadConfiguration(sectionName);
+            var configuration = await PlatibusConfigurationManager.LoadConfiguration(sectionName).ConfigureAwait(false);
 
             Log.Info("Initializing bus...");
             var bus = new Bus(configuration, new HttpTransportService());

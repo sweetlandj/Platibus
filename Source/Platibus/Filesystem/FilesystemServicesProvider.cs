@@ -23,37 +23,38 @@ using Platibus.Config.Extensibility;
 // THE SOFTWARE.
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Platibus.Filesystem
 {
     [ProviderAttribute("Filesystem")]
     public class FilesystemServicesProvider : IMessageQueueingServiceProvider, IMessageJournalingServiceProvider, ISubscriptionTrackingServiceProvider
     {
-        public IMessageQueueingService CreateMessageQueueingService(QueueingElement configuration)
+        public Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
             var path = configuration.GetString("path");
             var fsQueueingBaseDir = new DirectoryInfo(GetRootedPath(path));
             var fsQueueingService = new FilesystemMessageQueueingService(fsQueueingBaseDir);
             fsQueueingService.Init();
-            return fsQueueingService;
+            return Task.FromResult<IMessageQueueingService>(fsQueueingService);
         }
 
-        public IMessageJournalingService CreateMessageJournalingService(JournalingElement configuration)
+        public Task<IMessageJournalingService> CreateMessageJournalingService(JournalingElement configuration)
         {
             var path = configuration.GetString("path");
             var fsJournalingBaseDir = new DirectoryInfo(GetRootedPath(path));
             var fsJournalingService = new FilesystemMessageJournalingService(fsJournalingBaseDir);
             fsJournalingService.Init();
-            return fsJournalingService;
+            return Task.FromResult<IMessageJournalingService>(fsJournalingService);
         }
 
-        public ISubscriptionTrackingService CreateSubscriptionTrackingService(SubscriptionTrackingElement configuration)
+        public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(SubscriptionTrackingElement configuration)
         {
             var path = configuration.GetString("path");
             var fsTrackingBaseDir = new DirectoryInfo(GetRootedPath(path));
             var fsTrackingService = new FilesystemSubscriptionTrackingService(fsTrackingBaseDir);
             fsTrackingService.Init();
-            return fsTrackingService;
+            return Task.FromResult<ISubscriptionTrackingService>(fsTrackingService);
         }
 
         public static string GetRootedPath(string path)

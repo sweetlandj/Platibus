@@ -11,14 +11,14 @@ namespace Platibus.InMemory
     [Provider("InMemory")]
     public class InMemoryServicesProvider : IMessageQueueingServiceProvider, ISubscriptionTrackingServiceProvider
     {
-        public IMessageQueueingService CreateMessageQueueingService(QueueingElement configuration)
+        public Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
-            return new InMemoryMessageQueueingService();
+            return Task.FromResult<IMessageQueueingService>(new InMemoryMessageQueueingService());
         }
 
-        public ISubscriptionTrackingService CreateSubscriptionTrackingService(SubscriptionTrackingElement configuration)
+        public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(SubscriptionTrackingElement configuration)
         {
-            return new InMemorySubscriptionTrackingService();
+            return Task.FromResult<ISubscriptionTrackingService>(new InMemorySubscriptionTrackingService());
         }
     }
 }

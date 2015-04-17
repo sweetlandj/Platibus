@@ -81,7 +81,8 @@ namespace Platibus.SQLite {
         ///	CONSTRAINT [PB_QueuedMessages_PK] 
         ///		PRIMARY KEY ([MessageId], [QueueName])
         ///);
-        ///        /// [rest of string was truncated]&quot;;.
+        ///
+        /// [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string CreateObjectsCommand {
             get {
