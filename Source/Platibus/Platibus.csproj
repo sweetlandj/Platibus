@@ -204,11 +204,6 @@
     <Compile Include="Serialization\DataContractSerializerAdapter.cs" />
     <Compile Include="Serialization\StringSerializer.cs" />
     <Compile Include="Serialization\XmlSerializerAdapter.cs" />
-    <Compile Include="SQL\CommonSQLCommands.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>CommonSQLCommands.resx</DependentUpon>
-    </Compile>
     <Compile Include="SQL\CommonSQLDialect.cs" />
     <Compile Include="SQL\DbExtensions.cs" />
     <Compile Include="SQL\DefaultConnectionProvider.cs" />
@@ -217,11 +212,6 @@
     <Compile Include="SQL\MSSQLDialectProvider.cs" />
     <Compile Include="SQL\SQLQueuedMessageContext.cs" />
     <Compile Include="SQL\ISQLDialect.cs" />
-    <Compile Include="SQL\MSSQLCommands.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>MSSQLCommands.resx</DependentUpon>
-    </Compile>
     <Compile Include="SQL\MSSQLDialect.cs" />
     <Compile Include="SQL\SQLMessageQueue.cs" />
     <Compile Include="SQL\SQLMessageQueueingService.cs" />
@@ -250,16 +240,6 @@
     <None Include="Platibus.licenseheader" />
     <None Include="Platibus.nuspec" />
     <None Include="Platibus.snk" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="SQL\CommonSQLCommands.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>CommonSQLCommands.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="SQL\MSSQLCommands.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>MSSQLCommands.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />

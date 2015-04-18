@@ -12,17 +12,76 @@ namespace Platibus.SQL
 
         public virtual string InsertQueuedMessageCommand
         {
-            get { return CommonSQLCommands.InsertQueuedMessageCommand; }
+            get
+            {
+                return @"
+INSERT INTO [PB_QueuedMessages] (
+    [MessageId], 
+    [QueueName], 
+    [MessageName], 
+    [Origination], 
+    [Destination], 
+    [ReplyTo], 
+    [Expires], 
+    [ContentType], 
+    [SenderPrincipal], 
+    [Headers], 
+    [MessageContent])
+SELECT 
+    @MessageId, 
+    @QueueName, 
+    @MessageName, 
+    @Origination, 
+    @Destination, 
+    @ReplyTo, 
+    @Expires, 
+    @ContentType, 
+    @SenderPrincipal, 
+    @Headers, 
+    @MessageContent
+WHERE NOT EXISTS (
+    SELECT [MessageID] 
+    FROM [PB_QueuedMessages]
+    WHERE [MessageId]=@MessageId 
+    AND [QueueName]=@QueueName)";
+            }
         }
 
         public virtual string SelectQueuedMessagesCommand
         {
-            get { return CommonSQLCommands.SelectQueuedMessagesCommand; }
+            get { return @"
+SELECT 
+    [MessageId], 
+    [QueueName], 
+    [MessageName], 
+    [Origination], 
+    [Destination], 
+    [ReplyTo], 
+    [Expires], 
+    [ContentType], 
+    [SenderPrincipal], 
+    [Headers], 
+    [MessageContent], 
+    [Attempts], 
+    [Acknowledged], 
+    [Abandoned]
+FROM [PB_QueuedMessages]
+WHERE [QueueName]=@QueueName 
+AND [Acknowledged] IS NULL
+AND [Abandoned] IS NULL";
+            }
         }
 
         public virtual string UpdateQueuedMessageCommand
         {
-            get { return CommonSQLCommands.UpdateQueuedMessageCommand; }
+            get { return @"
+UPDATE [PB_QueuedMessages] SET 
+    [Acknowledged]=@Acknowledged,
+    [Abandoned]=@Abandoned,
+    [Attempts]=@Attempts
+WHERE [MessageId]=@MessageId 
+AND [QueueName]=@QueueName";
+            }
         }
 
         public virtual string QueueNameParameterName

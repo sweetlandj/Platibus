@@ -20,11 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using Platibus.SQL;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Platibus.SQLite
 {
@@ -32,7 +27,46 @@ namespace Platibus.SQLite
     {
         public override string CreateObjectsCommand
         {
-            get { return SQLiteCommands.CreateObjectsCommand; }
+            get
+            {
+                return @"
+CREATE TABLE IF NOT EXISTS [PB_QueuedMessages]
+(
+    [MessageId] TEXT NOT NULL,
+    [QueueName] TEXT NOT NULL,
+    [MessageName] TEXT NULL,
+    [Origination] TEXT NULL,
+    [Destination] TEXT NULL,
+    [ReplyTo] TEXT NULL,
+    [Expires] TEXT NULL,
+    [ContentType] TEXT NULL,
+    [SenderPrincipal] TEXT,
+    [Headers] TEXT,
+    [MessageContent] TEXT,
+    [Attempts] INT NOT NULL DEFAULT 0,
+    [Acknowledged] TEXT NULL,
+    [Abandoned] TEXT NULL,
+                
+    CONSTRAINT [PB_QueuedMessages_PK] 
+        PRIMARY KEY ([MessageId], [QueueName])
+);
+
+CREATE INDEX IF NOT EXISTS [PB_QueuedMessages_IX_QueueName] 
+    ON [PB_QueuedMessages]([QueueName]);
+
+CREATE TABLE IF NOT EXISTS [PB_Subscriptions]
+(
+    [TopicName] TEXT NOT NULL,
+    [Subscriber] TEXT NOT NULL,
+    [Expires] TEXT NULL,
+
+    CONSTRAINT [PB_Subscriptions_PK] 
+        PRIMARY KEY ([TopicName], [Subscriber])
+);
+
+CREATE INDEX IF NOT EXISTS [PB_Subscriptions_IX_TopicName] 
+    ON [PB_Subscriptions]([TopicName]);";
+            }
         }
     }
 }
