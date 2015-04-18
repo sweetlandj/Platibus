@@ -25,9 +25,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.IO;
-using System.Linq;
 using System.Security.Principal;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -61,7 +59,7 @@ namespace Platibus.SQLite
                 ConnectionString = "Data Source=" + dbpath + "; Version=3",
                 ProviderName = "System.Data.SQLite"
             };
-            
+
             var connectionProvider = new SingletonConnectionProvider(connectionStringSettings);
             var connection = connectionProvider.GetConnection();
             try
@@ -69,7 +67,7 @@ namespace Platibus.SQLite
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandType = CommandType.Text;
-                    command.CommandText = SQLiteCommands.CreateObjectsCommand;
+                    command.CommandText = new SQLiteDialect().CreateObjectsCommand;
                     command.ExecuteNonQuery();
                 }
             }
@@ -114,7 +112,7 @@ namespace Platibus.SQLite
                     _cancellationTokenSource.Dispose();
                     _operationQueue.Complete();
                 }
-                catch(Exception)
+                catch (Exception)
                 {
                 }
             }

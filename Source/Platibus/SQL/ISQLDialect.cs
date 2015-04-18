@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace Platibus.SQL
 {
     public interface ISQLDialect
@@ -15,7 +10,6 @@ namespace Platibus.SQL
         string UpdateQueuedMessageCommand { get; }
 
         string QueueNameParameterName { get; }
-        string CurrentDateParameterName { get; }
         string MessageIdParameterName { get; }
         string MessageNameParameterName { get; }
         string OriginationParameterName { get; }

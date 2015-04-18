@@ -2,14 +2,11 @@
 using Platibus.Security;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data;
-using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Principal;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -25,7 +22,7 @@ namespace Platibus.SQL
         private readonly ISQLDialect _dialect;
         private readonly QueueName _queueName;
         private readonly IQueueListener _listener;
-        
+
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly SemaphoreSlim _concurrentMessageProcessingSlot;
         private readonly bool _autoAcknowledge;
@@ -42,7 +39,7 @@ namespace Platibus.SQL
             if (dialect == null) throw new ArgumentNullException("dialect");
             if (queueName == null) throw new ArgumentNullException("queueName");
             if (listener == null) throw new ArgumentNullException("listener");
-            
+
             _connectionProvider = connectionProvider;
             _dialect = dialect;
             _queueName = queueName;
@@ -179,16 +176,16 @@ namespace Platibus.SQL
 
                         var headers = message.Headers;
 
-                        command.SetParameter(_dialect.MessageIdParameterName, (Guid)headers.MessageId); 
-                        command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName); 
-                        command.SetParameter(_dialect.MessageNameParameterName, (string)headers.MessageName);  
-                        command.SetParameter(_dialect.OriginationParameterName, headers.Origination == null ? null : headers.Origination.ToString()); 
-                        command.SetParameter(_dialect.DestinationParameterName, headers.Destination == null ? null : headers.Destination.ToString()); 
+                        command.SetParameter(_dialect.MessageIdParameterName, (Guid)headers.MessageId);
+                        command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
+                        command.SetParameter(_dialect.MessageNameParameterName, (string)headers.MessageName);
+                        command.SetParameter(_dialect.OriginationParameterName, headers.Origination == null ? null : headers.Origination.ToString());
+                        command.SetParameter(_dialect.DestinationParameterName, headers.Destination == null ? null : headers.Destination.ToString());
                         command.SetParameter(_dialect.ReplyToParameterName, headers.ReplyTo == null ? null : headers.ReplyTo.ToString());
                         command.SetParameter(_dialect.ExpiresParameterName, headers.Expires);
                         command.SetParameter(_dialect.ContentTypeParameterName, headers.ContentType);
                         command.SetParameter(_dialect.SenderPrincipalParameterName, SerializePrincipal(senderPrincipal));
-                        command.SetParameter(_dialect.HeadersParameterName, SerializeHeaders(headers)); 
+                        command.SetParameter(_dialect.HeadersParameterName, SerializeHeaders(headers));
                         command.SetParameter(_dialect.MessageContentParameterName, message.Content);
 
                         command.ExecuteNonQuery();
@@ -220,7 +217,6 @@ namespace Platibus.SQL
                         command.CommandType = CommandType.Text;
                         command.CommandText = _dialect.SelectQueuedMessagesCommand;
                         command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
-                        command.SetParameter(_dialect.CurrentDateParameterName, DateTime.UtcNow);
 
                         using (var reader = command.ExecuteReader())
                         {
@@ -353,12 +349,12 @@ namespace Platibus.SQL
         {
             var headers = new MessageHeaders();
             if (string.IsNullOrWhiteSpace(headerString)) return headers;
-            
+
             var currentHeaderName = (HeaderName)null;
             var currentHeaderValue = new StringWriter();
             var finishedReadingHeaders = false;
             var lineNumber = 0;
-            
+
             string currentLine;
             using (var reader = new StringReader(headerString))
             {
