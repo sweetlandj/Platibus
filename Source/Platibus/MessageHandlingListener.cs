@@ -62,7 +62,7 @@ namespace Platibus
                 Log.WarnFormat("Discarding expired \"{0}\" message (ID {1}, expired {2})", message.Headers.MessageName,
                     message.Headers.MessageId, message.Headers.Expires);
 
-                context.Acknowledge();
+                await context.Acknowledge().ConfigureAwait(false);
                 return;
             }
 
@@ -70,11 +70,11 @@ namespace Platibus
             var messageType = _messageNamingService.GetTypeForName(message.Headers.MessageName);
             var serializer = _serializationService.GetSerializer(message.Headers.ContentType);
             var messageContent = serializer.Deserialize(message.Content, messageType);
-            var handlingTasks = _messageHandlers.Select(handler => 
+            var handlingTasks = _messageHandlers.Select(handler =>
                 handler.HandleMessage(messageContent, messageContext, cancellationToken));
-            
+
             await Task.WhenAll(handlingTasks).ConfigureAwait(false);
-            
+
             if (messageContext.MessageAcknowledged)
             {
                 await context.Acknowledge().ConfigureAwait(false);

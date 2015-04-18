@@ -133,7 +133,7 @@ namespace Platibus
                 var subscriptionTask = Subscribe(subscription, _cancellationTokenSource.Token);
             }
         }
-        
+
         public async Task<ISentMessage> Send(object content, SendOptions options = default(SendOptions),
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -182,7 +182,7 @@ namespace Platibus
             };
             var message = BuildMessage(content, headers, options);
 
-            Log.DebugFormat("Sending message ID {0} to endpoint \"{1}\" ({2})...", 
+            Log.DebugFormat("Sending message ID {0} to endpoint \"{1}\" ({2})...",
                 message.Headers.MessageId, endpointName, endpoint.Address);
 
             await TransportMessage(message, credentials, options, cancellationToken).ConfigureAwait(false);
@@ -206,7 +206,7 @@ namespace Platibus
 
             Log.DebugFormat("Sending message ID {0} to \"{2}\"...",
                 message.Headers.MessageId, endpointUri);
-            
+
             await TransportMessage(message, credentials, options, cancellationToken).ConfigureAwait(false);
             return _replyHub.CreateSentMessage(message);
         }
@@ -223,7 +223,7 @@ namespace Platibus
                 Published = DateTime.UtcNow
             };
 
-            var options = new SendOptions 
+            var options = new SendOptions
             {
                 UseDurableTransport = true
             };
@@ -332,7 +332,7 @@ namespace Platibus
                     // Attempt to renew after half of the TTL to allow for
                     // issues that may occur when attempting to renew the
                     // subscription.
-                    retryOrRenewAfter = TimeSpan.FromMilliseconds(subscription.TTL.TotalMilliseconds/2);
+                    retryOrRenewAfter = TimeSpan.FromMilliseconds(subscription.TTL.TotalMilliseconds / 2);
                     Log.DebugFormat(
                         "Subscription request for topic {0} successfuly sent to {1}.  Subscription TTL is {2} and is scheduled to auto-renew in {3}",
                         subscription.Topic, publisher, subscription.TTL, retryOrRenewAfter);
@@ -416,7 +416,7 @@ namespace Platibus
             return _sendRules
                 .Where(r => r.Specification.IsSatisfiedBy(message))
                 .SelectMany(r => r.Endpoints)
-                .Join(_endpoints, n => n, d => d.Key, (n, d) => new {Name = n, Endpoint = d.Value})
+                .Join(_endpoints, n => n, d => d.Key, (n, d) => new { Name = n, Endpoint = d.Value })
                 .ToDictionary(x => x.Name, x => x.Endpoint);
         }
 
@@ -507,7 +507,7 @@ namespace Platibus
             {
                 tasks.Add(NotifyReplyReceived(message));
             }
-            
+
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
@@ -577,13 +577,13 @@ namespace Platibus
 
             public OutboundQueueListener(ITransportService transportService, IMessageJournalingService messageJournalingService, Func<Uri, IEndpointCredentials> credentialsFactory)
             {
-                if (transportService == null) 
+                if (transportService == null)
                 {
                     throw new ArgumentNullException("transportService");
                 }
                 _transportService = transportService;
                 _messageJournalingService = messageJournalingService;
-                _credentialsFactory = credentialsFactory ?? 
+                _credentialsFactory = credentialsFactory ??
                     new Func<Uri, IEndpointCredentials>(uri => null);
             }
 
@@ -595,7 +595,7 @@ namespace Platibus
                     Log.WarnFormat("Discarding expired \"{0}\" message (ID {1}, expired {2})",
                         message.Headers.MessageName, message.Headers.MessageId, message.Headers.Expires);
 
-                    context.Acknowledge();
+                    await context.Acknowledge().ConfigureAwait(false);
                     return;
                 }
 
