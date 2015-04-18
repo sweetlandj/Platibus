@@ -61,6 +61,8 @@ namespace Platibus
             {
                 Log.WarnFormat("Discarding expired \"{0}\" message (ID {1}, expired {2})", message.Headers.MessageName,
                     message.Headers.MessageId, message.Headers.Expires);
+
+                context.Acknowledge();
                 return;
             }
 
