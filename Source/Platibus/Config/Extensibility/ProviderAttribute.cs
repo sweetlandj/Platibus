@@ -29,6 +29,7 @@ namespace Platibus.Config.Extensibility
         private readonly string _name;
 
         public string Name { get { return _name; } }
+        public int Priority { get; set; }
 
         public ProviderAttribute(string name)
         {

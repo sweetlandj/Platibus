@@ -20,10 +20,10 @@ namespace Platibus.Config.Extensibility
                 var providers = ReflectionHelper
                     .FindConcreteSubtypes<TProvider>()
                     .With<ProviderAttribute>(a => string.Equals(providerName, a.Name, StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending<ProviderAttribute>(a => a.Priority)
                     .ToList();
 
                 if (!providers.Any()) throw new ProviderNotFoundException(providerName);
-                if (providers.Count > 1) throw new MultipleProvidersFoundException(providerName, providers);
 
                 providerType = providers.First();
             }

@@ -92,5 +92,29 @@ namespace Platibus.Config
         {
             return source.Where(t => t.Has<TAttribute>(where));
         }
+
+        public static IEnumerable<Type> OrderBy<TAttribute>(this IEnumerable<Type> source, Func<TAttribute, object> attributeMember) where TAttribute : Attribute
+        {
+            return source.Select(t => new
+            {
+                Type = t,
+                Attribute = t.GetCustomAttribute<TAttribute>()
+            })
+            .Where(x => x.Attribute != null)
+            .OrderBy(x => attributeMember(x.Attribute))
+            .Select(x => x.Type);
+        }
+
+        public static IEnumerable<Type> OrderByDescending<TAttribute>(this IEnumerable<Type> source, Func<TAttribute, object> attributeMember) where TAttribute : Attribute
+        {
+            return source.Select(t => new
+            {
+                Type = t,
+                Attribute = t.GetCustomAttribute<TAttribute>()
+            })
+            .Where(x => x.Attribute != null)
+            .OrderByDescending(x => attributeMember(x.Attribute))
+            .Select(x => x.Type);
+        }
     }
 }
