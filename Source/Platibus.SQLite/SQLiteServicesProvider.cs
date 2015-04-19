@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿using Platibus.Config;
+// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -30,16 +31,24 @@ using System.Threading.Tasks;
 namespace Platibus.SQLite
 {
     [Provider("SQLite")]
-    public class SQLiteServicesProvider : IMessageQueueingServiceProvider
+    public class SQLiteServicesProvider : IMessageQueueingServiceProvider, ISubscriptionTrackingServiceProvider
     {
-
-        public Task<IMessageQueueingService> CreateMessageQueueingService(Config.QueueingElement configuration)
+        public Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
             var path = configuration.GetString("path");
             var sqliteBaseDir = new DirectoryInfo(GetRootedPath(path));
             var sqliteMessageQueueingService = new SQLiteMessageQueueingService(sqliteBaseDir);
             sqliteMessageQueueingService.Init();
             return Task.FromResult<IMessageQueueingService>(sqliteMessageQueueingService);
+        }
+
+        public async Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(SubscriptionTrackingElement configuration)
+        {
+            var path = configuration.GetString("path");
+            var sqliteBaseDir = new DirectoryInfo(GetRootedPath(path));
+            var sqliteSubscriptionTrackingService = new SQLiteSubscriptionTrackingService(sqliteBaseDir);
+            await sqliteSubscriptionTrackingService.Init();
+            return sqliteSubscriptionTrackingService;
         }
 
         public static string GetRootedPath(string path)

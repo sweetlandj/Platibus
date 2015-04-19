@@ -34,8 +34,8 @@ namespace Platibus.SQLite
 {
     class SQLiteMessageQueue : SQLMessageQueue
     {
-        private readonly ActionBlock<ISQLiteOperation> _operationQueue;
         private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly ActionBlock<ISQLiteOperation> _operationQueue;
 
         public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
             : base(InitDb(baseDirectory, queueName), new SQLiteDialect(), queueName, listener, options)
@@ -52,11 +52,11 @@ namespace Platibus.SQLite
 
         private static IDbConnectionProvider InitDb(DirectoryInfo directory, QueueName queueName)
         {
-            var dbpath = Path.Combine(directory.FullName, queueName + ".db");
+            var dbPath = Path.Combine(directory.FullName, queueName + ".db");
             var connectionStringSettings = new ConnectionStringSettings
             {
-                Name = dbpath,
-                ConnectionString = "Data Source=" + dbpath + "; Version=3",
+                Name = dbPath,
+                ConnectionString = "Data Source=" + dbPath + "; Version=3",
                 ProviderName = "System.Data.SQLite"
             };
 

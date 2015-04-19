@@ -12,7 +12,7 @@ using System.Transactions;
 
 namespace Platibus.SQL
 {
-    class SQLSubscriptionTrackingService : ISubscriptionTrackingService, IDisposable
+    public class SQLSubscriptionTrackingService : ISubscriptionTrackingService, IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.SQL);
 
@@ -232,7 +232,5 @@ namespace Platibus.SQL
         {
             if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }
-
-
     }
 }

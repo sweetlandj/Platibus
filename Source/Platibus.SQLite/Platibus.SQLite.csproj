@@ -74,6 +74,7 @@
     <Compile Include="SQLiteMessageQueueingService.cs" />
     <Compile Include="SQLiteOperation.cs" />
     <Compile Include="SQLiteServicesProvider.cs" />
+    <Compile Include="SQLiteSubscriptionTrackingService.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Platibus\Platibus.csproj">
