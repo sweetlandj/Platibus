@@ -59,7 +59,7 @@ namespace Platibus.SQLite
         public void Init()
         {
             _baseDirectory.Refresh();
-            if (_baseDirectory.Exists)
+            if (!_baseDirectory.Exists)
             {
                 _baseDirectory.Create();
                 _baseDirectory.Refresh();
@@ -107,7 +107,7 @@ namespace Platibus.SQLite
             if (_disposed) return;
             if (disposing)
             {
-                foreach(var queue in _queues.Values)
+                foreach (var queue in _queues.Values)
                 {
                     queue.Dispose();
                 }
