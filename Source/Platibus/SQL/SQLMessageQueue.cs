@@ -226,7 +226,7 @@ namespace Platibus.SQL
                                 var headers = DeserializeHeaders(reader.GetString("Headers"));
                                 var senderPrincipal = DeserializePrincipal(reader.GetString("SenderPrincipal"));
                                 var message = new Message(headers, messageContent);
-                                var attempts = reader.GetInt("Attempts");
+                                var attempts = reader.GetInt("Attempts").GetValueOrDefault(0);
                                 var queuedMessage = new SQLQueuedMessage(message, senderPrincipal, attempts);
                                 queuedMessages.Add(queuedMessage);
                             }

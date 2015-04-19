@@ -24,7 +24,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public async Task Given_Many_Concurrent_Calls_When_Subscribing_Then_All_Subscriptions_Recorded_No_Errors()
+        public async Task Handles_Many_Concurrent_Calls_Correctly_Without_Errors()
         {
             var tempDir = GetTempDirectory();
             Log.DebugFormat("Temp directory: {0}", tempDir);
@@ -36,10 +36,10 @@ namespace Platibus.UnitTests
                 .Select(i => new TopicName("Topic-" + i));
 
             var subscriptions = topicNames
-                .SelectMany(t => 
+                .SelectMany(t =>
                     Enumerable.Range(0, 100)
                         .Select(j => new Uri("http://localhost/subscriber-" + j))
-                        .Select(s => new 
+                        .Select(s => new
                         {
                             Topic = t,
                             Subscriber = s
@@ -49,16 +49,82 @@ namespace Platibus.UnitTests
             await Task.WhenAll(subscriptions.Select(s => fsSubscriptionService.AddSubscription(s.Topic, s.Subscriber)));
 
             var subscriptionsByTopic = subscriptions.GroupBy(s => s.Topic);
-            foreach(var grouping in subscriptionsByTopic)
+            foreach (var grouping in subscriptionsByTopic)
             {
                 var expectedSubscribers = grouping.Select(g => g.Subscriber).ToList();
-                var actualSubscribers = fsSubscriptionService.GetSubscribers(grouping.Key);
+                var actualSubscribers = await fsSubscriptionService.GetSubscribers(grouping.Key).ConfigureAwait(false);
                 Assert.That(actualSubscribers, Is.EquivalentTo(expectedSubscribers));
             }
         }
 
         [Test]
-        public async Task Given_Existing_Subscriptions_When_Initializing_Then_Subscriptions_Should_Be_Loaded()
+        public async Task Subscriber_Should_Not_Be_Returned_After_It_Is_Removed()
+        {
+            var tempDir = GetTempDirectory();
+            Log.DebugFormat("Temp directory: {0}", tempDir);
+
+            var fsSubscriptionService = new FilesystemSubscriptionTrackingService(tempDir);
+            await fsSubscriptionService.Init();
+
+            var topic = "topic-0";
+            var subscriber = new Uri("http://localhost/platibus");
+            await fsSubscriptionService.AddSubscription(topic, subscriber).ConfigureAwait(false);
+
+            var subscribers = await fsSubscriptionService.GetSubscribers(topic).ConfigureAwait(false);
+            Assert.That(subscribers, Has.Member(subscriber));
+
+            await fsSubscriptionService.RemoveSubscription(topic, subscriber).ConfigureAwait(false);
+
+            var subscribersAfterRemoval = await fsSubscriptionService.GetSubscribers(topic).ConfigureAwait(false);
+            Assert.That(subscribersAfterRemoval, Has.No.Member(subscriber));
+        }
+
+        [Test]
+        public async Task Expired_Subscription_Should_Not_Be_Returned()
+        {
+            var tempDir = GetTempDirectory();
+            Log.DebugFormat("Temp directory: {0}", tempDir);
+
+            var fsSubscriptionService = new FilesystemSubscriptionTrackingService(tempDir);
+            await fsSubscriptionService.Init();
+
+            var topic = "topic-0";
+            var subscriber = new Uri("http://localhost/platibus");
+            await fsSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromMilliseconds(1)).ConfigureAwait(false);
+
+            await Task.Delay(TimeSpan.FromMilliseconds(100)).ConfigureAwait(false);
+
+            var subscribers = await fsSubscriptionService.GetSubscribers(topic).ConfigureAwait(false);
+            Assert.That(subscribers, Has.No.Member(subscriber));
+        }
+
+        [Test]
+        public async Task Expired_Subscription_That_Is_Renewed_Should_Be_Returned()
+        {
+            var tempDir = GetTempDirectory();
+            Log.DebugFormat("Temp directory: {0}", tempDir);
+
+            var fsSubscriptionService = new FilesystemSubscriptionTrackingService(tempDir);
+            await fsSubscriptionService.Init();
+
+            var topic = "topic-0";
+            var subscriber = new Uri("http://localhost/platibus");
+            await fsSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromMilliseconds(1)).ConfigureAwait(false);
+
+            await Task.Delay(TimeSpan.FromMilliseconds(100)).ConfigureAwait(false);
+
+            var subscribers = await fsSubscriptionService.GetSubscribers(topic).ConfigureAwait(false);
+            Assert.That(subscribers, Has.No.Member(subscriber));
+
+            await fsSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+
+            var subscribersAfterRenewal = await fsSubscriptionService.GetSubscribers(topic).ConfigureAwait(false);
+            Assert.That(subscribersAfterRenewal, Has.Member(subscriber));
+
+        }
+
+        [Test]
+        public async Task Existing_Subscriptions_Should_Be_Loaded_When_Initializing()
         {
             var tempDir = GetTempDirectory();
             Log.DebugFormat("Temp directory: {0}", tempDir);
@@ -93,7 +159,7 @@ namespace Platibus.UnitTests
             foreach (var grouping in subscriptionsByTopic)
             {
                 var expectedSubscribers = grouping.Select(g => g.Subscriber).ToList();
-                var actualSubscribers = fsSubscriptionService2.GetSubscribers(grouping.Key);
+                var actualSubscribers = await fsSubscriptionService2.GetSubscribers(grouping.Key).ConfigureAwait(false);
                 Assert.That(actualSubscribers, Is.EquivalentTo(expectedSubscribers));
             }
         }

@@ -10,9 +10,9 @@
     <projectUrl>https://github.com/sweetlandj/Platibus/</projectUrl>
     <iconUrl>https://raw.githubusercontent.com/sweetlandj/Platibus/master/Icon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Platibus decentralized asynchronous messaging framework</description>
+    <description>SQLite extensions for the Platibus decentralized asynchronous messaging framework</description>
     <releaseNotes>Initial release</releaseNotes>
     <copyright>Copyright 2015</copyright>
-    <tags>bus message queue service rest async</tags>
+    <tags>bus message queue service rest async sqlite</tags>
   </metadata>
 </package>

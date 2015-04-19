@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace Platibus.SQL
 {
     public abstract class CommonSQLDialect : ISQLDialect
     {
-        public abstract string CreateObjectsCommand { get; }
+        public abstract string CreateMessageQueueingServiceObjectsCommand { get; }
+        public abstract string CreateSubscriptionTrackingServiceObjectsCommand { get; }
 
         public virtual string InsertQueuedMessageCommand
         {
@@ -49,7 +45,9 @@ WHERE NOT EXISTS (
 
         public virtual string SelectQueuedMessagesCommand
         {
-            get { return @"
+            get
+            {
+                return @"
 SELECT 
     [MessageId], 
     [QueueName], 
@@ -74,7 +72,9 @@ AND [Abandoned] IS NULL";
 
         public virtual string UpdateQueuedMessageCommand
         {
-            get { return @"
+            get
+            {
+                return @"
 UPDATE [PB_QueuedMessages] SET 
     [Acknowledged]=@Acknowledged,
     [Abandoned]=@Abandoned,
@@ -84,14 +84,58 @@ AND [QueueName]=@QueueName";
             }
         }
 
+        public string InsertSubscriptionCommand
+        {
+            get
+            {
+                return @"
+INSERT INTO [PB_Subscriptions] ([TopicName], [Subscriber], [Expires])
+SELECT @TopicName, @Subscriber, @Expires
+WHERE NOT EXISTS (
+    SELECT [TopicName], [Subscriber]
+    FROM [PB_Subscriptions]
+    WHERE [TopicName]=@TopicName
+    AND [Subscriber]=@Subscriber)";
+            }
+        }
+
+        public string UpdateSubscriptionCommand
+        {
+            get
+            {
+                return @"
+UPDATE [PB_Subscriptions] SET [Expires]=@Expires
+WHERE [TopicName]=@TopicName
+AND [Subscriber]=@Subscriber";
+            }
+        }
+
+        public string SelectSubscriptionsCommand
+        {
+            get
+            {
+                return @"
+SELECT [TopicName], [Subscriber], [Expires]
+FROM [PB_Subscriptions]
+WHERE [Expires] IS NULL
+OR [Expires] > @CurrentDate";
+            }
+        }
+
+        public string DeleteSubscriptionCommand
+        {
+            get
+            {
+                return @"
+DELETE FROM [PB_Subscriptions]
+WHERE [TopicName]=@TopicName
+AND [Subscriber]=@Subscriber";
+            }
+        }
+
         public virtual string QueueNameParameterName
         {
             get { return "@QueueName"; }
-        }
-
-        public virtual string CurrentDateParameterName
-        {
-            get { return "@CurrentDate"; }
         }
 
         public virtual string MessageIdParameterName
@@ -157,6 +201,21 @@ AND [QueueName]=@QueueName";
         public virtual string AbandonedParameterName
         {
             get { return "@Abandoned"; }
+        }
+
+        public string TopicNameParameterName
+        {
+            get { return "@TopicName"; }
+        }
+
+        public string SubscriberParameterName
+        {
+            get { return "@Subscriber"; }
+        }
+
+        public string CurrentDateParameterName
+        {
+            get { return "@CurrentDate"; }
         }
     }
 }

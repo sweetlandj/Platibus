@@ -55,7 +55,7 @@ namespace Platibus.SQL
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandType = CommandType.Text;
-                    command.CommandText = _dialect.CreateObjectsCommand;
+                    command.CommandText = _dialect.CreateMessageQueueingServiceObjectsCommand;
                     command.ExecuteNonQuery();
                 }
             }

@@ -234,7 +234,7 @@ namespace Platibus
                 await _messageJournalingService.MessagePublished(prototypicalMessage).ConfigureAwait(false);
             }
 
-            var subscribers = _subscriptionTrackingService.GetSubscribers(topic);
+            var subscribers = await _subscriptionTrackingService.GetSubscribers(topic).ConfigureAwait(false);
 
             var publishSendOptions = new SendOptions();
             var transportTasks = new List<Task>();
@@ -538,7 +538,17 @@ namespace Platibus
             var topic = args.Topic;
             var subscriber = args.Subscriber;
             var ttl = args.TTL;
-            await _subscriptionTrackingService.AddSubscription(topic, subscriber, ttl).ConfigureAwait(false);
+
+            switch (args.RequestType)
+            {
+                case SubscriptionRequestType.Add:
+                    await _subscriptionTrackingService.AddSubscription(topic, subscriber, ttl).ConfigureAwait(false);
+                    break;
+                case SubscriptionRequestType.Remove:
+                    await _subscriptionTrackingService.RemoveSubscription(topic, subscriber).ConfigureAwait(false);
+                    break;
+            }
+
         }
 
         private void CheckDisposed()

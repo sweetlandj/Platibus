@@ -57,14 +57,13 @@ namespace Platibus.Filesystem
             var expirationDate = ttl <= TimeSpan.Zero ? DateTime.MaxValue : DateTime.UtcNow + ttl;
             var expiringSubscription = new ExpiringSubscription(subscriber, expirationDate);
 
-            _subscriptions.AddOrUpdate(topic, new[] {expiringSubscription},
-                (t, existing) => new[] {expiringSubscription}.Union(existing).ToList());
+            _subscriptions.AddOrUpdate(topic, new[] { expiringSubscription },
+                (t, existing) => new[] { expiringSubscription }.Union(existing).ToList());
 
             return FlushSubscriptionsToDisk(topic);
         }
 
-        public Task RemoveSubscription(TopicName topic, Uri subscriber, TimeSpan ttl = default(TimeSpan),
-            CancellationToken cancellationToken = default(CancellationToken))
+        public Task RemoveSubscription(TopicName topic, Uri subscriber, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
             _subscriptions.AddOrUpdate(topic, new ExpiringSubscription[0],
@@ -73,14 +72,16 @@ namespace Platibus.Filesystem
             return FlushSubscriptionsToDisk(topic);
         }
 
-        public IEnumerable<Uri> GetSubscribers(TopicName topicName)
+        public Task<IEnumerable<Uri>> GetSubscribers(TopicName topicName, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
             IEnumerable<ExpiringSubscription> subscriptions;
             _subscriptions.TryGetValue(topicName, out subscriptions);
-            return (subscriptions ?? Enumerable.Empty<ExpiringSubscription>())
+            var activeSubscribers = (subscriptions ?? Enumerable.Empty<ExpiringSubscription>())
                 .Where(s => s.ExpirationDate > DateTime.UtcNow)
                 .Select(s => s.Subscriber);
+
+            return Task.FromResult(activeSubscribers);
         }
 
         public Task Init()

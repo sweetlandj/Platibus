@@ -65,7 +65,7 @@ namespace Platibus.Filesystem
                 return defaultRootedPath;
             }
 
-            if (Path.IsPathRooted(path)) 
+            if (Path.IsPathRooted(path))
             {
                 return path;
             }

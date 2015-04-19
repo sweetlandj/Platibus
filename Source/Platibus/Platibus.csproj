@@ -217,6 +217,8 @@
     <Compile Include="SQL\SQLMessageQueueingService.cs" />
     <Compile Include="SQL\SQLQueuedMessage.cs" />
     <Compile Include="SQL\SQLServicesProvider.cs" />
+    <Compile Include="SQL\SQLSubscription.cs" />
+    <Compile Include="SQL\SQLSubscriptionTrackingService.cs" />
     <Compile Include="SubscriptionRequestReceivedEventArgs.cs" />
     <Compile Include="SubscriptionRequestReceivedHandler.cs" />
     <Compile Include="SubscriptionRequestType.cs" />

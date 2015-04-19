@@ -43,14 +43,13 @@ namespace Platibus.InMemory
             var expirationDate = ttl <= TimeSpan.Zero ? DateTime.MaxValue : DateTime.UtcNow + ttl;
             var expiringSubscription = new ExpiringSubscription(subscriber, expirationDate);
 
-            _subscriptions.AddOrUpdate(topic, new[] {expiringSubscription},
-                (t, existing) => new[] {expiringSubscription}.Union(existing).ToList());
+            _subscriptions.AddOrUpdate(topic, new[] { expiringSubscription },
+                (t, existing) => new[] { expiringSubscription }.Union(existing).ToList());
 
             return Task.FromResult(true);
         }
 
-        public Task RemoveSubscription(TopicName topic, Uri subscriber, TimeSpan ttl = default(TimeSpan),
-            CancellationToken cancellationToken = default(CancellationToken))
+        public Task RemoveSubscription(TopicName topic, Uri subscriber, CancellationToken cancellationToken = default(CancellationToken))
         {
             _subscriptions.AddOrUpdate(topic, new ExpiringSubscription[0],
                 (t, existing) => existing.Where(se => se.Subscriber != subscriber).ToList());
@@ -58,13 +57,15 @@ namespace Platibus.InMemory
             return Task.FromResult(true);
         }
 
-        public IEnumerable<Uri> GetSubscribers(TopicName topicName)
+        public Task<IEnumerable<Uri>> GetSubscribers(TopicName topicName, CancellationToken cancellationToken = default(CancellationToken))
         {
             IEnumerable<ExpiringSubscription> subscriptions;
             _subscriptions.TryGetValue(topicName, out subscriptions);
-            return (subscriptions ?? Enumerable.Empty<ExpiringSubscription>())
+            var activeSubscriptions = (subscriptions ?? Enumerable.Empty<ExpiringSubscription>())
                 .Where(s => s.ExpirationDate > DateTime.UtcNow)
                 .Select(s => s.Subscriber);
+
+            return Task.FromResult(activeSubscriptions);
         }
 
         private class ExpiringSubscription : IEquatable<ExpiringSubscription>

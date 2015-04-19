@@ -67,7 +67,7 @@ namespace Platibus.SQLite
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandType = CommandType.Text;
-                    command.CommandText = new SQLiteDialect().CreateObjectsCommand;
+                    command.CommandText = new SQLiteDialect().CreateMessageQueueingServiceObjectsCommand;
                     command.ExecuteNonQuery();
                 }
             }

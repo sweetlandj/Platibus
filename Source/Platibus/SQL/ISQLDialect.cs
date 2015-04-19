@@ -3,11 +3,17 @@ namespace Platibus.SQL
 {
     public interface ISQLDialect
     {
-        string CreateObjectsCommand { get; }
+        string CreateMessageQueueingServiceObjectsCommand { get; }
+        string CreateSubscriptionTrackingServiceObjectsCommand { get; }
 
         string InsertQueuedMessageCommand { get; }
         string SelectQueuedMessagesCommand { get; }
         string UpdateQueuedMessageCommand { get; }
+
+        string InsertSubscriptionCommand { get; }
+        string UpdateSubscriptionCommand { get; }
+        string SelectSubscriptionsCommand { get; }
+        string DeleteSubscriptionCommand { get; }
 
         string QueueNameParameterName { get; }
         string MessageIdParameterName { get; }
@@ -23,5 +29,9 @@ namespace Platibus.SQL
         string AttemptsParameterName { get; }
         string AcknowledgedParameterName { get; }
         string AbandonedParameterName { get; }
+
+        string TopicNameParameterName { get; }
+        string SubscriberParameterName { get; }
+        string CurrentDateParameterName { get; }
     }
 }

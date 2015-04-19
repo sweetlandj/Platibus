@@ -83,6 +83,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Platibus.SQLite.nuspec" />
     <None Include="Platibus.SQLite.licenseheader" />
     <None Include="Platibus.snk" />
   </ItemGroup>

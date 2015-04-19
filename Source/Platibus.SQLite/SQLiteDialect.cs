@@ -25,7 +25,7 @@ namespace Platibus.SQLite
 {
     class SQLiteDialect : CommonSQLDialect
     {
-        public override string CreateObjectsCommand
+        public override string CreateMessageQueueingServiceObjectsCommand
         {
             get
             {
@@ -52,8 +52,15 @@ CREATE TABLE IF NOT EXISTS [PB_QueuedMessages]
 );
 
 CREATE INDEX IF NOT EXISTS [PB_QueuedMessages_IX_QueueName] 
-    ON [PB_QueuedMessages]([QueueName]);
+    ON [PB_QueuedMessages]([QueueName]);";
+            }
+        }
 
+        public override string CreateSubscriptionTrackingServiceObjectsCommand
+        {
+            get
+            {
+                return @"
 CREATE TABLE IF NOT EXISTS [PB_Subscriptions]
 (
     [TopicName] TEXT NOT NULL,

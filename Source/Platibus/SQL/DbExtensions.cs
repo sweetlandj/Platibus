@@ -1,13 +1,9 @@
 ﻿using Common.Logging;
 using Platibus.Config.Extensibility;
 using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Platibus.SQL
 {
@@ -41,8 +37,8 @@ namespace Platibus.SQL
                 parameter.Value = (long)((TimeSpan)value).TotalMilliseconds;
             }
             else
-            { 
-                parameter.Value = value; 
+            {
+                parameter.Value = value;
             }
 
             command.Parameters.Add(parameter);
@@ -54,34 +50,34 @@ namespace Platibus.SQL
             return record.IsDBNull(ordinal) ? defaultValue : record.GetString(ordinal);
         }
 
-        public static int GetInt(this IDataRecord record, string name, int defaultValue = default(int))
+        public static int? GetInt(this IDataRecord record, string name)
         {
             var ordinal = record.GetOrdinal(name);
-            return record.IsDBNull(ordinal) ? defaultValue : record.GetInt32(ordinal);
+            return record.IsDBNull(ordinal) ? null : (int?)record.GetInt32(ordinal);
         }
 
-        public static long GetLong(this IDataRecord record, string name, long defaultValue = default(long))
+        public static long? GetLong(this IDataRecord record, string name)
         {
             var ordinal = record.GetOrdinal(name);
-            return record.IsDBNull(ordinal) ? defaultValue : record.GetInt64(ordinal);
+            return record.IsDBNull(ordinal) ? null : (long?)record.GetInt64(ordinal);
         }
 
-        public static bool GetBoolean(this IDataRecord record, string name, bool defaultValue = default(bool))
+        public static bool? GetBoolean(this IDataRecord record, string name)
         {
             var ordinal = record.GetOrdinal(name);
-            return record.IsDBNull(ordinal) ? defaultValue : record.GetBoolean(ordinal);
+            return record.IsDBNull(ordinal) ? null : (bool?)record.GetBoolean(ordinal);
         }
 
-        public static DateTime GetDateTime(this IDataRecord record, string name, DateTime defaultValue = default(DateTime))
+        public static DateTime? GetDateTime(this IDataRecord record, string name)
         {
             var ordinal = record.GetOrdinal(name);
-            return record.IsDBNull(ordinal) ? defaultValue : record.GetDateTime(ordinal);
+            return record.IsDBNull(ordinal) ? null : (DateTime?)record.GetDateTime(ordinal);
         }
 
-        public static TimeSpan GetTimeSpan(this IDataRecord record, string name, TimeSpan defaultValue = default(TimeSpan))
+        public static TimeSpan? GetTimeSpan(this IDataRecord record, string name)
         {
             var milliseconds = record.GetLong(name);
-            return TimeSpan.FromMilliseconds(milliseconds);
+            return milliseconds == null ? null : (TimeSpan?)TimeSpan.FromMilliseconds(milliseconds.Value);
         }
 
         public static ISQLDialect GetSQLDialect(this ConnectionStringSettings connectionStringSettings)
