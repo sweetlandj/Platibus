@@ -33,8 +33,6 @@ namespace Platibus.UnitTests
         public async Task Handles_Many_Concurrent_Calls_Correctly_Without_Errors()
         {
             var connectionStringSettings = GetConnectionStringSettings();
-            Log.DebugFormat("Temp directory: {0}", connectionStringSettings);
-
             var sqlSubscriptionService = new SQLSubscriptionTrackingService(connectionStringSettings);
             await sqlSubscriptionService.Init();
 
@@ -67,8 +65,6 @@ namespace Platibus.UnitTests
         public async Task Subscriber_Should_Not_Be_Returned_After_It_Is_Removed()
         {
             var connectionStringSettings = GetConnectionStringSettings();
-            Log.DebugFormat("Temp directory: {0}", connectionStringSettings);
-
             var sqlSubscriptionService = new SQLSubscriptionTrackingService(connectionStringSettings);
             await sqlSubscriptionService.Init();
 
@@ -108,8 +104,6 @@ namespace Platibus.UnitTests
         public async Task Expired_Subscription_That_Is_Renewed_Should_Be_Returned()
         {
             var connectionStringSettings = GetConnectionStringSettings();
-            Log.DebugFormat("Temp directory: {0}", connectionStringSettings);
-
             var sqlSubscriptionService = new SQLSubscriptionTrackingService(connectionStringSettings);
             await sqlSubscriptionService.Init();
 
@@ -133,8 +127,6 @@ namespace Platibus.UnitTests
         public async Task Existing_Subscriptions_Should_Be_Loaded_When_Initializing()
         {
             var connectionStringSettings = GetConnectionStringSettings();
-            Log.DebugFormat("Temp directory: {0}", connectionStringSettings);
-
             var sqlSubscriptionService = new SQLSubscriptionTrackingService(connectionStringSettings);
             await sqlSubscriptionService.Init();
 
