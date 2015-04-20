@@ -36,55 +36,57 @@ namespace Platibus.SQLite
     {
         private static readonly ILog Log = LogManager.GetLogger(SQLiteLoggingCategories.SQLite);
         private readonly object _syncRoot = new object();
-        private readonly DbConnection _connection;
+        private readonly DbProviderFactory _dbProviderFactory;
+        private readonly string _connectionString;
 
+        private volatile DbConnection _connection;
         private bool _disposed;
 
         public SingletonConnectionProvider(ConnectionStringSettings connectionStringSettings)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-            _connection = connectionStringSettings.OpenConnection();
+            _dbProviderFactory = DbProviderFactories.GetFactory(connectionStringSettings.ProviderName);
+            _connectionString = connectionStringSettings.ConnectionString;
         }
 
-        private bool IsConnectionOk
-        {
-            get
-            {
-                return _connection.State != ConnectionState.Broken
-                    && _connection.State != ConnectionState.Closed;
-            }
-        }
-
-        private void Reconnect()
-        {
-            try
-            {
-                _connection.Close();
-            }
-            catch(Exception ex)
-            {
-                Log.Info("Error closing connection", ex);
-            }
-            _connection.Open();
-        }
 
         public DbConnection GetConnection()
         {
             CheckDisposed();
-            if (IsConnectionOk)
+            var myConnection = _connection;
+            if (myConnection != null && myConnection.State == ConnectionState.Open)
             {
-                return _connection;
+                return myConnection;
             }
-         
-            lock(_connection)
+
+            lock (_syncRoot)
             {
-                if (!IsConnectionOk)
+                if (myConnection != null && myConnection.State == ConnectionState.Broken)
                 {
-                    Log.Info("Connection in closed or broken state; reconnecting...");
-                    Reconnect();
+                    try
+                    {
+                        myConnection.Close();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warn("Error closing connection", ex);
+                    }
+                    myConnection = null;
                 }
+
+                if (myConnection == null)
+                {
+                    myConnection = _dbProviderFactory.CreateConnection();
+                    myConnection.ConnectionString = _connectionString;
+                }
+
+                if (myConnection.State == ConnectionState.Closed)
+                {
+                    myConnection.Open();
+                }
+                _connection = myConnection;
             }
-            return _connection;
+            return myConnection;
         }
 
         public void ReleaseConnection(DbConnection connection)
@@ -98,6 +100,7 @@ namespace Platibus.SQLite
 
         ~SingletonConnectionProvider()
         {
+            if (_disposed) return;
             Dispose(false);
         }
 
@@ -105,19 +108,22 @@ namespace Platibus.SQLite
         {
             if (_disposed) return;
             Dispose(true);
-            GC.SuppressFinalize(true);
             _disposed = true;
+            GC.SuppressFinalize(true);
         }
 
         protected virtual void Dispose(bool disposing)
         {
-            try
+            if (disposing)
             {
-                _connection.Close();
-            }
-            catch(Exception ex)
-            {
-                Log.Warn("Error closing singleton connection", ex);
+                try
+                {
+                    _connection.Close();
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn("Error closing singleton connection", ex);
+                }
             }
         }
     }
