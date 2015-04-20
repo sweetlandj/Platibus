@@ -161,6 +161,7 @@ namespace Platibus.SQL
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         protected virtual Task<SQLQueuedMessage> InsertQueuedMessage(Message message, IPrincipal senderPrincipal)
         {
             SQLQueuedMessage queuedMessage = null;
@@ -204,6 +205,7 @@ namespace Platibus.SQL
             return Task.FromResult(queuedMessage);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         protected virtual Task<IEnumerable<SQLQueuedMessage>> SelectQueuedMessages()
         {
             var queuedMessages = new List<SQLQueuedMessage>();
@@ -245,6 +247,7 @@ namespace Platibus.SQL
             return Task.FromResult(queuedMessages.AsEnumerable());
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         protected virtual Task UpdateQueuedMessage(SQLQueuedMessage queuedMessage, DateTime? acknowledged, DateTime? abandoned, int attempts)
         {
             var connection = _connectionProvider.GetConnection();

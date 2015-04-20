@@ -106,6 +106,7 @@ namespace Platibus.SQL
             return Task.FromResult(activeSubscribers);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         protected virtual Task<SQLSubscription> InsertOrUpdateSubscription(TopicName topicName, Uri subscriber, DateTime expires)
         {
             SQLSubscription subscription = null;
@@ -141,6 +142,7 @@ namespace Platibus.SQL
             return Task.FromResult(subscription);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         protected virtual Task<IEnumerable<SQLSubscription>> SelectSubscriptions()
         {
             var subscriptions = new List<SQLSubscription>();
@@ -177,6 +179,7 @@ namespace Platibus.SQL
             return Task.FromResult<IEnumerable<SQLSubscription>>(subscriptions);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         protected virtual Task DeleteSubscription(TopicName topicName, Uri subscriber)
         {
             var deleted = false;

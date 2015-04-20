@@ -30,6 +30,7 @@ namespace Platibus.SQLite
                 });
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         private static IDbConnectionProvider InitDb(DirectoryInfo baseDirectory)
         {
             if (baseDirectory == null)

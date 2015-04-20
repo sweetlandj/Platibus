@@ -19,7 +19,7 @@ namespace Platibus.SQL
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly ISQLDialect _dialect;
         private readonly ConcurrentDictionary<QueueName, SQLMessageQueue> _queues = new ConcurrentDictionary<QueueName, SQLMessageQueue>();
-        
+
         private bool _disposed;
 
         public IDbConnectionProvider ConnectionProvider
@@ -46,7 +46,8 @@ namespace Platibus.SQL
             _connectionProvider = connectionProvider;
             _dialect = dialect;
         }
-        
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public void Init()
         {
             var connection = _connectionProvider.GetConnection();
