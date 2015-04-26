@@ -46,7 +46,5 @@ namespace Platibus
             _message = message;
             _senderPrincipal = senderPrincipal;
         }
-
-        
     }
 }

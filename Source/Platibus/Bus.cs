@@ -488,6 +488,10 @@ namespace Platibus
 
         private async Task OnMessageReceived(object source, MessageReceivedEventArgs args)
         {
+            // TODO: How to communicate to the transport, in a non-HTTP-specific way,
+            // whether the message was processed or just accepted for future processing?
+            // i.e. in the case of HTTP transport, whether to respond with 200 or 201?
+
             var message = args.Message;
 
             if (_messageJournalingService != null)
