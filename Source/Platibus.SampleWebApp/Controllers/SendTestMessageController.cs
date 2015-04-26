@@ -26,7 +26,8 @@ namespace Platibus.SampleWebApp.Controllers
                 var sendOptions = new SendOptions
                 {
                     UseDurableTransport = sendTestMessage.UseDurableTransport,
-                    ContentType = sendTestMessage.ContentType
+                    ContentType = sendTestMessage.ContentType,
+                    Importance = sendTestMessage.Importance
                 };
 
                 var message = new TestMessage

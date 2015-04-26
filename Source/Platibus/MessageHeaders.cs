@@ -140,10 +140,21 @@ namespace Platibus
             set { this[HeaderName.ContentType] = value; }
         }
 
-        public MessageDurability Durability
+        public MessageImportance Importance
         {
-            get { return this[HeaderName.Durability]; }
-            set { this[HeaderName.Durability] = value; }
+            get { return GetInt(HeaderName.Importance); }
+            set { SetInt(HeaderName.Importance, value); }
+        }
+
+        public int GetInt(HeaderName headerName)
+        {
+            int intValue;
+            var value = this[headerName];
+            if (!string.IsNullOrWhiteSpace(value) && int.TryParse(value, out intValue))
+            {
+                return intValue;
+            }
+            return 0;
         }
 
         public Uri GetUri(HeaderName headerName)
@@ -174,6 +185,11 @@ namespace Platibus
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        public void SetInt(HeaderName headerName, int intValue)
+        {
+            this[headerName] = intValue.ToString("d");
         }
 
         public void SetUri(HeaderName headerName, Uri uri)

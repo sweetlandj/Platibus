@@ -407,9 +407,7 @@ namespace Platibus
                 MessageId = MessageId.Generate(),
                 MessageName = messageName,
                 Origination = _baseUri,
-                Durability = options.UseDurableTransport
-                    ? MessageDurability.Requested
-                    : MessageDurability.None
+                Importance = options.Importance
             };
 
             var contentType = options.ContentType;
@@ -466,7 +464,7 @@ namespace Platibus
                 // in the outbound queue listener.  We'll keep the sender
                 // principal as-is until we can revisit this and improve
                 // as needed.
-                var senderPrincipal = Thread.CurrentPrincipal;
+                var senderPrincipal = null as SenderPrincipal;
 
                 Log.DebugFormat("Durable transport requested.  Enqueueing message ID {0} in outbound queue \"{1}\"...", message.Headers.MessageId, _outboundQueueName);
                 await _messageQueueingService
@@ -497,7 +495,6 @@ namespace Platibus
                 await _messageJournalingService.MessageReceived(message);
             }
 
-
             // Make sure that the principal is serializable before enqueuing
             var senderPrincipal = args.Principal as SenderPrincipal;
             if (senderPrincipal == null && args.Principal != null)
@@ -514,8 +511,8 @@ namespace Platibus
                 tasks.Add(NotifyReplyReceived(message));
             }
 
-            var durability = message.Headers.Durability ?? MessageDurability.Default;
-            if (durability.IsRequested)
+            var importance = message.Headers.Importance;
+            if (importance.RequiresQueueing)
             {
                 // Message expiration handled in MessageHandlingListener
                 tasks.AddRange(_handlingRules

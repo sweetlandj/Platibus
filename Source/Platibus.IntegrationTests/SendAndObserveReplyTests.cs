@@ -34,7 +34,7 @@ namespace Platibus.IntegrationTests
         private static readonly Random RNG = new Random();
 
         [Test]
-        public async Task Given_Nondurable_Message_Not_Authorized_When_Sending_Then_UnauthorizedAccessException()
+        public async Task Given_Noncritical_Message_Not_Authorized_When_Sending_Then_UnauthorizedAccessException()
         {
             await With.HttpHostedBusInstances(async (platibus0, platibus1) =>
             {
@@ -66,7 +66,7 @@ namespace Platibus.IntegrationTests
         }
 
         [Test]
-        public async Task Given_Nondurable_Message_Not_Acknowledged_When_Sending_Then_MessageNotAcknowledgedException()
+        public async Task Given_Noncritical_Message_Not_Acknowledged_When_Sending_Then_MessageNotAcknowledgedException()
         {
             await With.HttpHostedBusInstances(async (platibus0, platibus1) =>
             {

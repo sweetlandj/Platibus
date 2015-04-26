@@ -95,9 +95,10 @@ namespace Platibus
         public static readonly HeaderName ContentType = "Content-Type";
 
         /// <summary>
-        ///     Message durability settings
+        ///     Directives for the receiver regarding how the sender would like the
+        ///     message to be processed.
         /// </summary>
-        public static readonly HeaderName Durability = "Platibus-Durability";
+        public static readonly HeaderName Importance = "Platibus-Importance";
 
         private readonly string _value;
 
