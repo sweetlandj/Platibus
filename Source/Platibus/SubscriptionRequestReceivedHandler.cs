@@ -20,7 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Threading.Tasks;
 namespace Platibus
 {
-    public delegate void SubscriptionRequestReceivedHandler(object sender, SubscriptionRequestReceivedEventArgs e);
+    public delegate Task SubscriptionRequestReceivedHandler(object sender, SubscriptionRequestReceivedEventArgs e);
 }

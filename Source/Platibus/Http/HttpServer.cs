@@ -136,11 +136,10 @@ namespace Platibus.Http
 
         protected async Task Accept(HttpListenerContext context)
         {
+            var resourceRequest = new HttpListenerRequestAdapter(context.Request, context.User);
+            var resourceResponse = new HttpListenerResponseAdapter(context.Response);
             try
             {
-                var resourceRequest = new HttpListenerRequestAdapter(context.Request, context.User);
-                var resourceResponse = new HttpListenerResponseAdapter(context.Response);
-
                 Log.DebugFormat("Routing {0} request for resource {1} from {2}...",
                     context.Request.HttpMethod, context.Request.Url, context.Request.RemoteEndPoint);
 
@@ -149,25 +148,10 @@ namespace Platibus.Http
                 Log.DebugFormat("{0} request for resource {1} handled successfully",
                     context.Request.HttpMethod, context.Request.Url);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                context.Response.StatusCode = 500;
-                Func<Exception, bool> handler = ex =>
-                {
-                    Log.ErrorFormat("Error processing {0} request for resource {1}", ex, context.Request.HttpMethod,
-                        context.Request.Url);
-                    return true;
-                };
-
-                var aex = e as AggregateException;
-                if (aex != null)
-                {
-                    aex.Handle(handler);
-                }
-                else
-                {
-                    handler(e);
-                }
+                var exceptionHandler = new HttpExceptionHandler(resourceRequest, resourceResponse, Log);
+                exceptionHandler.HandleException(ex);
             }
             finally
             {

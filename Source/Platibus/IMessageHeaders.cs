@@ -40,6 +40,7 @@ namespace Platibus
         DateTime Sent { get; }
         DateTime Received { get; }
         string ContentType { get; }
+        MessageDurability Durability { get; }
         Uri GetUri(HeaderName headerName);
         DateTime? GetDateTime(HeaderName headerName);
     }

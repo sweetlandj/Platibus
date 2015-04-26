@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿using System;
+// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -28,6 +29,11 @@ namespace Platibus.IntegrationTests
     {
         public static async Task HandleMessage(TestMessage message, IMessageContext messageContext, CancellationToken cancellationToken)
         {
+            if (message.SimulateAuthorizationFailure)
+            {
+                throw new UnauthorizedAccessException();
+            }
+
             await messageContext.SendReply(new TestReply
             {
                 GuidData = message.GuidData,
@@ -37,6 +43,10 @@ namespace Platibus.IntegrationTests
             }, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
+            if (message.SimulateAcknowledgementFailure)
+            {
+                return;
+            }
             messageContext.Acknowledge();
         }
     }

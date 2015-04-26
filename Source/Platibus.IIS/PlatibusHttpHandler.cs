@@ -59,21 +59,18 @@ namespace Platibus.IIS
                 AppDomain.CurrentDomain.Id);
 
             Log.DebugFormat("Processing {0} request for resource {1} (HTTP handler instance: {2})...", context.Request.HttpMethod, context.Request.Url, _instanceId);
+            var resourceRequest = new HttpRequestAdapter(context.Request, context.User);
+            var resourceResponse = new HttpResponseAdapter(context.Response);
             try
             {
-                
-                var resourceRequest = new HttpRequestAdapter(context.Request, context.User);
-                var resourceResponse = new HttpResponseAdapter(context.Response);
                 var router = await GetRouter().ConfigureAwait(false);
                 await router.Route(resourceRequest, resourceResponse).ConfigureAwait(false);
                 Log.DebugFormat("Processing {0} request for resource {1} (HTTP handler instance: {2})...", context.Request.HttpMethod, context.Request.Url, _instanceId);
             }
             catch (Exception ex)
             {
-                Log.DebugFormat("Unhandled exception processing {0} request for resource {1} (HTTP handler instance: {2})", ex, context.Request.HttpMethod, context.Request.Url, _instanceId);
-
-                // Let the server reply with HTTP 500 or whatever is appropriate
-                throw;
+                var exceptionHandler = new HttpExceptionHandler(resourceRequest, resourceResponse, Log);
+                exceptionHandler.HandleException(ex);
             }
         }
 

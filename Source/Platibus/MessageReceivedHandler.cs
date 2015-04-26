@@ -20,7 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Threading.Tasks;
 namespace Platibus
 {
-    public delegate void MessageReceivedHandler(object sender, MessageReceivedEventArgs e);
+    public delegate Task MessageReceivedHandler(object sender, MessageReceivedEventArgs e);
 }

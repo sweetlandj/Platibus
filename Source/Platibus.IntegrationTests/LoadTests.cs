@@ -1,6 +1,4 @@
-﻿using NUnit.Framework;
-
-// The MIT License (MIT)
+﻿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -21,9 +19,11 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Diagnostics;
 using System.Linq;
+using NUnit.Framework;
 using System.Threading.Tasks;
 
 namespace Platibus.IntegrationTests

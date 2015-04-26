@@ -40,16 +40,11 @@ namespace Platibus
         public ISentMessage CreateSentMessage(Message message)
         {
             CheckDisposed();
-            return new SentMessageWithCachedReplies(this, message.Headers.MessageId);
-        }
 
-        public IObservable<object> ObserveReplies(MessageId relatedToMessageId)
-        {
-            CheckDisposed();
+            var messageId = message.Headers.MessageId;
             var replyStreamExpiration = DateTime.UtcNow.Add(_replyTimeout);
             var newReplyStream = new ReplyStream();
-            var replyStream = (ReplyStream) _cache.AddOrGetExisting(relatedToMessageId, newReplyStream, replyStreamExpiration);
-
+            var replyStream = (ReplyStream)_cache.AddOrGetExisting(messageId, newReplyStream, replyStreamExpiration);
             if (replyStream == null)
             {
                 // MemoryCache.AddOrGetExisting returns null if the key does not
@@ -57,7 +52,7 @@ namespace Platibus
                 // http://msdn.microsoft.com/en-us/library/dd988741%28v=vs.110%29.aspx
                 replyStream = newReplyStream;
             }
-            return replyStream;
+            return new SentMessageWithCachedReplies(messageId, replyStream);
         }
 
         public Task ReplyReceived(object reply, MessageId relatedToMessageId)
@@ -65,8 +60,12 @@ namespace Platibus
             CheckDisposed();
             return Task.Run(() =>
             {
+                var newReplyStream = new ReplyStream();
                 var replyStream = _cache.Get(relatedToMessageId) as ReplyStream;
-                if (replyStream == null) return;
+                if (replyStream == null)
+                {
+                    return;
+                }
 
                 replyStream.NotifyReplyReceived(reply);
             });
@@ -76,8 +75,11 @@ namespace Platibus
         {
             return Task.Run(() =>
             {
-                var replyStream = _cache.Get(relatedToMessageId) as ReplyStream;
-                if (replyStream == null) return;
+                var replyStream = _cache.Remove(relatedToMessageId) as ReplyStream;
+                if (replyStream == null)
+                {
+                    return;
+                }
 
                 replyStream.NotifyCompleted();
             });

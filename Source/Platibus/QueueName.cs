@@ -39,7 +39,7 @@ namespace Platibus
         public bool Equals(QueueName queueName)
         {
             if (ReferenceEquals(null, queueName)) return false;
-            return string.Equals(_value, queueName._value, StringComparison.InvariantCultureIgnoreCase);
+            return string.Equals(_value, queueName._value, StringComparison.OrdinalIgnoreCase);
         }
 
         public override string ToString()

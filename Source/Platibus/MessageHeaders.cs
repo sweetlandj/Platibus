@@ -140,6 +140,12 @@ namespace Platibus
             set { this[HeaderName.ContentType] = value; }
         }
 
+        public MessageDurability Durability
+        {
+            get { return this[HeaderName.Durability]; }
+            set { this[HeaderName.Durability] = value; }
+        }
+
         public Uri GetUri(HeaderName headerName)
         {
             var value = this[headerName];

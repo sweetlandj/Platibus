@@ -27,6 +27,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Security.Principal;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -82,6 +83,14 @@ namespace Platibus.Http
                 HandleHttpErrorResponse(httpResponseMessage);
             }
             catch (TransportException)
+            {
+                throw;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                throw;
+            }
+            catch (MessageNotAcknowledgedException)
             {
                 throw;
             }
@@ -154,41 +163,57 @@ namespace Platibus.Http
             }
         }
 
-        public Task AcceptMessage(Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task AcceptMessage(Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return Task.Run(() =>
+            var handlers = MessageReceived;
+            if (handlers != null)
             {
-                var handlers = MessageReceived;
-                if (handlers != null)
-                {
-                    handlers(this, new MessageReceivedEventArgs(message, senderPrincipal));
-                }
-            }, cancellationToken);
+                var args = new MessageReceivedEventArgs(message, senderPrincipal);
+                var handlerTasks = handlers.GetInvocationList()
+                    .Cast<MessageReceivedHandler>()
+                    .Select(handler => handler(this, args));
+
+                await Task.WhenAll(handlerTasks);
+            }
         }
 
-        public Task AcceptSubscriptionRequest(SubscriptionRequestType requestType, TopicName topic, Uri subscriber, TimeSpan ttl, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task AcceptSubscriptionRequest(SubscriptionRequestType requestType, TopicName topic, Uri subscriber, TimeSpan ttl, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return Task.Run(() =>
+            var handlers = SubscriptionRequestReceived;
+            if (handlers != null)
             {
-                var handlers = SubscriptionRequestReceived;
-                if (handlers != null)
-                {
-                    handlers(this, new SubscriptionRequestReceivedEventArgs(requestType, topic, subscriber, ttl, senderPrincipal));
-                }
-            }, cancellationToken);
+                var args = new SubscriptionRequestReceivedEventArgs(requestType, topic, subscriber, ttl, senderPrincipal);
+                var handlerTasks = handlers.GetInvocationList()
+                    .Cast<SubscriptionRequestReceivedHandler>()
+                    .Select(handler => handler(this, args));
+
+                await Task.WhenAll(handlerTasks);
+            }
         }
 
         private static void HandleHttpErrorResponse(HttpResponseMessage response)
         {
             if (response.IsSuccessStatusCode) return;
 
-            var statusCode = (int) response.StatusCode;
+            var statusCode = (int)response.StatusCode;
             var statusDescription = response.ReasonPhrase;
+
+            if (statusCode == 401)
+            {
+                throw new UnauthorizedAccessException(string.Format("HTTP {0}: {1}", statusCode, statusDescription));
+            }
+
+            if (statusCode == 422)
+            {
+                throw new MessageNotAcknowledgedException(string.Format("HTTP {0}: {1}", statusCode, statusDescription));
+            }
+
             if (statusCode < 500)
             {
                 // HTTP 400-499 are invalid requests (bad request, authentication required, not authorized, etc.)
                 throw new InvalidRequestException(string.Format("HTTP {0}: {1}", statusCode, statusDescription));
             }
+
             // HTTP 500+ are internal server errors
             throw new TransportException(string.Format("HTTP {0}: {1}", statusCode, statusDescription));
         }

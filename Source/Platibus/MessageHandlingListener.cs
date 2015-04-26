@@ -57,23 +57,9 @@ namespace Platibus
         public async Task MessageReceived(Message message, IQueuedMessageContext context,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (message.Headers.Expires < DateTime.UtcNow)
-            {
-                Log.WarnFormat("Discarding expired \"{0}\" message (ID {1}, expired {2})", message.Headers.MessageName,
-                    message.Headers.MessageId, message.Headers.Expires);
-
-                await context.Acknowledge().ConfigureAwait(false);
-                return;
-            }
-
             var messageContext = new BusMessageContext(_bus, context.Headers, context.SenderPrincipal);
-            var messageType = _messageNamingService.GetTypeForName(message.Headers.MessageName);
-            var serializer = _serializationService.GetSerializer(message.Headers.ContentType);
-            var messageContent = serializer.Deserialize(message.Content, messageType);
-            var handlingTasks = _messageHandlers.Select(handler =>
-                handler.HandleMessage(messageContent, messageContext, cancellationToken));
-
-            await Task.WhenAll(handlingTasks).ConfigureAwait(false);
+            await MessageHandler.HandleMessage(_messageNamingService, _serializationService, _messageHandlers,
+                message, messageContext, cancellationToken);
 
             if (messageContext.MessageAcknowledged)
             {

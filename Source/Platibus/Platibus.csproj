@@ -76,8 +76,12 @@
     </Compile>
     <Compile Include="Config\ClientCredentialType.cs" />
     <Compile Include="Config\Extensibility\ProviderHelper.cs" />
+    <Compile Include="Http\HttpExceptionHandler.cs" />
+    <Compile Include="DeliveryMode.cs" />
     <Compile Include="Http\HttpEndpointCredentialsVisitor.cs" />
     <Compile Include="InMemory\InMemoryServicesProvider.cs" />
+    <Compile Include="MessageHandler.cs" />
+    <Compile Include="MessageNotAcknowledgedException.cs" />
     <Compile Include="ObservableExtensions.cs" />
     <Compile Include="Security\BasicAuthCredentials.cs" />
     <Compile Include="Config\Bootstrapper.cs" />

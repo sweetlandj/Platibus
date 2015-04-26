@@ -29,5 +29,8 @@ namespace Platibus.IntegrationTests
         public int IntData { get; set; }
         public string StringData { get; set; }
         public DateTime DateData { get; set; }
+
+        public bool SimulateAuthorizationFailure { get; set; }
+        public bool SimulateAcknowledgementFailure { get; set; }
     }
 }

@@ -34,6 +34,70 @@ namespace Platibus.IntegrationTests
         private static readonly Random RNG = new Random();
 
         [Test]
+        public async Task Given_Nondurable_Message_Not_Authorized_When_Sending_Then_UnauthorizedAccessException()
+        {
+            await With.HttpHostedBusInstances(async (platibus0, platibus1) =>
+            {
+                var message = new TestMessage
+                {
+                    GuidData = Guid.NewGuid(),
+                    IntData = RNG.Next(0, int.MaxValue),
+                    StringData = "Hello, world!",
+                    DateData = DateTime.UtcNow,
+                    SimulateAuthorizationFailure = true
+                };
+
+                Exception exception = null;
+                try
+                {
+                    await platibus0.Send(message, options: new SendOptions
+                    {
+                        UseDurableTransport = false
+                    });
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
+
+                Assert.That(exception, Is.Not.Null);
+                Assert.That(exception, Is.InstanceOf<UnauthorizedAccessException>());
+            });
+        }
+
+        [Test]
+        public async Task Given_Nondurable_Message_Not_Acknowledged_When_Sending_Then_MessageNotAcknowledgedException()
+        {
+            await With.HttpHostedBusInstances(async (platibus0, platibus1) =>
+            {
+                var message = new TestMessage
+                {
+                    GuidData = Guid.NewGuid(),
+                    IntData = RNG.Next(0, int.MaxValue),
+                    StringData = "Hello, world!",
+                    DateData = DateTime.UtcNow,
+                    SimulateAcknowledgementFailure = true
+                };
+
+                Exception exception = null;
+                try
+                {
+                    await platibus0.Send(message, options: new SendOptions
+                    {
+                        UseDurableTransport = false
+                    });
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
+
+                Assert.That(exception, Is.Not.Null);
+                Assert.That(exception, Is.InstanceOf<MessageNotAcknowledgedException>());
+            });
+        }
+
+        [Test]
         public async Task Given_Message_When_Sending_Then_Reply_Should_Be_Observed()
         {
             await With.HttpHostedBusInstances(async (platibus0, platibus1) =>

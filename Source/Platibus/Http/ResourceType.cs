@@ -39,7 +39,7 @@ namespace Platibus.Http
         public bool Equals(ResourceType resourceType)
         {
             if (ReferenceEquals(null, resourceType)) return false;
-            return string.Equals(_value, resourceType._value, StringComparison.InvariantCultureIgnoreCase);
+            return string.Equals(_value, resourceType._value, StringComparison.OrdinalIgnoreCase);
         }
 
         public override string ToString()

@@ -89,10 +89,7 @@ namespace Platibus
             _sendRules = configuration.SendRules.ToList();
             _handlingRules = configuration.HandlingRules.ToList();
             _subscriptions = configuration.Subscriptions.ToList();
-
             _transportService = transportService;
-            _transportService.MessageReceived += OnMessageReceived;
-            _transportService.SubscriptionRequestReceived += OnSubscriptionRequestReceived;
 
             _outboundQueueName = "Outbound";
         }
@@ -132,6 +129,9 @@ namespace Platibus
                 // ReSharper disable once UnusedVariable
                 var subscriptionTask = Subscribe(subscription, _cancellationTokenSource.Token);
             }
+
+            _transportService.MessageReceived += OnMessageReceived;
+            _transportService.SubscriptionRequestReceived += OnSubscriptionRequestReceived;
         }
 
         public async Task<ISentMessage> Send(object content, SendOptions options = default(SendOptions),
@@ -144,6 +144,10 @@ namespace Platibus
             var prototypicalMessage = BuildMessage(content, options: options);
             var endpoints = GetEndpointsForMessage(prototypicalMessage);
             var transportTasks = new List<Task>();
+
+            // Create the sent message before transporting it in order to ensure that the
+            // reply stream is cached before any replies arrive.
+            var sentMessage = _replyHub.CreateSentMessage(prototypicalMessage);
 
             // ReSharper disable once LoopCanBeConvertedToQuery
             foreach (var kvp in endpoints)
@@ -163,7 +167,7 @@ namespace Platibus
                 transportTasks.Add(TransportMessage(addressedMessage, credentials, options, cancellationToken));
             }
             await Task.WhenAll(transportTasks).ConfigureAwait(false);
-            return _replyHub.CreateSentMessage(prototypicalMessage);
+            return sentMessage;
         }
 
         public async Task<ISentMessage> Send(object content, EndpointName endpointName,
@@ -185,8 +189,11 @@ namespace Platibus
             Log.DebugFormat("Sending message ID {0} to endpoint \"{1}\" ({2})...",
                 message.Headers.MessageId, endpointName, endpoint.Address);
 
+            // Create the sent message before transporting it in order to ensure that the
+            // reply stream is cached before any replies arrive.
+            var sentMessage = _replyHub.CreateSentMessage(message);
             await TransportMessage(message, credentials, options, cancellationToken).ConfigureAwait(false);
-            return _replyHub.CreateSentMessage(message);
+            return sentMessage;
         }
 
         public async Task<ISentMessage> Send(object content, Uri endpointUri, IEndpointCredentials credentials = null, SendOptions options = default(SendOptions),
@@ -207,8 +214,11 @@ namespace Platibus
             Log.DebugFormat("Sending message ID {0} to \"{2}\"...",
                 message.Headers.MessageId, endpointUri);
 
+            // Create the sent message before transporting it in order to ensure that the
+            // reply stream is cached before any replies arrive.
+            var sentMessage = _replyHub.CreateSentMessage(message);
             await TransportMessage(message, credentials, options, cancellationToken).ConfigureAwait(false);
-            return _replyHub.CreateSentMessage(message);
+            return sentMessage;
         }
 
         public async Task Publish(object content, TopicName topic,
@@ -396,7 +406,10 @@ namespace Platibus
             {
                 MessageId = MessageId.Generate(),
                 MessageName = messageName,
-                Origination = _baseUri
+                Origination = _baseUri,
+                Durability = options.UseDurableTransport
+                    ? MessageDurability.Requested
+                    : MessageDurability.None
             };
 
             var contentType = options.ContentType;
@@ -475,7 +488,7 @@ namespace Platibus
             }
         }
 
-        private async void OnMessageReceived(object source, MessageReceivedEventArgs args)
+        private async Task OnMessageReceived(object source, MessageReceivedEventArgs args)
         {
             var message = args.Message;
 
@@ -484,9 +497,6 @@ namespace Platibus
                 await _messageJournalingService.MessageReceived(message);
             }
 
-            var matchingRules = _handlingRules
-                .Where(r => r.MessageSpecification.IsSatisfiedBy(message))
-                .ToList();
 
             // Make sure that the principal is serializable before enqueuing
             var senderPrincipal = args.Principal as SenderPrincipal;
@@ -495,20 +505,54 @@ namespace Platibus
                 senderPrincipal = new SenderPrincipal(args.Principal);
             }
 
-            // Message expiration handled in MessageHandlingListener
-            var tasks = matchingRules
-                .Select(rule => rule.QueueName)
-                .Distinct()
-                .Select(q => _messageQueueingService.EnqueueMessage(q, message, senderPrincipal))
-                .ToList();
+            var tasks = new List<Task>();
 
             var relatedToMessageId = message.Headers.RelatedTo;
-            if (relatedToMessageId != default(MessageId))
+            var isReply = relatedToMessageId != default(MessageId);
+            if (isReply)
             {
                 tasks.Add(NotifyReplyReceived(message));
             }
 
+            var durability = message.Headers.Durability ?? MessageDurability.Default;
+            if (durability.IsRequested)
+            {
+                // Message expiration handled in MessageHandlingListener
+                tasks.AddRange(_handlingRules
+                    .Where(r => r.MessageSpecification.IsSatisfiedBy(message))
+                    .Select(rule => rule.QueueName)
+                    .Distinct()
+                    .Select(q => _messageQueueingService.EnqueueMessage(q, message, senderPrincipal)));
+            }
+            else
+            {
+                tasks.Add(HandleMessageImmediately(message, senderPrincipal, isReply));
+            }
+
             await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+
+        private async Task HandleMessageImmediately(Message message, SenderPrincipal senderPrincipal, bool isReply)
+        {
+            var messageContext = new BusMessageContext(this, message.Headers, senderPrincipal);
+            var handlers = _handlingRules
+                .Where(r => r.MessageSpecification.IsSatisfiedBy(message))
+                .Select(rule => rule.MessageHandler)
+                .ToList();
+
+            if (!handlers.Any() && isReply)
+            {
+                // TODO: Figure out what to do here.
+                return;
+            }
+
+            await MessageHandler.HandleMessage(_messageNamingService, _serializationService,
+                handlers, message, messageContext, _cancellationTokenSource.Token);
+
+            if (!messageContext.MessageAcknowledged)
+            {
+                throw new MessageNotAcknowledgedException();
+            }
         }
 
         private async Task NotifyReplyReceived(Message message)
@@ -533,7 +577,7 @@ namespace Platibus
             await _replyHub.NotifyLastReplyReceived(relatedToMessageId);
         }
 
-        private async void OnSubscriptionRequestReceived(object source, SubscriptionRequestReceivedEventArgs args)
+        private async Task OnSubscriptionRequestReceived(object source, SubscriptionRequestReceivedEventArgs args)
         {
             var topic = args.Topic;
             var subscriber = args.Subscriber;
