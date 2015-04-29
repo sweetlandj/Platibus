@@ -20,12 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using Common.Logging;
-using Platibus.Config;
 using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Common.Logging;
+using Platibus.Config;
 
 namespace Platibus.Http
 {

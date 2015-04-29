@@ -1,10 +1,10 @@
-﻿using Common.Logging;
-using NUnit.Framework;
-using Platibus.SQL;
-using System;
+﻿using System;
 using System.Configuration;
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Logging;
+using NUnit.Framework;
+using Platibus.SQL;
 
 namespace Platibus.UnitTests
 {

@@ -1,8 +1,4 @@
-﻿using Moq;
-using NUnit.Framework;
-using Platibus.Http;
-using Platibus.Serialization;
-using System;
+﻿using System;
 using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
@@ -11,6 +7,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using Moq;
+using NUnit.Framework;
+using Platibus.Http;
+using Platibus.Serialization;
 
 namespace Platibus.UnitTests
 {

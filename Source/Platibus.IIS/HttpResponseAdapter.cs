@@ -20,11 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using Platibus.Http;
 using System;
 using System.IO;
 using System.Text;
 using System.Web;
+using Platibus.Http;
 
 namespace Platibus.IIS
 {

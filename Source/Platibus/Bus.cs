@@ -20,15 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using Common.Logging;
-using Platibus.Config;
-using Platibus.Security;
-using Platibus.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Common.Logging;
+using Platibus.Config;
+using Platibus.Security;
+using Platibus.Serialization;
 
 namespace Platibus
 {
@@ -639,7 +639,7 @@ namespace Platibus
                 _transportService = transportService;
                 _messageJournalingService = messageJournalingService;
                 _credentialsFactory = credentialsFactory ??
-                    new Func<Uri, IEndpointCredentials>(uri => null);
+                    (uri => null);
             }
 
             public async Task MessageReceived(Message message, IQueuedMessageContext context,

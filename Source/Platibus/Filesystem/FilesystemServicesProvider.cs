@@ -1,4 +1,7 @@
-﻿using Platibus.Config;
+﻿using System;
+using System.IO;
+using System.Threading.Tasks;
+using Platibus.Config;
 using Platibus.Config.Extensibility;
 // The MIT License (MIT)
 // 
@@ -21,13 +24,10 @@ using Platibus.Config.Extensibility;
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace Platibus.Filesystem
 {
-    [ProviderAttribute("Filesystem")]
+    [Provider("Filesystem")]
     public class FilesystemServicesProvider : IMessageQueueingServiceProvider, IMessageJournalingServiceProvider, ISubscriptionTrackingServiceProvider
     {
         public Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)

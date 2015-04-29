@@ -1,12 +1,12 @@
-﻿using Common.Logging;
-using Platibus.SampleWebApp.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.Common;
 using System.Threading.Tasks;
 using System.Transactions;
+using Common.Logging;
+using Platibus.SampleWebApp.Models;
 
 namespace Platibus.SampleWebApp.Controllers
 {

@@ -1,10 +1,5 @@
-﻿using Platibus.Config.Extensibility;
-using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Configuration;
+using Platibus.Config.Extensibility;
 
 namespace Platibus.SQL
 {

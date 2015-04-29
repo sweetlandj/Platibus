@@ -1,14 +1,11 @@
-﻿using Common.Logging;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
-using System.Data.Common;
-using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Principal;
-using System.Text;
 using System.Threading.Tasks;
+using Common.Logging;
 
 namespace Platibus.SQL
 {
@@ -47,7 +44,7 @@ namespace Platibus.SQL
             _dialect = dialect;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
+        [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public void Init()
         {
             var connection = _connectionProvider.GetConnection();

@@ -1,6 +1,5 @@
-﻿using Common.Logging;
-using System;
-using System.Security;
+﻿using System;
+using Common.Logging;
 
 namespace Platibus.Http
 {

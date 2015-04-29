@@ -23,8 +23,8 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
-using NUnit.Framework;
 using System.Threading.Tasks;
+using NUnit.Framework;
 
 namespace Platibus.IntegrationTests
 {

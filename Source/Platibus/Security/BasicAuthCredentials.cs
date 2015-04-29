@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Platibus.Security
+﻿namespace Platibus.Security
 {
     public class BasicAuthCredentials : IEndpointCredentials
     {

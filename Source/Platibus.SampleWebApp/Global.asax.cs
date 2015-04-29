@@ -1,13 +1,14 @@
-﻿using Platibus.IIS;
-using Platibus.SampleWebApp.Controllers;
-using System.Threading;
+﻿using System.Threading;
+using System.Web;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
+using Platibus.IIS;
+using Platibus.SampleWebApp.Controllers;
 
 namespace Platibus.SampleWebApp
 {
-    public class MvcApplication : System.Web.HttpApplication
+    public class MvcApplication : HttpApplication
     {
         private static int _applicationCount;
 

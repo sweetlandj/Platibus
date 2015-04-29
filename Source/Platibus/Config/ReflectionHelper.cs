@@ -1,4 +1,9 @@
-﻿using Common.Logging;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using Common.Logging;
 // The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
@@ -20,11 +25,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 
 namespace Platibus.Config
 {
@@ -90,7 +90,7 @@ namespace Platibus.Config
 
         public static IEnumerable<Type> With<TAttribute>(this IEnumerable<Type> source, Func<TAttribute, bool> where) where TAttribute : Attribute
         {
-            return source.Where(t => t.Has<TAttribute>(where));
+            return source.Where(t => t.Has(where));
         }
 
         public static IEnumerable<Type> OrderBy<TAttribute>(this IEnumerable<Type> source, Func<TAttribute, object> attributeMember) where TAttribute : Attribute

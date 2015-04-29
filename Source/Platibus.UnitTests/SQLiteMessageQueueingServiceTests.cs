@@ -1,15 +1,12 @@
-﻿using Moq;
-using NUnit.Framework;
-using Platibus.SQL;
-using Platibus.SQLite;
-using System;
-using System.Configuration;
-using System.Data;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Moq;
+using NUnit.Framework;
+using Platibus.SQLite;
 
 namespace Platibus.UnitTests
 {

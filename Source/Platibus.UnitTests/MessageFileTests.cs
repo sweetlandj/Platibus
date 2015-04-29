@@ -1,9 +1,9 @@
-﻿using NUnit.Framework;
-using Platibus.Filesystem;
-using System;
+﻿using System;
 using System.IO;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using NUnit.Framework;
+using Platibus.Filesystem;
 
 namespace Platibus.UnitTests
 {

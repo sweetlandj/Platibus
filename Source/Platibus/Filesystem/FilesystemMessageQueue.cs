@@ -20,13 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using Common.Logging;
 using System;
 using System.IO;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Common.Logging;
 
 namespace Platibus.Filesystem
 {
@@ -189,7 +189,7 @@ namespace Platibus.Filesystem
                     Log.DebugFormat("Message file {0} deleted successfully", queuedMessage.File);
                     return;
                 }
-                else if (attemptCount >= _maxAttempts)
+                if (attemptCount >= _maxAttempts)
                 {
                     Log.WarnFormat("Maximum attempts to proces message file {0} exceeded", queuedMessage.File);
                     deadLetter = true;

@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System.Threading.Tasks;
+
 namespace Platibus
 {
     public delegate Task SubscriptionRequestReceivedHandler(object sender, SubscriptionRequestReceivedEventArgs e);

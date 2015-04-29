@@ -21,13 +21,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using Platibus.Http;
 using System;
 using System.Collections.Specialized;
 using System.IO;
 using System.Security.Principal;
 using System.Text;
 using System.Web;
+using Platibus.Http;
 
 namespace Platibus.IIS
 {

@@ -20,17 +20,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using Common.Logging;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Security.Principal;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using Common.Logging;
 
 namespace Platibus.Http
 {

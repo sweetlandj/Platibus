@@ -20,12 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using Common.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Security.Principal;
 using System.Threading.Tasks;
+using Common.Logging;
 
 namespace Platibus.Filesystem
 {

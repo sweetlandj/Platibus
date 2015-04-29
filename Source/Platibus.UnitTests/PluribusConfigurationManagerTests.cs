@@ -1,7 +1,7 @@
-﻿using NUnit.Framework;
-using Platibus.Config;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
+using NUnit.Framework;
+using Platibus.Config;
 
 namespace Platibus.UnitTests
 {

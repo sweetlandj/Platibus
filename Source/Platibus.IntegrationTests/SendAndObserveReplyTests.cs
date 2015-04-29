@@ -20,12 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using NUnit.Framework;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using NUnit.Framework;
 
 namespace Platibus.IntegrationTests
 {
@@ -50,7 +50,7 @@ namespace Platibus.IntegrationTests
                 Exception exception = null;
                 try
                 {
-                    await platibus0.Send(message, options: new SendOptions
+                    await platibus0.Send(message, new SendOptions
                     {
                         UseDurableTransport = false
                     });
@@ -82,7 +82,7 @@ namespace Platibus.IntegrationTests
                 Exception exception = null;
                 try
                 {
-                    await platibus0.Send(message, options: new SendOptions
+                    await platibus0.Send(message, new SendOptions
                     {
                         UseDurableTransport = false
                     });

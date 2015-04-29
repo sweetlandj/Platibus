@@ -1,9 +1,9 @@
-﻿using Common.Logging;
-using Platibus.Config.Extensibility;
-using System;
+﻿using System;
 using System.Configuration;
 using System.Data;
 using System.Data.Common;
+using Common.Logging;
+using Platibus.Config.Extensibility;
 
 namespace Platibus.SQL
 {

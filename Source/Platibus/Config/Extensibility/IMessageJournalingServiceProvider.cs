@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System.Threading.Tasks;
+
 namespace Platibus.Config.Extensibility
 {
     public interface IMessageJournalingServiceProvider

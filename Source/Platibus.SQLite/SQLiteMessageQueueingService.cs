@@ -19,21 +19,13 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using Common.Logging;
-using Platibus.SQL;
+
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Data.Common;
 using System.IO;
-using System.Linq;
 using System.Security.Principal;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
+using Common.Logging;
 
 namespace Platibus.SQLite
 {

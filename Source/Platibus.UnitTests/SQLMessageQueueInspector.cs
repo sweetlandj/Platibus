@@ -1,12 +1,8 @@
-﻿using Platibus.SQL;
-using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Security.Principal;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Platibus.SQL;
 
 namespace Platibus.UnitTests
 {
@@ -19,12 +15,12 @@ namespace Platibus.UnitTests
 
         public Task<SQLQueuedMessage> InsertMessage(Message testMessage, IPrincipal senderPrincipal)
         {
-            return base.InsertQueuedMessage(testMessage, senderPrincipal);
+            return InsertQueuedMessage(testMessage, senderPrincipal);
         }
 
         public Task<IEnumerable<SQLQueuedMessage>> EnumerateMessages()
         {
-            return base.SelectQueuedMessages();
+            return SelectQueuedMessages();
         }
 
         private class NoopQueueListener : IQueueListener

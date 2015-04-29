@@ -1,10 +1,6 @@
-﻿using Platibus.Config;
+﻿using System.Threading.Tasks;
+using Platibus.Config;
 using Platibus.Config.Extensibility;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Platibus.InMemory
 {

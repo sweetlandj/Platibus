@@ -1,9 +1,9 @@
-﻿using Common.Logging;
-using Platibus.SampleWebApp.Models;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Common.Logging;
+using Platibus.SampleWebApp.Models;
 
 namespace Platibus.SampleWebApp.Controllers
 {
