@@ -23,6 +23,9 @@ BEGIN
         [SenderPrincipal] VARCHAR(MAX),
         [Headers] VARCHAR(MAX),
         [MessageContent] TEXT,
+        [Acknowledged] DATETIME NULL,
+        [Abandoned] DATETIME NULL,
+        [Attempts] INT NOT NULL DEFAULT 0,
 
         CONSTRAINT [PB_QueuedMessages_PK] 
             PRIMARY KEY NONCLUSTERED ([MessageId], [QueueName])
