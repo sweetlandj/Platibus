@@ -29,7 +29,7 @@ using System.Threading.Tasks;
 
 namespace Platibus.RabbitMQ
 {
-    internal class MessageWriter : IDisposable
+    public class MessageWriter : IDisposable
     {
         private readonly bool _leaveOpen;
         private readonly TextWriter _writer;

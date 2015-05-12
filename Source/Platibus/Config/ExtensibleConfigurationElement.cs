@@ -46,6 +46,19 @@ namespace Platibus.Config
             return strVal;
         }
 
+        public Uri GetUri(string name)
+        {
+            var val = GetObject(name);
+            if (val == null) return null;
+
+            var strVal = val as string;
+            if (strVal == null)
+            {
+                strVal = val.ToString();
+            }
+            return new Uri(strVal);
+        }
+
         public int GetInt(string name)
         {
             var val = GetObject(name);

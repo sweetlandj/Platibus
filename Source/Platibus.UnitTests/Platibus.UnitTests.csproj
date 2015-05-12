@@ -72,6 +72,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
     </Reference>
+    <Reference Include="RabbitMQ.Client, Version=3.5.1.0, Culture=neutral, PublicKeyToken=89e7d7c5feba84ce, processorArchitecture=MSIL">
+      <HintPath>..\packages\RabbitMQ.Client.3.5.1\lib\net40\RabbitMQ.Client.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -94,6 +98,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClaimsPrincipalEqualityComparer.cs" />
+    <Compile Include="RabbitMQMessageQueueingServiceTests.cs" />
     <Compile Include="SQLiteMessageQueueingServiceTests.cs" />
     <Compile Include="SQLMessageQueueingServiceTests.cs" />
     <Compile Include="FilesystemMessageQueueingServiceTests.cs" />
@@ -119,6 +124,10 @@
     <None Include="Platibus.snk" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Platibus.RabbitMQ\Platibus.RabbitMQ.csproj">
+      <Project>{ce776ec9-c665-44bf-8edd-45678d269112}</Project>
+      <Name>Platibus.RabbitMQ</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Platibus.SQLite\Platibus.SQLite.csproj">
       <Project>{a23be958-6524-4c9c-8957-1c3debb0780c}</Project>
       <Name>Platibus.SQLite</Name>
