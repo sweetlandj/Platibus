@@ -80,11 +80,11 @@ namespace Platibus.RabbitMQ
                 channel.QueueDeclare(_queueName, true, false, false, null);
                 channel.QueueBind(_queueName, _queueExchange, "", null);
 
-                var retryTtlSeconds = (int) _retryDelay.TotalSeconds;
+                var retryTtlMs = (int) _retryDelay.TotalMilliseconds;
                 var retryQueueArgs = new Dictionary<string, object>
                 {
                     {"x-dead-letter-exchange", _queueExchange},
-                    {"x-message-ttl", retryTtlSeconds}
+                    {"x-message-ttl", retryTtlMs}
                 };
 
                 channel.ExchangeDeclare(_retryExchange, "direct", true, false, null);
