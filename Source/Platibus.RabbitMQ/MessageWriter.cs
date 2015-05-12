@@ -27,23 +27,23 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Platibus.Filesystem
+namespace Platibus.RabbitMQ
 {
-    internal class MessageFileWriter : IDisposable
+    internal class MessageWriter : IDisposable
     {
         private readonly bool _leaveOpen;
         private readonly TextWriter _writer;
 
         private bool _disposed;
 
-        public MessageFileWriter(TextWriter writer, bool leaveOpen = false)
+        public MessageWriter(TextWriter writer, bool leaveOpen = false)
         {
             if (writer == null) throw new ArgumentNullException("writer");
             _writer = writer;
             _leaveOpen = leaveOpen;
         }
 
-        public MessageFileWriter(Stream stream, Encoding encoding = null, bool leaveOpen = false)
+        public MessageWriter(Stream stream, Encoding encoding = null, bool leaveOpen = false)
         {
             if (stream == null) throw new ArgumentNullException("stream");
             _writer = new StreamWriter(stream, encoding ?? Encoding.UTF8);
@@ -110,7 +110,7 @@ namespace Platibus.Filesystem
             }
         }
 
-        ~MessageFileWriter()
+        ~MessageWriter()
         {
             Dispose(false);
         }
