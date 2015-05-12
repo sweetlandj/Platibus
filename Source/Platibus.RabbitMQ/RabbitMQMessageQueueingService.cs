@@ -86,6 +86,15 @@ namespace Platibus.RabbitMQ
             Log.DebugFormat("Message ID {0} enqueued successfully in RabbitMQ queue \"{1}\"", message.Headers.MessageId, queueName);
         }
 
+        public void DeleteQueue(QueueName queueName)
+        {
+            CheckDisposed();
+            RabbitMQQueue queue;
+            if (!_queues.TryRemove(queueName, out queue)) return;
+
+            queue.Delete();
+        }
+
         private void CheckDisposed()
         {
             if (_disposed) throw new ObjectDisposedException(GetType().FullName);
