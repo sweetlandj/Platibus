@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -37,10 +38,22 @@ namespace Platibus.Http
     public class HttpTransportService : ITransportService
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Http);
+
+        private readonly Uri _baseUri;
+        private readonly ISubscriptionTrackingService _subscriptionTrackingService;
+
         public event MessageReceivedHandler MessageReceived;
         public event SubscriptionRequestReceivedHandler SubscriptionRequestReceived;
 
-        private HttpClient GetClient(Uri uri, IEndpointCredentials credentials)
+        public HttpTransportService(Uri baseUri, ISubscriptionTrackingService subscriptionTrackingService)
+        {
+            if (baseUri == null) throw new ArgumentNullException("baseUri");
+            if (subscriptionTrackingService == null) throw new ArgumentNullException("subscriptionTrackingService");
+            _baseUri = baseUri;
+            _subscriptionTrackingService = subscriptionTrackingService;
+        }
+
+        private static HttpClient GetClient(Uri uri, IEndpointCredentials credentials)
         {
             var clientHandler = new HttpClientHandler
             {
@@ -109,12 +122,113 @@ namespace Platibus.Http
             }
         }
 
+        public async Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken)
+        {
+            var subscribers = await _subscriptionTrackingService.GetSubscribers(topicName, cancellationToken).ConfigureAwait(false);
+            var transportTasks = new List<Task>();
+
+            // ReSharper disable once LoopCanBeConvertedToQuery
+            foreach (var subscriber in subscribers)
+            {
+                var perEndpointHeaders = new MessageHeaders(message.Headers)
+                {
+                    Destination = subscriber
+                };
+
+                var addressedMessage = new Message(perEndpointHeaders, message.Content);
+                transportTasks.Add(SendMessage(addressedMessage, null, cancellationToken));
+            }
+
+            await Task.WhenAll(transportTasks).ConfigureAwait(false);
+        }
+
+        // ReSharper disable once UnusedMethodReturnValue.Local
+        public async Task Subscribe(Uri publisherUri, TopicName topicName, TimeSpan ttl = default(TimeSpan), 
+            IEndpointCredentials credentials = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                TimeSpan retryOrRenewAfter;
+                try
+                {
+                    Log.DebugFormat("Sending subscription request for topic {0} to {1}...", topicName, publisherUri);
+
+                    await SendSubscriptionRequest(SubscriptionRequestType.Add, publisherUri, credentials,
+                        topicName, _baseUri, TimeSpan.FromHours(1), cancellationToken).ConfigureAwait(false);
+
+                    if (ttl <= TimeSpan.Zero)
+                    {
+                        // No TTL specified; subscription lives forever on the
+                        // remote server.  Since publications are pushed to the
+                        // subscribers, we don't need to keep this task running.
+                        return;
+                    }
+
+                    // Attempt to renew after half of the TTL to allow for
+                    // issues that may occur when attempting to renew the
+                    // subscription.
+                    retryOrRenewAfter = TimeSpan.FromTicks(ttl.Ticks/2);
+                    Log.DebugFormat(
+                        "Subscription request for topic {0} successfuly sent to {1}.  Subscription TTL is {2} and is scheduled to auto-renew in {3}",
+                        topicName, publisherUri, ttl, retryOrRenewAfter);
+                }
+                catch (EndpointNotFoundException enfe)
+                {
+                    // Endpoint is not defined in the supplied configuration,
+                    // so we cannot determine the URI.  This is an unrecoverable
+                    // error, so simply return.
+                    Log.ErrorFormat("Fatal error subscribing to topic {0} of endpoint \"{1}\"", enfe, topicName,
+                        publisherUri);
+                    return;
+                }
+                catch (NameResolutionFailedException nrfe)
+                {
+                    // The transport was unable to resolve the hostname in the
+                    // endpoint URI.  This may or may not be a temporary error.
+                    // In either case, retry after 30 seconds.
+                    retryOrRenewAfter = TimeSpan.FromSeconds(30);
+                    Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", nrfe,
+                        topicName, publisherUri, retryOrRenewAfter);
+                }
+                catch (ConnectionRefusedException cre)
+                {
+                    // The transport was unable to resolve the hostname in the
+                    // endpoint URI.  This may or may not be a temporary error.
+                    // In either case, retry after 30 seconds.
+                    retryOrRenewAfter = TimeSpan.FromSeconds(30);
+                    Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", cre,
+                        topicName, publisherUri, retryOrRenewAfter);
+                }
+                catch (InvalidRequestException ire)
+                {
+                    // Request is not valid.  Either the URL is malformed or the
+                    // topic does not exist.  In any case, retrying would be
+                    // fruitless, so just return.
+                    Log.ErrorFormat("Fatal error subscribing to topic {0} of endpoint {1}", ire, topicName,
+                        publisherUri);
+                    return;
+                }
+                catch (TransportException te)
+                {
+                    // Unspecified transport error.  This may or may not be
+                    // due to temporary conditions that will resolve 
+                    // themselves.  Retry in 30 seconds.
+                    retryOrRenewAfter = TimeSpan.FromSeconds(30);
+                    Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", te,
+                        topicName, publisherUri, retryOrRenewAfter);
+                }
+
+                await Task.Delay(retryOrRenewAfter, cancellationToken).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+        }
+
         public async Task SendSubscriptionRequest(SubscriptionRequestType requestType, Uri publisherUri, IEndpointCredentials credentials, TopicName topic,
             Uri subscriberUri, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (publisherUri == null) throw new ArgumentNullException("publisherUri");
             if (topic == null) throw new ArgumentNullException("topic");
-            if (subscriberUri == null) throw new ArgumentNullException("subscriber");
+            if (subscriberUri == null) throw new ArgumentNullException("subscriberUri");
 
             try
             {

@@ -20,7 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
 using System.Collections.Generic;
 using Platibus.Serialization;
 
@@ -28,12 +27,11 @@ namespace Platibus.Config
 {
     public interface IPlatibusConfiguration
     {
-        Uri BaseUri { get; }
         ISerializationService SerializationService { get; }
         IMessageNamingService MessageNamingService { get; }
         IMessageJournalingService MessageJournalingService { get; }
         IMessageQueueingService MessageQueueingService { get; }
-        ISubscriptionTrackingService SubscriptionTrackingService { get; }
+
         IEnumerable<TopicName> Topics { get; }
         IEnumerable<KeyValuePair<EndpointName, IEndpoint>> Endpoints { get; }
         IEnumerable<ISendRule> SendRules { get; }

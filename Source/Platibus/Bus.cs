@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
@@ -37,9 +38,9 @@ namespace Platibus
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Core);
 
         private bool _disposed;
-        private readonly Uri _baseUri;
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly IDictionary<EndpointName, IEndpoint> _endpoints;
+        private readonly IList<Task> _subscriptionTasks = new List<Task>(); 
         private readonly IList<IHandlingRule> _handlingRules;
         private readonly IMessageNamingService _messageNamingService;
         private readonly IMessageJournalingService _messageJournalingService;
@@ -49,31 +50,20 @@ namespace Platibus
         private readonly IList<ISendRule> _sendRules;
         private readonly ISerializationService _serializationService;
         private readonly IList<ISubscription> _subscriptions;
-        private readonly ISubscriptionTrackingService _subscriptionTrackingService;
         private readonly IList<TopicName> _topics;
-        private readonly ITransportService _transportService;
-
-        public Uri BaseUri
-        {
-            get { return _baseUri; }
-        }
-
-        public ITransportService TransportService
-        {
-            get { return _transportService; }
-        }
+        private readonly IBusHost _host;
 
         public IEnumerable<TopicName> Topics
         {
             get { return _topics; }
         }
 
-        public Bus(IPlatibusConfiguration configuration, ITransportService transportService)
+        public Bus(IPlatibusConfiguration configuration, IBusHost host)
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
-            if (transportService == null) throw new ArgumentNullException("transportService");
+            if (host == null) throw new ArgumentNullException("host");
 
-            _baseUri = configuration.BaseUri;
+            _host = host;
 
             // TODO: Throw configuration exception if message queueing service, message naming
             // service, or serialization service are null
@@ -82,15 +72,13 @@ namespace Platibus
             _messageQueueingService = configuration.MessageQueueingService;
             _messageNamingService = configuration.MessageNamingService;
             _serializationService = configuration.SerializationService;
-            _subscriptionTrackingService = configuration.SubscriptionTrackingService;
 
             _endpoints = configuration.Endpoints.ToDictionary(d => d.Key, d => d.Value);
             _topics = configuration.Topics.ToList();
             _sendRules = configuration.SendRules.ToList();
             _handlingRules = configuration.HandlingRules.ToList();
             _subscriptions = configuration.Subscriptions.ToList();
-            _transportService = transportService;
-
+            
             _outboundQueueName = "Outbound";
         }
 
@@ -111,7 +99,7 @@ namespace Platibus
                     .ConfigureAwait(false);
             }
 
-            var outboundQueueListener = new OutboundQueueListener(_transportService, _messageJournalingService, uri =>
+            var outboundQueueListener = new OutboundQueueListener(_host.TransportService, _messageJournalingService, uri =>
             {
                 IEndpoint endpoint;
                 return TryGetEndpointByUri(uri, out endpoint) ? endpoint.Credentials : null;
@@ -123,15 +111,18 @@ namespace Platibus
 
             foreach (var subscription in _subscriptions)
             {
-                // Do not await these; it uses a loop with Task.Delay to ensure that the subscriptions
-                // are periodically renewed.
+                var endpoint = GetEndpoint(subscription.Publisher);
 
-                // ReSharper disable once UnusedVariable
-                var subscriptionTask = Subscribe(subscription, _cancellationTokenSource.Token);
+                // The returned task will no complete until the subscription is
+                // canceled via the supplied cancelation token, so we shouldn't
+                // await it.
+
+                var subscriptionTask = _host.TransportService.Subscribe(
+                    endpoint.Address, subscription.Topic, subscription.TTL,
+                    endpoint.Credentials, _cancellationTokenSource.Token);
+
+                _subscriptionTasks.Add(subscriptionTask);
             }
-
-            _transportService.MessageReceived += OnMessageReceived;
-            _transportService.SubscriptionRequestReceived += OnSubscriptionRequestReceived;
         }
 
         public async Task<ISentMessage> Send(object content, SendOptions options = default(SendOptions),
@@ -238,37 +229,12 @@ namespace Platibus
                 UseDurableTransport = true
             };
 
-            var prototypicalMessage = BuildMessage(content, prototypicalHeaders, options);
+            var message = BuildMessage(content, prototypicalHeaders, options);
             if (_messageJournalingService != null)
             {
-                await _messageJournalingService.MessagePublished(prototypicalMessage).ConfigureAwait(false);
+                await _messageJournalingService.MessagePublished(message).ConfigureAwait(false);
             }
-
-            var subscribers = await _subscriptionTrackingService.GetSubscribers(topic).ConfigureAwait(false);
-
-            var publishSendOptions = new SendOptions();
-            var transportTasks = new List<Task>();
-
-            // ReSharper disable once LoopCanBeConvertedToQuery
-            foreach (var subscriber in subscribers)
-            {
-                IEndpoint endpoint;
-                IEndpointCredentials credentials = null;
-                if (TryGetEndpointByUri(subscriber, out endpoint) && endpoint != null)
-                {
-                    credentials = endpoint.Credentials;
-                }
-
-                var perEndpointHeaders = new MessageHeaders(prototypicalMessage.Headers)
-                {
-                    Destination = subscriber
-                };
-
-                var addressedMessage = new Message(perEndpointHeaders, prototypicalMessage.Content);
-                transportTasks.Add(TransportMessage(addressedMessage, credentials, publishSendOptions, cancellationToken));
-            }
-
-            await Task.WhenAll(transportTasks).ConfigureAwait(false);
+            await _host.TransportService.PublishMessage(message, topic, cancellationToken);
         }
 
         private IEndpoint GetEndpoint(EndpointName endpointName)
@@ -287,117 +253,6 @@ namespace Platibus
             return endpoint != null;
         }
 
-        private IEndpoint GetEndpointByUri(Uri uri)
-        {
-            IEndpoint endpoint;
-            if (!TryGetEndpointByUri(uri, out endpoint) || endpoint == null)
-            {
-                throw new EndpointNotFoundException(uri);
-            }
-            return endpoint;
-        }
-
-        // ReSharper disable once UnusedMethodReturnValue.Local
-        private async Task Subscribe(ISubscription subscription,
-            CancellationToken cancellationToken = default(CancellationToken))
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                Uri publisher;
-                IEndpointCredentials credentials;
-                try
-                {
-                    var publisherEndpoint = GetEndpoint(subscription.Publisher);
-                    publisher = publisherEndpoint.Address;
-                    credentials = publisherEndpoint.Credentials;
-                }
-                catch (EndpointNotFoundException enfe)
-                {
-                    // Endpoint is not defined in the supplied configuration,
-                    // so we cannot determine the URI.  This is an unrecoverable
-                    // error, so simply return.
-                    Log.ErrorFormat("Fatal error subscribing to topic {0} of endpoint \"{1}\"", enfe, subscription.Topic,
-                        subscription.Publisher);
-                    return;
-                }
-
-                TimeSpan retryOrRenewAfter;
-                try
-                {
-                    Log.DebugFormat("Sending subscription request for topic {0} to {1}...", subscription.Topic,
-                        publisher);
-
-                    await _transportService.SendSubscriptionRequest(SubscriptionRequestType.Add, publisher, credentials,
-                        subscription.Topic, _baseUri, subscription.TTL, cancellationToken).ConfigureAwait(false);
-
-                    if (subscription.TTL <= TimeSpan.Zero)
-                    {
-                        // Subscription does not expire, so no need to schedule a renewal.
-                        Log.DebugFormat(
-                            "Subscription request for topic {0} successfuly sent to {1}.  Subscription has no configured TTL and is not set to auto-renew.",
-                            subscription.Topic, publisher);
-                        return;
-                    }
-
-                    // Attempt to renew after half of the TTL to allow for
-                    // issues that may occur when attempting to renew the
-                    // subscription.
-                    retryOrRenewAfter = TimeSpan.FromMilliseconds(subscription.TTL.TotalMilliseconds / 2);
-                    Log.DebugFormat(
-                        "Subscription request for topic {0} successfuly sent to {1}.  Subscription TTL is {2} and is scheduled to auto-renew in {3}",
-                        subscription.Topic, publisher, subscription.TTL, retryOrRenewAfter);
-                }
-                catch (EndpointNotFoundException enfe)
-                {
-                    // Endpoint is not defined in the supplied configuration,
-                    // so we cannot determine the URI.  This is an unrecoverable
-                    // error, so simply return.
-                    Log.ErrorFormat("Fatal error subscribing to topic {0} of endpoint \"{1}\"", enfe, subscription.Topic,
-                        publisher);
-                    return;
-                }
-                catch (NameResolutionFailedException nrfe)
-                {
-                    // The transport was unable to resolve the hostname in the
-                    // endpoint URI.  This may or may not be a temporary error.
-                    // In either case, retry after 30 seconds.
-                    retryOrRenewAfter = TimeSpan.FromSeconds(30);
-                    Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", nrfe,
-                        subscription.Topic, publisher, retryOrRenewAfter);
-                }
-                catch (ConnectionRefusedException cre)
-                {
-                    // The transport was unable to resolve the hostname in the
-                    // endpoint URI.  This may or may not be a temporary error.
-                    // In either case, retry after 30 seconds.
-                    retryOrRenewAfter = TimeSpan.FromSeconds(30);
-                    Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", cre,
-                        subscription.Topic, publisher, retryOrRenewAfter);
-                }
-                catch (InvalidRequestException ire)
-                {
-                    // Request is not valid.  Either the URL is malformed or the
-                    // topic does not exist.  In any case, retrying would be
-                    // fruitless, so just return.
-                    Log.ErrorFormat("Fatal error subscribing to topic {0} of endpoint {1}", ire, subscription.Topic,
-                        publisher);
-                    return;
-                }
-                catch (TransportException te)
-                {
-                    // Unspecified transport error.  This may or may not be
-                    // due to temporary conditions that will resolve 
-                    // themselves.  Retry in 30 seconds.
-                    retryOrRenewAfter = TimeSpan.FromSeconds(30);
-                    Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", te,
-                        subscription.Topic, publisher, retryOrRenewAfter);
-                }
-
-                await Task.Delay(retryOrRenewAfter, cancellationToken).ConfigureAwait(false);
-                cancellationToken.ThrowIfCancellationRequested();
-            }
-        }
-
         private Message BuildMessage(object content, IMessageHeaders suppliedHeaders = null, SendOptions options = default(SendOptions))
         {
             if (content == null) throw new ArgumentNullException("content");
@@ -406,7 +261,7 @@ namespace Platibus
             {
                 MessageId = MessageId.Generate(),
                 MessageName = messageName,
-                Origination = _baseUri,
+                Origination = _host.BaseUri,
                 Importance = options.Importance
             };
 
@@ -464,11 +319,9 @@ namespace Platibus
                 // in the outbound queue listener.  We'll keep the sender
                 // principal as-is until we can revisit this and improve
                 // as needed.
-                var senderPrincipal = null as SenderPrincipal;
-
                 Log.DebugFormat("Durable transport requested.  Enqueueing message ID {0} in outbound queue \"{1}\"...", message.Headers.MessageId, _outboundQueueName);
                 await _messageQueueingService
-                    .EnqueueMessage(_outboundQueueName, message, senderPrincipal)
+                    .EnqueueMessage(_outboundQueueName, message, null)
                     .ConfigureAwait(false);
 
                 Log.DebugFormat("Message ID {0} enqueued successfully", message.Headers.MessageId);
@@ -476,7 +329,7 @@ namespace Platibus
             else
             {
                 Log.DebugFormat("Durable transport not requested.  Attempting to transport message ID {0} directly to destination \"{1}\"...", message.Headers.MessageId, message.Headers.Destination);
-                await _transportService.SendMessage(message, credentials, cancellationToken).ConfigureAwait(false);
+                await _host.TransportService.SendMessage(message, credentials, cancellationToken).ConfigureAwait(false);
                 Log.DebugFormat("Message ID {0} transported successfully", message.Headers.MessageId);
 
                 if (_messageJournalingService != null)
@@ -486,24 +339,18 @@ namespace Platibus
             }
         }
 
-        private async Task OnMessageReceived(object source, MessageReceivedEventArgs args)
+        public async Task HandleMessage(Message message, IPrincipal principal)
         {
-            // TODO: How to communicate to the transport, in a non-HTTP-specific way,
-            // whether the message was processed or just accepted for future processing?
-            // i.e. in the case of HTTP transport, whether to respond with 200 or 201?
-
-            var message = args.Message;
-
             if (_messageJournalingService != null)
             {
                 await _messageJournalingService.MessageReceived(message);
             }
 
             // Make sure that the principal is serializable before enqueuing
-            var senderPrincipal = args.Principal as SenderPrincipal;
-            if (senderPrincipal == null && args.Principal != null)
+            var senderPrincipal = principal as SenderPrincipal;
+            if (senderPrincipal == null && principal != null)
             {
-                senderPrincipal = new SenderPrincipal(args.Principal);
+                senderPrincipal = new SenderPrincipal(principal);
             }
 
             var tasks = new List<Task>();
@@ -578,24 +425,6 @@ namespace Platibus
             await _replyHub.NotifyLastReplyReceived(relatedToMessageId);
         }
 
-        private async Task OnSubscriptionRequestReceived(object source, SubscriptionRequestReceivedEventArgs args)
-        {
-            var topic = args.Topic;
-            var subscriber = args.Subscriber;
-            var ttl = args.TTL;
-
-            switch (args.RequestType)
-            {
-                case SubscriptionRequestType.Add:
-                    await _subscriptionTrackingService.AddSubscription(topic, subscriber, ttl).ConfigureAwait(false);
-                    break;
-                case SubscriptionRequestType.Remove:
-                    await _subscriptionTrackingService.RemoveSubscription(topic, subscriber).ConfigureAwait(false);
-                    break;
-            }
-
-        }
-
         private void CheckDisposed()
         {
             if (_disposed) throw new ObjectDisposedException(GetType().FullName);
@@ -617,6 +446,7 @@ namespace Platibus
         protected virtual void Dispose(bool disposing)
         {
             _cancellationTokenSource.Cancel();
+            Task.WhenAll(_subscriptionTasks).Wait(TimeSpan.FromSeconds(30));
             if (disposing)
             {
                 _cancellationTokenSource.Dispose();

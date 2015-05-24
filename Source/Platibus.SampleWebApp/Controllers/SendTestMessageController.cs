@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using Platibus.IIS;
 using Platibus.SampleWebApp.Models;
 
 namespace Platibus.SampleWebApp.Controllers

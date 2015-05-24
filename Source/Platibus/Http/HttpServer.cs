@@ -25,65 +25,87 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
-using Platibus.Config;
 
 namespace Platibus.Http
 {
-    public class HttpServer : IDisposable
+    /// <summary>
+    /// A standalone HTTP server bus host
+    /// </summary>
+    public class HttpServer : IBusHost, IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Http);
+
+        /// <summary>
+        /// Creates and starts a new <see cref="HttpServer"/> based on the configuration
+        /// in the named configuration section.
+        /// </summary>
+        /// <param name="configSectionName">The configuration section containing the
+        /// settings for this HTTP server instance.</param>
+        /// <param name="cancellationToken">(Optional) A cancelation token that may be
+        /// used by the caller to interrupt the HTTP server initialization process</param>
+        /// <returns>Returns the fully initialized and listening HTTP server</returns>
+        /// <seealso cref="HttpServerConfigurationSection"/>
+        public static async Task<HttpServer> Start(string configSectionName = "platibus.httpserver", CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var configuration = await HttpServerConfigurationManager.LoadConfiguration(configSectionName);
+            return await Start(configuration, cancellationToken);
+        }
+
+        /// <summary>
+        /// Creates and starts a new <see cref="HttpServer"/> based on the specified
+        /// <paramref name="configuration"/>.
+        /// </summary>
+        /// <param name="configuration">The configuration for this HTTP server instance.</param>
+        /// <param name="cancellationToken">(Optional) A cancelation token that may be
+        /// used by the caller to interrupt the HTTP server initialization process</param>
+        /// <returns>Returns the fully initialized and listening HTTP server</returns>
+        /// <seealso cref="HttpServerConfigurationSection"/>
+        public static async Task<HttpServer> Start(IHttpServerConfiguration configuration, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var server = new HttpServer(configuration);
+            await server.Init(cancellationToken);
+            return server;
+        }
+
         private bool _disposed;
         private readonly Uri _baseUri;
+        private readonly ISubscriptionTrackingService _subscriptionTrackingService;
+        private readonly ITransportService _transportService;
+        private readonly Bus _bus;
+        private readonly IHttpResourceRouter _router;
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly HttpListener _httpListener;
-        private readonly IHttpResourceRouter _router;
 
-        public HttpServer(string sectionName = null, AuthenticationSchemes authenticationSchemes = AuthenticationSchemes.Anonymous)
-        {
-            var bus = Bootstrapper.InitBus(sectionName).ConfigureAwait(false).GetAwaiter().GetResult();
-            Shutdown += (source, e) => bus.Dispose();
-
-            _router = InitDefaultRouter(bus);
-            _baseUri = bus.BaseUri;
-            _httpListener = InitHttpListener(_baseUri, authenticationSchemes);
-        }
-
-        public HttpServer(Bus bus, AuthenticationSchemes authenticationSchemes = AuthenticationSchemes.Anonymous)
-        {
-            if (bus == null) throw new ArgumentNullException("bus");
-
-            _router = InitDefaultRouter(bus);
-            _baseUri = bus.BaseUri;
-            _httpListener = InitHttpListener(_baseUri, authenticationSchemes);
-        }
-
-        public HttpServer(Uri baseUri, IHttpResourceRouter router, AuthenticationSchemes authenticationSchemes = AuthenticationSchemes.Anonymous)
-        {
-            if (router == null) throw new ArgumentNullException("router");
-            if (baseUri == null)
-            {
-                baseUri = new Uri("http://localhost:52180/platibus/");
-            }
-
-            _router = router;
-            _baseUri = baseUri;
-            _httpListener = InitHttpListener(_baseUri, authenticationSchemes);
-        }
-
+        private Task _listenTask;
+        
         public Uri BaseUri
         {
             get { return _baseUri; }
         }
 
-        public event HttpServerShutdownHandler Shutdown;
-
-        private static IHttpResourceRouter InitDefaultRouter(Bus bus)
+        public ITransportService TransportService
         {
-            return new ResourceTypeDictionaryRouter
+            get { return _transportService; }
+        }
+
+        public IBus Bus
+        {
+            get { return _bus; }
+        }
+
+        private HttpServer(IHttpServerConfiguration configuration)
+        {
+            _baseUri = configuration.BaseUri;
+            _subscriptionTrackingService = configuration.SubscriptionTrackingService;
+            _transportService = new HttpTransportService(_baseUri, _subscriptionTrackingService);
+            _bus = new Bus(configuration, this);
+            
+            _router = new ResourceTypeDictionaryRouter
             {
-                {"message", new MessageController(bus.TransportService)},
-                {"topic", new TopicController(bus.TransportService, bus.Topics)}
+                {"message", new MessageController(_bus.HandleMessage)},
+                {"topic", new TopicController(_subscriptionTrackingService, configuration.Topics)}
             };
+            _httpListener = InitHttpListener(_baseUri, configuration.AuthenticationSchemes);
         }
 
         private static HttpListener InitHttpListener(Uri baseUri, AuthenticationSchemes authenticationSchemes)
@@ -101,18 +123,18 @@ namespace Platibus.Http
             return httpListener;
         }
 
-        public void Start()
+        private async Task Init(CancellationToken cancellationToken = default(CancellationToken))
         {
             if (_httpListener.IsListening) return;
+
+            await _bus.Init(cancellationToken);
 
             Log.InfoFormat("Starting HTTP server listening on {0}...", _baseUri);
             _httpListener.Start();
             Log.InfoFormat("HTTP started successfully");
 
             // Create a new async task but do not wait for it to complete.
-
-            // ReSharper disable once UnusedVariable
-            var listenTask = Listen(_cancellationTokenSource.Token);
+            _listenTask = Listen(_cancellationTokenSource.Token);
         }
 
         // ReSharper disable once UnusedMethodReturnValue.Local
@@ -177,6 +199,8 @@ namespace Platibus.Http
             if (_disposed) return;
 
             _cancellationTokenSource.Cancel();
+            _bus.TryDispose();
+            _subscriptionTrackingService.TryDispose();
 
             Log.Info("Stopping HTTP server...");
             _httpListener.Stop();
@@ -189,21 +213,12 @@ namespace Platibus.Http
                 Log.Warn("Error closing HTTP listener; aborting...", ex);
                 _httpListener.Abort();
             }
+
+            _listenTask.TryWait(TimeSpan.FromSeconds(30));
+
             Log.InfoFormat("HTTP server stopped");
 
-            var shutdownHandlers = Shutdown;
-            if (shutdownHandlers != null)
-            {
-                try
-                {
-                    shutdownHandlers(this, new HttpServerShutdownEventArgs());
-                }
-                catch (Exception e)
-                {
-                    Log.Warn("Unhandled exception invoking HTTP server shutdown handlers during dispose", e);
-                }
-            }
-            _cancellationTokenSource.Dispose();
+            _cancellationTokenSource.TryDispose();
         }
     }
 }

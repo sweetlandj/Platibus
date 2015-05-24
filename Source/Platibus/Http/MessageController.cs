@@ -23,18 +23,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Principal;
 using System.Threading.Tasks;
 
 namespace Platibus.Http
 {
     public class MessageController : IHttpResourceController
     {
-        private readonly ITransportService _transportService;
+        private readonly Func<Message, IPrincipal, Task> _accept;
 
-        public MessageController(ITransportService transportService)
+        public MessageController(Func<Message, IPrincipal, Task> accept)
         {
-            if (transportService == null) throw new ArgumentNullException("transportService");
-            _transportService = transportService;
+            if (accept == null) throw new ArgumentNullException("accept");
+            _accept = accept;
         }
 
         public async Task Process(IHttpResourceRequest request, IHttpResourceResponse response,
@@ -65,7 +66,7 @@ namespace Platibus.Http
             var content = await request.ReadContentAsString();
             var message = new Message(messageHeaders, content);
 
-            await _transportService.AcceptMessage(message, request.Principal).ConfigureAwait(false);
+            await _accept(message, request.Principal).ConfigureAwait(false);
             response.StatusCode = 202;
         }
     }

@@ -21,24 +21,56 @@
 // THE SOFTWARE.
 
 using System;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Platibus
 {
+    /// <summary>
+    /// An interface that describes an object that transmits messages from one
+    /// application to another.
+    /// </summary>
     public interface ITransportService
     {
-        event MessageReceivedHandler MessageReceived;
-        event SubscriptionRequestReceivedHandler SubscriptionRequestReceived;
-
+        /// <summary>
+        /// Sends a message directly to the application identified by the
+        /// <see cref="IMessageHeaders.Destination"/> header.
+        /// </summary>
+        /// <param name="message">The message to send.</param>
+        /// <param name="credentials">The credentials required to send a 
+        /// message to the specified destination, if applicable.</param>
+        /// <param name="cancellationToken">A token used by the caller to
+        /// indicate if and when the send operation has been canceled.</param>
+        /// <returns>returns a task that completes when the message has
+        /// been successfully sent to the destination.</returns> 
         Task SendMessage(Message message, IEndpointCredentials credentials = null, CancellationToken cancellationToken = default(CancellationToken));
 
-        Task SendSubscriptionRequest(SubscriptionRequestType requestType, Uri publisher, IEndpointCredentials credentials, TopicName topic, Uri subscriber,
-            TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken));
+        /// <summary>
+        /// Publishes a message to a topic.
+        /// </summary>
+        /// <param name="message">The message to publish.</param>
+        /// <param name="topicName">The name of the topic.</param>
+        /// <param name="cancellationToken">A token used by the caller
+        /// to indicate if and when the publish operation has been canceled.</param>
+        /// <returns>returns a task that completes when the message has
+        /// been successfully published to the topic.</returns>
+        Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken);
 
-        Task AcceptMessage(Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken));
-
-        Task AcceptSubscriptionRequest(SubscriptionRequestType requestType, TopicName topic, Uri subscriber, TimeSpan ttl, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken));
+        /// <summary>
+        /// Subscribes to messages published to the specified <paramref name="topicName"/>
+        /// by the application at the provided <paramref name="publisherUri"/>.
+        /// </summary>
+        /// <param name="publisherUri">The base URI of the publishing application.</param>
+        /// <param name="ttl">(Optional) The Time To Live (TTL) for the subscription
+        /// on the publishing application if it is not renewed.</param>
+        /// <param name="credentials">The credentials required to subscribe to the
+        /// publishing application, if applicable.</param>
+        /// <param name="topicName">The name of the topic to which the caller is
+        /// subscribing.</param>
+        /// <param name="cancellationToken">A token used by the caller to
+        /// indicate if and when the subscription should be canceled.</param>
+        /// <returns>Returns a long-running task that will be completed when the 
+        /// subscription is canceled by the caller or a non-recoverable error occurs.</returns>
+        Task Subscribe(Uri publisherUri, TopicName topicName, TimeSpan ttl, IEndpointCredentials credentials, CancellationToken cancellationToken = default (CancellationToken));
     }
 }

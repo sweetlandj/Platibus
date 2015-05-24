@@ -49,6 +49,7 @@
       <HintPath>..\packages\Common.Logging.Core.3.0.0\lib\net40\Common.Logging.Core.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Web" />
   </ItemGroup>
@@ -57,10 +58,16 @@
       <Link>Properties\Copyright.cs</Link>
     </Compile>
     <Compile Include="BusManager.cs" />
+    <Compile Include="IISConfiguration.cs" />
+    <Compile Include="IISConfigurationManager.cs" />
+    <Compile Include="IISConfigurationSection.cs" />
+    <Compile Include="IIISConfiguration.cs" />
     <Compile Include="IISLoggingCategories.cs" />
     <Compile Include="PlatibusHttpHandler.cs" />
     <Compile Include="HttpRequestAdapter.cs" />
     <Compile Include="HttpResponseAdapter.cs" />
+    <Compile Include="PlatibusHttpHandlerFactory.cs" />
+    <Compile Include="PlatibusIISConfigurationSection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

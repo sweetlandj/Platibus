@@ -20,17 +20,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
 using System.Configuration;
 
 namespace Platibus.Config
 {
     public class PlatibusConfigurationSection : ConfigurationSection
     {
-        private const string BaseUriPropertyName = "baseUri";
+        
         private const string JournalingPropertyName = "journaling";
         private const string QueueingPropertyName = "queueing";
-        private const string SubscriptionTrackingPropertyName = "subscriptionTracking";
+        
         private const string TimeoutsPropertyName = "timeouts";
         private const string EndpointsPropertyName = "endpoints";
         private const string TopicsPropertyName = "topics";
@@ -44,15 +43,7 @@ namespace Platibus.Config
             Topics = new TopicElementCollection();
             SendRules = new SendRuleElementCollection();
         }
-
-        [ConfigurationProperty(BaseUriPropertyName)]
-        public Uri BaseUri
-        {
-            get { return (Uri) base[BaseUriPropertyName]; }
-            set { base[BaseUriPropertyName] = value; }
-        }
-
-        [ConfigurationProperty(JournalingPropertyName, IsRequired=false, DefaultValue=null)]
+[ConfigurationProperty(JournalingPropertyName, IsRequired=false, DefaultValue=null)]
         public JournalingElement Journaling
         {
             get { return (JournalingElement)base[JournalingPropertyName]; }
@@ -64,13 +55,6 @@ namespace Platibus.Config
         {
             get { return (QueueingElement) base[QueueingPropertyName]; }
             set { base[QueueingPropertyName] = value; }
-        }
-
-        [ConfigurationProperty(SubscriptionTrackingPropertyName)]
-        public SubscriptionTrackingElement SubscriptionTracking
-        {
-            get { return (SubscriptionTrackingElement) base[SubscriptionTrackingPropertyName]; }
-            set { base[SubscriptionTrackingPropertyName] = value; }
         }
 
         [ConfigurationProperty(TimeoutsPropertyName)]

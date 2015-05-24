@@ -32,12 +32,12 @@ namespace Platibus.Http
     {
         private readonly NewtonsoftJsonSerializer _serializer = new NewtonsoftJsonSerializer();
         private readonly IList<TopicName> _topics;
-        private readonly ITransportService _transportService;
+        private readonly ISubscriptionTrackingService _subscriptionTrackingService;
 
-        public TopicController(ITransportService transportService, IEnumerable<TopicName> topics)
+        public TopicController(ISubscriptionTrackingService subscriptionTrackingService, IEnumerable<TopicName> topics)
         {
-            if (transportService == null) throw new ArgumentNullException("transportService");
-            _transportService = transportService;
+            if (subscriptionTrackingService == null) throw new ArgumentNullException("subscriptionTrackingService");
+            _subscriptionTrackingService = subscriptionTrackingService;
             _topics = (topics ?? Enumerable.Empty<TopicName>())
                 .Where(t => t != null)
                 .ToList();
@@ -104,8 +104,7 @@ namespace Platibus.Http
 
             if ("delete".Equals(request.HttpMethod, StringComparison.OrdinalIgnoreCase))
             {
-                await _transportService.AcceptSubscriptionRequest(SubscriptionRequestType.Remove, topic,
-                    subscriber, TimeSpan.Zero, request.Principal).ConfigureAwait(false);
+                await _subscriptionTrackingService.RemoveSubscription(topic, subscriber).ConfigureAwait(false);
             }
             else
             {
@@ -114,8 +113,7 @@ namespace Platibus.Http
                     ? default(TimeSpan)
                     : TimeSpan.FromSeconds(int.Parse(ttlStr));
 
-                await _transportService.AcceptSubscriptionRequest(SubscriptionRequestType.Add, topic, subscriber,
-                    ttl, request.Principal).ConfigureAwait(false);
+                await _subscriptionTrackingService.AddSubscription(topic, subscriber, ttl).ConfigureAwait(false);
             }
             response.StatusCode = 202;
         }

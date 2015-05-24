@@ -38,20 +38,20 @@ namespace Platibus.Config
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
 
-        public static Task<PlatibusConfiguration> LoadConfiguration(bool processConfigurationHooks = true)
+        public static Task<TConfig> LoadConfiguration<TConfig>(string sectionName, bool processConfigurationHooks = true) where TConfig : PlatibusConfiguration, new()
         {
-            return LoadConfiguration("platibus", processConfigurationHooks);
+            if (string.IsNullOrWhiteSpace(sectionName)) throw new ArgumentNullException("sectionName");
+            var configSection = (PlatibusConfigurationSection)ConfigurationManager.GetSection(sectionName) ?? new PlatibusConfigurationSection();
+            return LoadConfiguration<TConfig>(configSection, processConfigurationHooks);
         }
 
-        public static async Task<PlatibusConfiguration> LoadConfiguration(string sectionName, bool processConfigurationHooks = true)
+        public static async Task<TConfig> LoadConfiguration<TConfig>(PlatibusConfigurationSection configSection, bool processConfigurationHooks = true) where TConfig : PlatibusConfiguration, new()
         {
-            var configuration = new PlatibusConfiguration();
-
-            var configSection = (PlatibusConfigurationSection) ConfigurationManager.GetSection(sectionName) ??
-                                new PlatibusConfigurationSection();
-            configuration.BaseUri = configSection.BaseUri;
-            configuration.SerializationService = new DefaultSerializationService();
-            configuration.MessageNamingService = new DefaultMessageNamingService();
+            var configuration = new TConfig
+            {
+                SerializationService = new DefaultSerializationService(),
+                MessageNamingService = new DefaultMessageNamingService()
+            };
 
             IEnumerable<EndpointElement> endpoints = configSection.Endpoints;
             foreach (var endpointConfig in endpoints)
@@ -89,9 +89,7 @@ namespace Platibus.Config
             var queueing = configSection.Queueing ?? new QueueingElement();
             configuration.MessageQueueingService = await InitMessageQueueingService(queueing);
 
-            var subscriptionTracking = configSection.SubscriptionTracking ?? new SubscriptionTrackingElement();
-            configuration.SubscriptionTrackingService = await InitSubscriptionTrackingService(subscriptionTracking);
-
+            
             IEnumerable<SendRuleElement> sendRules = configSection.SendRules;
             foreach (var sendRule in sendRules)
             {
@@ -149,23 +147,7 @@ namespace Platibus.Config
             return provider.CreateMessageJournalingService(config);
         }
 
-        public static Task<ISubscriptionTrackingService> InitSubscriptionTrackingService(SubscriptionTrackingElement config)
-        {
-            var providerName = config.Provider;
-            ISubscriptionTrackingServiceProvider provider;
-            if (string.IsNullOrWhiteSpace(providerName))
-            {
-                Log.Debug("No subscription tracking service provider specified; using default provider...");
-                provider = new FilesystemServicesProvider();
-            }
-            else
-            {
-                provider = ProviderHelper.GetProvider<ISubscriptionTrackingServiceProvider>(providerName);
-            }
-
-            Log.Debug("Initializing subscription tracking service...");
-            return provider.CreateSubscriptionTrackingService(config);
-        }
+        
 
         public static string GetRootedPath(string path)
         {

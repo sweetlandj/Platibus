@@ -37,25 +37,17 @@ namespace Platibus.Config
     /// </remarks>
     public class PlatibusConfiguration : IPlatibusConfiguration
     {
-        private Uri _baseUri;
         private readonly IDictionary<EndpointName, IEndpoint> _endpoints = new Dictionary<EndpointName, IEndpoint>();
         private readonly IList<IHandlingRule> _handlingRules = new List<IHandlingRule>();
         private readonly IList<ISendRule> _sendRules = new List<ISendRule>();
         private readonly IList<ISubscription> _subscriptions = new List<ISubscription>();
         private readonly IList<TopicName> _topics = new List<TopicName>();
 
-        public Uri BaseUri
-        {
-            get { return _baseUri ?? (_baseUri = new Uri("http://localhost/platibus")); }
-            set { _baseUri = value; }
-        }
-
         public IMessageNamingService MessageNamingService { get; set; }
         public ISerializationService SerializationService { get; set; }
         public IMessageJournalingService MessageJournalingService { get; set; }
         public IMessageQueueingService MessageQueueingService { get; set; }
-        public ISubscriptionTrackingService SubscriptionTrackingService { get; set; }
-
+        
         public IEnumerable<KeyValuePair<EndpointName, IEndpoint>> Endpoints
         {
             get { return _endpoints; }

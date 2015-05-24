@@ -76,12 +76,20 @@
     </Compile>
     <Compile Include="Config\ClientCredentialType.cs" />
     <Compile Include="Config\Extensibility\ProviderHelper.cs" />
+    <Compile Include="Http\AuthenticationSchemeElement.cs" />
+    <Compile Include="Http\AuthenticationSchemesElementCollection.cs" />
+    <Compile Include="Http\HttpServerConfigurationManager.cs" />
+    <Compile Include="Http\IHttpServerConfiguration.cs" />
+    <Compile Include="Http\HttpServerConfiguration.cs" />
+    <Compile Include="Http\HttpServerConfigurationSection.cs" />
     <Compile Include="Http\HttpExceptionHandler.cs" />
+    <Compile Include="IBusHost.cs" />
     <Compile Include="MessageImportance.cs" />
     <Compile Include="Http\HttpEndpointCredentialsVisitor.cs" />
     <Compile Include="InMemory\InMemoryServicesProvider.cs" />
     <Compile Include="MessageHandler.cs" />
     <Compile Include="MessageNotAcknowledgedException.cs" />
+    <Compile Include="Utils.cs" />
     <Compile Include="ObservableExtensions.cs" />
     <Compile Include="Security\BasicAuthCredentials.cs" />
     <Compile Include="Config\Bootstrapper.cs" />
@@ -116,8 +124,6 @@
     <Compile Include="Filesystem\FilesystemServicesProvider.cs" />
     <Compile Include="Filesystem\FilesystemSubscriptionTrackingService.cs" />
     <Compile Include="Filesystem\MessageFileFormatException.cs" />
-    <Compile Include="Http\HttpServerShutdownEventArgs.cs" />
-    <Compile Include="Http\HttpServerShutdownHandler.cs" />
     <Compile Include="Http\ResourceTypeDictionaryRouter.cs" />
     <Compile Include="Http\HttpListenerResponseAdapter.cs" />
     <Compile Include="Http\HttpRequestExtensions.cs" />

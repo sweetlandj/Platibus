@@ -77,7 +77,7 @@ namespace Platibus.IIS
         protected virtual async Task<IHttpResourceRouter> GetRouter()
         {
             var bus = await BusManager.GetInstance();
-            var transportService = bus.TransportService;
+            var transportService = (HttpTransportService)bus.TransportService;
             return new ResourceTypeDictionaryRouter 
             {
                 {"message", new MessageController(transportService)},
