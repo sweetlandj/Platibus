@@ -114,6 +114,7 @@ namespace Platibus.Http
             {
                 AuthenticationSchemes = authenticationSchemes
             };
+
             var prefix = baseUri.ToString();
             if (!prefix.EndsWith("/"))
             {

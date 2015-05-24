@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using Platibus.Config;
+using Platibus.InMemory;
 
 namespace Platibus.Http
 {
@@ -22,5 +23,10 @@ namespace Platibus.Http
         }
 
         public ISubscriptionTrackingService SubscriptionTrackingService { get; set; }
+
+        public HttpServerConfiguration()
+        {
+            SubscriptionTrackingService = new InMemorySubscriptionTrackingService();
+        }
     }
 }

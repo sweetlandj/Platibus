@@ -38,6 +38,11 @@ namespace Platibus.Config
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
 
+        public static Task<PlatibusConfiguration> LoadConfiguration(string sectionName = "platibus", bool processConfigurationHooks = true)
+        {
+            return LoadConfiguration<PlatibusConfiguration>(sectionName, processConfigurationHooks);
+        }
+
         public static Task<TConfig> LoadConfiguration<TConfig>(string sectionName, bool processConfigurationHooks = true) where TConfig : PlatibusConfiguration, new()
         {
             if (string.IsNullOrWhiteSpace(sectionName)) throw new ArgumentNullException("sectionName");

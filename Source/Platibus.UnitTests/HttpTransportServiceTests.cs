@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Moq;
 using NUnit.Framework;
+using Platibus.Config;
 using Platibus.Http;
+using Platibus.InMemory;
 
 namespace Platibus.UnitTests
 {
@@ -17,21 +17,6 @@ namespace Platibus.UnitTests
             var messageReceivedEvent = new ManualResetEvent(false);
             string content = null; 
 
-            var transportService = new HttpTransportService();
-            var mockMessageController = new Mock<IHttpResourceController>();
-            mockMessageController.Setup(c => c.Process(It.IsAny<IHttpResourceRequest>(), It.IsAny<IHttpResourceResponse>(), It.IsAny<IEnumerable<string>>()))
-                .Callback<IHttpResourceRequest, IHttpResourceResponse, IEnumerable<string>>((req, resp, subPath) =>
-                {
-                    content = req.ReadContentAsString().Result;
-                    messageReceivedEvent.Set();
-                })
-                .Returns(Task.FromResult(true));
-
-            var router = new ResourceTypeDictionaryRouter
-            {
-                {"message", mockMessageController.Object}
-            };
-
             var serverBaseUri = new UriBuilder
             {
                 Scheme = "http",
@@ -40,11 +25,21 @@ namespace Platibus.UnitTests
                 Path = "/platibus.test/"
             }.Uri;
 
-            bool messageReceived;
-            using(var server = new HttpServer(serverBaseUri, router))
+            var configuration = new HttpServerConfiguration
             {
-                server.Start();
+                BaseUri = serverBaseUri
+            };
 
+            configuration.AddHandlingRule<string>(".*", (c, ctx) =>
+            {
+                content = c;
+                messageReceivedEvent.Set();
+                ctx.Acknowledge();
+            });
+
+            bool messageReceived;
+            using(var server = await HttpServer.Start(configuration))
+            {
                 var endpoint = serverBaseUri;
                 var message = new Message(new MessageHeaders
                 {
@@ -53,7 +48,7 @@ namespace Platibus.UnitTests
                     {HeaderName.Destination, endpoint.ToString()}
                 }, "Hello, world!");
 
-                await transportService
+                await server.TransportService
                     .SendMessage(message)
                     .ConfigureAwait(false);
 
@@ -72,21 +67,6 @@ namespace Platibus.UnitTests
         [Test]
         public async Task Given_Invalid_Resource_Type_When_Sending_Then_Remote_Responds_Invalid_Request()
         {
-            var messageReceivedEvent = new ManualResetEvent(false);
-            var transportService = new HttpTransportService();
-            var mockMessageController = new Mock<IHttpResourceController>();
-            mockMessageController.Setup(c => c.Process(It.IsAny<IHttpResourceRequest>(), It.IsAny<IHttpResourceResponse>(), It.IsAny<IEnumerable<string>>()))
-                .Callback<IHttpResourceRequest, IHttpResourceResponse, IEnumerable<string>>((req, resp, subPath) =>
-                {
-                    resp.StatusCode = 400;
-                    messageReceivedEvent.Set();
-                })
-                .Returns(Task.FromResult(true));
-
-            // Similate a configuration in which the server does not
-            // know what a "message" resource is.
-            var router = new ResourceTypeDictionaryRouter();
-
             var serverBaseUri = new UriBuilder
             {
                 Scheme = "http",
@@ -95,11 +75,15 @@ namespace Platibus.UnitTests
                 Path = "/platibus.test/"
             }.Uri;
 
-            Exception exception = null;
-            using (var server = new HttpServer(serverBaseUri, router))
+            var configuration = new HttpServerConfiguration
             {
-                server.Start();
+                BaseUri = serverBaseUri
+            };
 
+            var messageReceivedEvent = new ManualResetEvent(false);            
+            Exception exception = null;
+            using (var server = await HttpServer.Start(configuration))
+            {
                 var endpoint = serverBaseUri;
                 var message = new Message(new MessageHeaders
                 {
@@ -110,7 +94,7 @@ namespace Platibus.UnitTests
 
                 try
                 {
-                    await transportService
+                    await server.TransportService
                         .SendMessage(message)
                         .ConfigureAwait(false);    
                 }
@@ -137,8 +121,6 @@ namespace Platibus.UnitTests
         [Test]
         public async Task Given_Remote_Host_Not_Listening_When_Sending_Then_Transport_Service_Throws_TransportException()
         {
-            var transportService = new HttpTransportService();
-
             var endpoint = new UriBuilder
             {
                 Scheme = "http",
@@ -146,6 +128,8 @@ namespace Platibus.UnitTests
                 Port = 52180,
                 Path = "/platibus.test/"
             }.Uri;
+
+            var transportService = new HttpTransportService(endpoint, new InMemorySubscriptionTrackingService());
 
             var message = new Message(new MessageHeaders
             {
@@ -176,8 +160,6 @@ namespace Platibus.UnitTests
         [Test]
         public async Task Given_Invalid_Hostname_When_Sending_Then_Transport_Service_Throws_TransportException()
         {
-            var transportService = new HttpTransportService();
-
             var endpoint = new UriBuilder
             {
                 Scheme = "http",
@@ -185,6 +167,8 @@ namespace Platibus.UnitTests
                 Port = 52180,
                 Path = "/platibus.test/"
             }.Uri;
+
+            var transportService = new HttpTransportService(endpoint, new InMemorySubscriptionTrackingService());
 
             var message = new Message(new MessageHeaders
             {

@@ -84,6 +84,7 @@
     <Compile Include="Http\HttpServerConfigurationSection.cs" />
     <Compile Include="Http\HttpExceptionHandler.cs" />
     <Compile Include="IBusHost.cs" />
+    <Compile Include="LoopbackHost.cs" />
     <Compile Include="MessageImportance.cs" />
     <Compile Include="Http\HttpEndpointCredentialsVisitor.cs" />
     <Compile Include="InMemory\InMemoryServicesProvider.cs" />
@@ -92,7 +93,6 @@
     <Compile Include="Utils.cs" />
     <Compile Include="ObservableExtensions.cs" />
     <Compile Include="Security\BasicAuthCredentials.cs" />
-    <Compile Include="Config\Bootstrapper.cs" />
     <Compile Include="Config\Extensibility\ISubscriptionTrackingServiceProvider.cs" />
     <Compile Include="Config\Extensibility\IMessageJournalingServiceProvider.cs" />
     <Compile Include="Config\Extensibility\IMessageQueueingServiceProvider.cs" />

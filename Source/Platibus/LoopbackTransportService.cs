@@ -35,45 +35,28 @@ namespace Platibus
     /// </remarks>
     public class LoopbackTransportService : ITransportService
     {
-        public event MessageReceivedHandler MessageReceived;
-        public event SubscriptionRequestReceivedHandler SubscriptionRequestReceived;
+        private readonly Func<Message, IPrincipal, Task> _accept;
+
+        public LoopbackTransportService(Func<Message, IPrincipal, Task> accept)
+        {
+            if (accept == null) throw new ArgumentNullException("accept");
+            _accept = accept;
+        }
 
         public async Task SendMessage(Message message, IEndpointCredentials credentials = null, CancellationToken cancellationToken = new CancellationToken())
         {
-            await AcceptMessage(message, Thread.CurrentPrincipal, cancellationToken);
+            await Task.Run(() => _accept(message, Thread.CurrentPrincipal), cancellationToken);
         }
 
-        public Task SendSubscriptionRequest(SubscriptionRequestType requestType, Uri publisher, IEndpointCredentials credentials, TopicName topic, Uri subscriber,
-            TimeSpan ttl, CancellationToken cancellationToken = new CancellationToken())
+        public async Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken)
         {
-            return AcceptSubscriptionRequest(requestType, topic, subscriber, ttl, 
-                Thread.CurrentPrincipal, cancellationToken);
+            await Task.Run(() => _accept(message, Thread.CurrentPrincipal), cancellationToken);
         }
 
-        public Task AcceptMessage(Message message, IPrincipal senderPrincipal,
+        public Task Subscribe(Uri publisherUri, TopicName topicName, TimeSpan ttl, IEndpointCredentials credentials,
             CancellationToken cancellationToken = new CancellationToken())
         {
-            return Task.Run(() =>
-            {
-                var handlers = MessageReceived;
-                if (handlers != null)
-                {
-                    handlers(this, new MessageReceivedEventArgs(message, senderPrincipal));
-                }
-            }, cancellationToken);
-        }
-
-        public Task AcceptSubscriptionRequest(SubscriptionRequestType requestType, TopicName topic, Uri subscriber, TimeSpan ttl,
-            IPrincipal senderPrincipal, CancellationToken cancellationToken = new CancellationToken())
-        {
-            return Task.Run(() =>
-            {
-                var handlers = SubscriptionRequestReceived;
-                if (handlers != null)
-                {
-                    handlers(this, new SubscriptionRequestReceivedEventArgs(requestType, topic, subscriber, ttl, senderPrincipal));
-                }
-            }, cancellationToken);
+            return Task.FromResult(false);
         }
     }
 }

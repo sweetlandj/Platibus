@@ -2,7 +2,6 @@
 using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
-using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,9 +18,9 @@ namespace Platibus.UnitTests
         [Test]
         public async Task Given_No_Topic_When_Getting_Then_Topic_List_Returned()
         {
-            var mockTransportService = new Mock<ITransportService>();
+            var mockSubscriptionTrackingService = new Mock<ISubscriptionTrackingService>();
             var topics = new TopicName[]{"topic-1", "topic-2", "topic-3"};
-            var controller = new TopicController(mockTransportService.Object, topics);
+            var controller = new TopicController(mockSubscriptionTrackingService.Object, topics);
 
             var mockRequest = new Mock<IHttpResourceRequest>();
             var requestUri = new UriBuilder
@@ -30,6 +29,7 @@ namespace Platibus.UnitTests
                 Host = "localhost",
                 Path = "/platibus/topic/"
             }.Uri;
+
             mockRequest.Setup(r => r.HttpMethod).Returns("GET");
             mockRequest.Setup(r => r.Url).Returns(requestUri);
             
@@ -56,9 +56,9 @@ namespace Platibus.UnitTests
         [Test]
         public async Task Given_No_Topic_When_Posting_Then_400_Returned()
         {
-            var mockTransportService = new Mock<ITransportService>();
+            var mockSubscriptionTrackingService = new Mock<ISubscriptionTrackingService>();
             var topics = new TopicName[] { "topic-1", "topic-2", "topic-3" };
-            var controller = new TopicController(mockTransportService.Object, topics);
+            var controller = new TopicController(mockSubscriptionTrackingService.Object, topics);
 
             var mockRequest = new Mock<IHttpResourceRequest>();
             var requestUri = new UriBuilder
@@ -86,13 +86,14 @@ namespace Platibus.UnitTests
         [Test]
         public async Task Given_Topic_And_Subscriber_When_Posting_Then_Subscription_Added()
         {
-            var mockTransportService = new Mock<ITransportService>();
-            mockTransportService.Setup(ts => ts.AcceptSubscriptionRequest(It.IsAny<SubscriptionRequestType>(),
-                It.IsAny<TopicName>(), It.IsAny<Uri>(), It.IsAny<TimeSpan>(), It.IsAny<IPrincipal>(), It.IsAny<CancellationToken>()))
+            var mockSubscriptionTrackingService = new Mock<ISubscriptionTrackingService>();
+            mockSubscriptionTrackingService.Setup(sts =>
+                    sts.AddSubscription(It.IsAny<TopicName>(), It.IsAny<Uri>(), It.IsAny<TimeSpan>(),
+                        It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(true));
 
             var topics = new TopicName[] { "topic-1", "topic-2", "topic-3" };
-            var controller = new TopicController(mockTransportService.Object, topics);
+            var controller = new TopicController(mockSubscriptionTrackingService.Object, topics);
 
             var mockRequest = new Mock<IHttpResourceRequest>();
             var encodedSubscriberUri = HttpUtility.UrlEncode("http://example.com/platibus");
@@ -119,21 +120,22 @@ namespace Platibus.UnitTests
                 .ConfigureAwait(false);
 
             mockResponse.VerifySet(r => r.StatusCode = 202);
-            mockTransportService.Verify(ts => ts.AcceptSubscriptionRequest(SubscriptionRequestType.Add,
-                "topic-1", new Uri("http://example.com/platibus"), TimeSpan.FromSeconds(3600), It.IsAny<IPrincipal>(), 
+            mockSubscriptionTrackingService.Verify(ts => ts.AddSubscription(
+                "topic-1", new Uri("http://example.com/platibus"), TimeSpan.FromSeconds(3600), 
                 It.IsAny<CancellationToken>()));
         }
 
         [Test]
         public async Task Given_Topic_And_Subscriber_When_Deleting_Then_Subscription_Removed()
         {
-            var mockTransportService = new Mock<ITransportService>();
-            mockTransportService.Setup(ts => ts.AcceptSubscriptionRequest(It.IsAny<SubscriptionRequestType>(),
-                It.IsAny<TopicName>(), It.IsAny<Uri>(), It.IsAny<TimeSpan>(), It.IsAny<IPrincipal>(), It.IsAny<CancellationToken>()))
+            var mockSubscriptionTrackingService = new Mock<ISubscriptionTrackingService>();
+            mockSubscriptionTrackingService.Setup(sts =>
+                    sts.RemoveSubscription(It.IsAny<TopicName>(), It.IsAny<Uri>(),
+                        It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(true));
 
             var topics = new TopicName[] { "topic-1", "topic-2", "topic-3" };
-            var controller = new TopicController(mockTransportService.Object, topics);
+            var controller = new TopicController(mockSubscriptionTrackingService.Object, topics);
 
             var mockRequest = new Mock<IHttpResourceRequest>();
             var encodedSubscriberUri = HttpUtility.UrlEncode("http://example.com/platibus");
@@ -159,9 +161,8 @@ namespace Platibus.UnitTests
                 .ConfigureAwait(false);
 
             mockResponse.VerifySet(r => r.StatusCode = 202);
-            mockTransportService.Verify(ts => ts.AcceptSubscriptionRequest(SubscriptionRequestType.Remove,
-                "topic-1", new Uri("http://example.com/platibus"), TimeSpan.Zero, It.IsAny<IPrincipal>(),
-                It.IsAny<CancellationToken>()));
+            mockSubscriptionTrackingService.Verify(ts => ts.RemoveSubscription(
+                "topic-1", new Uri("http://example.com/platibus"), It.IsAny<CancellationToken>()));
         }
     }
 }

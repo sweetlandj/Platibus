@@ -3,7 +3,6 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,18 +34,15 @@ namespace Platibus.UnitTests
                 });
 
             var mockResponse = new Mock<IHttpResourceResponse>();
-            var mockTransportService = new Mock<ITransportService>();
-            var controller = new MessageController(mockTransportService.Object);
-
+            
             var messageReceivedEvent = new ManualResetEvent(false);
             Message receivedMessage = null;
-            mockTransportService.Setup(x => x.AcceptMessage(It.IsAny<Message>(), It.IsAny<IPrincipal>(), It.IsAny<CancellationToken>()))
-                .Callback<Message, IPrincipal, CancellationToken>((m, p, ct) =>
-                {
-                    receivedMessage = m;
-                    messageReceivedEvent.Set();
-                })
-                .Returns(Task.FromResult(true));
+            var controller = new MessageController((m, p) =>
+            {
+                receivedMessage = m;
+                messageReceivedEvent.Set();
+                return Task.FromResult(true);
+            });
 
             await controller
                 .Process(mockRequest.Object, mockResponse.Object, Enumerable.Empty<string>())

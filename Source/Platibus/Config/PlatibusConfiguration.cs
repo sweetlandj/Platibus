@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using Platibus.InMemory;
 using Platibus.Serialization;
 
 namespace Platibus.Config
@@ -71,6 +72,13 @@ namespace Platibus.Config
         public IEnumerable<ISubscription> Subscriptions
         {
             get { return _subscriptions; }
+        }
+
+        public PlatibusConfiguration()
+        {
+            MessageNamingService = new DefaultMessageNamingService();
+            SerializationService = new DefaultSerializationService();
+            MessageQueueingService = new InMemoryMessageQueueingService();
         }
 
         public void AddEndpoint(EndpointName name, IEndpoint endpoint)

@@ -24,7 +24,6 @@ using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using Platibus.Config;
 using Platibus.Http;
 
 namespace Platibus.IntegrationTests
@@ -44,18 +43,13 @@ namespace Platibus.IntegrationTests
         {
             Cleanup();
 
-            using (var platibus0 = await Bootstrapper.InitBus("platibus0").ConfigureAwait(false))
-            using (var platibus1 = await Bootstrapper.InitBus("platibus1").ConfigureAwait(false))
-            using (var server0 = new HttpServer(platibus0))
-            using (var server1 = new HttpServer(platibus1))
+            using (var server0 = await HttpServer.Start("platibus0"))
+            using (var server1 = await HttpServer.Start("platibus1"))
             {
-                server0.Start();
-                server1.Start();
-
                 // Give HTTP listeners time to initialize
                 await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
 
-                return await test(platibus0, platibus1);
+                return await test(server0.Bus, server1.Bus);
             }
         }
 
@@ -72,18 +66,13 @@ namespace Platibus.IntegrationTests
         {
             Cleanup();
 
-            using (var platibus0 = await Bootstrapper.InitBus("platibus0-basic").ConfigureAwait(false))
-            using (var platibus1 = await Bootstrapper.InitBus("platibus1-basic").ConfigureAwait(false))
-            using (var server0 = new HttpServer(platibus0, AuthenticationSchemes.Basic))
-            using (var server1 = new HttpServer(platibus1, AuthenticationSchemes.Basic))
+            using (var server0 = await HttpServer.Start("platibus0-basic"))
+            using (var server1 = await HttpServer.Start("platibus1-basic"))
             {
-                server0.Start();
-                server1.Start();
-
                 // Give HTTP listeners time to initialize
                 await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
 
-                return await test(platibus0, platibus1);
+                return await test(server0.Bus, server1.Bus);
             }
         }
 
