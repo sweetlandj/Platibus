@@ -58,6 +58,7 @@
       <Link>Properties\Copyright.cs</Link>
     </Compile>
     <Compile Include="BusManager.cs" />
+    <Compile Include="IBusManager.cs" />
     <Compile Include="IISConfiguration.cs" />
     <Compile Include="IISConfigurationManager.cs" />
     <Compile Include="IISConfigurationSection.cs" />
@@ -66,7 +67,6 @@
     <Compile Include="PlatibusHttpHandler.cs" />
     <Compile Include="HttpRequestAdapter.cs" />
     <Compile Include="HttpResponseAdapter.cs" />
-    <Compile Include="PlatibusHttpHandlerFactory.cs" />
     <Compile Include="PlatibusIISConfigurationSection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

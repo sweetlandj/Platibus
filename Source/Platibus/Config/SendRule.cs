@@ -34,10 +34,13 @@ namespace Platibus.Config
         public SendRule(IMessageSpecification specification, IEnumerable<EndpointName> endpoints)
         {
             if (specification == null) throw new ArgumentNullException("specification");
-            if (endpoints == null) throw new ArgumentNullException("endpoint");
-            if (!endpoints.Any(x => x != null)) throw new EndpointRequiredException();
+            if (endpoints == null) throw new ArgumentNullException("endpoints");
+
+            var endpointList = endpoints as IList<EndpointName> ?? endpoints.ToList();
+            if (endpointList.All(x => x == null)) throw new EndpointRequiredException();
+
             _specification = specification;
-            _endpoints = endpoints.Where(x => x != null).ToList();
+            _endpoints = endpointList.Where(x => x != null).ToList();
         }
 
         public SendRule(IMessageSpecification specification, params EndpointName[] endpoints)

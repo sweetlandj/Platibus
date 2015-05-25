@@ -26,10 +26,9 @@ namespace Platibus.Config
 {
     public class PlatibusConfigurationSection : ConfigurationSection
     {
-        
         private const string JournalingPropertyName = "journaling";
         private const string QueueingPropertyName = "queueing";
-        
+
         private const string TimeoutsPropertyName = "timeouts";
         private const string EndpointsPropertyName = "endpoints";
         private const string TopicsPropertyName = "topics";
@@ -43,10 +42,11 @@ namespace Platibus.Config
             Topics = new TopicElementCollection();
             SendRules = new SendRuleElementCollection();
         }
-[ConfigurationProperty(JournalingPropertyName, IsRequired=false, DefaultValue=null)]
+
+        [ConfigurationProperty(JournalingPropertyName, IsRequired = false, DefaultValue = null)]
         public JournalingElement Journaling
         {
-            get { return (JournalingElement)base[JournalingPropertyName]; }
+            get { return (JournalingElement) base[JournalingPropertyName]; }
             set { base[JournalingPropertyName] = value; }
         }
 

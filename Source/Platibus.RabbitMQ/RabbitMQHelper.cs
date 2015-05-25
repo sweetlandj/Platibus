@@ -25,7 +25,8 @@ namespace Platibus.RabbitMQ
             return queueName + "-RX";
         }
 
-        public static async Task PublishMessage(Message message, IPrincipal principal, IConnection connection, QueueName queueName, string exchange = "", Encoding encoding = null, int attempts = 0)
+        public static async Task PublishMessage(Message message, IPrincipal principal, IConnection connection,
+            QueueName queueName, string exchange = "", Encoding encoding = null, int attempts = 0)
         {
             using (var channel = connection.CreateModel())
             {
@@ -33,7 +34,8 @@ namespace Platibus.RabbitMQ
             }
         }
 
-        public static async Task PublishMessage(Message message, IPrincipal principal, IModel channel, QueueName queueName, string exchange = "", Encoding encoding = null, int attempts = 0)
+        public static async Task PublishMessage(Message message, IPrincipal principal, IModel channel,
+            QueueName queueName, string exchange = "", Encoding encoding = null, int attempts = 0)
         {
             if (encoding == null)
             {
@@ -49,8 +51,8 @@ namespace Platibus.RabbitMQ
             using (var stringWriter = new StringWriter())
             using (var messageWriter = new MessageWriter(stringWriter))
             {
-                await messageWriter.WritePrincipal(senderPrincipal).ConfigureAwait(false);
-                await messageWriter.WriteMessage(message).ConfigureAwait(false);
+                await messageWriter.WritePrincipal(senderPrincipal);
+                await messageWriter.WriteMessage(message);
                 var messageBody = stringWriter.ToString();
                 var properties = channel.CreateBasicProperties();
                 properties.SetPersistent(true);
@@ -68,7 +70,7 @@ namespace Platibus.RabbitMQ
                 var body = encoding.GetBytes(messageBody);
 
                 var ex = exchange ?? "";
-                var q = (string)queueName ?? "";
+                var q = (string) queueName ?? "";
 
                 channel.BasicPublish(ex, q, properties, body);
             }

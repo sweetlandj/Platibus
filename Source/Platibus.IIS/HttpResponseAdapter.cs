@@ -28,7 +28,7 @@ using Platibus.Http;
 
 namespace Platibus.IIS
 {
-    class HttpResponseAdapter : IHttpResourceResponse
+    internal class HttpResponseAdapter : IHttpResourceResponse
     {
         private readonly HttpResponseBase _response;
 

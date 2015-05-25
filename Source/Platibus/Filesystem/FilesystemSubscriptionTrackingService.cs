@@ -39,7 +39,7 @@ namespace Platibus.Filesystem
         private readonly ConcurrentDictionary<TopicName, IEnumerable<ExpiringSubscription>> _subscriptions =
             new ConcurrentDictionary<TopicName, IEnumerable<ExpiringSubscription>>();
 
-        private readonly SemaphoreSlim _writeAccess = new SemaphoreSlim(1);
+        private readonly SemaphoreSlim _fileAccess = new SemaphoreSlim(1);
 
         public FilesystemSubscriptionTrackingService(DirectoryInfo baseDirectory = null)
         {
@@ -58,13 +58,14 @@ namespace Platibus.Filesystem
             var expirationDate = ttl <= TimeSpan.Zero ? DateTime.MaxValue : DateTime.UtcNow + ttl;
             var expiringSubscription = new ExpiringSubscription(subscriber, expirationDate);
 
-            _subscriptions.AddOrUpdate(topic, new[] { expiringSubscription },
-                (t, existing) => new[] { expiringSubscription }.Union(existing).ToList());
+            _subscriptions.AddOrUpdate(topic, new[] {expiringSubscription},
+                (t, existing) => new[] {expiringSubscription}.Union(existing).ToList());
 
             return FlushSubscriptionsToDisk(topic);
         }
 
-        public Task RemoveSubscription(TopicName topic, Uri subscriber, CancellationToken cancellationToken = default(CancellationToken))
+        public Task RemoveSubscription(TopicName topic, Uri subscriber,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
             _subscriptions.AddOrUpdate(topic, new ExpiringSubscription[0],
@@ -73,7 +74,8 @@ namespace Platibus.Filesystem
             return FlushSubscriptionsToDisk(topic);
         }
 
-        public Task<IEnumerable<Uri>> GetSubscribers(TopicName topicName, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<IEnumerable<Uri>> GetSubscribers(TopicName topicName,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
             IEnumerable<ExpiringSubscription> subscriptions;
@@ -107,11 +109,25 @@ namespace Platibus.Filesystem
             var subscriptionFile = GetSubscriptionFile(topicName);
             if (!subscriptionFile.Exists) return;
 
-            using (var fileStream = subscriptionFile.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (var fileReader = new StreamReader(fileStream))
+            string fileContents;
+            await _fileAccess.WaitAsync();
+            try
+            {
+                using (var fileStream = subscriptionFile.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var fileReader = new StreamReader(fileStream))
+                {
+                    fileContents = await fileReader.ReadToEndAsync();        
+                }
+            }
+            finally
+            {
+                _fileAccess.Release();
+            }
+
+            using(var stringReader = new StringReader(fileContents))
             {
                 string line;
-                while ((line = await fileReader.ReadLineAsync().ConfigureAwait(false)) != null)
+                while ((line = stringReader.ReadLine()) != null)
                 {
                     var parts = line.Split(' ');
                     var addressPart = parts[0];
@@ -125,6 +141,7 @@ namespace Platibus.Filesystem
                     }
                 }
             }
+            
             _subscriptions.AddOrUpdate(topicName, subscriptions, (t, s) => s.Union(subscriptions).ToList());
         }
 
@@ -136,25 +153,32 @@ namespace Platibus.Filesystem
                 return;
             }
 
+            string fileContents;
+            using (var stringWriter = new StringWriter())
+            {
+                foreach (var subscription in expiringSubscriptions.Where(s => s.ExpirationDate > DateTime.UtcNow))
+                {
+                    var address = subscription.Subscriber.ToString();
+                    var expirationDate = subscription.ExpirationDate;
+                    var line = string.Format(CultureInfo.InvariantCulture, "{0} {1:o}", address, expirationDate);
+                    stringWriter.WriteLine(line);
+                }
+                fileContents = stringWriter.ToString();
+            }
+
             var subscriptionFile = GetSubscriptionFile(topicName);
-            await _writeAccess.WaitAsync();
+            await _fileAccess.WaitAsync();
             try
             {
                 using (var fileStream = subscriptionFile.Open(FileMode.Create, FileAccess.Write, FileShare.Read))
                 using (var fileWriter = new StreamWriter(fileStream))
                 {
-                    foreach (var subscription in expiringSubscriptions.Where(s => s.ExpirationDate > DateTime.UtcNow))
-                    {
-                        var address = subscription.Subscriber.ToString();
-                        var expirationDate = subscription.ExpirationDate;
-                        var line = string.Format(CultureInfo.InvariantCulture, "{0} {1:o}", address, expirationDate);
-                        await fileWriter.WriteLineAsync(line).ConfigureAwait(false);
-                    }
+                    await fileWriter.WriteAsync(fileContents);
                 }
             }
             finally
             {
-                _writeAccess.Release();
+                _fileAccess.Release();
             }
         }
 
@@ -175,7 +199,7 @@ namespace Platibus.Filesystem
         {
             if (disposing)
             {
-                _writeAccess.Dispose();
+                _fileAccess.Dispose();
             }
         }
 

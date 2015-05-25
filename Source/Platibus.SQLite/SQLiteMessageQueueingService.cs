@@ -34,7 +34,9 @@ namespace Platibus.SQLite
         private static readonly ILog Log = LogManager.GetLogger(SQLiteLoggingCategories.SQLite);
 
         private readonly DirectoryInfo _baseDirectory;
-        private readonly ConcurrentDictionary<QueueName, SQLiteMessageQueue> _queues = new ConcurrentDictionary<QueueName, SQLiteMessageQueue>();
+
+        private readonly ConcurrentDictionary<QueueName, SQLiteMessageQueue> _queues =
+            new ConcurrentDictionary<QueueName, SQLiteMessageQueue>();
 
         private bool _disposed;
 
@@ -58,7 +60,8 @@ namespace Platibus.SQLite
             }
         }
 
-        public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
+        public async Task CreateQueue(QueueName queueName, IQueueListener listener,
+            QueueOptions options = default(QueueOptions))
         {
             CheckDisposed();
             var queue = new SQLiteMessageQueue(_baseDirectory, queueName, listener, options);
@@ -67,7 +70,7 @@ namespace Platibus.SQLite
                 throw new QueueAlreadyExistsException(queueName);
             }
 
-            await queue.Init().ConfigureAwait(false);
+            await queue.Init();
             Log.DebugFormat("SQLite queue \"{0}\" created successfully", queueName);
         }
 
@@ -77,8 +80,9 @@ namespace Platibus.SQLite
             if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
 
             Log.DebugFormat("Enqueueing message ID {0} in SQL queue \"{1}\"...", message.Headers.MessageId, queueName);
-            await queue.Enqueue(message, senderPrincipal).ConfigureAwait(false);
-            Log.DebugFormat("Message ID {0} enqueued successfully in SQL queue \"{1}\"", message.Headers.MessageId, queueName);
+            await queue.Enqueue(message, senderPrincipal);
+            Log.DebugFormat("Message ID {0} enqueued successfully in SQL queue \"{1}\"", message.Headers.MessageId,
+                queueName);
         }
 
         ~SQLiteMessageQueueingService()

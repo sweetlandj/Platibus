@@ -29,7 +29,7 @@ using NUnit.Framework;
 
 namespace Platibus.IntegrationTests
 {
-    class SendAndObserveReplyTests
+    internal class SendAndObserveReplyTests
     {
         private static readonly Random RNG = new Random();
 
@@ -122,8 +122,8 @@ namespace Platibus.IntegrationTests
                         replyReceivedEvent.Set();
                     }, () => repliesCompletedEvent.Set());
 
-                var replyReceived = await replyReceivedEvent.WaitOneAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
-                var repliesCompleted = await repliesCompletedEvent.WaitOneAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+                var replyReceived = await replyReceivedEvent.WaitOneAsync(TimeSpan.FromSeconds(30));
+                var repliesCompleted = await repliesCompletedEvent.WaitOneAsync(TimeSpan.FromSeconds(30));
                 subscription.Dispose();
 
                 Assert.That(replyReceived, Is.True);
@@ -160,8 +160,8 @@ namespace Platibus.IntegrationTests
                         replyReceivedEvent.Set();
                     }, () => repliesCompletedEvent.Set());
 
-                var replyReceived = await replyReceivedEvent.WaitOneAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
-                var repliesCompleted = await repliesCompletedEvent.WaitOneAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+                var replyReceived = await replyReceivedEvent.WaitOneAsync(TimeSpan.FromSeconds(30));
+                var repliesCompleted = await repliesCompletedEvent.WaitOneAsync(TimeSpan.FromSeconds(30));
                 subscription.Dispose();
 
                 Assert.That(replyReceived, Is.True);

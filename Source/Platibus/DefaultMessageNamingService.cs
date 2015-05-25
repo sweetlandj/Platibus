@@ -30,7 +30,7 @@ namespace Platibus
     {
         private readonly MemoryCache _nameTypeCache = new MemoryCache("DefaultMessageNamingService");
 
-        protected bool _disposed;
+        private bool _disposed;
 
         public MessageName GetNameForType(Type messageType)
         {
@@ -45,7 +45,7 @@ namespace Platibus
                 type = _nameTypeCache.Get(messageName) as Type;
             }
 
-            if (type == null)
+            if (type == null && messageName != null)
             {
                 type = Type.GetType(messageName) ?? AppDomain.CurrentDomain
                     .GetAssemblies()

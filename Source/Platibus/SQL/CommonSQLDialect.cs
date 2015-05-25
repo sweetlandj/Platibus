@@ -1,5 +1,4 @@
-﻿
-namespace Platibus.SQL
+﻿namespace Platibus.SQL
 {
     public abstract class CommonSQLDialect : ISQLDialect
     {
@@ -8,9 +7,7 @@ namespace Platibus.SQL
 
         public virtual string InsertQueuedMessageCommand
         {
-            get
-            {
-                return @"
+            get { return @"
 INSERT INTO [PB_QueuedMessages] (
     [MessageId], 
     [QueueName], 
@@ -39,15 +36,12 @@ WHERE NOT EXISTS (
     SELECT [MessageID] 
     FROM [PB_QueuedMessages]
     WHERE [MessageId]=@MessageId 
-    AND [QueueName]=@QueueName)";
-            }
+    AND [QueueName]=@QueueName)"; }
         }
 
         public virtual string SelectQueuedMessagesCommand
         {
-            get
-            {
-                return @"
+            get { return @"
 SELECT 
     [MessageId], 
     [QueueName], 
@@ -66,71 +60,55 @@ SELECT
 FROM [PB_QueuedMessages]
 WHERE [QueueName]=@QueueName 
 AND [Acknowledged] IS NULL
-AND [Abandoned] IS NULL";
-            }
+AND [Abandoned] IS NULL"; }
         }
 
         public virtual string UpdateQueuedMessageCommand
         {
-            get
-            {
-                return @"
+            get { return @"
 UPDATE [PB_QueuedMessages] SET 
     [Acknowledged]=@Acknowledged,
     [Abandoned]=@Abandoned,
     [Attempts]=@Attempts
 WHERE [MessageId]=@MessageId 
-AND [QueueName]=@QueueName";
-            }
+AND [QueueName]=@QueueName"; }
         }
 
         public string InsertSubscriptionCommand
         {
-            get
-            {
-                return @"
+            get { return @"
 INSERT INTO [PB_Subscriptions] ([TopicName], [Subscriber], [Expires])
 SELECT @TopicName, @Subscriber, @Expires
 WHERE NOT EXISTS (
     SELECT [TopicName], [Subscriber]
     FROM [PB_Subscriptions]
     WHERE [TopicName]=@TopicName
-    AND [Subscriber]=@Subscriber)";
-            }
+    AND [Subscriber]=@Subscriber)"; }
         }
 
         public string UpdateSubscriptionCommand
         {
-            get
-            {
-                return @"
+            get { return @"
 UPDATE [PB_Subscriptions] SET [Expires]=@Expires
 WHERE [TopicName]=@TopicName
-AND [Subscriber]=@Subscriber";
-            }
+AND [Subscriber]=@Subscriber"; }
         }
 
         public string SelectSubscriptionsCommand
         {
-            get
-            {
-                return @"
+            get { return @"
 SELECT [TopicName], [Subscriber], [Expires]
 FROM [PB_Subscriptions]
 WHERE [Expires] IS NULL
-OR [Expires] > @CurrentDate";
-            }
+OR [Expires] > @CurrentDate"; }
         }
 
         public string DeleteSubscriptionCommand
         {
-            get
-            {
-                return @"
+            get { return @"
 DELETE FROM [PB_Subscriptions]
 WHERE [TopicName]=@TopicName
-AND [Subscriber]=@Subscriber";
-            }
+AND [Subscriber]=@Subscriber"; }
         }
 
         public virtual string QueueNameParameterName

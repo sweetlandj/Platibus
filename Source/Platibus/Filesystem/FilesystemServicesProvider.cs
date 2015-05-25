@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
+
 // The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
@@ -28,7 +29,8 @@ using Platibus.Config.Extensibility;
 namespace Platibus.Filesystem
 {
     [Provider("Filesystem")]
-    public class FilesystemServicesProvider : IMessageQueueingServiceProvider, IMessageJournalingServiceProvider, ISubscriptionTrackingServiceProvider
+    public class FilesystemServicesProvider : IMessageQueueingServiceProvider, IMessageJournalingServiceProvider,
+        ISubscriptionTrackingServiceProvider
     {
         public Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
@@ -48,7 +50,8 @@ namespace Platibus.Filesystem
             return Task.FromResult<IMessageJournalingService>(fsJournalingService);
         }
 
-        public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(SubscriptionTrackingElement configuration)
+        public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
+            SubscriptionTrackingElement configuration)
         {
             var path = configuration.GetString("path");
             var fsTrackingBaseDir = new DirectoryInfo(GetRootedPath(path));

@@ -29,10 +29,13 @@ namespace Platibus
 {
     public interface ISubscriptionTrackingService
     {
-        Task AddSubscription(TopicName topic, Uri subscriber, TimeSpan ttl = default(TimeSpan), CancellationToken cancellationToken = default(CancellationToken));
+        Task AddSubscription(TopicName topic, Uri subscriber, TimeSpan ttl = default(TimeSpan),
+            CancellationToken cancellationToken = default(CancellationToken));
 
-        Task RemoveSubscription(TopicName topic, Uri subscriber, CancellationToken cancellationToken = default(CancellationToken));
+        Task RemoveSubscription(TopicName topic, Uri subscriber,
+            CancellationToken cancellationToken = default(CancellationToken));
 
-        Task<IEnumerable<Uri>> GetSubscribers(TopicName topic, CancellationToken cancellationToken = default(CancellationToken));
+        Task<IEnumerable<Uri>> GetSubscribers(TopicName topic,
+            CancellationToken cancellationToken = default(CancellationToken));
     }
 }

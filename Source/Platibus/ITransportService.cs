@@ -43,7 +43,8 @@ namespace Platibus
         /// indicate if and when the send operation has been canceled.</param>
         /// <returns>returns a task that completes when the message has
         /// been successfully sent to the destination.</returns> 
-        Task SendMessage(Message message, IEndpointCredentials credentials = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task SendMessage(Message message, IEndpointCredentials credentials = null,
+            CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Publishes a message to a topic.
@@ -71,6 +72,7 @@ namespace Platibus
         /// indicate if and when the subscription should be canceled.</param>
         /// <returns>Returns a long-running task that will be completed when the 
         /// subscription is canceled by the caller or a non-recoverable error occurs.</returns>
-        Task Subscribe(Uri publisherUri, TopicName topicName, TimeSpan ttl, IEndpointCredentials credentials, CancellationToken cancellationToken = default (CancellationToken));
+        Task Subscribe(Uri publisherUri, TopicName topicName, TimeSpan ttl, IEndpointCredentials credentials,
+            CancellationToken cancellationToken = default(CancellationToken));
     }
 }

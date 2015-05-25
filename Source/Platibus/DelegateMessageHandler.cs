@@ -28,17 +28,17 @@ namespace Platibus
 {
     public class DelegateMessageHandler : DelegateMessageHandler<object>
     {
-        public DelegateMessageHandler(Func<object, IMessageContext, Task> handleMessage) 
+        public DelegateMessageHandler(Func<object, IMessageContext, Task> handleMessage)
             : base(handleMessage)
         {
         }
 
-        public DelegateMessageHandler(Func<object, IMessageContext, CancellationToken, Task> handleMessage) 
+        public DelegateMessageHandler(Func<object, IMessageContext, CancellationToken, Task> handleMessage)
             : base(handleMessage)
         {
         }
 
-        public DelegateMessageHandler(Action<object, IMessageContext> handleMessage) 
+        public DelegateMessageHandler(Action<object, IMessageContext> handleMessage)
             : base(handleMessage)
         {
         }
@@ -69,7 +69,7 @@ namespace Platibus
         public Task HandleMessage(object message, IMessageContext messageContext,
             CancellationToken cancellationToken)
         {
-            return _handleMessage((TContent)message, messageContext, cancellationToken);
+            return _handleMessage((TContent) message, messageContext, cancellationToken);
         }
 
         public static DelegateMessageHandler<T> For<T>(Func<T, IMessageContext, Task> handleMessage)

@@ -35,8 +35,8 @@ namespace Platibus
                 return AnonymousPrincipalName;
             }
 
-            return string.IsNullOrWhiteSpace(principal.Identity.Name) 
-                ? AnonymousPrincipalName 
+            return string.IsNullOrWhiteSpace(principal.Identity.Name)
+                ? AnonymousPrincipalName
                 : principal.Identity.Name;
         }
     }

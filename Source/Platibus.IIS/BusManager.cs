@@ -1,57 +1,58 @@
 ﻿using System;
-using Platibus.Config;
+using System.Threading;
+using System.Threading.Tasks;
 using Platibus.Http;
 
 namespace Platibus.IIS
 {
-    public class BusManager : IBusHost, IDisposable
+    public class BusManager : IDisposable, IBusManager
     {
-        private static readonly BusManager Instance;
+        internal static readonly BusManager SingletonInstance = new BusManager();
 
-        static BusManager()
+        public static IBusManager GetInstance()
         {
-            var configuration = PlatibusConfigurationManager.LoadConfiguration()
-                .ConfigureAwait(false).GetAwaiter().GetResult();
-
-            Instance = new BusManager(configuration);
+            return SingletonInstance;
         }
 
-        public static IBus GetBus()
-        {
-            return Instance.Bus;
-        }
-
-        private readonly Uri _baseUri;
-        private readonly ISubscriptionTrackingService _subscriptionTrackingService;
-        private readonly HttpTransportService _transportService;
-        private readonly Bus _bus;
+        private readonly Task _initialization;
+        private IIISConfiguration _configuration;
+        private Uri _baseUri;
+        private ISubscriptionTrackingService _subscriptionTrackingService;
+        private HttpTransportService _transportService;
+        private Bus _bus;
+        private IHttpResourceRouter _resourceRouter;
         private bool _disposed;
 
-        public event MessageReceivedHandler MessageReceived;
-
-        public Uri BaseUri
+        public async Task<IBus> GetBus()
         {
-            get { return _baseUri; }
+            await _initialization;
+            return _bus;
         }
 
-        public ITransportService TransportService 
+        public async Task<IHttpResourceRouter> GetResourceRouter()
         {
-            get { return _transportService; }
+            await _initialization;
+            return _resourceRouter;
         }
 
-        public IBus Bus
+        private BusManager()
         {
-            get { return _bus; }
+            _initialization = Init();
         }
 
-        private BusManager(IPlatibusConfiguration configuration)
+        private async Task Init(CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
-            _baseUri = BaseUri;
-            _subscriptionTrackingService = configuration.SubscriptionTrackingService;
+            _configuration = await IISConfigurationManager.LoadConfiguration();
+            _baseUri = _configuration.BaseUri;
+            _subscriptionTrackingService = _configuration.SubscriptionTrackingService;
             _transportService = new HttpTransportService(_baseUri, _subscriptionTrackingService);
-            _bus = new Bus(configuration, this);
-            _bus.Init().ConfigureAwait(false).GetAwaiter().GetResult();
+            _bus = new Bus(_configuration, _baseUri, _transportService);
+            await _bus.Init(cancellationToken);
+            _resourceRouter = new ResourceTypeDictionaryRouter
+            {
+                {"message", new MessageController(_bus.HandleMessage)},
+                {"topic", new TopicController(_subscriptionTrackingService, _configuration.Topics)}
+            };
         }
 
         ~BusManager()

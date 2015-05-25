@@ -51,7 +51,7 @@ namespace Platibus.Http
                 return;
             }
 
-            await Post(request, response).ConfigureAwait(false);
+            await Post(request, response);
         }
 
         public async Task Post(IHttpResourceRequest request, IHttpResourceResponse response)
@@ -66,7 +66,7 @@ namespace Platibus.Http
             var content = await request.ReadContentAsString();
             var message = new Message(messageHeaders, content);
 
-            await _accept(message, request.Principal).ConfigureAwait(false);
+            await _accept(message, request.Principal);
             response.StatusCode = 202;
         }
     }

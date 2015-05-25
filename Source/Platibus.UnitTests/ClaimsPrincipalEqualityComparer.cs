@@ -4,7 +4,7 @@ using KellermanSoftware.CompareNetObjects;
 
 namespace Platibus.UnitTests
 {
-    class ClaimsPrincipalEqualityComparer : IEqualityComparer<ClaimsPrincipal>
+    internal class ClaimsPrincipalEqualityComparer : IEqualityComparer<ClaimsPrincipal>
     {
         public bool Equals(ClaimsPrincipal x, ClaimsPrincipal y)
         {

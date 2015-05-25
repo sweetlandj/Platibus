@@ -5,7 +5,7 @@ namespace Platibus.SampleWebApp.Models
     public class ReceivedMessage
     {
         public string SenderPrincipal { get; set; }
-        
+
         public string MessageId { get; set; }
         public string MessageName { get; set; }
         public string Origination { get; set; }

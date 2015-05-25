@@ -49,7 +49,7 @@ namespace Platibus.RabbitMQ
             _writer = new StreamWriter(stream, encoding ?? Encoding.UTF8);
             _leaveOpen = leaveOpen;
         }
-        
+
         public async Task WritePrincipal(IPrincipal principal)
         {
             if (principal != null)
@@ -59,12 +59,12 @@ namespace Platibus.RabbitMQ
                     var formatter = new BinaryFormatter();
                     formatter.Serialize(memoryStream, principal);
                     var base64String = Convert.ToBase64String(memoryStream.GetBuffer());
-                    await _writer.WriteLineAsync(base64String).ConfigureAwait(false);
+                    await _writer.WriteLineAsync(base64String);
                 }
             }
             // Blank line to separate subsequent content from Base-64
             // encoded principal data
-            await _writer.WriteLineAsync().ConfigureAwait(false);
+            await _writer.WriteLineAsync();
         }
 
         public async Task WriteMessage(Message message)
@@ -78,12 +78,12 @@ namespace Platibus.RabbitMQ
                 {
                     var headerName = header.Key;
                     var headerValue = header.Value;
-                    await _writer.WriteAsync(string.Format("{0}: ", headerName)).ConfigureAwait(false);
+                    await _writer.WriteAsync(string.Format("{0}: ", headerName));
                     using (var headerValueReader = new StringReader(headerValue))
                     {
                         var multilineContinuation = false;
                         string line;
-                        while ((line = await headerValueReader.ReadLineAsync().ConfigureAwait(false)) != null)
+                        while ((line = await headerValueReader.ReadLineAsync()) != null)
                         {
                             if (multilineContinuation)
                             {
@@ -91,7 +91,7 @@ namespace Platibus.RabbitMQ
                                 // lines are not confused with different headers.
                                 line = "    " + line;
                             }
-                            await _writer.WriteLineAsync(line).ConfigureAwait(false);
+                            await _writer.WriteLineAsync(line);
                             multilineContinuation = true;
                         }
                     }
@@ -99,14 +99,14 @@ namespace Platibus.RabbitMQ
             }
 
             // Blank line separates headers from content
-            await _writer.WriteLineAsync().ConfigureAwait(false);
+            await _writer.WriteLineAsync();
 
             var content = message.Content;
             if (!string.IsNullOrWhiteSpace(content))
             {
                 // No special formatting required for content.  Content is defined as
                 // everything following the blank line.
-                await _writer.WriteAsync(content).ConfigureAwait(false);
+                await _writer.WriteAsync(content);
             }
         }
 

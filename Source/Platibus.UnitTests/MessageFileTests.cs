@@ -7,11 +7,12 @@ using Platibus.Filesystem;
 
 namespace Platibus.UnitTests
 {
-    class MessageFileTests
+    internal class MessageFileTests
     {
         protected DirectoryInfo GetTempDirectory()
         {
-            var tempPath = Path.Combine(Path.GetTempPath(), "Platibus.UnitTests", DateTime.Now.ToString("yyyyMMddHHmmss"));
+            var tempPath = Path.Combine(Path.GetTempPath(), "Platibus.UnitTests",
+                DateTime.Now.ToString("yyyyMMddHHmmss"));
             var tempDir = new DirectoryInfo(tempPath);
             if (!tempDir.Exists)
             {
@@ -38,10 +39,10 @@ namespace Platibus.UnitTests
                 {HeaderName.MessageId, Guid.NewGuid().ToString()}
             }, "Hello, world!");
 
-            var file = (await MessageFile.Create(queueDir, message, null).ConfigureAwait(false)).File;
+            var file = (await MessageFile.Create(queueDir, message, null)).File;
             var messageFile = new MessageFile(file);
-            var readSenderPrincipal = await messageFile.ReadSenderPrincipal().ConfigureAwait(false);
-            var readMessage = await messageFile.ReadMessage().ConfigureAwait(false);
+            var readSenderPrincipal = await messageFile.ReadSenderPrincipal();
+            var readMessage = await messageFile.ReadMessage();
 
             Assert.That(readSenderPrincipal, Is.Null);
             Assert.That(readMessage, Is.EqualTo(message).Using(new MessageEqualityComparer()));
@@ -71,10 +72,10 @@ namespace Platibus.UnitTests
                 new Claim("role", "testrole")
             }));
 
-            var file = (await MessageFile.Create(queueDir, message, senderPrincipal).ConfigureAwait(false)).File;
+            var file = (await MessageFile.Create(queueDir, message, senderPrincipal)).File;
             var messageFile = new MessageFile(file);
-            var readSenderPrincipal = await messageFile.ReadSenderPrincipal().ConfigureAwait(false);
-            var readMessage = await messageFile.ReadMessage().ConfigureAwait(false);
+            var readSenderPrincipal = await messageFile.ReadSenderPrincipal();
+            var readMessage = await messageFile.ReadMessage();
 
             Assert.That(readSenderPrincipal, Is.EqualTo(senderPrincipal).Using(new ClaimsPrincipalEqualityComparer()));
             Assert.That(readMessage, Is.EqualTo(message).Using(new MessageEqualityComparer()));

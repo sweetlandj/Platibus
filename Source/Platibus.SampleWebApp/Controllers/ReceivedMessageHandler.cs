@@ -20,17 +20,17 @@ namespace Platibus.SampleWebApp.Controllers
 
         public async Task HandleMessage(object message, IMessageContext context, CancellationToken cancellationToken)
         {
-            var testMessage = (TestMessage)message;
-         
+            var testMessage = (TestMessage) message;
+
             Log.DebugFormat("[Process {0}, Thread {1}, AppDomain {2}]",
                 Process.GetCurrentProcess().Id,
                 Thread.CurrentThread.ManagedThreadId,
                 AppDomain.CurrentDomain.Id);
 
             var headers = context.Headers;
-            Log.DebugFormat("Handling {0} ID {1} sent from {2} by {3} at {4:o} and received {5:o}...", 
+            Log.DebugFormat("Handling {0} ID {1} sent from {2} by {3} at {4:o} and received {5:o}...",
                 headers.MessageName,
-                headers.MessageId, 
+                headers.MessageId,
                 headers.Origination,
                 context.SenderPrincipal.GetName(),
                 headers.Sent,

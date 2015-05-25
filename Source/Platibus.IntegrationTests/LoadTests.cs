@@ -28,7 +28,7 @@ using NUnit.Framework;
 
 namespace Platibus.IntegrationTests
 {
-    class LoadTests
+    internal class LoadTests
     {
         [Test]
         public async Task When_Sending_10_Test_Messages_10_Replies_Should_Be_Handled_Within_1s()
@@ -81,11 +81,11 @@ namespace Platibus.IntegrationTests
             return await With.HttpHostedBusInstances(async (platibus0, platibus1) =>
             {
                 var sw = Stopwatch.StartNew();
-                var sendOptions = new SendOptions { UseDurableTransport = durable };
+                var sendOptions = new SendOptions {UseDurableTransport = durable};
                 var repliesReceieved = Enumerable.Range(0, messageCount)
                     .Select(async i =>
                     {
-                        var message = new TestMessage { IntData = i };
+                        var message = new TestMessage {IntData = i};
                         var sentMessage = await platibus0.Send(message, sendOptions);
                         return await sentMessage.GetReply();
                     });

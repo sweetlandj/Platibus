@@ -1,5 +1,4 @@
-﻿
-// The MIT License (MIT)
+﻿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -27,7 +26,7 @@ using NUnit.Framework;
 
 namespace Platibus.IntegrationTests
 {
-    class PubSubTests
+    internal class PubSubTests
     {
         private static readonly Random RNG = new Random();
 
@@ -44,9 +43,9 @@ namespace Platibus.IntegrationTests
                     DateData = DateTime.UtcNow
                 };
 
-                await platibus0.Publish(publication, "Topic0").ConfigureAwait(false);
+                await platibus0.Publish(publication, "Topic0");
 
-                var publicationReceived = await TestPublicationHandler.WaitHandle.WaitOneAsync(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+                var publicationReceived = await TestPublicationHandler.WaitHandle.WaitOneAsync(TimeSpan.FromSeconds(3));
             });
         }
     }

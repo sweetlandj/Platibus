@@ -80,7 +80,5 @@ namespace Platibus.Http
             _request = request;
             _principal = principal;
         }
-
-       
     }
 }

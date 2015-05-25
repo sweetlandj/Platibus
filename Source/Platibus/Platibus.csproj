@@ -83,7 +83,6 @@
     <Compile Include="Http\HttpServerConfiguration.cs" />
     <Compile Include="Http\HttpServerConfigurationSection.cs" />
     <Compile Include="Http\HttpExceptionHandler.cs" />
-    <Compile Include="IBusHost.cs" />
     <Compile Include="LoopbackHost.cs" />
     <Compile Include="MessageImportance.cs" />
     <Compile Include="Http\HttpEndpointCredentialsVisitor.cs" />
@@ -154,8 +153,6 @@
     <Compile Include="MessageEqualityComparer.cs" />
     <Compile Include="MessageHeadersEqualityComparer.cs" />
     <Compile Include="MessageName.cs" />
-    <Compile Include="MessageReceivedEventArgs.cs" />
-    <Compile Include="MessageReceivedHandler.cs" />
     <Compile Include="Filesystem\MessageFileReader.cs" />
     <Compile Include="IQueueListener.cs" />
     <Compile Include="MessageHandlingListener.cs" />
@@ -229,9 +226,6 @@
     <Compile Include="SQL\SQLServicesProvider.cs" />
     <Compile Include="SQL\SQLSubscription.cs" />
     <Compile Include="SQL\SQLSubscriptionTrackingService.cs" />
-    <Compile Include="SubscriptionRequestReceivedEventArgs.cs" />
-    <Compile Include="SubscriptionRequestReceivedHandler.cs" />
-    <Compile Include="SubscriptionRequestType.cs" />
     <Compile Include="TopicNotFoundException.cs" />
     <Compile Include="HeaderName.cs" />
     <Compile Include="MessageHeaders.cs" />

@@ -114,7 +114,7 @@ namespace Platibus.SampleWebApp.Controllers
                 Received = reader.GetDateTime(reader.GetOrdinal("Received")),
                 Expires = reader.IsDBNull(reader.GetOrdinal("Expires"))
                     ? null
-                    : (DateTime?)reader.GetDateTime(reader.GetOrdinal("Expires")),
+                    : (DateTime?) reader.GetDateTime(reader.GetOrdinal("Expires")),
                 ContentType = reader.GetString(reader.GetOrdinal("ContentType")),
                 Content = reader.GetString(reader.GetOrdinal("Content"))
             };
@@ -201,7 +201,9 @@ namespace Platibus.SampleWebApp.Controllers
         private static async Task<TResult> ExecuteQuery<TResult>(Func<DbConnection, Task<TResult>> query)
         {
             TResult result;
-            using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
+            using (
+                var scope = new TransactionScope(TransactionScopeOption.Suppress,
+                    TransactionScopeAsyncFlowOption.Enabled))
             {
                 using (var connection = await CreateConnection())
                 {
@@ -215,7 +217,9 @@ namespace Platibus.SampleWebApp.Controllers
         private static async Task<TResult> ExecuteUpdate<TResult>(Func<DbConnection, Task<TResult>> update)
         {
             TResult result;
-            using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
+            using (
+                var scope = new TransactionScope(TransactionScopeOption.Required,
+                    TransactionScopeAsyncFlowOption.Enabled))
             {
                 using (var connection = await CreateConnection())
                 {

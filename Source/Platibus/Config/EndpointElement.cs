@@ -54,24 +54,25 @@ namespace Platibus.Config
             set { base[AddressPropertyName] = value; }
         }
 
-        [ConfigurationProperty(CredentialTypePropertyName, IsRequired = false, DefaultValue = ClientCredentialType.None)]
+        [ConfigurationProperty(CredentialTypePropertyName, IsRequired = false, DefaultValue = ClientCredentialType.None)
+        ]
         public ClientCredentialType CredentialType
         {
-            get { return (ClientCredentialType)base[CredentialTypePropertyName]; }
+            get { return (ClientCredentialType) base[CredentialTypePropertyName]; }
             set { base[CredentialTypePropertyName] = value; }
         }
 
         [ConfigurationProperty(UsernamePropertyName, IsRequired = false)]
         public string Username
         {
-            get { return (string)base[UsernamePropertyName]; }
+            get { return (string) base[UsernamePropertyName]; }
             set { base[UsernamePropertyName] = value; }
         }
 
         [ConfigurationProperty(PasswordPropertyName, IsRequired = false)]
         public string Password
         {
-            get { return (string)base[PasswordPropertyName]; }
+            get { return (string) base[PasswordPropertyName]; }
             set { base[PasswordPropertyName] = value; }
         }
     }

@@ -4,7 +4,8 @@ namespace Platibus
 {
     public static class MessageContextExtensions
     {
-        public static TransactionScope StartTransaction(this IMessageContext messageContext, TransactionScopeOption option = TransactionScopeOption.Required)
+        public static TransactionScope StartTransaction(this IMessageContext messageContext,
+            TransactionScopeOption option = TransactionScopeOption.Required)
         {
             var scope = new TransactionScope(option);
             messageContext.EnlistInCurrentTransaction();

@@ -13,14 +13,14 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="form-group">
-                    @Html.LabelFor(model => model.MessageName, "Name", new { @class = "control-label" })
-                    @Html.TextBoxFor(model => model.MessageName, new { @class = "form-control", @readonly = true })
-                </div>    
+                    @Html.LabelFor(model => model.MessageName, "Name", new {@class = "control-label"})
+                    @Html.TextBoxFor(model => model.MessageName, new {@class = "form-control", @readonly = true})
+                </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    @Html.LabelFor(model => model.SenderPrincipal, "Sender", new { @class = "control-label" })
-                    @Html.TextBoxFor(model => model.SenderPrincipal, new { @class = "form-control", @readonly = true })
+                    @Html.LabelFor(model => model.SenderPrincipal, "Sender", new {@class = "control-label"})
+                    @Html.TextBoxFor(model => model.SenderPrincipal, new {@class = "form-control", @readonly = true})
                 </div>
             </div>
         </div>
@@ -41,14 +41,14 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="form-group">
-                    @Html.LabelFor(model => model.Sent, "Sent", new { @class = "control-label" })
-                    @Html.TextBoxFor(model => model.Sent, "{0:o}", new { @class = "form-control", @readonly = true })
+                    @Html.LabelFor(model => model.Sent, "Sent", new {@class = "control-label"})
+                    @Html.TextBoxFor(model => model.Sent, "{0:o}", new {@class = "form-control", @readonly = true})
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    @Html.LabelFor(model => model.Received, "Received", new { @class = "control-label" })
-                    @Html.TextBoxFor(model => model.Received, "{0:o}", new { @class = "form-control", @readonly = true })
+                    @Html.LabelFor(model => model.Received, "Received", new {@class = "control-label"})
+                    @Html.TextBoxFor(model => model.Received, "{0:o}", new {@class = "form-control", @readonly = true})
                 </div>
             </div>
         </div>
@@ -69,9 +69,9 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="form-group">
-                    @Html.LabelFor(model => model.Content, "Content", new { @class = "control-label" })
-                    @Html.TextAreaFor(model => model.Content, new { @class = "form-control", @readonly = true })
-                </div>    
+                    @Html.LabelFor(model => model.Content, "Content", new {@class = "control-label"})
+                    @Html.TextAreaFor(model => model.Content, new {@class = "form-control", @readonly = true})
+                </div>
             </div>
         </div>
         <div class="row">
@@ -81,7 +81,7 @@
                         <span class="glyphicon glyphicon-arrow-left"></span>
                         Back
                     </a>
-                </div>    
+                </div>
             </div>
         </div>
     </fieldset>

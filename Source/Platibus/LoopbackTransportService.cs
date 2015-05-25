@@ -43,7 +43,8 @@ namespace Platibus
             _accept = accept;
         }
 
-        public async Task SendMessage(Message message, IEndpointCredentials credentials = null, CancellationToken cancellationToken = new CancellationToken())
+        public async Task SendMessage(Message message, IEndpointCredentials credentials = null,
+            CancellationToken cancellationToken = new CancellationToken())
         {
             await Task.Run(() => _accept(message, Thread.CurrentPrincipal), cancellationToken);
         }

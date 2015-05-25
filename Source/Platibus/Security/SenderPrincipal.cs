@@ -39,7 +39,10 @@ namespace Platibus.Security
         private readonly SenderIdentity _identity;
         private readonly SenderRole[] _roles;
 
-        public IIdentity Identity { get { return _identity; } }
+        public IIdentity Identity
+        {
+            get { return _identity; }
+        }
 
         public SenderPrincipal(IPrincipal principal)
         {
@@ -73,8 +76,8 @@ namespace Platibus.Security
 
         protected SenderPrincipal(SerializationInfo info, StreamingContext context)
         {
-            _identity = (SenderIdentity)info.GetValue("identity", typeof(SenderIdentity));
-            _roles = (SenderRole[])info.GetValue("roles", typeof(SenderRole[]));
+            _identity = (SenderIdentity) info.GetValue("identity", typeof (SenderIdentity));
+            _roles = (SenderRole[]) info.GetValue("roles", typeof (SenderRole[]));
         }
 
         [SecurityPermission(SecurityAction.Demand, Flags = SecurityPermissionFlag.SerializationFormatter)]
@@ -91,7 +94,7 @@ namespace Platibus.Security
             var ntAccount = new NTAccount(role);
             try
             {
-                var sid = ntAccount.Translate(typeof(SecurityIdentifier)) as SecurityIdentifier;
+                var sid = ntAccount.Translate(typeof (SecurityIdentifier)) as SecurityIdentifier;
                 if (sid != null)
                 {
                     if (_roles.Contains(new SenderRole(sid.ToString())))
@@ -100,10 +103,10 @@ namespace Platibus.Security
                     }
                 }
             }
-            catch(IdentityNotMappedException)
+            catch (IdentityNotMappedException)
             {
             }
-            
+
             return _roles.Contains(new SenderRole(role));
         }
     }

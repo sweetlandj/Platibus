@@ -12,7 +12,7 @@ using Platibus.Http;
 
 namespace Platibus.UnitTests
 {
-    class MessageControllerTests
+    internal class MessageControllerTests
     {
         [Test]
         public async Task Given_Content_When_Posting_Then_Transport_Service_Accepts_Message()
@@ -34,7 +34,7 @@ namespace Platibus.UnitTests
                 });
 
             var mockResponse = new Mock<IHttpResourceResponse>();
-            
+
             var messageReceivedEvent = new ManualResetEvent(false);
             Message receivedMessage = null;
             var controller = new MessageController((m, p) =>
@@ -44,9 +44,7 @@ namespace Platibus.UnitTests
                 return Task.FromResult(true);
             });
 
-            await controller
-                .Process(mockRequest.Object, mockResponse.Object, Enumerable.Empty<string>())
-                .ConfigureAwait(false);
+            await controller.Process(mockRequest.Object, mockResponse.Object, Enumerable.Empty<string>());
 
             var messageReceived = messageReceivedEvent.WaitOne(TimeSpan.FromSeconds(1));
 
@@ -55,10 +53,9 @@ namespace Platibus.UnitTests
             Assert.That(receivedMessage.Content, Is.EqualTo("Hello, world!"));
             Assert.That(receivedMessage.Headers.MessageId, Is.EqualTo(messageId));
 
-            mockResponse.VerifySet(r => r.StatusCode = (int)HttpStatusCode.Accepted);
+            mockResponse.VerifySet(r => r.StatusCode = (int) HttpStatusCode.Accepted);
 
             Console.WriteLine(receivedMessage.Content);
         }
-
     }
 }

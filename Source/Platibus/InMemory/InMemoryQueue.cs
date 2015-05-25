@@ -29,7 +29,7 @@ using Common.Logging;
 
 namespace Platibus.InMemory
 {
-    class InMemoryQueue : IDisposable
+    internal class InMemoryQueue : IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Filesystem);
         private bool _disposed;
@@ -81,8 +81,8 @@ namespace Platibus.InMemory
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var nextQueuedMessage = await _queuedMessages.ReceiveAsync(cancellationToken).ConfigureAwait(false);
-                
+                var nextQueuedMessage = await _queuedMessages.ReceiveAsync(cancellationToken);
+
                 // We don't want to wait on this task; we want to allow concurrent processing
                 // of messages.  The semaphore will be released by the ProcessQueuedMessage
                 // method.
@@ -103,19 +103,20 @@ namespace Platibus.InMemory
                 var context = new InMemoryQueuedMessageContext(message, queuedMessage.SenderPrincipal);
                 cancellationToken.ThrowIfCancellationRequested();
 
-                await _concurrentMessageProcessingSlot.WaitAsync(cancellationToken).ConfigureAwait(false);
+                await _concurrentMessageProcessingSlot.WaitAsync(cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
-                    await _listener.MessageReceived(message, context, cancellationToken).ConfigureAwait(false);
+                    await _listener.MessageReceived(message, context, cancellationToken);
                     if (_autoAcknowledge && !context.Acknowledged)
                     {
-                        await context.Acknowledge().ConfigureAwait(false);
+                        await context.Acknowledge();
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.WarnFormat("Unhandled exception handling queued message {0}", ex, queuedMessage.Message.Headers.MessageId);
+                    Log.WarnFormat("Unhandled exception handling queued message {0}", ex,
+                        queuedMessage.Message.Headers.MessageId);
                 }
                 finally
                 {
@@ -129,7 +130,7 @@ namespace Platibus.InMemory
                 }
                 if (attemptsRemaining > 0)
                 {
-                    await Task.Delay(_retryDelay, cancellationToken).ConfigureAwait(false);
+                    await Task.Delay(_retryDelay, cancellationToken);
                 }
             }
         }

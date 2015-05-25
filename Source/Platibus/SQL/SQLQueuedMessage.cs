@@ -9,9 +9,20 @@ namespace Platibus.SQL
         private readonly IPrincipal _senderPrincipal;
         private readonly int _attempts;
 
-        public Message Message { get { return _message; } }
-        public IPrincipal SenderPrincipal { get { return _senderPrincipal; } }
-        public int Attempts { get { return _attempts; } }
+        public Message Message
+        {
+            get { return _message; }
+        }
+
+        public IPrincipal SenderPrincipal
+        {
+            get { return _senderPrincipal; }
+        }
+
+        public int Attempts
+        {
+            get { return _attempts; }
+        }
 
         public SQLQueuedMessage(Message message, IPrincipal senderPrincipal)
         {

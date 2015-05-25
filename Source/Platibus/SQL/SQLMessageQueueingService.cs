@@ -15,7 +15,9 @@ namespace Platibus.SQL
 
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly ISQLDialect _dialect;
-        private readonly ConcurrentDictionary<QueueName, SQLMessageQueue> _queues = new ConcurrentDictionary<QueueName, SQLMessageQueue>();
+
+        private readonly ConcurrentDictionary<QueueName, SQLMessageQueue> _queues =
+            new ConcurrentDictionary<QueueName, SQLMessageQueue>();
 
         private bool _disposed;
 
@@ -63,7 +65,8 @@ namespace Platibus.SQL
             }
         }
 
-        public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
+        public async Task CreateQueue(QueueName queueName, IQueueListener listener,
+            QueueOptions options = default(QueueOptions))
         {
             var queue = new SQLMessageQueue(_connectionProvider, _dialect, queueName, listener, options);
             if (!_queues.TryAdd(queueName, queue))
@@ -72,7 +75,7 @@ namespace Platibus.SQL
             }
 
             Log.DebugFormat("Initializing SQL queue named \"{0}\"...", queueName);
-            await queue.Init().ConfigureAwait(false);
+            await queue.Init();
             Log.DebugFormat("SQL queue \"{0}\" created successfully", queueName);
         }
 
@@ -82,8 +85,9 @@ namespace Platibus.SQL
             if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
 
             Log.DebugFormat("Enqueueing message ID {0} in SQL queue \"{1}\"...", message.Headers.MessageId, queueName);
-            await queue.Enqueue(message, senderPrincipal).ConfigureAwait(false);
-            Log.DebugFormat("Message ID {0} enqueued successfully in SQL queue \"{1}\"", message.Headers.MessageId, queueName);
+            await queue.Enqueue(message, senderPrincipal);
+            Log.DebugFormat("Message ID {0} enqueued successfully in SQL queue \"{1}\"", message.Headers.MessageId,
+                queueName);
         }
 
         ~SQLMessageQueueingService()

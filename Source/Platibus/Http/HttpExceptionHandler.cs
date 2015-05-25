@@ -23,7 +23,8 @@ namespace Platibus.Http
             var aggregateException = ex as AggregateException;
             if (aggregateException != null)
             {
-                _log.ErrorFormat("One or more errors occurred processing {0} request for resource {1}:", ex, _request.HttpMethod, _request.Url);
+                _log.ErrorFormat("One or more errors occurred processing {0} request for resource {1}:", ex,
+                    _request.HttpMethod, _request.Url);
                 aggregateException.Handle(HandleException);
                 return true;
             }
@@ -31,7 +32,8 @@ namespace Platibus.Http
             var unauthorizedAccessException = ex as UnauthorizedAccessException;
             if (unauthorizedAccessException != null)
             {
-                _log.ErrorFormat("{0} request for resource {1} not authorized for user {2}", ex, _request.HttpMethod, _request.Url, _request.Principal.GetName());
+                _log.ErrorFormat("{0} request for resource {1} not authorized for user {2}", ex, _request.HttpMethod,
+                    _request.Url, _request.Principal.GetName());
                 _response.StatusCode = 401;
                 return true;
             }
@@ -39,13 +41,15 @@ namespace Platibus.Http
             var notAcknowledgedException = ex as MessageNotAcknowledgedException;
             if (notAcknowledgedException != null)
             {
-                _log.ErrorFormat("{0} request for resource {1} was not acknowledged", ex, _request.HttpMethod, _request.Url);
+                _log.ErrorFormat("{0} request for resource {1} was not acknowledged", ex, _request.HttpMethod,
+                    _request.Url);
                 // HTTP 422: Unprocessable Entity
                 _response.StatusCode = 422;
                 return true;
             }
 
-            _log.ErrorFormat("Unknown error processing {0} request for resource {1}", ex, _request.HttpMethod, _request.Url);
+            _log.ErrorFormat("Unknown error processing {0} request for resource {1}", ex, _request.HttpMethod,
+                _request.Url);
             // HTTP 500: Unknown error
             _response.StatusCode = 500;
             return true;

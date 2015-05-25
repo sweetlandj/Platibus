@@ -58,31 +58,22 @@ namespace Platibus.IIS
                 Thread.CurrentThread.ManagedThreadId,
                 AppDomain.CurrentDomain.Id);
 
-            Log.DebugFormat("Processing {0} request for resource {1} (HTTP handler instance: {2})...", context.Request.HttpMethod, context.Request.Url, _instanceId);
+            Log.DebugFormat("Processing {0} request for resource {1} (HTTP handler instance: {2})...",
+                context.Request.HttpMethod, context.Request.Url, _instanceId);
             var resourceRequest = new HttpRequestAdapter(context.Request, context.User);
             var resourceResponse = new HttpResponseAdapter(context.Response);
             try
             {
-                var router = await GetRouter().ConfigureAwait(false);
-                await router.Route(resourceRequest, resourceResponse).ConfigureAwait(false);
-                Log.DebugFormat("Processing {0} request for resource {1} (HTTP handler instance: {2})...", context.Request.HttpMethod, context.Request.Url, _instanceId);
+                var resourceRouter = await BusManager.SingletonInstance.GetResourceRouter();
+                await resourceRouter.Route(resourceRequest, resourceResponse);
+                Log.DebugFormat("Processing {0} request for resource {1} (HTTP handler instance: {2})...",
+                    context.Request.HttpMethod, context.Request.Url, _instanceId);
             }
             catch (Exception ex)
             {
                 var exceptionHandler = new HttpExceptionHandler(resourceRequest, resourceResponse, Log);
                 exceptionHandler.HandleException(ex);
             }
-        }
-
-        protected virtual async Task<IHttpResourceRouter> GetRouter()
-        {
-            var bus = await BusManager.GetInstance();
-            var transportService = (HttpTransportService)bus.TransportService;
-            return new ResourceTypeDictionaryRouter 
-            {
-                {"message", new MessageController(transportService)},
-                {"topic", new TopicController(transportService, bus.Topics)}
-            };
         }
     }
 }

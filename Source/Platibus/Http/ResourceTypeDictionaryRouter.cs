@@ -76,7 +76,7 @@ namespace Platibus.Http
             }
 
             var subPath = resourceSegments.Skip(1); // Skip resource type
-            await controller.Process(request, response, subPath).ConfigureAwait(false);
+            await controller.Process(request, response, subPath);
         }
 
         public void Add(ResourceType resourceType, IHttpResourceController resourceHandler)

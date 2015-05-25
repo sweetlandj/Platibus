@@ -44,7 +44,8 @@ namespace Platibus
             var messageId = message.Headers.MessageId;
             var replyStreamExpiration = DateTime.UtcNow.Add(_replyTimeout);
             var newReplyStream = new ReplyStream();
-            var replyStream = (ReplyStream)_cache.AddOrGetExisting(messageId, newReplyStream, replyStreamExpiration);
+            var replyStream = (ReplyStream) _cache.AddOrGetExisting(messageId, newReplyStream, replyStreamExpiration);
+            // ReSharper disable once ConvertIfStatementToNullCoalescingExpression
             if (replyStream == null)
             {
                 // MemoryCache.AddOrGetExisting returns null if the key does not
@@ -60,7 +61,6 @@ namespace Platibus
             CheckDisposed();
             return Task.Run(() =>
             {
-                var newReplyStream = new ReplyStream();
                 var replyStream = _cache.Get(relatedToMessageId) as ReplyStream;
                 if (replyStream == null)
                 {

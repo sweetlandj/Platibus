@@ -1,5 +1,4 @@
-﻿
-namespace Platibus.SampleWebApp.Controllers
+﻿namespace Platibus.SampleWebApp.Controllers
 {
     public class TestMessage
     {

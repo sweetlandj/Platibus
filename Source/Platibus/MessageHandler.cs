@@ -8,11 +8,13 @@ using Platibus.Serialization;
 
 namespace Platibus
 {
-    static class MessageHandler
+    internal static class MessageHandler
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Core);
 
-        public static async Task HandleMessage(IMessageNamingService messageNamingService, ISerializationService serializationService, IEnumerable<IMessageHandler> messageHandlers, Message message, IMessageContext messageContext, CancellationToken cancellationToken = default(CancellationToken))
+        public static async Task HandleMessage(IMessageNamingService messageNamingService,
+            ISerializationService serializationService, IEnumerable<IMessageHandler> messageHandlers, Message message,
+            IMessageContext messageContext, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (message.Headers.Expires < DateTime.UtcNow)
             {
@@ -26,9 +28,11 @@ namespace Platibus
             var messageType = messageNamingService.GetTypeForName(message.Headers.MessageName);
             var serializer = serializationService.GetSerializer(message.Headers.ContentType);
             var messageContent = serializer.Deserialize(message.Content, messageType);
-            var handlingTasks = messageHandlers.Select(handler => handler.HandleMessage(messageContent, messageContext, cancellationToken));
+            var handlingTasks =
+                messageHandlers.Select(
+                    handler => handler.HandleMessage(messageContent, messageContext, cancellationToken));
 
-            await Task.WhenAll(handlingTasks).ConfigureAwait(false);
+            await Task.WhenAll(handlingTasks);
         }
     }
 }

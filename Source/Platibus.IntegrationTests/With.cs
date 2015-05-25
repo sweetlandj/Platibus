@@ -22,13 +22,12 @@
 
 using System;
 using System.IO;
-using System.Net;
 using System.Threading.Tasks;
 using Platibus.Http;
 
 namespace Platibus.IntegrationTests
 {
-    class With
+    internal class With
     {
         public static async Task HttpHostedBusInstances(Func<IBus, IBus, Task> test)
         {
@@ -47,7 +46,7 @@ namespace Platibus.IntegrationTests
             using (var server1 = await HttpServer.Start("platibus1"))
             {
                 // Give HTTP listeners time to initialize
-                await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromSeconds(1));
 
                 return await test(server0.Bus, server1.Bus);
             }
@@ -70,7 +69,7 @@ namespace Platibus.IntegrationTests
             using (var server1 = await HttpServer.Start("platibus1-basic"))
             {
                 // Give HTTP listeners time to initialize
-                await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromSeconds(1));
 
                 return await test(server0.Bus, server1.Bus);
             }
@@ -95,7 +94,9 @@ namespace Platibus.IntegrationTests
             {
                 action();
             }
-            catch (Exception) { }
+            catch (Exception)
+            {
+            }
         }
     }
 }

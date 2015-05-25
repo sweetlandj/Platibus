@@ -6,7 +6,7 @@ using NUnit.Framework;
 
 namespace Platibus.UnitTests
 {
-    class MessageHandlerTests
+    internal class MessageHandlerTests
     {
         [Test]
         public async Task When_Enlisted_Completed_Transaction_Then_Acknowledged()

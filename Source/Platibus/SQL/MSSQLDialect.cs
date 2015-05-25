@@ -1,13 +1,10 @@
-﻿
-namespace Platibus.SQL
+﻿namespace Platibus.SQL
 {
     public class MSSQLDialect : CommonSQLDialect
     {
         public override string CreateMessageQueueingServiceObjectsCommand
         {
-            get
-            {
-                return @"
+            get { return @"
 IF OBJECT_ID('[PB_QueuedMessages]') IS NULL
 BEGIN
     CREATE TABLE [PB_QueuedMessages]
@@ -33,15 +30,12 @@ BEGIN
 
     CREATE CLUSTERED INDEX [PB_QueuedMessages_IX_QueueName] 
         ON [PB_QueuedMessages]([QueueName])
-END";
-            }
+END"; }
         }
 
         public override string CreateSubscriptionTrackingServiceObjectsCommand
         {
-            get
-            {
-                return @"
+            get { return @"
 IF OBJECT_ID('[PB_Subscriptions]') IS NULL
 BEGIN
     CREATE TABLE [PB_Subscriptions]
@@ -56,8 +50,7 @@ BEGIN
 
     CREATE INDEX [PB_Subscriptions_IX_TopicName] 
         ON [PB_Subscriptions]([TopicName])
-END";
-            }
+END"; }
         }
     }
 }

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Common.Logging;
+
 // The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
@@ -28,7 +29,7 @@ using Common.Logging;
 
 namespace Platibus.Config
 {
-    static class ReflectionHelper
+    internal static class ReflectionHelper
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
 
@@ -41,7 +42,7 @@ namespace Platibus.Config
                 new DirectoryInfo(Path.Combine(appDomainBaseDirectory, "bin"))
             };
 
-            var filenamePatterns = new[] { "*.dll", "*.exe" };
+            var filenamePatterns = new[] {"*.dll", "*.exe"};
             var assemblyFiles = directories
                 .SelectMany(dir => filenamePatterns, (dir, pattern) => new
                 {
@@ -57,10 +58,11 @@ namespace Platibus.Config
                 try
                 {
                     var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyFile.FullName);
-                    Log.DebugFormat("Scanning assembly {0} for concrete subtypes of {1}...", assembly.GetName().FullName, typeof(TBase).FullName);
+                    Log.DebugFormat("Scanning assembly {0} for concrete subtypes of {1}...", assembly.GetName().FullName,
+                        typeof (TBase).FullName);
                     subtypes.AddRange(AppDomain.CurrentDomain.Load(assembly.GetName())
                         .GetTypes()
-                        .Where(typeof(TBase).IsAssignableFrom)
+                        .Where(typeof (TBase).IsAssignableFrom)
                         .Where(t => !t.IsInterface && !t.IsAbstract));
                 }
                 catch (Exception ex)
@@ -73,12 +75,12 @@ namespace Platibus.Config
 
         public static bool Has<TAttribute>(this Type type) where TAttribute : Attribute
         {
-            return type.GetCustomAttributes(typeof(TAttribute), false).Any();
+            return type.GetCustomAttributes(typeof (TAttribute), false).Any();
         }
 
         public static bool Has<TAttribute>(this Type type, Func<TAttribute, bool> where) where TAttribute : Attribute
         {
-            return type.GetCustomAttributes(typeof(TAttribute), false)
+            return type.GetCustomAttributes(typeof (TAttribute), false)
                 .OfType<TAttribute>()
                 .Any(where);
         }
@@ -88,33 +90,36 @@ namespace Platibus.Config
             return source.Where(t => t.Has<TAttribute>());
         }
 
-        public static IEnumerable<Type> With<TAttribute>(this IEnumerable<Type> source, Func<TAttribute, bool> where) where TAttribute : Attribute
+        public static IEnumerable<Type> With<TAttribute>(this IEnumerable<Type> source, Func<TAttribute, bool> where)
+            where TAttribute : Attribute
         {
             return source.Where(t => t.Has(where));
         }
 
-        public static IEnumerable<Type> OrderBy<TAttribute>(this IEnumerable<Type> source, Func<TAttribute, object> attributeMember) where TAttribute : Attribute
+        public static IEnumerable<Type> OrderBy<TAttribute>(this IEnumerable<Type> source,
+            Func<TAttribute, object> attributeMember) where TAttribute : Attribute
         {
             return source.Select(t => new
             {
                 Type = t,
                 Attribute = t.GetCustomAttribute<TAttribute>()
             })
-            .Where(x => x.Attribute != null)
-            .OrderBy(x => attributeMember(x.Attribute))
-            .Select(x => x.Type);
+                .Where(x => x.Attribute != null)
+                .OrderBy(x => attributeMember(x.Attribute))
+                .Select(x => x.Type);
         }
 
-        public static IEnumerable<Type> OrderByDescending<TAttribute>(this IEnumerable<Type> source, Func<TAttribute, object> attributeMember) where TAttribute : Attribute
+        public static IEnumerable<Type> OrderByDescending<TAttribute>(this IEnumerable<Type> source,
+            Func<TAttribute, object> attributeMember) where TAttribute : Attribute
         {
             return source.Select(t => new
             {
                 Type = t,
                 Attribute = t.GetCustomAttribute<TAttribute>()
             })
-            .Where(x => x.Attribute != null)
-            .OrderByDescending(x => attributeMember(x.Attribute))
-            .Select(x => x.Type);
+                .Where(x => x.Attribute != null)
+                .OrderByDescending(x => attributeMember(x.Attribute))
+                .Select(x => x.Type);
         }
     }
 }

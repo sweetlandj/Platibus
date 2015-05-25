@@ -25,20 +25,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Common.Logging;
 using Platibus.Serialization;
 
 namespace Platibus
 {
     internal class MessageHandlingListener : IQueueListener
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Filesystem);
         private readonly Bus _bus;
         private readonly IMessageNamingService _messageNamingService;
         private readonly ISerializationService _serializationService;
         private readonly IEnumerable<IMessageHandler> _messageHandlers;
 
-        public MessageHandlingListener(Bus bus, IMessageNamingService namingService, ISerializationService serializationService, IEnumerable<IMessageHandler> messageHandlers)
+        public MessageHandlingListener(Bus bus, IMessageNamingService namingService,
+            ISerializationService serializationService, IEnumerable<IMessageHandler> messageHandlers)
         {
             if (bus == null) throw new ArgumentNullException("bus");
             if (namingService == null) throw new ArgumentNullException("namingService");
@@ -63,7 +62,7 @@ namespace Platibus
 
             if (messageContext.MessageAcknowledged)
             {
-                await context.Acknowledge().ConfigureAwait(false);
+                await context.Acknowledge();
             }
         }
     }

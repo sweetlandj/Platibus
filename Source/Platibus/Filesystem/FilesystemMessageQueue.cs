@@ -76,8 +76,8 @@ namespace Platibus.Filesystem
         {
             CheckDisposed();
 
-            var queuedMessage = await MessageFile.Create(_directory, message, senderPrincipal).ConfigureAwait(false);
-            await _queuedMessages.SendAsync(queuedMessage).ConfigureAwait(false);
+            var queuedMessage = await MessageFile.Create(_directory, message, senderPrincipal);
+            await _queuedMessages.SendAsync(queuedMessage);
             // TODO: handle accepted == false
         }
 
@@ -88,7 +88,7 @@ namespace Platibus.Filesystem
             {
                 Log.DebugFormat("Enqueueing existing message from file {0}...", file);
                 var queuedMessage = new MessageFile(file);
-                await _queuedMessages.SendAsync(queuedMessage).ConfigureAwait(false);
+                await _queuedMessages.SendAsync(queuedMessage);
             }
         }
 
@@ -109,10 +109,10 @@ namespace Platibus.Filesystem
                 {
                     _deadLetterDirectory.Create();
                 }
-                    
+
                 if (directoryAlreadyExisted)
                 {
-                    await EnqueueExistingFiles().ConfigureAwait(false);
+                    await EnqueueExistingFiles();
                 }
 
                 // ReSharper disable once UnusedVariable
@@ -127,8 +127,8 @@ namespace Platibus.Filesystem
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var nextQueuedMessage = await _queuedMessages.ReceiveAsync(cancellationToken).ConfigureAwait(false);
-                
+                var nextQueuedMessage = await _queuedMessages.ReceiveAsync(cancellationToken);
+
                 // We don't want to wait on this task; we want to allow concurrent processing
                 // of messages.  The semaphore will be released by the ProcessQueuedMessage
                 // method.
@@ -143,28 +143,29 @@ namespace Platibus.Filesystem
         {
             var attemptCount = 0;
             var deadLetter = false;
-            while (!deadLetter)
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            while (!deadLetter && attemptCount < _maxAttempts)
             {
                 attemptCount++;
 
-                Log.DebugFormat("Processing queued message {0} (attempt {1} of {2})...", 
+                Log.DebugFormat("Processing queued message {0} (attempt {1} of {2})...",
                     queuedMessage.File,
-                    attemptCount, 
+                    attemptCount,
                     _maxAttempts);
-                
+
                 var context = new FilesystemQueuedMessageContext(queuedMessage);
                 cancellationToken.ThrowIfCancellationRequested();
 
-                await _concurrentMessageProcessingSlot.WaitAsync(cancellationToken).ConfigureAwait(false);
+                await _concurrentMessageProcessingSlot.WaitAsync(cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
 
                 try
                 {
-                    var message = await queuedMessage.ReadMessage(cancellationToken).ConfigureAwait(false);
-                    await _listener.MessageReceived(message, context, cancellationToken).ConfigureAwait(false);
+                    var message = await queuedMessage.ReadMessage(cancellationToken);
+                    await _listener.MessageReceived(message, context, cancellationToken);
                     if (_autoAcknowledge && !context.Acknowledged)
                     {
-                        await context.Acknowledge().ConfigureAwait(false);
+                        await context.Acknowledge();
                     }
                 }
                 catch (MessageFileFormatException ex)
@@ -189,6 +190,7 @@ namespace Platibus.Filesystem
                     Log.DebugFormat("Message file {0} deleted successfully", queuedMessage.File);
                     return;
                 }
+
                 if (attemptCount >= _maxAttempts)
                 {
                     Log.WarnFormat("Maximum attempts to proces message file {0} exceeded", queuedMessage.File);
@@ -197,12 +199,12 @@ namespace Platibus.Filesystem
 
                 if (deadLetter)
                 {
-                    await queuedMessage.MoveTo(_deadLetterDirectory, cancellationToken).ConfigureAwait(false);
+                    await queuedMessage.MoveTo(_deadLetterDirectory, cancellationToken);
                     return;
                 }
 
                 Log.DebugFormat("Message not acknowledged.  Retrying in {0}...", _retryDelay);
-                await Task.Delay(_retryDelay, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(_retryDelay, cancellationToken);
             }
         }
 

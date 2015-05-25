@@ -31,7 +31,7 @@ namespace Platibus.Http
     /// <summary>
     /// A standalone HTTP server bus host
     /// </summary>
-    public class HttpServer : IBusHost, IDisposable
+    public class HttpServer : IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Http);
 
@@ -45,7 +45,8 @@ namespace Platibus.Http
         /// used by the caller to interrupt the HTTP server initialization process</param>
         /// <returns>Returns the fully initialized and listening HTTP server</returns>
         /// <seealso cref="HttpServerConfigurationSection"/>
-        public static async Task<HttpServer> Start(string configSectionName = "platibus.httpserver", CancellationToken cancellationToken = default(CancellationToken))
+        public static async Task<HttpServer> Start(string configSectionName = "platibus.httpserver",
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             var configuration = await HttpServerConfigurationManager.LoadConfiguration(configSectionName);
             return await Start(configuration, cancellationToken);
@@ -60,7 +61,8 @@ namespace Platibus.Http
         /// used by the caller to interrupt the HTTP server initialization process</param>
         /// <returns>Returns the fully initialized and listening HTTP server</returns>
         /// <seealso cref="HttpServerConfigurationSection"/>
-        public static async Task<HttpServer> Start(IHttpServerConfiguration configuration, CancellationToken cancellationToken = default(CancellationToken))
+        public static async Task<HttpServer> Start(IHttpServerConfiguration configuration,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             var server = new HttpServer(configuration);
             await server.Init(cancellationToken);
@@ -72,20 +74,20 @@ namespace Platibus.Http
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
         private readonly ITransportService _transportService;
         private readonly Bus _bus;
-        private readonly IHttpResourceRouter _router;
+        private readonly IHttpResourceRouter _resourceRouter;
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly HttpListener _httpListener;
 
         private Task _listenTask;
-        
-        public Uri BaseUri
+
+        public Task<Uri> GetBaseUri()
         {
-            get { return _baseUri; }
+            return Task.FromResult(_baseUri);
         }
 
-        public ITransportService TransportService
+        public Task<ITransportService> GetTransportService()
         {
-            get { return _transportService; }
+            return Task.FromResult(_transportService);
         }
 
         public IBus Bus
@@ -98,9 +100,9 @@ namespace Platibus.Http
             _baseUri = configuration.BaseUri;
             _subscriptionTrackingService = configuration.SubscriptionTrackingService;
             _transportService = new HttpTransportService(_baseUri, _subscriptionTrackingService);
-            _bus = new Bus(configuration, this);
-            
-            _router = new ResourceTypeDictionaryRouter
+            _bus = new Bus(configuration, _baseUri, _transportService);
+
+            _resourceRouter = new ResourceTypeDictionaryRouter
             {
                 {"message", new MessageController(_bus.HandleMessage)},
                 {"topic", new TopicController(_subscriptionTrackingService, configuration.Topics)}
@@ -145,7 +147,7 @@ namespace Platibus.Http
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var context = await _httpListener.GetContextAsync().ConfigureAwait(false);
+                var context = await _httpListener.GetContextAsync();
 
                 Log.DebugFormat("Accepting {0} request for resource {1} from {2}...",
                     context.Request.HttpMethod, context.Request.Url, context.Request.RemoteEndPoint);
@@ -166,7 +168,7 @@ namespace Platibus.Http
                 Log.DebugFormat("Routing {0} request for resource {1} from {2}...",
                     context.Request.HttpMethod, context.Request.Url, context.Request.RemoteEndPoint);
 
-                await _router.Route(resourceRequest, resourceResponse).ConfigureAwait(false);
+                await _resourceRouter.Route(resourceRequest, resourceResponse);
 
                 Log.DebugFormat("{0} request for resource {1} handled successfully",
                     context.Request.HttpMethod, context.Request.Url);
@@ -195,6 +197,8 @@ namespace Platibus.Http
             GC.SuppressFinalize(this);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_bus")]
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;

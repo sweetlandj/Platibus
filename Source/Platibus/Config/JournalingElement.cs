@@ -32,7 +32,7 @@ namespace Platibus.Config
         [ConfigurationProperty(EnabledPropertyName, DefaultValue = true)]
         public bool IsEnabled
         {
-            get { return (bool)base[EnabledPropertyName]; }
+            get { return (bool) base[EnabledPropertyName]; }
             set { base[EnabledPropertyName] = value; }
         }
 

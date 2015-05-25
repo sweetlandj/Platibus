@@ -6,10 +6,12 @@ using Platibus.SQL;
 
 namespace Platibus.UnitTests
 {
-    class SQLMessageQueueInspector : SQLMessageQueue
+    internal class SQLMessageQueueInspector : SQLMessageQueue
     {
         public SQLMessageQueueInspector(SQLMessageQueueingService messageQueueingService, QueueName queueName)
-            : base(messageQueueingService.ConnectionProvider, messageQueueingService.Dialect, queueName, new NoopQueueListener())
+            : base(
+                messageQueueingService.ConnectionProvider, messageQueueingService.Dialect, queueName,
+                new NoopQueueListener())
         {
         }
 
@@ -25,7 +27,8 @@ namespace Platibus.UnitTests
 
         private class NoopQueueListener : IQueueListener
         {
-            public Task MessageReceived(Message message, IQueuedMessageContext context, CancellationToken cancellationToken = default(CancellationToken))
+            public Task MessageReceived(Message message, IQueuedMessageContext context,
+                CancellationToken cancellationToken = default(CancellationToken))
             {
                 return Task.FromResult(false);
             }

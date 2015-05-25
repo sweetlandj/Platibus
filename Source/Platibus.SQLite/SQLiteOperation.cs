@@ -25,7 +25,7 @@ using System.Threading.Tasks;
 
 namespace Platibus.SQLite
 {
-    class SQLiteOperation : ISQLiteOperation
+    internal class SQLiteOperation : ISQLiteOperation
     {
         private readonly TaskCompletionSource<bool> _taskCompletionSource;
         private readonly Task _task;
@@ -73,12 +73,12 @@ namespace Platibus.SQLite
         }
     }
 
-    class SQLiteOperation<TResult> : ISQLiteOperation
+    internal class SQLiteOperation<TResult> : ISQLiteOperation
     {
         private readonly TaskCompletionSource<TResult> _taskCompletionSource;
         private readonly Task<TResult> _task;
         private readonly Func<Task<TResult>> _asyncOperation;
-        
+
         public Task<TResult> Task
         {
             get { return _task; }
@@ -110,7 +110,7 @@ namespace Platibus.SQLite
                 var result = await _asyncOperation();
                 _taskCompletionSource.SetResult(result);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _taskCompletionSource.SetException(ex);
             }

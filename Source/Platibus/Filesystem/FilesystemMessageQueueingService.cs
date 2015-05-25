@@ -34,7 +34,9 @@ namespace Platibus.Filesystem
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Filesystem);
 
         private readonly DirectoryInfo _baseDirectory;
-        private readonly ConcurrentDictionary<QueueName, FilesystemMessageQueue> _queues = new ConcurrentDictionary<QueueName, FilesystemMessageQueue>();
+
+        private readonly ConcurrentDictionary<QueueName, FilesystemMessageQueue> _queues =
+            new ConcurrentDictionary<QueueName, FilesystemMessageQueue>();
 
         public FilesystemMessageQueueingService(DirectoryInfo baseDirectory = null)
         {
@@ -57,7 +59,7 @@ namespace Platibus.Filesystem
             }
 
             Log.DebugFormat("Initializing filesystem queue named \"{0}\" in path \"{1}\"...", queueName, queueDirectory);
-            await queue.Init().ConfigureAwait(false);
+            await queue.Init();
             Log.DebugFormat("Filesystem queue \"{0}\" created successfully", queueName);
         }
 
@@ -66,9 +68,11 @@ namespace Platibus.Filesystem
             FilesystemMessageQueue queue;
             if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
 
-            Log.DebugFormat("Enqueueing message ID {0} in filesystem queue \"{1}\"...", message.Headers.MessageId, queueName);
-            await queue.Enqueue(message, senderPrincipal).ConfigureAwait(false);
-            Log.DebugFormat("Message ID {0} enqueued successfully in filesystem queue \"{1}\"", message.Headers.MessageId, queueName);
+            Log.DebugFormat("Enqueueing message ID {0} in filesystem queue \"{1}\"...", message.Headers.MessageId,
+                queueName);
+            await queue.Enqueue(message, senderPrincipal);
+            Log.DebugFormat("Message ID {0} enqueued successfully in filesystem queue \"{1}\"",
+                message.Headers.MessageId, queueName);
         }
 
         public void Init()

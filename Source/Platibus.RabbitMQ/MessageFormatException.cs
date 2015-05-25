@@ -31,7 +31,10 @@ namespace Platibus.RabbitMQ
     {
         private readonly string _path;
 
-        public string Path { get { return _path; } }
+        public string Path
+        {
+            get { return _path; }
+        }
 
         public MessageFormatException(string path)
         {
@@ -43,7 +46,8 @@ namespace Platibus.RabbitMQ
             _path = path;
         }
 
-        public MessageFormatException(string path, string message, Exception innerException) : base(message, innerException)
+        public MessageFormatException(string path, string message, Exception innerException)
+            : base(message, innerException)
         {
             _path = path;
         }

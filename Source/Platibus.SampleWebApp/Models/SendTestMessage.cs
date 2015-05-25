@@ -1,5 +1,4 @@
-﻿
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
 
@@ -15,24 +14,24 @@ namespace Platibus.SampleWebApp.Models
         {
             get
             {
-                return new[] 
+                return new[]
                 {
-                    new SelectListItem 
+                    new SelectListItem
                     {
                         Value = MessageImportance.Low.ToString(),
                         Text = "Low"
                     },
-                    new SelectListItem 
+                    new SelectListItem
                     {
                         Value = MessageImportance.Normal.ToString(),
                         Text = "Normal"
                     },
-                    new SelectListItem 
+                    new SelectListItem
                     {
                         Value = MessageImportance.High.ToString(),
                         Text = "High"
                     },
-                    new SelectListItem 
+                    new SelectListItem
                     {
                         Value = MessageImportance.Critical.ToString(),
                         Text = "Critical"
@@ -52,8 +51,8 @@ namespace Platibus.SampleWebApp.Models
                     "application/json",
                     "application/xml"
                 }
-                .Select(ct => new SelectListItem { Value = ct, Text = ct })
-                .ToList();
+                    .Select(ct => new SelectListItem {Value = ct, Text = ct})
+                    .ToList();
             }
         }
 

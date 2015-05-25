@@ -22,7 +22,7 @@
 
 namespace Platibus.IntegrationTests
 {
-    static class IntegrationTestLoggingCategories
+    internal static class IntegrationTestLoggingCategories
     {
         public const string IntegrationTests = "Platibus.IntegrationTests";
     }

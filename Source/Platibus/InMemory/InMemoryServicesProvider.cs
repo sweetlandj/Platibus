@@ -12,7 +12,8 @@ namespace Platibus.InMemory
             return Task.FromResult<IMessageQueueingService>(new InMemoryMessageQueueingService());
         }
 
-        public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(SubscriptionTrackingElement configuration)
+        public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
+            SubscriptionTrackingElement configuration)
         {
             return Task.FromResult<ISubscriptionTrackingService>(new InMemorySubscriptionTrackingService());
         }

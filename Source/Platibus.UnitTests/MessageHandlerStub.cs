@@ -13,7 +13,10 @@ namespace Platibus.UnitTests
         private static readonly AutoResetEvent MessageReceivedEvent = new AutoResetEvent(false);
         private static readonly ConcurrentQueue<object> HandledMessageQueue = new ConcurrentQueue<object>();
 
-        public WaitHandle WaitHandle { get { return MessageReceivedEvent; } }
+        public WaitHandle WaitHandle
+        {
+            get { return MessageReceivedEvent; }
+        }
 
         public IEnumerable<object> HandledMessages
         {
@@ -25,7 +28,8 @@ namespace Platibus.UnitTests
             get { return "TestMessageHandler"; }
         }
 
-        public Task HandleMessage(object message, IMessageContext messageContext, CancellationToken cancellationToken = default(CancellationToken))
+        public Task HandleMessage(object message, IMessageContext messageContext,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             Log.DebugFormat("Handling message ID {0}...", messageContext.Headers.MessageId);
             HandledMessageQueue.Enqueue(message);

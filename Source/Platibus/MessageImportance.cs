@@ -38,8 +38,15 @@ namespace Platibus
 
         private readonly int _value;
 
-        public bool AllowsDiscarding { get { return _value <= LowValue; } }
-        public bool RequiresQueueing { get { return _value >= CriticalValue; } }
+        public bool AllowsDiscarding
+        {
+            get { return _value <= LowValue; }
+        }
+
+        public bool RequiresQueueing
+        {
+            get { return _value >= CriticalValue; }
+        }
 
         public MessageImportance(int value)
         {
@@ -58,7 +65,7 @@ namespace Platibus
 
         public override bool Equals(object obj)
         {
-            return obj is MessageImportance && Equals((MessageImportance)obj);
+            return obj is MessageImportance && Equals((MessageImportance) obj);
         }
 
         public override int GetHashCode()

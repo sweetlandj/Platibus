@@ -1,16 +1,17 @@
-﻿
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Config;
 
 namespace Platibus
 {
-    public class LoopbackHost : IBusHost, IDisposable
+    public class LoopbackHost : IDisposable
     {
-        public static async Task<LoopbackHost> Start(string configSectionName = "platibus", CancellationToken cancellationToken = default(CancellationToken))
+        public static async Task<LoopbackHost> Start(string configSectionName = "platibus",
+            CancellationToken cancellationToken = default(CancellationToken))
         {
-            var configuration = await PlatibusConfigurationManager.LoadConfiguration<PlatibusConfiguration>(configSectionName);
+            var configuration =
+                await PlatibusConfigurationManager.LoadConfiguration<PlatibusConfiguration>(configSectionName);
             return await Start(configuration, cancellationToken);
         }
 
@@ -28,26 +29,26 @@ namespace Platibus
         private readonly LoopbackTransportService _transportService;
         private bool _disposed;
 
-        public Uri BaseUri
+        public Task<Uri> GetBaseUri()
         {
-            get { return _baseUri; }
+            return Task.FromResult(_baseUri);
         }
 
-        public IBus Bus
+        public Task<IBus> GetBus()
         {
-            get { return _bus; }
+            return Task.FromResult<IBus>(_bus);
         }
 
-        public ITransportService TransportService
+        public Task<ITransportService> GetTransportService()
         {
-            get { return _transportService; }
+            return Task.FromResult<ITransportService>(_transportService);
         }
 
         private LoopbackHost(IPlatibusConfiguration configuration)
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
             _baseUri = new Uri("http://localhost");
-            _bus = new Bus(configuration, this);
+            _bus = new Bus(configuration, _baseUri, _transportService);
             _transportService = new LoopbackTransportService(_bus.HandleMessage);
         }
 
@@ -60,7 +61,7 @@ namespace Platibus
         {
             Dispose(false);
         }
-    
+
         public void Dispose()
         {
             if (_disposed) return;
@@ -69,13 +70,13 @@ namespace Platibus
             GC.SuppressFinalize(this);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_bus")]
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)
             {
-                _bus.TryDispose();    
+                _bus.TryDispose();
             }
         }
     }
-
 }

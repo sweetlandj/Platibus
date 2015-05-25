@@ -32,12 +32,12 @@ namespace Platibus
         private readonly EndpointName _endpoint;
         private readonly Uri _uri;
 
-        public EndpointNotFoundException(EndpointName endpoint) : base (endpoint)
+        public EndpointNotFoundException(EndpointName endpoint) : base(endpoint)
         {
             _endpoint = endpoint;
         }
 
-        public EndpointNotFoundException(Uri uri) : base (uri == null ? null : uri.ToString())
+        public EndpointNotFoundException(Uri uri) : base(uri == null ? null : uri.ToString())
         {
             _uri = uri;
         }

@@ -4,7 +4,8 @@ namespace Platibus
 {
     public static class ObservableExtensions
     {
-        public static IDisposable Subscribe<TSource>(this IObservable<TSource> source, Action<TSource> handleNext, Action handleComplete = null, Action<Exception> handleError = null)
+        public static IDisposable Subscribe<TSource>(this IObservable<TSource> source, Action<TSource> handleNext,
+            Action handleComplete = null, Action<Exception> handleError = null)
         {
             var observer = new DelegateObserver<TSource>(handleNext, handleComplete, handleError);
             return source.Subscribe(observer);
@@ -16,7 +17,8 @@ namespace Platibus
             private readonly Action _handleComplete;
             private readonly Action<Exception> _handleError;
 
-            public DelegateObserver(Action<TSource> handleNext, Action handleComplete = null, Action<Exception> handleError = null)
+            public DelegateObserver(Action<TSource> handleNext, Action handleComplete = null,
+                Action<Exception> handleError = null)
             {
                 _handleNext = handleNext;
                 _handleComplete = handleComplete;

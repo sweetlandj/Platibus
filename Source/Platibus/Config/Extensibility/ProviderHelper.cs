@@ -16,7 +16,8 @@ namespace Platibus.Config.Extensibility
                 Log.DebugFormat("Looking for provider \"{0}\"...", providerName);
                 var providers = ReflectionHelper
                     .FindConcreteSubtypes<TProvider>()
-                    .With<ProviderAttribute>(a => string.Equals(providerName, a.Name, StringComparison.OrdinalIgnoreCase))
+                    .With<ProviderAttribute>(
+                        a => string.Equals(providerName, a.Name, StringComparison.OrdinalIgnoreCase))
                     .OrderByDescending<ProviderAttribute>(a => a.Priority)
                     .ToList();
 
@@ -26,7 +27,7 @@ namespace Platibus.Config.Extensibility
             }
 
             Log.DebugFormat("Found provider type \"{0}\"", providerType.FullName);
-            return (TProvider)Activator.CreateInstance(providerType);
+            return (TProvider) Activator.CreateInstance(providerType);
         }
     }
 }

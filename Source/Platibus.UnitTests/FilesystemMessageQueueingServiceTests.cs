@@ -10,11 +10,12 @@ using Platibus.Filesystem;
 
 namespace Platibus.UnitTests
 {
-    class FilesystemMessageQueueingServiceTests
+    internal class FilesystemMessageQueueingServiceTests
     {
         protected DirectoryInfo GetTempDirectory()
         {
-            var tempPath = Path.Combine(Path.GetTempPath(), "Platibus.UnitTests", DateTime.Now.ToString("yyyyMMddHHmmss"));
+            var tempPath = Path.Combine(Path.GetTempPath(), "Platibus.UnitTests",
+                DateTime.Now.ToString("yyyyMMddHHmmss"));
             var tempDir = new DirectoryInfo(tempPath);
             if (!tempDir.Exists)
             {
@@ -32,7 +33,10 @@ namespace Platibus.UnitTests
             fsQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
-            mockListener.Setup(x => x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()))
+            mockListener.Setup(
+                x =>
+                    x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
+                        It.IsAny<CancellationToken>()))
                 .Callback<Message, IQueuedMessageContext, CancellationToken>((msg, ctx, ct) =>
                 {
                     ctx.Acknowledge();
@@ -41,9 +45,7 @@ namespace Platibus.UnitTests
                 .Returns(Task.FromResult(true));
 
             var queueName = new QueueName(Guid.NewGuid().ToString());
-            await fsQueueingService
-                .CreateQueue(queueName, mockListener.Object, new QueueOptions { MaxAttempts = 1 })
-                .ConfigureAwait(false);
+            await fsQueueingService.CreateQueue(queueName, mockListener.Object, new QueueOptions {MaxAttempts = 1});
 
             var message = new Message(new MessageHeaders
             {
@@ -51,16 +53,14 @@ namespace Platibus.UnitTests
                 {HeaderName.MessageId, Guid.NewGuid().ToString()}
             }, "Hello, world!");
 
-            await fsQueueingService
-                .EnqueueMessage(queueName, message, Thread.CurrentPrincipal)
-                .ConfigureAwait(false);
-
-            await listenerCalledEvent
-                .WaitOneAsync(TimeSpan.FromSeconds(1))
-                .ConfigureAwait(false);
+            await fsQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal);
+            await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(1));
 
             var messageEqualityComparer = new MessageEqualityComparer();
-            mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());            
+            mockListener.Verify(
+                x =>
+                    x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                        It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
         }
 
         [Test]
@@ -80,7 +80,10 @@ namespace Platibus.UnitTests
             fsQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
-            mockListener.Setup(x => x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()))
+            mockListener.Setup(
+                x =>
+                    x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
+                        It.IsAny<CancellationToken>()))
                 .Callback<Message, IQueuedMessageContext, CancellationToken>((msg, ctx, ct) =>
                 {
                     ctx.Acknowledge();
@@ -88,9 +91,7 @@ namespace Platibus.UnitTests
                 })
                 .Returns(Task.FromResult(true));
 
-            await fsQueueingService
-                .CreateQueue(queueName, mockListener.Object, new QueueOptions { MaxAttempts = 1 })
-                .ConfigureAwait(false);
+            await fsQueueingService.CreateQueue(queueName, mockListener.Object, new QueueOptions {MaxAttempts = 1});
 
             var message = new Message(new MessageHeaders
             {
@@ -98,21 +99,19 @@ namespace Platibus.UnitTests
                 {HeaderName.MessageId, Guid.NewGuid().ToString()}
             }, "Hello, world!");
 
-            await fsQueueingService
-                .EnqueueMessage(queueName, message, Thread.CurrentPrincipal)
-                .ConfigureAwait(false);
-
-            await listenerCalledEvent
-                .WaitOneAsync(TimeSpan.FromSeconds(1))
-                .ConfigureAwait(false);
+            await fsQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal);
+            await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(1));
 
             // The listener is called before the file is deleted, so there is a possible
             // race condition here.  Wait for a second to allow the delete to take place
             // before enumerating the files to see that they were actually deleted.
-            await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromSeconds(1));
 
             var messageEqualityComparer = new MessageEqualityComparer();
-            mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
+            mockListener.Verify(
+                x =>
+                    x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                        It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
             var queuedMessages = queueDir.EnumerateFiles()
                 .Select(f => new MessageFile(f))
@@ -138,20 +137,20 @@ namespace Platibus.UnitTests
             fsQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
-            mockListener.Setup(x => x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()))
-                .Callback<Message, IQueuedMessageContext, CancellationToken>((msg, ctx, ct) =>
-                {
-                    listenerCalledEvent.Set();
-                })
+            mockListener.Setup(
+                x =>
+                    x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
+                        It.IsAny<CancellationToken>()))
+                .Callback<Message, IQueuedMessageContext, CancellationToken>(
+                    (msg, ctx, ct) => { listenerCalledEvent.Set(); })
                 .Returns(Task.FromResult(true));
 
             await fsQueueingService
-                .CreateQueue(queueName, mockListener.Object, new QueueOptions 
-                { 
+                .CreateQueue(queueName, mockListener.Object, new QueueOptions
+                {
                     MaxAttempts = 2, // Prevent message from being sent to the DLQ,
                     RetryDelay = TimeSpan.FromSeconds(30)
-                })
-                .ConfigureAwait(false);
+                });
 
             var message = new Message(new MessageHeaders
             {
@@ -159,22 +158,20 @@ namespace Platibus.UnitTests
                 {HeaderName.MessageId, Guid.NewGuid().ToString()}
             }, "Hello, world!");
 
-            await fsQueueingService
-                .EnqueueMessage(queueName, message, Thread.CurrentPrincipal)
-                .ConfigureAwait(false);
-
-            await listenerCalledEvent
-                .WaitOneAsync(TimeSpan.FromSeconds(1))
-                .ConfigureAwait(false);
+            await fsQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal);
+            await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(1));
 
             // The listener is called before the file is deleted, so there is a possible
             // race condition here.  Wait for a second to allow the delete to take place
             // before enumerating the files to see that they were actually not deleted.
-            await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromSeconds(1));
 
 
             var messageEqualityComparer = new MessageEqualityComparer();
-            mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
+            mockListener.Verify(
+                x =>
+                    x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                        It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
             var queuedMessages = queueDir.EnumerateFiles()
                 .Select(f => new MessageFile(f))
@@ -201,16 +198,15 @@ namespace Platibus.UnitTests
             fsQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
-            mockListener.Setup(x => x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()))
-                .Callback<Message, IQueuedMessageContext, CancellationToken>((msg, ctx, ct) =>
-                {
-                    listenerCalledEvent.Set();
-                })
+            mockListener.Setup(
+                x =>
+                    x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
+                        It.IsAny<CancellationToken>()))
+                .Callback<Message, IQueuedMessageContext, CancellationToken>(
+                    (msg, ctx, ct) => { listenerCalledEvent.Set(); })
                 .Returns(Task.FromResult(true));
 
-            await fsQueueingService
-                .CreateQueue(queueName, mockListener.Object, new QueueOptions { AutoAcknowledge = true })
-                .ConfigureAwait(false);
+            await fsQueueingService.CreateQueue(queueName, mockListener.Object, new QueueOptions {AutoAcknowledge = true});
 
             var message = new Message(new MessageHeaders
             {
@@ -218,21 +214,19 @@ namespace Platibus.UnitTests
                 {HeaderName.MessageId, Guid.NewGuid().ToString()}
             }, "Hello, world!");
 
-            await fsQueueingService
-                .EnqueueMessage(queueName, message, Thread.CurrentPrincipal)
-                .ConfigureAwait(false);
-
-            await listenerCalledEvent
-                .WaitOneAsync(TimeSpan.FromSeconds(1))
-                .ConfigureAwait(false);
+            await fsQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal);
+            await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(1));
 
             // The listener is called before the file is deleted, so there is a possible
             // race condition here.  Wait for a second to allow the delete to take place
             // before enumerating the files to see that they were actually deleted.
-            await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromSeconds(1));
 
             var messageEqualityComparer = new MessageEqualityComparer();
-            mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
+            mockListener.Verify(
+                x =>
+                    x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                        It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
             var queuedMessages = queueDir.EnumerateFiles()
                 .Select(f => new MessageFile(f))
@@ -258,7 +252,10 @@ namespace Platibus.UnitTests
             fsQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
-            mockListener.Setup(x => x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()))
+            mockListener.Setup(
+                x =>
+                    x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
+                        It.IsAny<CancellationToken>()))
                 .Callback<Message, IQueuedMessageContext, CancellationToken>((msg, ctx, ct) =>
                 {
                     listenerCalledEvent.Set();
@@ -266,13 +263,12 @@ namespace Platibus.UnitTests
                 });
 
             await fsQueueingService
-                .CreateQueue(queueName, mockListener.Object, new QueueOptions 
-                { 
-                    AutoAcknowledge = true, 
+                .CreateQueue(queueName, mockListener.Object, new QueueOptions
+                {
+                    AutoAcknowledge = true,
                     MaxAttempts = 2, // So the message doesn't get moved to the DLQ
-                    RetryDelay = TimeSpan.FromSeconds(30) 
-                })
-                .ConfigureAwait(false);
+                    RetryDelay = TimeSpan.FromSeconds(30)
+                });
 
             var message = new Message(new MessageHeaders
             {
@@ -280,23 +276,23 @@ namespace Platibus.UnitTests
                 {HeaderName.MessageId, Guid.NewGuid().ToString()}
             }, "Hello, world!");
 
-            await fsQueueingService
-                .EnqueueMessage(queueName, message, Thread.CurrentPrincipal)
-                .ConfigureAwait(false);
+            await fsQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal);
 
             var listenerCalled = await listenerCalledEvent
-                .WaitOneAsync(Debugger.IsAttached ? TimeSpan.FromMinutes(5) : TimeSpan.FromSeconds(3))
-                .ConfigureAwait(false);
+                .WaitOneAsync(Debugger.IsAttached ? TimeSpan.FromMinutes(5) : TimeSpan.FromSeconds(3));
 
             Assert.That(listenerCalled, Is.True);
 
             // The listener is called before the file is deleted, so there is a possible
             // race condition here.  Wait for a second to allow the delete to take place
             // before enumerating the files to see that they were actually not deleted.
-            await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromSeconds(1));
 
             var messageEqualityComparer = new MessageEqualityComparer();
-            mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
+            mockListener.Verify(
+                x =>
+                    x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                        It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
             var queuedMessages = queueDir.EnumerateFiles()
                 .Select(f => new MessageFile(f))
@@ -325,14 +321,16 @@ namespace Platibus.UnitTests
                 {HeaderName.MessageId, Guid.NewGuid().ToString()}
             }, "Hello, world!");
 
-            await MessageFile.Create(queueDir, message, Thread.CurrentPrincipal)
-                .ConfigureAwait(false);
+            await MessageFile.Create(queueDir, message, Thread.CurrentPrincipal);
 
             var fsQueueingService = new FilesystemMessageQueueingService(tempDir);
             fsQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
-            mockListener.Setup(x => x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()))
+            mockListener.Setup(
+                x =>
+                    x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
+                        It.IsAny<CancellationToken>()))
                 .Callback<Message, IQueuedMessageContext, CancellationToken>((msg, ctx, ct) =>
                 {
                     ctx.Acknowledge();
@@ -340,16 +338,14 @@ namespace Platibus.UnitTests
                 })
                 .Returns(Task.FromResult(true));
 
-            await fsQueueingService
-                .CreateQueue(queueName, mockListener.Object, new QueueOptions { MaxAttempts = 1 })
-                .ConfigureAwait(false);
-
-            await listenerCalledEvent
-                .WaitOneAsync(TimeSpan.FromSeconds(1))
-                .ConfigureAwait(false);
+            await fsQueueingService.CreateQueue(queueName, mockListener.Object, new QueueOptions {MaxAttempts = 1});
+            await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(1));
 
             var messageEqualityComparer = new MessageEqualityComparer();
-            mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
+            mockListener.Verify(
+                x =>
+                    x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                        It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
         }
 
         [Test]
@@ -372,8 +368,7 @@ namespace Platibus.UnitTests
                 queueDir.Create();
             }
 
-            await Task.WhenAll(existingMessages.Select(msg => MessageFile.Create(queueDir, msg, Thread.CurrentPrincipal)))
-                .ConfigureAwait(false);
+            await Task.WhenAll(existingMessages.Select(msg => MessageFile.Create(queueDir, msg, Thread.CurrentPrincipal)));
 
             var newMessages = Enumerable.Range(1, 10)
                 .Select(i => new Message(new MessageHeaders
@@ -384,12 +379,15 @@ namespace Platibus.UnitTests
                 .ToList();
 
             var listenerCountdown = new CountdownEvent(existingMessages.Count + newMessages.Count);
-            
+
             var fsQueueingService = new FilesystemMessageQueueingService(tempDir);
             fsQueueingService.Init();
 
             var mockListener = new Mock<IQueueListener>();
-            mockListener.Setup(x => x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()))
+            mockListener.Setup(
+                x =>
+                    x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
+                        It.IsAny<CancellationToken>()))
                 .Callback<Message, IQueuedMessageContext, CancellationToken>((msg, ctx, ct) =>
                 {
                     ctx.Acknowledge();
@@ -397,12 +395,8 @@ namespace Platibus.UnitTests
                 })
                 .Returns(Task.FromResult(true));
 
-            await fsQueueingService
-                .CreateQueue(queueName, mockListener.Object, new QueueOptions { MaxAttempts = 1 })
-                .ConfigureAwait(false);
-
-            await Task.WhenAll(newMessages.Select(msg => fsQueueingService.EnqueueMessage(queueName, msg, Thread.CurrentPrincipal)))
-                .ConfigureAwait(false);
+            await fsQueueingService.CreateQueue(queueName, mockListener.Object, new QueueOptions {MaxAttempts = 1});
+            await Task.WhenAll(newMessages.Select(msg => fsQueueingService.EnqueueMessage(queueName, msg, Thread.CurrentPrincipal)));
 
             var timedOut = !await listenerCountdown.WaitHandle.WaitOneAsync(TimeSpan.FromSeconds(10));
 
@@ -410,9 +404,12 @@ namespace Platibus.UnitTests
 
             var messageEqualityComparer = new MessageEqualityComparer();
             var allmessages = existingMessages.Union(newMessages);
-            foreach(var message in allmessages)
+            foreach (var message in allmessages)
             {
-                mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
+                mockListener.Verify(
+                    x =>
+                        x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                            It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
             }
         }
     }

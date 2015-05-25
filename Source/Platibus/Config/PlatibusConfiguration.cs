@@ -48,7 +48,7 @@ namespace Platibus.Config
         public ISerializationService SerializationService { get; set; }
         public IMessageJournalingService MessageJournalingService { get; set; }
         public IMessageQueueingService MessageQueueingService { get; set; }
-        
+
         public IEnumerable<KeyValuePair<EndpointName, IEndpoint>> Endpoints
         {
             get { return _endpoints; }
@@ -102,7 +102,8 @@ namespace Platibus.Config
             _sendRules.Add(sendRule);
         }
 
-        public void AddHandlingRule(IMessageSpecification specification, IMessageHandler messageHandler, QueueName queueName = null)
+        public void AddHandlingRule(IMessageSpecification specification, IMessageHandler messageHandler,
+            QueueName queueName = null)
         {
             if (specification == null) throw new ArgumentNullException("specification");
             if (messageHandler == null) throw new ArgumentNullException("messageHandler");

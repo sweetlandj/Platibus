@@ -1,7 +1,6 @@
-﻿
-namespace Platibus.UnitTests
+﻿namespace Platibus.UnitTests
 {
-    static class UnitTestLoggingCategories
+    internal static class UnitTestLoggingCategories
     {
         public const string UnitTests = "Platibus.UnitTests";
     }

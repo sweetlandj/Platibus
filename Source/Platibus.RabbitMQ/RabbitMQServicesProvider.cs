@@ -19,7 +19,7 @@ namespace Platibus.RabbitMQ
                 encodingName = "UTF-8";
             }
 
-            var encoding = ParseEncoding(encodingName);   
+            var encoding = ParseEncoding(encodingName);
             var messageQueueingService = new RabbitMQMessageQueueingService(uri, encoding);
             messageQueueingService.Init();
             return Task.FromResult<IMessageQueueingService>(messageQueueingService);

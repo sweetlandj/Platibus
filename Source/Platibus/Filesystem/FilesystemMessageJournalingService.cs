@@ -23,14 +23,11 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Common.Logging;
 
 namespace Platibus.Filesystem
 {
     public class FilesystemMessageJournalingService : IMessageJournalingService
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Filesystem);
-
         private readonly DirectoryInfo _baseDirectory;
         private readonly DirectoryInfo _receivedDirectory;
         private readonly DirectoryInfo _sentDirectory;
@@ -74,8 +71,8 @@ namespace Platibus.Filesystem
 
         private static DirectoryInfo GetJournalDirectory(DirectoryInfo baseDirectory, DateTime dateTime)
         {
-            var pathSegments = new []
-            { 
+            var pathSegments = new[]
+            {
                 baseDirectory.FullName,
                 dateTime.Year.ToString("D4"),
                 string.Format("{0:D2}{1:D2}", dateTime.Month, dateTime.Day),
@@ -94,7 +91,7 @@ namespace Platibus.Filesystem
             {
                 directory.Create();
             }
-            var journaledMessageFile = await MessageFile.Create(directory, message, null);
+            await MessageFile.Create(directory, message, null);
         }
 
         public async Task MessageSent(Message message)
@@ -105,7 +102,7 @@ namespace Platibus.Filesystem
             {
                 directory.Create();
             }
-            var journaledMessageFile = await MessageFile.Create(directory, message, null);
+            await MessageFile.Create(directory, message, null);
         }
 
         public async Task MessagePublished(Message message)
@@ -122,7 +119,7 @@ namespace Platibus.Filesystem
             {
                 directory.Create();
             }
-            var journaledMessageFile = await MessageFile.Create(directory, message, null);
+            await MessageFile.Create(directory, message, null);
         }
     }
 }

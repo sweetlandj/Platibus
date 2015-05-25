@@ -38,11 +38,7 @@ namespace Platibus.Config
             var val = GetObject(name);
             if (val == null) return null;
 
-            var strVal = val as string;
-            if (strVal == null)
-            {
-                strVal = val.ToString();
-            }
+            var strVal = val as string ?? val.ToString();
             return strVal;
         }
 
@@ -51,11 +47,7 @@ namespace Platibus.Config
             var val = GetObject(name);
             if (val == null) return null;
 
-            var strVal = val as string;
-            if (strVal == null)
-            {
-                strVal = val.ToString();
-            }
+            var strVal = val as string ?? val.ToString();
             return new Uri(strVal);
         }
 
@@ -66,7 +58,7 @@ namespace Platibus.Config
 
             if (val is int)
             {
-                return (int)val;
+                return (int) val;
             }
             return Convert.ToInt32(val);
         }
@@ -78,7 +70,7 @@ namespace Platibus.Config
 
             if (val is bool)
             {
-                return (bool)val;
+                return (bool) val;
             }
             return Convert.ToBoolean(val);
         }
@@ -90,16 +82,16 @@ namespace Platibus.Config
 
             if (val is TEnum)
             {
-                return (TEnum)val;
+                return (TEnum) val;
             }
-            return (TEnum)Enum.Parse(typeof(TEnum), val.ToString(), false);
+            return (TEnum) Enum.Parse(typeof (TEnum), val.ToString(), false);
         }
 
         protected override bool OnDeserializeUnrecognizedAttribute(string name, string value)
         {
             if (!Properties.Contains(name))
             {
-                Properties.Add(new ConfigurationProperty(name, typeof(string), null));
+                Properties.Add(new ConfigurationProperty(name, typeof (string), null));
             }
 
             this[name] = value;

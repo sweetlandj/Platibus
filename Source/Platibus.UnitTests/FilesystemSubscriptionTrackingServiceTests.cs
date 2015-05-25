@@ -8,13 +8,14 @@ using Platibus.Filesystem;
 
 namespace Platibus.UnitTests
 {
-    class FilesystemSubscriptionTrackingServiceTests
+    internal class FilesystemSubscriptionTrackingServiceTests
     {
         private static readonly ILog Log = LogManager.GetLogger(UnitTestLoggingCategories.UnitTests);
 
         protected DirectoryInfo GetTempDirectory()
         {
-            var tempPath = Path.Combine(Path.GetTempPath(), "Platibus.UnitTests", DateTime.Now.ToString("yyyyMMddHHmmss"));
+            var tempPath = Path.Combine(Path.GetTempPath(), "Platibus.UnitTests",
+                DateTime.Now.ToString("yyyyMMddHHmmss"));
             var tempDir = new DirectoryInfo(tempPath);
             if (!tempDir.Exists)
             {
@@ -44,7 +45,7 @@ namespace Platibus.UnitTests
                             Topic = t,
                             Subscriber = s
                         }))
-                        .ToList();
+                .ToList();
 
             await Task.WhenAll(subscriptions.Select(s => fsSubscriptionService.AddSubscription(s.Topic, s.Subscriber)));
 
@@ -52,7 +53,7 @@ namespace Platibus.UnitTests
             foreach (var grouping in subscriptionsByTopic)
             {
                 var expectedSubscribers = grouping.Select(g => g.Subscriber).ToList();
-                var actualSubscribers = await fsSubscriptionService.GetSubscribers(grouping.Key).ConfigureAwait(false);
+                var actualSubscribers = await fsSubscriptionService.GetSubscribers(grouping.Key);
                 Assert.That(actualSubscribers, Is.EquivalentTo(expectedSubscribers));
             }
         }
@@ -68,14 +69,14 @@ namespace Platibus.UnitTests
 
             var topic = "topic-0";
             var subscriber = new Uri("http://localhost/platibus");
-            await fsSubscriptionService.AddSubscription(topic, subscriber).ConfigureAwait(false);
+            await fsSubscriptionService.AddSubscription(topic, subscriber);
 
-            var subscribers = await fsSubscriptionService.GetSubscribers(topic).ConfigureAwait(false);
+            var subscribers = await fsSubscriptionService.GetSubscribers(topic);
             Assert.That(subscribers, Has.Member(subscriber));
 
-            await fsSubscriptionService.RemoveSubscription(topic, subscriber).ConfigureAwait(false);
+            await fsSubscriptionService.RemoveSubscription(topic, subscriber);
 
-            var subscribersAfterRemoval = await fsSubscriptionService.GetSubscribers(topic).ConfigureAwait(false);
+            var subscribersAfterRemoval = await fsSubscriptionService.GetSubscribers(topic);
             Assert.That(subscribersAfterRemoval, Has.No.Member(subscriber));
         }
 
@@ -90,11 +91,11 @@ namespace Platibus.UnitTests
 
             var topic = "topic-0";
             var subscriber = new Uri("http://localhost/platibus");
-            await fsSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromMilliseconds(1)).ConfigureAwait(false);
+            await fsSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromMilliseconds(1));
 
-            await Task.Delay(TimeSpan.FromMilliseconds(100)).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
 
-            var subscribers = await fsSubscriptionService.GetSubscribers(topic).ConfigureAwait(false);
+            var subscribers = await fsSubscriptionService.GetSubscribers(topic);
             Assert.That(subscribers, Has.No.Member(subscriber));
         }
 
@@ -109,18 +110,17 @@ namespace Platibus.UnitTests
 
             var topic = "topic-0";
             var subscriber = new Uri("http://localhost/platibus");
-            await fsSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromMilliseconds(1)).ConfigureAwait(false);
+            await fsSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromMilliseconds(1));
 
-            await Task.Delay(TimeSpan.FromMilliseconds(100)).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
 
-            var subscribers = await fsSubscriptionService.GetSubscribers(topic).ConfigureAwait(false);
+            var subscribers = await fsSubscriptionService.GetSubscribers(topic);
             Assert.That(subscribers, Has.No.Member(subscriber));
 
-            await fsSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+            await fsSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromSeconds(5));
 
-            var subscribersAfterRenewal = await fsSubscriptionService.GetSubscribers(topic).ConfigureAwait(false);
+            var subscribersAfterRenewal = await fsSubscriptionService.GetSubscribers(topic);
             Assert.That(subscribersAfterRenewal, Has.Member(subscriber));
-
         }
 
         [Test]
@@ -144,7 +144,7 @@ namespace Platibus.UnitTests
                             Topic = t,
                             Subscriber = s
                         }))
-                        .ToList();
+                .ToList();
 
             await Task.WhenAll(subscriptions.Select(s => fsSubscriptionService.AddSubscription(s.Topic, s.Subscriber)));
 
@@ -159,7 +159,7 @@ namespace Platibus.UnitTests
             foreach (var grouping in subscriptionsByTopic)
             {
                 var expectedSubscribers = grouping.Select(g => g.Subscriber).ToList();
-                var actualSubscribers = await fsSubscriptionService2.GetSubscribers(grouping.Key).ConfigureAwait(false);
+                var actualSubscribers = await fsSubscriptionService2.GetSubscribers(grouping.Key);
                 Assert.That(actualSubscribers, Is.EquivalentTo(expectedSubscribers));
             }
         }

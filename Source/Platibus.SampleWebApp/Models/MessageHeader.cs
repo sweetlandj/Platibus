@@ -1,5 +1,4 @@
-﻿
-namespace Platibus.SampleWebApp.Models
+﻿namespace Platibus.SampleWebApp.Models
 {
     public class MessageHeader
     {

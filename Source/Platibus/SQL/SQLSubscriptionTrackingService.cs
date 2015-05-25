@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
@@ -9,17 +8,16 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
-using Common.Logging;
 
 namespace Platibus.SQL
 {
     public class SQLSubscriptionTrackingService : ISubscriptionTrackingService, IDisposable
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.SQL);
-
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly ISQLDialect _dialect;
-        private readonly ConcurrentDictionary<TopicName, IEnumerable<SQLSubscription>> _subscriptions = new ConcurrentDictionary<TopicName, IEnumerable<SQLSubscription>>();
+
+        private readonly ConcurrentDictionary<TopicName, IEnumerable<SQLSubscription>> _subscriptions =
+            new ConcurrentDictionary<TopicName, IEnumerable<SQLSubscription>>();
 
         private bool _disposed;
 
@@ -33,7 +31,8 @@ namespace Platibus.SQL
             get { return _dialect; }
         }
 
-        public SQLSubscriptionTrackingService(ConnectionStringSettings connectionStringSettings, ISQLDialect dialect = null)
+        public SQLSubscriptionTrackingService(ConnectionStringSettings connectionStringSettings,
+            ISQLDialect dialect = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
             _connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
@@ -65,7 +64,7 @@ namespace Platibus.SQL
                 _connectionProvider.ReleaseConnection(connection);
             }
 
-            var subscriptionsByTopicName = (await SelectSubscriptions().ConfigureAwait(false))
+            var subscriptionsByTopicName = (await SelectSubscriptions())
                 .GroupBy(subscription => subscription.TopicName);
 
             foreach (var grouping in subscriptionsByTopicName)
@@ -76,16 +75,18 @@ namespace Platibus.SQL
             }
         }
 
-        public async Task AddSubscription(TopicName topic, Uri subscriber, TimeSpan ttl = default(TimeSpan), CancellationToken cancellationToken = default(CancellationToken))
+        public async Task AddSubscription(TopicName topic, Uri subscriber, TimeSpan ttl = default(TimeSpan),
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
             var expires = ttl <= TimeSpan.Zero ? DateTime.MaxValue : (DateTime.UtcNow + ttl);
-            var subscription = await InsertOrUpdateSubscription(topic, subscriber, expires).ConfigureAwait(false);
-            _subscriptions.AddOrUpdate(topic, new[] { subscription },
-                (t, existing) => new[] { subscription }.Union(existing).ToList());
+            var subscription = await InsertOrUpdateSubscription(topic, subscriber, expires);
+            _subscriptions.AddOrUpdate(topic, new[] {subscription},
+                (t, existing) => new[] {subscription}.Union(existing).ToList());
         }
 
-        public async Task RemoveSubscription(TopicName topic, Uri subscriber, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task RemoveSubscription(TopicName topic, Uri subscriber,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
 
@@ -95,7 +96,8 @@ namespace Platibus.SQL
                 (t, existing) => existing.Where(se => se.Subscriber != subscriber).ToList());
         }
 
-        public Task<IEnumerable<Uri>> GetSubscribers(TopicName topic, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<IEnumerable<Uri>> GetSubscribers(TopicName topic,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
             IEnumerable<SQLSubscription> subscriptions;
@@ -108,9 +110,10 @@ namespace Platibus.SQL
         }
 
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual Task<SQLSubscription> InsertOrUpdateSubscription(TopicName topicName, Uri subscriber, DateTime expires)
+        protected virtual Task<SQLSubscription> InsertOrUpdateSubscription(TopicName topicName, Uri subscriber,
+            DateTime expires)
         {
-            SQLSubscription subscription = null;
+            SQLSubscription subscription;
             var connection = _connectionProvider.GetConnection();
             try
             {
@@ -121,7 +124,7 @@ namespace Platibus.SQL
                         command.CommandType = CommandType.Text;
                         command.CommandText = _dialect.InsertSubscriptionCommand;
 
-                        command.SetParameter(_dialect.TopicNameParameterName, (string)topicName);
+                        command.SetParameter(_dialect.TopicNameParameterName, (string) topicName);
                         command.SetParameter(_dialect.SubscriberParameterName, subscriber.ToString());
                         command.SetParameter(_dialect.ExpiresParameterName, expires);
 
@@ -162,7 +165,7 @@ namespace Platibus.SQL
                         {
                             while (reader.Read())
                             {
-                                var topicName = (TopicName)reader.GetString("TopicName");
+                                var topicName = (TopicName) reader.GetString("TopicName");
                                 var subscriber = new Uri(reader.GetString("Subscriber"));
                                 var expires = reader.GetDateTime("Expires").GetValueOrDefault(DateTime.MaxValue);
                                 var subscription = new SQLSubscription(topicName, subscriber, expires);
@@ -183,7 +186,7 @@ namespace Platibus.SQL
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         protected virtual Task DeleteSubscription(TopicName topicName, Uri subscriber)
         {
-            var deleted = false;
+            bool deleted;
             var connection = _connectionProvider.GetConnection();
             try
             {
@@ -194,7 +197,7 @@ namespace Platibus.SQL
                         command.CommandType = CommandType.Text;
                         command.CommandText = _dialect.DeleteSubscriptionCommand;
 
-                        command.SetParameter(_dialect.TopicNameParameterName, (string)topicName);
+                        command.SetParameter(_dialect.TopicNameParameterName, (string) topicName);
                         command.SetParameter(_dialect.SubscriberParameterName, subscriber.ToString());
 
                         var rowsAffected = command.ExecuteNonQuery();

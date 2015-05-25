@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
+
 // The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
@@ -39,7 +40,8 @@ namespace Platibus.SQLite
             return Task.FromResult<IMessageQueueingService>(sqliteMessageQueueingService);
         }
 
-        public async Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(SubscriptionTrackingElement configuration)
+        public async Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
+            SubscriptionTrackingElement configuration)
         {
             var path = configuration.GetString("path");
             var sqliteBaseDir = new DirectoryInfo(GetRootedPath(path));

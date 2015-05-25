@@ -1,5 +1,4 @@
-﻿
-// The MIT License (MIT)
+﻿// The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -31,7 +30,7 @@ using Platibus.Http;
 
 namespace Platibus.IIS
 {
-    class HttpRequestAdapter : IHttpResourceRequest
+    internal class HttpRequestAdapter : IHttpResourceRequest
     {
         private readonly HttpRequestBase _request;
         private readonly IPrincipal _principal;

@@ -22,12 +22,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -41,9 +39,6 @@ namespace Platibus.Http
 
         private readonly Uri _baseUri;
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
-
-        public event MessageReceivedHandler MessageReceived;
-        public event SubscriptionRequestReceivedHandler SubscriptionRequestReceived;
 
         public HttpTransportService(Uri baseUri, ISubscriptionTrackingService subscriptionTrackingService)
         {
@@ -74,7 +69,8 @@ namespace Platibus.Http
             return httpClient;
         }
 
-        public async Task SendMessage(Message message, IEndpointCredentials credentials = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task SendMessage(Message message, IEndpointCredentials credentials = null,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             if (message == null) throw new ArgumentNullException("message");
             if (message.Headers.Destination == null) throw new ArgumentException("Message has no destination");
@@ -89,9 +85,7 @@ namespace Platibus.Http
                 var messageId = message.Headers.MessageId;
                 var urlEncondedMessageId = HttpUtility.UrlEncode(messageId);
                 var relativeUri = string.Format("message/{0}", urlEncondedMessageId);
-                var httpResponseMessage = await httpClient
-                    .PostAsync(relativeUri, httpContent, cancellationToken)
-                    .ConfigureAwait(false);
+                var httpResponseMessage = await httpClient.PostAsync(relativeUri, httpContent, cancellationToken);
 
                 HandleHttpErrorResponse(httpResponseMessage);
             }
@@ -124,7 +118,7 @@ namespace Platibus.Http
 
         public async Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken)
         {
-            var subscribers = await _subscriptionTrackingService.GetSubscribers(topicName, cancellationToken).ConfigureAwait(false);
+            var subscribers = await _subscriptionTrackingService.GetSubscribers(topicName, cancellationToken);
             var transportTasks = new List<Task>();
 
             // ReSharper disable once LoopCanBeConvertedToQuery
@@ -139,11 +133,11 @@ namespace Platibus.Http
                 transportTasks.Add(SendMessage(addressedMessage, null, cancellationToken));
             }
 
-            await Task.WhenAll(transportTasks).ConfigureAwait(false);
+            await Task.WhenAll(transportTasks);
         }
 
         // ReSharper disable once UnusedMethodReturnValue.Local
-        public async Task Subscribe(Uri publisherUri, TopicName topicName, TimeSpan ttl = default(TimeSpan), 
+        public async Task Subscribe(Uri publisherUri, TopicName topicName, TimeSpan ttl = default(TimeSpan),
             IEndpointCredentials credentials = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -153,8 +147,7 @@ namespace Platibus.Http
                 {
                     Log.DebugFormat("Sending subscription request for topic {0} to {1}...", topicName, publisherUri);
 
-                    await SendSubscriptionRequest(SubscriptionRequestType.Add, publisherUri, credentials,
-                        topicName, _baseUri, TimeSpan.FromHours(1), cancellationToken).ConfigureAwait(false);
+                    await SendSubscriptionRequest(publisherUri, credentials, topicName, TimeSpan.FromHours(1), cancellationToken);
 
                     if (ttl <= TimeSpan.Zero)
                     {
@@ -218,44 +211,29 @@ namespace Platibus.Http
                         topicName, publisherUri, retryOrRenewAfter);
                 }
 
-                await Task.Delay(retryOrRenewAfter, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(retryOrRenewAfter, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
             }
         }
 
-        public async Task SendSubscriptionRequest(SubscriptionRequestType requestType, Uri publisherUri, IEndpointCredentials credentials, TopicName topic,
-            Uri subscriberUri, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task SendSubscriptionRequest(Uri publisherUri, IEndpointCredentials credentials, TopicName topic,
+            TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (publisherUri == null) throw new ArgumentNullException("publisherUri");
             if (topic == null) throw new ArgumentNullException("topic");
-            if (subscriberUri == null) throw new ArgumentNullException("subscriberUri");
-
+            
             try
             {
                 var httpClient = GetClient(publisherUri, credentials);
 
                 var urlSafeTopicName = HttpUtility.UrlEncode(topic);
-                var relativeUri = string.Format("topic/{0}/subscriber?uri={1}", urlSafeTopicName, subscriberUri);
+                var relativeUri = string.Format("topic/{0}/subscriber?uri={1}", urlSafeTopicName, _baseUri);
                 if (ttl > TimeSpan.Zero)
                 {
                     relativeUri += "&ttl=" + ttl.TotalSeconds;
                 }
 
-                HttpResponseMessage httpResponseMessage;
-                switch (requestType)
-                {
-                    case SubscriptionRequestType.Remove:
-                        httpResponseMessage = await httpClient
-                            .DeleteAsync(relativeUri, cancellationToken)
-                            .ConfigureAwait(false);
-                        break;
-                    default:
-                        httpResponseMessage = await httpClient
-                            .PostAsync(relativeUri, new StringContent(""), cancellationToken)
-                            .ConfigureAwait(false);
-                        break;
-                }
-
+                var httpResponseMessage = await httpClient.PostAsync(relativeUri, new StringContent(""), cancellationToken);
                 HandleHttpErrorResponse(httpResponseMessage);
             }
             catch (TransportException)
@@ -268,7 +246,8 @@ namespace Platibus.Http
             }
             catch (Exception ex)
             {
-                var errorMessage = string.Format("Error sending subscription request for topic {0} of publisher {1}", topic, publisherUri);
+                var errorMessage = string.Format("Error sending subscription request for topic {0} of publisher {1}",
+                    topic, publisherUri);
                 Log.ErrorFormat(errorMessage, ex);
 
                 HandleCommunicationException(ex, publisherUri);
@@ -277,39 +256,11 @@ namespace Platibus.Http
             }
         }
 
-        public async Task AcceptMessage(Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            var handlers = MessageReceived;
-            if (handlers != null)
-            {
-                var args = new MessageReceivedEventArgs(message, senderPrincipal);
-                var handlerTasks = handlers.GetInvocationList()
-                    .Cast<MessageReceivedHandler>()
-                    .Select(handler => handler(this, args));
-
-                await Task.WhenAll(handlerTasks);
-            }
-        }
-
-        public async Task AcceptSubscriptionRequest(SubscriptionRequestType requestType, TopicName topic, Uri subscriber, TimeSpan ttl, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            var handlers = SubscriptionRequestReceived;
-            if (handlers != null)
-            {
-                var args = new SubscriptionRequestReceivedEventArgs(requestType, topic, subscriber, ttl, senderPrincipal);
-                var handlerTasks = handlers.GetInvocationList()
-                    .Cast<SubscriptionRequestReceivedHandler>()
-                    .Select(handler => handler(this, args));
-
-                await Task.WhenAll(handlerTasks);
-            }
-        }
-
         private static void HandleHttpErrorResponse(HttpResponseMessage response)
         {
             if (response.IsSuccessStatusCode) return;
 
-            var statusCode = (int)response.StatusCode;
+            var statusCode = (int) response.StatusCode;
             var statusDescription = response.ReasonPhrase;
 
             if (statusCode == 401)

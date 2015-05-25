@@ -13,21 +13,21 @@ namespace Platibus.Http
         [ConfigurationProperty(BaseUriPropertyName)]
         public Uri BaseUri
         {
-            get { return (Uri)base[BaseUriPropertyName]; }
+            get { return (Uri) base[BaseUriPropertyName]; }
             set { base[BaseUriPropertyName] = value; }
         }
 
         [ConfigurationProperty(AuthenticationSchemesPropertyName)]
         public AuthenticationSchemesElementCollection AuthenticationSchemes
         {
-            get { return (AuthenticationSchemesElementCollection)base[AuthenticationSchemesPropertyName]; }
+            get { return (AuthenticationSchemesElementCollection) base[AuthenticationSchemesPropertyName]; }
             set { base[AuthenticationSchemesPropertyName] = value; }
         }
 
         [ConfigurationProperty(SubscriptionTrackingPropertyName)]
         public SubscriptionTrackingElement SubscriptionTracking
         {
-            get { return (SubscriptionTrackingElement)base[SubscriptionTrackingPropertyName]; }
+            get { return (SubscriptionTrackingElement) base[SubscriptionTrackingPropertyName]; }
             set { base[SubscriptionTrackingPropertyName] = value; }
         }
     }

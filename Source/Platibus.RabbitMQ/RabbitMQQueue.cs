@@ -19,6 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -50,8 +51,9 @@ namespace Platibus.RabbitMQ
         private readonly TimeSpan _retryDelay;
         private readonly CancellationTokenSource _cancellationTokenSource;
         private bool _disposed;
-        
-        public RabbitMQQueue(QueueName queueName, IQueueListener listener, IConnection connection, Encoding encoding = null, QueueOptions options = default(QueueOptions))
+
+        public RabbitMQQueue(QueueName queueName, IQueueListener listener, IConnection connection,
+            Encoding encoding = null, QueueOptions options = default(QueueOptions))
         {
             if (queueName == null) throw new ArgumentNullException("queueName");
             if (listener == null) throw new ArgumentNullException("listener");
@@ -146,7 +148,8 @@ namespace Platibus.RabbitMQ
             try
             {
                 // Put on the thread pool to avoid deadlock
-                var acknowleged = Task.Run(() => DispatchToListener(delivery, cancellationToken), cancellationToken).Result;
+                var acknowleged =
+                    Task.Run(() => DispatchToListener(delivery, cancellationToken), cancellationToken).Result;
                 if (acknowleged)
                 {
                     Log.DebugFormat(
@@ -176,8 +179,9 @@ namespace Platibus.RabbitMQ
                     }
                     else
                     {
-                        Log.WarnFormat("Maximum delivery attempts for message {0} exceeded.  Sending NACK on channel {1}...",
-                               delivery.DeliveryTag, channel.ChannelNumber);
+                        Log.WarnFormat(
+                            "Maximum delivery attempts for message {0} exceeded.  Sending NACK on channel {1}...",
+                            delivery.DeliveryTag, channel.ChannelNumber);
                     }
                     channel.BasicNack(delivery.DeliveryTag, false, false);
                 }
@@ -201,11 +205,11 @@ namespace Platibus.RabbitMQ
             using (var reader = new StringReader(messageBody))
             using (var messageReader = new MessageReader(reader))
             {
-                var principal = await messageReader.ReadPrincipal().ConfigureAwait(false);
-                var message = await messageReader.ReadMessage().ConfigureAwait(false);
+                var principal = await messageReader.ReadPrincipal();
+                var message = await messageReader.ReadMessage();
 
                 var context = new RabbitMQQueuedMessageContext(message.Headers, principal);
-                await _listener.MessageReceived(message, context, cancellationToken).ConfigureAwait(false);
+                await _listener.MessageReceived(message, context, cancellationToken);
                 return context.Acknowledged;
             }
         }

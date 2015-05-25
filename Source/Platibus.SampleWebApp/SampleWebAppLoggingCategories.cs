@@ -1,5 +1,4 @@
-﻿
-namespace Platibus.SampleWebApp
+﻿namespace Platibus.SampleWebApp
 {
     public class SampleWebAppLoggingCategories
     {

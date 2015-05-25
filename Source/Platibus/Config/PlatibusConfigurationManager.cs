@@ -38,19 +38,23 @@ namespace Platibus.Config
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
 
-        public static Task<PlatibusConfiguration> LoadConfiguration(string sectionName = "platibus", bool processConfigurationHooks = true)
+        public static Task<PlatibusConfiguration> LoadConfiguration(string sectionName = "platibus",
+            bool processConfigurationHooks = true)
         {
             return LoadConfiguration<PlatibusConfiguration>(sectionName, processConfigurationHooks);
         }
 
-        public static Task<TConfig> LoadConfiguration<TConfig>(string sectionName, bool processConfigurationHooks = true) where TConfig : PlatibusConfiguration, new()
+        public static Task<TConfig> LoadConfiguration<TConfig>(string sectionName, bool processConfigurationHooks = true)
+            where TConfig : PlatibusConfiguration, new()
         {
             if (string.IsNullOrWhiteSpace(sectionName)) throw new ArgumentNullException("sectionName");
-            var configSection = (PlatibusConfigurationSection)ConfigurationManager.GetSection(sectionName) ?? new PlatibusConfigurationSection();
+            var configSection = (PlatibusConfigurationSection) ConfigurationManager.GetSection(sectionName) ??
+                                new PlatibusConfigurationSection();
             return LoadConfiguration<TConfig>(configSection, processConfigurationHooks);
         }
 
-        public static async Task<TConfig> LoadConfiguration<TConfig>(PlatibusConfigurationSection configSection, bool processConfigurationHooks = true) where TConfig : PlatibusConfiguration, new()
+        public static async Task<TConfig> LoadConfiguration<TConfig>(PlatibusConfigurationSection configSection,
+            bool processConfigurationHooks = true) where TConfig : PlatibusConfiguration, new()
         {
             var configuration = new TConfig
             {
@@ -94,7 +98,7 @@ namespace Platibus.Config
             var queueing = configSection.Queueing ?? new QueueingElement();
             configuration.MessageQueueingService = await InitMessageQueueingService(queueing);
 
-            
+
             IEnumerable<SendRuleElement> sendRules = configSection.SendRules;
             foreach (var sendRule in sendRules)
             {
@@ -145,14 +149,13 @@ namespace Platibus.Config
                 Log.Debug("No message journaling service provider specified; journaling will be disabled");
                 return null;
             }
-            
+
             var provider = ProviderHelper.GetProvider<IMessageJournalingServiceProvider>(providerName);
-            
+
             Log.Debug("Initializing message journaling service...");
             return provider.CreateMessageJournalingService(config);
         }
 
-        
 
         public static string GetRootedPath(string path)
         {
@@ -172,7 +175,7 @@ namespace Platibus.Config
                 try
                 {
                     Log.InfoFormat("Processing configuration hook {0}...", hookType.FullName);
-                    var hook = (IConfigurationHook)Activator.CreateInstance(hookType);
+                    var hook = (IConfigurationHook) Activator.CreateInstance(hookType);
                     hook.Configure(configuration);
                     Log.InfoFormat("Configuration hook {0} processed successfully.", hookType.FullName);
                 }

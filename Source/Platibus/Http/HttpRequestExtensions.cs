@@ -41,7 +41,7 @@ namespace Platibus.Http
             var contentEncoding = request.ContentEncoding;
             using (var contentReader = new StreamReader(contentStream, contentEncoding))
             {
-                return await contentReader.ReadToEndAsync().ConfigureAwait(false);
+                return await contentReader.ReadToEndAsync();
             }
         }
     }

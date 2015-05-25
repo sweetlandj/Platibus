@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,10 +9,10 @@ using RabbitMQ.Client;
 
 namespace Platibus.UnitTests
 {
-    class RabbitMQMessageQueueingServiceTests
+    internal class RabbitMQMessageQueueingServiceTests
     {
         public static readonly Uri RabbitMQUri = new Uri("amqp://localhost:5672");
-        
+
         [Test]
         public async Task Given_Existing_Queue_When_New_Message_Queued_Then_Listener_Should_Fire()
         {
@@ -25,7 +24,10 @@ namespace Platibus.UnitTests
             try
             {
                 var mockListener = new Mock<IQueueListener>();
-                mockListener.Setup(x => x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()))
+                mockListener.Setup(
+                    x =>
+                        x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
+                            It.IsAny<CancellationToken>()))
                     .Callback<Message, IQueuedMessageContext, CancellationToken>((msg, ctx, ct) =>
                     {
                         ctx.Acknowledge();
@@ -33,10 +35,8 @@ namespace Platibus.UnitTests
                     })
                     .Returns(Task.FromResult(true));
 
-             
-                await rmqQueueingService
-                    .CreateQueue(queueName, mockListener.Object, new QueueOptions { MaxAttempts = 1 })
-                    .ConfigureAwait(false);
+
+                await rmqQueueingService.CreateQueue(queueName, mockListener.Object, new QueueOptions {MaxAttempts = 1});
 
                 var message = new Message(new MessageHeaders
                 {
@@ -44,16 +44,14 @@ namespace Platibus.UnitTests
                     {HeaderName.MessageId, Guid.NewGuid().ToString()}
                 }, "Hello, world!");
 
-                await rmqQueueingService
-                    .EnqueueMessage(queueName, message, Thread.CurrentPrincipal)
-                    .ConfigureAwait(false);
-
-                await listenerCalledEvent
-                    .WaitOneAsync(TimeSpan.FromSeconds(1))
-                    .ConfigureAwait(false);
+                await rmqQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal);
+                await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(1));
 
                 var messageEqualityComparer = new MessageEqualityComparer();
-                mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
+                mockListener.Verify(
+                    x =>
+                        x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                            It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
                 Assert.That(GetQueueDepth(queueName), Is.EqualTo(0));
                 Assert.That(GetQueueDepth(queueName.GetRetryQueueName()), Is.EqualTo(0));
@@ -74,7 +72,10 @@ namespace Platibus.UnitTests
             try
             {
                 var mockListener = new Mock<IQueueListener>();
-                mockListener.Setup(x => x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()))
+                mockListener.Setup(
+                    x =>
+                        x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
+                            It.IsAny<CancellationToken>()))
                     .Callback<Message, IQueuedMessageContext, CancellationToken>((msg, ctx, ct) =>
                     {
                         ctx.Acknowledge();
@@ -82,9 +83,7 @@ namespace Platibus.UnitTests
                     })
                     .Returns(Task.FromResult(true));
 
-                await rmqQueueingService
-                    .CreateQueue(queueName, mockListener.Object, new QueueOptions { MaxAttempts = 1 })
-                    .ConfigureAwait(false);
+                await rmqQueueingService.CreateQueue(queueName, mockListener.Object, new QueueOptions {MaxAttempts = 1});
 
                 var message = new Message(new MessageHeaders
                 {
@@ -92,21 +91,19 @@ namespace Platibus.UnitTests
                     {HeaderName.MessageId, Guid.NewGuid().ToString()}
                 }, "Hello, world!");
 
-                await rmqQueueingService
-                    .EnqueueMessage(queueName, message, Thread.CurrentPrincipal)
-                    .ConfigureAwait(false);
-
-                await listenerCalledEvent
-                    .WaitOneAsync(TimeSpan.FromSeconds(1))
-                    .ConfigureAwait(false);
+                await rmqQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal);
+                await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(1));
 
                 // The listener is called before the message is published to the retry queue, 
                 // so there is a possible race condition here.  Wait for a second to allow the 
                 // publish to take place before checking the queueu and retry queue depth.
-                await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromSeconds(1));
 
                 var messageEqualityComparer = new MessageEqualityComparer();
-                mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
+                mockListener.Verify(
+                    x =>
+                        x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                            It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
                 Assert.That(GetQueueDepth(queueName), Is.EqualTo(0));
                 Assert.That(GetQueueDepth(queueName.GetRetryQueueName()), Is.EqualTo(0));
@@ -128,20 +125,20 @@ namespace Platibus.UnitTests
             try
             {
                 var mockListener = new Mock<IQueueListener>();
-                mockListener.Setup(x => x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()))
-                    .Callback<Message, IQueuedMessageContext, CancellationToken>((msg, ctx, ct) =>
-                    {
-                        listenerCalledEvent.Set();
-                    })
+                mockListener.Setup(
+                    x =>
+                        x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
+                            It.IsAny<CancellationToken>()))
+                    .Callback<Message, IQueuedMessageContext, CancellationToken>(
+                        (msg, ctx, ct) => { listenerCalledEvent.Set(); })
                     .Returns(Task.FromResult(true));
 
                 await rmqQueueingService
-                    .CreateQueue(queueName, mockListener.Object, new QueueOptions 
-                    { 
+                    .CreateQueue(queueName, mockListener.Object, new QueueOptions
+                    {
                         MaxAttempts = 2, // Prevent message from being sent to the DLQ,
                         RetryDelay = TimeSpan.FromSeconds(30)
-                    })
-                    .ConfigureAwait(false);
+                    });
 
                 var message = new Message(new MessageHeaders
                 {
@@ -149,21 +146,19 @@ namespace Platibus.UnitTests
                     {HeaderName.MessageId, Guid.NewGuid().ToString()}
                 }, "Hello, world!");
 
-                await rmqQueueingService
-                    .EnqueueMessage(queueName, message, Thread.CurrentPrincipal)
-                    .ConfigureAwait(false);
-
-                await listenerCalledEvent
-                    .WaitOneAsync(TimeSpan.FromSeconds(3))
-                    .ConfigureAwait(false);
+                await rmqQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal);
+                await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(3));
 
                 // The listener is called before the message is published to the retry queue, 
                 // so there is a possible race condition here.  Wait for a second to allow the 
                 // publish to take place before checking the retry queue depth.
-                await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromSeconds(1));
 
                 var messageEqualityComparer = new MessageEqualityComparer();
-                mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
+                mockListener.Verify(
+                    x =>
+                        x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                            It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
                 Assert.That(GetQueueDepth(queueName), Is.EqualTo(0));
                 Assert.That(GetQueueDepth(queueName.GetRetryQueueName()), Is.EqualTo(1));
@@ -182,21 +177,17 @@ namespace Platibus.UnitTests
             rmqQueueingService.Init();
 
             try
-            {     
+            {
                 var listenerCalledEvent = new ManualResetEvent(false);
                 var mockListener = new Mock<IQueueListener>();
                 mockListener.Setup(x =>
                     x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
                         It.IsAny<CancellationToken>()))
-                    .Callback<Message, IQueuedMessageContext, CancellationToken>((msg, ctx, ct) =>
-                    {
-                        listenerCalledEvent.Set();
-                    })
+                    .Callback<Message, IQueuedMessageContext, CancellationToken>(
+                        (msg, ctx, ct) => { listenerCalledEvent.Set(); })
                     .Returns(Task.FromResult(true));
 
-                await rmqQueueingService
-                    .CreateQueue(queueName, mockListener.Object, new QueueOptions {AutoAcknowledge = true})
-                    .ConfigureAwait(false);
+                await rmqQueueingService.CreateQueue(queueName, mockListener.Object, new QueueOptions {AutoAcknowledge = true});
 
                 var message = new Message(new MessageHeaders
                 {
@@ -204,18 +195,13 @@ namespace Platibus.UnitTests
                     {HeaderName.MessageId, Guid.NewGuid().ToString()}
                 }, "Hello, world!");
 
-                await rmqQueueingService
-                    .EnqueueMessage(queueName, message, Thread.CurrentPrincipal)
-                    .ConfigureAwait(false);
-
-                await listenerCalledEvent
-                    .WaitOneAsync(TimeSpan.FromSeconds(1))
-                    .ConfigureAwait(false);
+                await rmqQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal);
+                await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(1));
 
                 // The listener is called before the file is deleted, so there is a possible
                 // race condition here.  Wait for a second to allow the delete to take place
                 // before enumerating the files to see that they were actually deleted.
-                await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromSeconds(1));
 
                 var messageEqualityComparer = new MessageEqualityComparer();
                 mockListener.Verify(x =>
@@ -227,24 +213,24 @@ namespace Platibus.UnitTests
             }
             finally
             {
-                rmqQueueingService.DeleteQueue(queueName);   
+                rmqQueueingService.DeleteQueue(queueName);
             }
         }
-     
+
         private static uint GetQueueDepth(QueueName queueName)
         {
-            var connectionFactory = new ConnectionFactory { Uri = RabbitMQUri.ToString() };
+            var connectionFactory = new ConnectionFactory {Uri = RabbitMQUri.ToString()};
             using (var connection = connectionFactory.CreateConnection())
             using (var channel = connection.CreateModel())
             {
                 var result = channel.QueueDeclarePassive(queueName);
                 return result.MessageCount;
-            }   
+            }
         }
 
         private static async Task StageExistingMessage(Message message, QueueName queueName)
         {
-            var connectionFactory = new ConnectionFactory { Uri = RabbitMQUri.ToString() };
+            var connectionFactory = new ConnectionFactory {Uri = RabbitMQUri.ToString()};
             using (var connection = connectionFactory.CreateConnection())
             using (var channel = connection.CreateModel())
             {
@@ -272,9 +258,12 @@ namespace Platibus.UnitTests
                 }, "Hello, world!");
 
                 await StageExistingMessage(message, queueName);
-            
+
                 var mockListener = new Mock<IQueueListener>();
-                mockListener.Setup(x => x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()))
+                mockListener.Setup(
+                    x =>
+                        x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
+                            It.IsAny<CancellationToken>()))
                     .Callback<Message, IQueuedMessageContext, CancellationToken>((msg, ctx, ct) =>
                     {
                         ctx.Acknowledge();
@@ -282,16 +271,14 @@ namespace Platibus.UnitTests
                     })
                     .Returns(Task.FromResult(true));
 
-                await rmqQueueingService
-                    .CreateQueue(queueName, mockListener.Object, new QueueOptions { MaxAttempts = 1, RetryDelay = TimeSpan.FromSeconds(30)})
-                    .ConfigureAwait(false);
-
-                await listenerCalledEvent
-                    .WaitOneAsync(TimeSpan.FromSeconds(5))
-                    .ConfigureAwait(false);
+                await rmqQueueingService.CreateQueue(queueName, mockListener.Object, new QueueOptions {MaxAttempts = 1, RetryDelay = TimeSpan.FromSeconds(30)});
+                await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(5));
 
                 var messageEqualityComparer = new MessageEqualityComparer();
-                mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
+                mockListener.Verify(
+                    x =>
+                        x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                            It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
                 Assert.That(GetQueueDepth(queueName), Is.EqualTo(0));
                 Assert.That(GetQueueDepth(queueName.GetRetryQueueName()), Is.EqualTo(0));
@@ -319,9 +306,7 @@ namespace Platibus.UnitTests
                     }, "Hello, world! (" + i + ")"))
                     .ToList();
 
-                await Task.WhenAll(existingMessages
-                    .Select(msg => StageExistingMessage(msg, queueName)))
-                    .ConfigureAwait(false);
+                await Task.WhenAll(existingMessages.Select(msg => StageExistingMessage(msg, queueName)));
 
                 var newMessages = Enumerable.Range(11, 20)
                     .Select(i => new Message(new MessageHeaders
@@ -332,9 +317,12 @@ namespace Platibus.UnitTests
                     .ToList();
 
                 var listenerCountdown = new CountdownEvent(existingMessages.Count + newMessages.Count);
-            
+
                 var mockListener = new Mock<IQueueListener>();
-                mockListener.Setup(x => x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()))
+                mockListener.Setup(
+                    x =>
+                        x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
+                            It.IsAny<CancellationToken>()))
                     .Callback<Message, IQueuedMessageContext, CancellationToken>((msg, ctx, ct) =>
                     {
                         ctx.Acknowledge();
@@ -342,12 +330,10 @@ namespace Platibus.UnitTests
                     })
                     .Returns(Task.FromResult(true));
 
-                await rmqQueueingService
-                    .CreateQueue(queueName, mockListener.Object, new QueueOptions { MaxAttempts = 1 })
-                    .ConfigureAwait(false);
+                await rmqQueueingService.CreateQueue(queueName, mockListener.Object, new QueueOptions {MaxAttempts = 1});
 
-                await Task.WhenAll(newMessages.Select(msg => rmqQueueingService.EnqueueMessage(queueName, msg, Thread.CurrentPrincipal)))
-                    .ConfigureAwait(false);
+                await Task.WhenAll(newMessages.Select(msg =>
+                    rmqQueueingService.EnqueueMessage(queueName, msg, Thread.CurrentPrincipal)));
 
                 var timedOut = !await listenerCountdown.WaitHandle.WaitOneAsync(TimeSpan.FromSeconds(10));
 
@@ -355,9 +341,12 @@ namespace Platibus.UnitTests
 
                 var messageEqualityComparer = new MessageEqualityComparer();
                 var allmessages = existingMessages.Union(newMessages);
-                foreach(var message in allmessages)
+                foreach (var message in allmessages)
                 {
-                    mockListener.Verify(x => x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)), It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
+                    mockListener.Verify(
+                        x =>
+                            x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                                It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
                 }
 
                 Assert.That(GetQueueDepth(queueName), Is.EqualTo(0));

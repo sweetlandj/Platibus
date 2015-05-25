@@ -19,6 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Collections.Concurrent;
 using System.Security.Principal;
@@ -33,7 +34,9 @@ namespace Platibus.RabbitMQ
     {
         private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
 
-        private readonly ConcurrentDictionary<QueueName, RabbitMQQueue> _queues = new ConcurrentDictionary<QueueName, RabbitMQQueue>(); 
+        private readonly ConcurrentDictionary<QueueName, RabbitMQQueue> _queues =
+            new ConcurrentDictionary<QueueName, RabbitMQQueue>();
+
         private readonly Encoding _encoding;
         private readonly IConnectionFactory _connectionFactory;
         private IConnection _connection;
@@ -81,9 +84,11 @@ namespace Platibus.RabbitMQ
             RabbitMQQueue queue;
             if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
 
-            Log.DebugFormat("Enqueueing message ID {0} in RabbitMQ queue \"{1}\"...", message.Headers.MessageId, queueName);
+            Log.DebugFormat("Enqueueing message ID {0} in RabbitMQ queue \"{1}\"...", message.Headers.MessageId,
+                queueName);
             await queue.Enqueue(message, senderPrincipal);
-            Log.DebugFormat("Message ID {0} enqueued successfully in RabbitMQ queue \"{1}\"", message.Headers.MessageId, queueName);
+            Log.DebugFormat("Message ID {0} enqueued successfully in RabbitMQ queue \"{1}\"", message.Headers.MessageId,
+                queueName);
         }
 
         public void DeleteQueue(QueueName queueName)
@@ -122,7 +127,7 @@ namespace Platibus.RabbitMQ
                 {
                     queue.Dispose();
                 }
-                _connection.Close();    
+                _connection.Close();
             }
             _disposed = true;
         }

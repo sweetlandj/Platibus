@@ -37,21 +37,14 @@ namespace Platibus.Config.Extensibility
         public MultipleProvidersFoundException(string providerName, IEnumerable<Type> providers) : base(providerName)
         {
             _providerName = providerName;
-            if (providers != null)
-            {
-                _providers = providers.Where(t => t != null).ToArray();
-            }
-            else
-            {
-                _providers = new Type[0];
-            }
+            _providers = providers != null ? providers.Where(t => t != null).ToArray() : new Type[0];
         }
 
         public MultipleProvidersFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
             _providerName = info.GetString("providerName");
-            _providers = (Type[])info.GetValue("providers", typeof(Type[]));
+            _providers = (Type[]) info.GetValue("providers", typeof (Type[]));
         }
 
         public string ProviderName

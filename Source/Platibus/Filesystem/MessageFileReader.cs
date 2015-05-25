@@ -54,7 +54,7 @@ namespace Platibus.Filesystem
         {
             var base64Buffer = new StringBuilder();
             string currentLine;
-            while (!string.IsNullOrWhiteSpace(currentLine = await _reader.ReadLineAsync().ConfigureAwait(false)))
+            while (!string.IsNullOrWhiteSpace(currentLine = await _reader.ReadLineAsync()))
             {
                 base64Buffer.AppendLine(currentLine);
             }
@@ -80,7 +80,7 @@ namespace Platibus.Filesystem
             var lineNumber = 0;
 
             string currentLine;
-            while (!finishedReadingHeaders && (currentLine = await _reader.ReadLineAsync().ConfigureAwait(false)) != null)
+            while (!finishedReadingHeaders && (currentLine = await _reader.ReadLineAsync()) != null)
             {
                 lineNumber++;
                 if (string.IsNullOrWhiteSpace(currentLine))
@@ -139,7 +139,7 @@ namespace Platibus.Filesystem
             var content = "";
             if (finishedReadingHeaders)
             {
-                content = await _reader.ReadToEndAsync().ConfigureAwait(false);
+                content = await _reader.ReadToEndAsync();
             }
             return new Message(headers, content);
         }

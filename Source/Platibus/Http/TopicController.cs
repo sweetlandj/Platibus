@@ -52,7 +52,7 @@ namespace Platibus.Http
             var topicSegments = subPath.ToList();
             if (!topicSegments.Any() && "get".Equals(request.HttpMethod, StringComparison.OrdinalIgnoreCase))
             {
-                await GetTopics(request, response).ConfigureAwait(false);
+                await GetTopics(request, response);
                 return;
             }
             if (topicSegments.Any())
@@ -62,7 +62,7 @@ namespace Platibus.Http
                 if ("subscriber".Equals(nestedResource, StringComparison.OrdinalIgnoreCase))
                 {
                     var subscriberSubPath = topicSegments.Skip(2);
-                    await PostOrDeleteSubscriber(request, response, topic, subscriberSubPath).ConfigureAwait(false);
+                    await PostOrDeleteSubscriber(request, response, topic, subscriberSubPath);
                     return;
                 }
             }
@@ -76,7 +76,7 @@ namespace Platibus.Http
             var responseContent = _serializer.Serialize(topicList);
             var encoding = response.ContentEncoding;
             var encodedContent = encoding.GetBytes(responseContent);
-            await response.OutputStream.WriteAsync(encodedContent, 0, encodedContent.Length).ConfigureAwait(false);
+            await response.OutputStream.WriteAsync(encodedContent, 0, encodedContent.Length);
             response.StatusCode = 200;
         }
 
@@ -104,7 +104,7 @@ namespace Platibus.Http
 
             if ("delete".Equals(request.HttpMethod, StringComparison.OrdinalIgnoreCase))
             {
-                await _subscriptionTrackingService.RemoveSubscription(topic, subscriber).ConfigureAwait(false);
+                await _subscriptionTrackingService.RemoveSubscription(topic, subscriber);
             }
             else
             {
@@ -113,7 +113,7 @@ namespace Platibus.Http
                     ? default(TimeSpan)
                     : TimeSpan.FromSeconds(int.Parse(ttlStr));
 
-                await _subscriptionTrackingService.AddSubscription(topic, subscriber, ttl).ConfigureAwait(false);
+                await _subscriptionTrackingService.AddSubscription(topic, subscriber, ttl);
             }
             response.StatusCode = 202;
         }

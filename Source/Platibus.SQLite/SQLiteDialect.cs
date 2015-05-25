@@ -24,13 +24,11 @@ using Platibus.SQL;
 
 namespace Platibus.SQLite
 {
-    class SQLiteDialect : CommonSQLDialect
+    internal class SQLiteDialect : CommonSQLDialect
     {
         public override string CreateMessageQueueingServiceObjectsCommand
         {
-            get
-            {
-                return @"
+            get { return @"
 CREATE TABLE IF NOT EXISTS [PB_QueuedMessages]
 (
     [MessageId] TEXT NOT NULL,
@@ -53,15 +51,12 @@ CREATE TABLE IF NOT EXISTS [PB_QueuedMessages]
 );
 
 CREATE INDEX IF NOT EXISTS [PB_QueuedMessages_IX_QueueName] 
-    ON [PB_QueuedMessages]([QueueName]);";
-            }
+    ON [PB_QueuedMessages]([QueueName]);"; }
         }
 
         public override string CreateSubscriptionTrackingServiceObjectsCommand
         {
-            get
-            {
-                return @"
+            get { return @"
 CREATE TABLE IF NOT EXISTS [PB_Subscriptions]
 (
     [TopicName] TEXT NOT NULL,
@@ -73,8 +68,7 @@ CREATE TABLE IF NOT EXISTS [PB_Subscriptions]
 );
 
 CREATE INDEX IF NOT EXISTS [PB_Subscriptions_IX_TopicName] 
-    ON [PB_Subscriptions]([TopicName]);";
-            }
+    ON [PB_Subscriptions]([TopicName]);"; }
         }
     }
 }

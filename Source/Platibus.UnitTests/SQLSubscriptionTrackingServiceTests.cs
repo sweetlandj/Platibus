@@ -8,7 +8,7 @@ using Platibus.SQL;
 
 namespace Platibus.UnitTests
 {
-    class SQLSubscriptionTrackingServiceTests
+    internal class SQLSubscriptionTrackingServiceTests
     {
         private static readonly ILog Log = LogManager.GetLogger(UnitTestLoggingCategories.UnitTests);
 
@@ -48,7 +48,7 @@ namespace Platibus.UnitTests
                             Topic = t,
                             Subscriber = s
                         }))
-                        .ToList();
+                .ToList();
 
             await Task.WhenAll(subscriptions.Select(s => sqlSubscriptionService.AddSubscription(s.Topic, s.Subscriber)));
 
@@ -56,7 +56,7 @@ namespace Platibus.UnitTests
             foreach (var grouping in subscriptionsByTopic)
             {
                 var expectedSubscribers = grouping.Select(g => g.Subscriber).ToList();
-                var actualSubscribers = await sqlSubscriptionService.GetSubscribers(grouping.Key).ConfigureAwait(false);
+                var actualSubscribers = await sqlSubscriptionService.GetSubscribers(grouping.Key);
                 Assert.That(actualSubscribers, Is.EquivalentTo(expectedSubscribers));
             }
         }
@@ -70,14 +70,14 @@ namespace Platibus.UnitTests
 
             var topic = "topic-0";
             var subscriber = new Uri("http://localhost/platibus");
-            await sqlSubscriptionService.AddSubscription(topic, subscriber).ConfigureAwait(false);
+            await sqlSubscriptionService.AddSubscription(topic, subscriber);
 
-            var subscribers = await sqlSubscriptionService.GetSubscribers(topic).ConfigureAwait(false);
+            var subscribers = await sqlSubscriptionService.GetSubscribers(topic);
             Assert.That(subscribers, Has.Member(subscriber));
 
-            await sqlSubscriptionService.RemoveSubscription(topic, subscriber).ConfigureAwait(false);
+            await sqlSubscriptionService.RemoveSubscription(topic, subscriber);
 
-            var subscribersAfterRemoval = await sqlSubscriptionService.GetSubscribers(topic).ConfigureAwait(false);
+            var subscribersAfterRemoval = await sqlSubscriptionService.GetSubscribers(topic);
             Assert.That(subscribersAfterRemoval, Has.No.Member(subscriber));
         }
 
@@ -92,11 +92,11 @@ namespace Platibus.UnitTests
 
             var topic = "topic-0";
             var subscriber = new Uri("http://localhost/platibus");
-            await sqlSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromMilliseconds(1)).ConfigureAwait(false);
+            await sqlSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromMilliseconds(1));
 
-            await Task.Delay(TimeSpan.FromMilliseconds(100)).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
 
-            var subscribers = await sqlSubscriptionService.GetSubscribers(topic).ConfigureAwait(false);
+            var subscribers = await sqlSubscriptionService.GetSubscribers(topic);
             Assert.That(subscribers, Has.No.Member(subscriber));
         }
 
@@ -109,18 +109,17 @@ namespace Platibus.UnitTests
 
             var topic = "topic-0";
             var subscriber = new Uri("http://localhost/platibus");
-            await sqlSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromMilliseconds(1)).ConfigureAwait(false);
+            await sqlSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromMilliseconds(1));
 
-            await Task.Delay(TimeSpan.FromMilliseconds(100)).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
 
-            var subscribers = await sqlSubscriptionService.GetSubscribers(topic).ConfigureAwait(false);
+            var subscribers = await sqlSubscriptionService.GetSubscribers(topic);
             Assert.That(subscribers, Has.No.Member(subscriber));
 
-            await sqlSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+            await sqlSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromSeconds(5));
 
-            var subscribersAfterRenewal = await sqlSubscriptionService.GetSubscribers(topic).ConfigureAwait(false);
+            var subscribersAfterRenewal = await sqlSubscriptionService.GetSubscribers(topic);
             Assert.That(subscribersAfterRenewal, Has.Member(subscriber));
-
         }
 
         [Test]
@@ -142,7 +141,7 @@ namespace Platibus.UnitTests
                             Topic = t,
                             Subscriber = s
                         }))
-                        .ToList();
+                .ToList();
 
             await Task.WhenAll(subscriptions.Select(s => sqlSubscriptionService.AddSubscription(s.Topic, s.Subscriber)));
 
@@ -157,7 +156,7 @@ namespace Platibus.UnitTests
             foreach (var grouping in subscriptionsByTopic)
             {
                 var expectedSubscribers = grouping.Select(g => g.Subscriber).ToList();
-                var actualSubscribers = await sqlSubscriptionService2.GetSubscribers(grouping.Key).ConfigureAwait(false);
+                var actualSubscribers = await sqlSubscriptionService2.GetSubscribers(grouping.Key);
                 Assert.That(actualSubscribers, Is.EquivalentTo(expectedSubscribers));
             }
         }

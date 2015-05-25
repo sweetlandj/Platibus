@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Configuration;
 using System.Threading.Tasks;
 using Common.Logging;
@@ -16,9 +15,11 @@ namespace Platibus.Http
         public static async Task<HttpServerConfiguration> LoadConfiguration(string sectionName = "platibus.httpserver")
         {
             if (string.IsNullOrWhiteSpace(sectionName)) throw new ArgumentNullException("sectionName");
-            var configSection = (HttpServerConfigurationSection)ConfigurationManager.GetSection(sectionName) ?? new HttpServerConfigurationSection();
+            var configSection = (HttpServerConfigurationSection) ConfigurationManager.GetSection(sectionName) ??
+                                new HttpServerConfigurationSection();
 
-            var configuration = await PlatibusConfigurationManager.LoadConfiguration<HttpServerConfiguration>(sectionName);
+            var configuration =
+                await PlatibusConfigurationManager.LoadConfiguration<HttpServerConfiguration>(sectionName);
             configuration.BaseUri = configSection.BaseUri;
             configuration.AuthenticationSchemes = configSection.AuthenticationSchemes.GetFlags();
 
@@ -28,7 +29,8 @@ namespace Platibus.Http
             return configuration;
         }
 
-        public static Task<ISubscriptionTrackingService> InitSubscriptionTrackingService(SubscriptionTrackingElement config)
+        public static Task<ISubscriptionTrackingService> InitSubscriptionTrackingService(
+            SubscriptionTrackingElement config)
         {
             var providerName = config.Provider;
             ISubscriptionTrackingServiceProvider provider;

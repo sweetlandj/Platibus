@@ -5,7 +5,7 @@ using Platibus.Security;
 
 namespace Platibus.Http
 {
-    class HttpEndpointCredentialsVisitor : IEndpointCredentialsVisitor
+    internal class HttpEndpointCredentialsVisitor : IEndpointCredentialsVisitor
     {
         private readonly HttpClientHandler _clientHandler;
 

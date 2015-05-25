@@ -63,10 +63,13 @@ namespace Platibus.SQLite
             return connectionProvider;
         }
 
-        protected override Task<SQLSubscription> InsertOrUpdateSubscription(TopicName topicName, Uri subscriber, DateTime expires)
+        protected override Task<SQLSubscription> InsertOrUpdateSubscription(TopicName topicName, Uri subscriber,
+            DateTime expires)
         {
             CheckDisposed();
-            var op = new SQLiteOperation<SQLSubscription>(() => base.InsertOrUpdateSubscription(topicName, subscriber, expires));
+            var op =
+                new SQLiteOperation<SQLSubscription>(
+                    () => base.InsertOrUpdateSubscription(topicName, subscriber, expires));
             _operationQueue.Post(op);
             return op.Task;
         }

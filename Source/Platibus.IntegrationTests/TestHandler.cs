@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+
 // The MIT License (MIT)
 // 
 // Copyright (c) 2014 Jesse Sweetland
@@ -27,7 +28,8 @@ namespace Platibus.IntegrationTests
 {
     public class TestHandler
     {
-        public static async Task HandleMessage(TestMessage message, IMessageContext messageContext, CancellationToken cancellationToken)
+        public static async Task HandleMessage(TestMessage message, IMessageContext messageContext,
+            CancellationToken cancellationToken)
         {
             if (message.SimulateAuthorizationFailure)
             {
@@ -40,8 +42,7 @@ namespace Platibus.IntegrationTests
                 IntData = message.IntData,
                 StringData = message.StringData,
                 DateData = message.DateData
-            }, cancellationToken: cancellationToken)
-            .ConfigureAwait(false);
+            }, cancellationToken: cancellationToken);
 
             if (message.SimulateAcknowledgementFailure)
             {

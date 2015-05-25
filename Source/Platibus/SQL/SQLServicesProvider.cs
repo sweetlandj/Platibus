@@ -13,7 +13,8 @@ namespace Platibus.SQL
             var connectionName = configuration.GetString("connectionName");
             if (string.IsNullOrWhiteSpace(connectionName))
             {
-                throw new ConfigurationErrorsException("Attribute 'connectionName' is required for SQL message queueing service");
+                throw new ConfigurationErrorsException(
+                    "Attribute 'connectionName' is required for SQL message queueing service");
             }
 
             var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
@@ -26,12 +27,14 @@ namespace Platibus.SQL
             return Task.FromResult<IMessageQueueingService>(sqlMessageQueueingService);
         }
 
-        public async Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(SubscriptionTrackingElement configuration)
+        public async Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
+            SubscriptionTrackingElement configuration)
         {
             var connectionName = configuration.GetString("connectionName");
             if (string.IsNullOrWhiteSpace(connectionName))
             {
-                throw new ConfigurationErrorsException("Attribute 'connectionName' is required for SQL subscription tracking service");
+                throw new ConfigurationErrorsException(
+                    "Attribute 'connectionName' is required for SQL subscription tracking service");
             }
 
             var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];

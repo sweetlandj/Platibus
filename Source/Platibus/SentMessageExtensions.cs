@@ -39,7 +39,7 @@ namespace Platibus
                 replyReceivedEvent.Set();
             });
 
-            await replyReceivedEvent.WaitOneAsync(timeout).ConfigureAwait(false);
+            await replyReceivedEvent.WaitOneAsync(timeout);
 
             subscription.Dispose();
             replyReceivedEvent.Dispose();

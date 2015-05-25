@@ -40,7 +40,7 @@ namespace Platibus.Config
 
         public bool IsSatisfiedBy(Message message)
         {
-            var messageName = message.Headers.MessageName;
+            var messageName = (string)message.Headers.MessageName ?? "";
             return (_nameRegex == null || _nameRegex.IsMatch(messageName));
         }
     }

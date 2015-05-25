@@ -28,9 +28,11 @@ namespace Platibus.InMemory
 {
     public class InMemoryMessageQueueingService : IMessageQueueingService
     {
-        private readonly ConcurrentDictionary<QueueName, InMemoryQueue> _queues = new ConcurrentDictionary<QueueName, InMemoryQueue>(); 
+        private readonly ConcurrentDictionary<QueueName, InMemoryQueue> _queues =
+            new ConcurrentDictionary<QueueName, InMemoryQueue>();
 
-        public Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
+        public Task CreateQueue(QueueName queueName, IQueueListener listener,
+            QueueOptions options = default(QueueOptions))
         {
             if (!_queues.TryAdd(queueName, new InMemoryQueue(listener, options)))
             {
@@ -48,6 +50,5 @@ namespace Platibus.InMemory
             }
             return queue.Enqueue(message, senderPrincipal);
         }
-
     }
 }

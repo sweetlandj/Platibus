@@ -34,7 +34,7 @@ namespace Platibus.SQL
             }
             else if (value is TimeSpan)
             {
-                parameter.Value = (long)((TimeSpan)value).TotalMilliseconds;
+                parameter.Value = (long) ((TimeSpan) value).TotalMilliseconds;
             }
             else
             {
@@ -53,31 +53,31 @@ namespace Platibus.SQL
         public static int? GetInt(this IDataRecord record, string name)
         {
             var ordinal = record.GetOrdinal(name);
-            return record.IsDBNull(ordinal) ? null : (int?)record.GetInt32(ordinal);
+            return record.IsDBNull(ordinal) ? null : (int?) record.GetInt32(ordinal);
         }
 
         public static long? GetLong(this IDataRecord record, string name)
         {
             var ordinal = record.GetOrdinal(name);
-            return record.IsDBNull(ordinal) ? null : (long?)record.GetInt64(ordinal);
+            return record.IsDBNull(ordinal) ? null : (long?) record.GetInt64(ordinal);
         }
 
         public static bool? GetBoolean(this IDataRecord record, string name)
         {
             var ordinal = record.GetOrdinal(name);
-            return record.IsDBNull(ordinal) ? null : (bool?)record.GetBoolean(ordinal);
+            return record.IsDBNull(ordinal) ? null : (bool?) record.GetBoolean(ordinal);
         }
 
         public static DateTime? GetDateTime(this IDataRecord record, string name)
         {
             var ordinal = record.GetOrdinal(name);
-            return record.IsDBNull(ordinal) ? null : (DateTime?)record.GetDateTime(ordinal);
+            return record.IsDBNull(ordinal) ? null : (DateTime?) record.GetDateTime(ordinal);
         }
 
         public static TimeSpan? GetTimeSpan(this IDataRecord record, string name)
         {
             var milliseconds = record.GetLong(name);
-            return milliseconds == null ? null : (TimeSpan?)TimeSpan.FromMilliseconds(milliseconds.Value);
+            return milliseconds == null ? null : (TimeSpan?) TimeSpan.FromMilliseconds(milliseconds.Value);
         }
 
         public static ISQLDialect GetSQLDialect(this ConnectionStringSettings connectionStringSettings)

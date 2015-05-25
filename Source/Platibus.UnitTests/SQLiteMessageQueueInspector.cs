@@ -8,7 +8,7 @@ using Platibus.SQLite;
 
 namespace Platibus.UnitTests
 {
-    class SQLiteMessageQueueInspector : SQLiteMessageQueue
+    internal class SQLiteMessageQueueInspector : SQLiteMessageQueue
     {
         public SQLiteMessageQueueInspector(DirectoryInfo baseDirectory, QueueName queueName)
             : base(baseDirectory, queueName, new NoopQueueListener())
@@ -27,7 +27,8 @@ namespace Platibus.UnitTests
 
         private class NoopQueueListener : IQueueListener
         {
-            public Task MessageReceived(Message message, IQueuedMessageContext context, CancellationToken cancellationToken = default(CancellationToken))
+            public Task MessageReceived(Message message, IQueuedMessageContext context,
+                CancellationToken cancellationToken = default(CancellationToken))
             {
                 return Task.FromResult(false);
             }

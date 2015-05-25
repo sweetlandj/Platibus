@@ -52,7 +52,7 @@ namespace Platibus.SQL
                 {
                     connection.Close();
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Log.Warn("Error closing database connection", ex);
                 }
@@ -73,7 +73,7 @@ namespace Platibus.SQL
         {
             if (_disposed) return;
             Dispose(true);
-            GC.SuppressFinalize(true);
+            GC.SuppressFinalize(this);
             _disposed = true;
         }
 

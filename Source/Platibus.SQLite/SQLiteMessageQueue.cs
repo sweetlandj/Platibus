@@ -34,12 +34,13 @@ using Platibus.SQL;
 
 namespace Platibus.SQLite
 {
-    class SQLiteMessageQueue : SQLMessageQueue
+    internal class SQLiteMessageQueue : SQLMessageQueue
     {
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly ActionBlock<ISQLiteOperation> _operationQueue;
 
-        public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions))
+        public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, IQueueListener listener,
+            QueueOptions options = default(QueueOptions))
             : base(InitDb(baseDirectory, queueName), new SQLiteDialect(), queueName, listener, options)
         {
             _cancellationTokenSource = new CancellationTokenSource();
@@ -89,10 +90,12 @@ namespace Platibus.SQLite
             return op.Task;
         }
 
-        protected override Task UpdateQueuedMessage(SQLQueuedMessage queuedMessage, DateTime? acknowledged, DateTime? abandoned, int attempts)
+        protected override Task UpdateQueuedMessage(SQLQueuedMessage queuedMessage, DateTime? acknowledged,
+            DateTime? abandoned, int attempts)
         {
             CheckDisposed();
-            var op = new SQLiteOperation(() => base.UpdateQueuedMessage(queuedMessage, acknowledged, abandoned, attempts));
+            var op =
+                new SQLiteOperation(() => base.UpdateQueuedMessage(queuedMessage, acknowledged, abandoned, attempts));
             _operationQueue.Post(op);
             return op.Task;
         }

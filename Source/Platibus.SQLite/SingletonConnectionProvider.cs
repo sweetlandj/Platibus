@@ -29,7 +29,7 @@ using Platibus.SQL;
 
 namespace Platibus.SQLite
 {
-    class SingletonConnectionProvider : IDbConnectionProvider
+    internal class SingletonConnectionProvider : IDbConnectionProvider
     {
         private static readonly ILog Log = LogManager.GetLogger(SQLiteLoggingCategories.SQLite);
         private readonly object _syncRoot = new object();
@@ -106,7 +106,7 @@ namespace Platibus.SQLite
             if (_disposed) return;
             Dispose(true);
             _disposed = true;
-            GC.SuppressFinalize(true);
+            GC.SuppressFinalize(this);
         }
 
         protected virtual void Dispose(bool disposing)

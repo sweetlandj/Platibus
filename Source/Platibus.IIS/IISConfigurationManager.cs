@@ -15,7 +15,8 @@ namespace Platibus.IIS
         public static async Task<IISConfiguration> LoadConfiguration(string sectionName = "platibus.iis")
         {
             if (string.IsNullOrWhiteSpace(sectionName)) throw new ArgumentNullException("sectionName");
-            var configSection = (IISConfigurationSection)ConfigurationManager.GetSection(sectionName) ?? new IISConfigurationSection();
+            var configSection = (IISConfigurationSection) ConfigurationManager.GetSection(sectionName) ??
+                                new IISConfigurationSection();
 
             var configuration = await PlatibusConfigurationManager.LoadConfiguration<IISConfiguration>(sectionName);
             configuration.BaseUri = configSection.BaseUri;
@@ -26,7 +27,8 @@ namespace Platibus.IIS
             return configuration;
         }
 
-        public static Task<ISubscriptionTrackingService> InitSubscriptionTrackingService(SubscriptionTrackingElement config)
+        public static Task<ISubscriptionTrackingService> InitSubscriptionTrackingService(
+            SubscriptionTrackingElement config)
         {
             var providerName = config.Provider;
             ISubscriptionTrackingServiceProvider provider;

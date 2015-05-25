@@ -9,13 +9,13 @@ using Platibus.InMemory;
 
 namespace Platibus.UnitTests
 {
-    class HttpTransportServiceTests
+    internal class HttpTransportServiceTests
     {
         [Test]
         public async Task Given_Valid_Request_And_Remote_Server_Listening_When_Sending_Then_Remote_Accepts()
         {
             var messageReceivedEvent = new ManualResetEvent(false);
-            string content = null; 
+            string content = null;
 
             var serverBaseUri = new UriBuilder
             {
@@ -38,50 +38,6 @@ namespace Platibus.UnitTests
             });
 
             bool messageReceived;
-            using(var server = await HttpServer.Start(configuration))
-            {
-                var endpoint = serverBaseUri;
-                var message = new Message(new MessageHeaders
-                {
-                    {HeaderName.ContentType, "text/plain"},
-                    {HeaderName.MessageId, Guid.NewGuid().ToString()},
-                    {HeaderName.Destination, endpoint.ToString()}
-                }, "Hello, world!");
-
-                await server.TransportService
-                    .SendMessage(message)
-                    .ConfigureAwait(false);
-
-                messageReceived = await messageReceivedEvent
-                    .WaitOneAsync(TimeSpan.FromSeconds(3))
-                    .ConfigureAwait(false);                
-            }
-
-            // Sanity check.  We're really testing the transport to ensure
-            // that it doesn't throw.  But if it does throw, then it would
-            // be nice to get some info about how the server behaved.
-            Assert.That(messageReceived, Is.True);
-            Assert.That(content, Is.EqualTo("Hello, world!"));
-        }
-
-        [Test]
-        public async Task Given_Invalid_Resource_Type_When_Sending_Then_Remote_Responds_Invalid_Request()
-        {
-            var serverBaseUri = new UriBuilder
-            {
-                Scheme = "http",
-                Host = "localhost",
-                Port = 52180,
-                Path = "/platibus.test/"
-            }.Uri;
-
-            var configuration = new HttpServerConfiguration
-            {
-                BaseUri = serverBaseUri
-            };
-
-            var messageReceivedEvent = new ManualResetEvent(false);            
-            Exception exception = null;
             using (var server = await HttpServer.Start(configuration))
             {
                 var endpoint = serverBaseUri;
@@ -89,33 +45,22 @@ namespace Platibus.UnitTests
                 {
                     {HeaderName.ContentType, "text/plain"},
                     {HeaderName.MessageId, Guid.NewGuid().ToString()},
-                    {HeaderName.Destination, endpoint.ToString()}
+                    {HeaderName.Destination, endpoint.ToString()},
+                    {HeaderName.MessageName, typeof (string).FullName},
                 }, "Hello, world!");
 
-                try
-                {
-                    await server.TransportService
-                        .SendMessage(message)
-                        .ConfigureAwait(false);    
-                }
-                catch(AggregateException aex)
-                {
-                    exception = aex.InnerExceptions.FirstOrDefault();
-                }
-                catch(Exception ex)
-                {
-                    exception = ex;
-                }
-                await messageReceivedEvent
-                    .WaitOneAsync(TimeSpan.FromSeconds(3))
-                    .ConfigureAwait(false);
+                var transportService = await server.GetTransportService();
+                await transportService.SendMessage(message);
+
+                messageReceived = await messageReceivedEvent
+                    .WaitOneAsync(TimeSpan.FromSeconds(3));
             }
 
             // Sanity check.  We're really testing the transport to ensure
             // that it doesn't throw.  But if it does throw, then it would
             // be nice to get some info about how the server behaved.
-            Assert.That(exception, Is.Not.Null);
-            Assert.That(exception, Is.InstanceOf<InvalidRequestException>());
+            Assert.That(messageReceived, Is.True);
+            Assert.That(content, Is.EqualTo("Hello, world!"));
         }
 
         [Test]
@@ -141,15 +86,13 @@ namespace Platibus.UnitTests
             Exception exception = null;
             try
             {
-                await transportService
-                    .SendMessage(message)
-                    .ConfigureAwait(false);
+                await transportService.SendMessage(message);
             }
-            catch(AggregateException ae)
+            catch (AggregateException ae)
             {
                 exception = ae.InnerExceptions.FirstOrDefault();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 exception = ex;
             }
@@ -180,9 +123,7 @@ namespace Platibus.UnitTests
             Exception exception = null;
             try
             {
-                await transportService
-                    .SendMessage(message)
-                    .ConfigureAwait(false);
+                await transportService.SendMessage(message);
             }
             catch (AggregateException ae)
             {

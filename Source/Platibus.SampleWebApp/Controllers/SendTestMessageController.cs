@@ -1,19 +1,26 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using Platibus.IIS;
 using Platibus.SampleWebApp.Models;
 
 namespace Platibus.SampleWebApp.Controllers
 {
     public class SendTestMessageController : Controller
     {
+        private readonly IBusManager _busManager;
+
+        public SendTestMessageController()
+        {
+            _busManager = BusManager.GetInstance();
+        }
+
         public async Task<ActionResult> Index()
         {
-            var bus = await BusManager.GetInstance();
             return View(new SendTestMessage
             {
                 MessageId = MessageId.Generate(),
-                Destination = bus.BaseUri.ToString(),
+                Destination = "http://localhost:52180/platibus",
                 ContentType = "application/json"
             });
         }
@@ -34,7 +41,7 @@ namespace Platibus.SampleWebApp.Controllers
                     Text = sendTestMessage.MessageText
                 };
 
-                var bus = await BusManager.GetInstance();
+                var bus = await _busManager.GetBus();
                 var sentMessage = await bus.Send(message, sendOptions);
                 return View("Index", new SendTestMessage
                 {

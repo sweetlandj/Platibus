@@ -1,5 +1,4 @@
-﻿
-namespace Platibus.SQL
+﻿namespace Platibus.SQL
 {
     public interface ISQLDialect
     {

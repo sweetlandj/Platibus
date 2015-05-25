@@ -52,7 +52,7 @@ namespace Platibus.Serialization
         public T Deserialize<T>(string str)
         {
             if (string.IsNullOrWhiteSpace(str)) return default(T);
-            return (T) Deserialize(str, typeof(T));
+            return (T) Deserialize(str, typeof (T));
         }
     }
 }

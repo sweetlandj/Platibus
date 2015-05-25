@@ -5,7 +5,8 @@ using System.Net;
 
 namespace Platibus.Http
 {
-    public class AuthenticationSchemesElementCollection : ConfigurationElementCollection, IEnumerable<AuthenticationSchemes>
+    public class AuthenticationSchemesElementCollection : ConfigurationElementCollection,
+        IEnumerable<AuthenticationSchemeElement>
     {
         protected override ConfigurationElement CreateNewElement()
         {
@@ -17,18 +18,20 @@ namespace Platibus.Http
             return ((AuthenticationSchemeElement) element).Scheme;
         }
 
-        IEnumerator<AuthenticationSchemes> IEnumerable<AuthenticationSchemes>.GetEnumerator()
+        IEnumerator<AuthenticationSchemeElement> IEnumerable<AuthenticationSchemeElement>.GetEnumerator()
         {
-            return this.OfType<AuthenticationSchemes>().GetEnumerator();
+            return this.OfType<AuthenticationSchemeElement>().GetEnumerator();
         }
 
         public AuthenticationSchemes GetFlags()
         {
             if (Count == 0) return AuthenticationSchemes.Anonymous;
-            
-            var authSchemes = this as IEnumerable<AuthenticationSchemes>;
-            return authSchemes.Aggregate(default(AuthenticationSchemes), 
+
+            var authSchemes = this.Select(e => e.Scheme);
+            var flags = authSchemes.Aggregate(default(AuthenticationSchemes),
                 (current, scheme) => current | scheme);
+
+            return flags;
         }
     }
 }
