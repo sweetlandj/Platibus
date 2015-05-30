@@ -45,6 +45,7 @@ namespace Platibus.Filesystem
         private readonly int _maxAttempts;
         private readonly BufferBlock<MessageFile> _queuedMessages;
         private readonly TimeSpan _retryDelay;
+        private Task _processingTask;
 
         public FilesystemMessageQueue(DirectoryInfo directory, IQueueListener listener,
             QueueOptions options = default(QueueOptions))
@@ -72,32 +73,20 @@ namespace Platibus.Filesystem
             });
         }
 
-        public async Task Enqueue(Message message, IPrincipal senderPrincipal)
+        public async Task Enqueue(Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
 
-            var queuedMessage = await MessageFile.Create(_directory, message, senderPrincipal);
-            await _queuedMessages.SendAsync(queuedMessage);
+            var queuedMessage = await MessageFile.Create(_directory, message, senderPrincipal, cancellationToken);
+            await _queuedMessages.SendAsync(queuedMessage, cancellationToken);
             // TODO: handle accepted == false
         }
 
-        private async Task EnqueueExistingFiles()
-        {
-            var files = _directory.EnumerateFiles();
-            foreach (var file in files)
-            {
-                Log.DebugFormat("Enqueueing existing message from file {0}...", file);
-                var queuedMessage = new MessageFile(file);
-                await _queuedMessages.SendAsync(queuedMessage);
-            }
-        }
-
-        public async Task Init()
+        public async Task Init(CancellationToken cancellationToken = default(CancellationToken))
         {
             if (Interlocked.Exchange(ref _initialized, 1) == 0)
             {
                 _directory.Refresh();
-
                 var directoryAlreadyExisted = _directory.Exists;
                 if (!directoryAlreadyExisted)
                 {
@@ -105,18 +94,31 @@ namespace Platibus.Filesystem
                     _directory.Refresh();
                 }
 
+                _deadLetterDirectory.Refresh();
                 if (!_deadLetterDirectory.Exists)
                 {
                     _deadLetterDirectory.Create();
+                    _deadLetterDirectory.Refresh();
                 }
 
                 if (directoryAlreadyExisted)
                 {
-                    await EnqueueExistingFiles();
+                    await EnqueueExistingFiles(cancellationToken);
                 }
 
-                // ReSharper disable once UnusedVariable
-                var processingTask = ProcessQueuedMessages(_cancellationTokenSource.Token);
+                cancellationToken.ThrowIfCancellationRequested();
+                _processingTask = ProcessQueuedMessages(_cancellationTokenSource.Token);
+            }
+        }
+
+        private async Task EnqueueExistingFiles(CancellationToken cancellationToken)
+        {
+            var files = _directory.EnumerateFiles();
+            foreach (var file in files)
+            {
+                Log.DebugFormat("Enqueueing existing message from file {0}...", file);
+                var queuedMessage = new MessageFile(file);
+                await _queuedMessages.SendAsync(queuedMessage, cancellationToken);
             }
         }
 
@@ -186,7 +188,7 @@ namespace Platibus.Filesystem
                 {
                     Log.DebugFormat("Message acknowledged.  Deleting message file {0}...", queuedMessage.File);
                     // TODO: Implement journaling
-                    await queuedMessage.Delete();
+                    await queuedMessage.Delete(cancellationToken);
                     Log.DebugFormat("Message file {0} deleted successfully", queuedMessage.File);
                     return;
                 }
@@ -229,6 +231,7 @@ namespace Platibus.Filesystem
         protected virtual void Dispose(bool disposing)
         {
             _cancellationTokenSource.Cancel();
+            _processingTask.TryWait(TimeSpan.FromSeconds(30));
             if (disposing)
             {
                 _concurrentMessageProcessingSlot.Dispose();

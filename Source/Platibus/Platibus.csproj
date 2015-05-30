@@ -157,7 +157,6 @@
     <Compile Include="IQueueListener.cs" />
     <Compile Include="MessageHandlingListener.cs" />
     <Compile Include="Filesystem\MessageFileWriter.cs" />
-    <Compile Include="Filesystem\PathExtensions.cs" />
     <Compile Include="Filesystem\MessageFile.cs" />
     <Compile Include="Filesystem\FilesystemMessageQueue.cs" />
     <Compile Include="Filesystem\FilesystemMessageQueueingService.cs" />

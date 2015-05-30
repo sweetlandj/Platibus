@@ -21,13 +21,14 @@
 // THE SOFTWARE.
 
 using System.Security.Principal;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Platibus
 {
     public interface IMessageQueueingService
     {
-        Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions));
-        Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal);
+        Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions), CancellationToken cancellationToken = default(CancellationToken));
+        Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

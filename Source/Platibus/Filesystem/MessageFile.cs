@@ -51,8 +51,7 @@ namespace Platibus.Filesystem
             _file = file;
         }
 
-        public static async Task<MessageFile> Create(DirectoryInfo directory, Message message,
-            IPrincipal senderPrincipal)
+        public static async Task<MessageFile> Create(DirectoryInfo directory, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
         {
             FileInfo file;
             var counter = 0;
@@ -66,19 +65,32 @@ namespace Platibus.Filesystem
                 file = new FileInfo(filePath);
                 counter++;
             } while (file.Exists);
-            return await Create(message, senderPrincipal, file);
+
+            cancellationToken.ThrowIfCancellationRequested();
+            return await Create(message, senderPrincipal, file, cancellationToken);
         }
 
-        private static async Task<MessageFile> Create(Message message,
-            IPrincipal senderPrincipal, FileInfo file)
+        private static async Task<MessageFile> Create(Message message, IPrincipal senderPrincipal, FileInfo file, CancellationToken cancellationToken = default(CancellationToken))
         {
             Log.DebugFormat("Creating message file {0} for message ID {1}...", file, message.Headers.MessageId);
 
-            using (var fileStream = file.Open(FileMode.CreateNew, FileAccess.Write))
-            using (var messageWriter = new MessageFileWriter(fileStream))
+            cancellationToken.ThrowIfCancellationRequested();
+
+            string messageFileContent;
+            using (var stringWriter = new StringWriter())
+            using (var messageFileWriter = new MessageFileWriter(stringWriter))
             {
-                await messageWriter.WritePrincipal(senderPrincipal);
-                await messageWriter.WriteMessage(message);
+                await messageFileWriter.WritePrincipal(senderPrincipal);
+                await messageFileWriter.WriteMessage(message);
+                messageFileContent = stringWriter.ToString();
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            using (var fileStream = file.Open(FileMode.CreateNew, FileAccess.Write))
+            using (var fileWriter = new StreamWriter(fileStream))
+            {
+                await fileWriter.WriteAsync(messageFileContent);
             }
 
             Log.DebugFormat("Message file {0} created successfully", file, message.Headers.MessageId);
@@ -113,22 +125,36 @@ namespace Platibus.Filesystem
             await _fileAccess.WaitAsync(cancellationToken);
 
             Log.DebugFormat("Reading message file {0}...", _file);
-
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 // Check to see if another thread already read the file.  The principal
                 // *could* be null, the message is the only thing we can go by.
                 if (_message != null) return;
 
+                string messageFileContent;
                 using (var fileStream = _file.OpenRead())
-                using (var messageReader = new MessageFileReader(fileStream))
+                using (var fileReader = new StreamReader(fileStream))
+                {
+                    messageFileContent = await fileReader.ReadToEndAsync();
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                using (var stringReader = new StringReader(messageFileContent))
+                using (var messageFileReader = new MessageFileReader(stringReader))
                 {
                     // Read principal and then message (same order they are written)
-                    _principal = await messageReader.ReadPrincipal();
-                    _message = await messageReader.ReadMessage();
+                    _principal = await messageFileReader.ReadPrincipal();
+                    _message = await messageFileReader.ReadMessage();
                 }
 
                 Log.DebugFormat("Message file {0} read successfully", _file);
+            }
+            catch (TaskCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -157,14 +183,16 @@ namespace Platibus.Filesystem
             }
         }
 
-        public async Task Delete()
+        public async Task Delete(CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
-            await _fileAccess.WaitAsync();
+            await _fileAccess.WaitAsync(cancellationToken);
 
             Log.DebugFormat("Deleting message file {0}...", _file);
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 _file.Refresh();
                 if (_file.Exists)
                 {

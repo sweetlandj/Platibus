@@ -22,6 +22,7 @@
 
 using System.Collections.Concurrent;
 using System.Security.Principal;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Platibus.InMemory
@@ -31,8 +32,7 @@ namespace Platibus.InMemory
         private readonly ConcurrentDictionary<QueueName, InMemoryQueue> _queues =
             new ConcurrentDictionary<QueueName, InMemoryQueue>();
 
-        public Task CreateQueue(QueueName queueName, IQueueListener listener,
-            QueueOptions options = default(QueueOptions))
+        public Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions), CancellationToken cancellationToken = default(CancellationToken))
         {
             if (!_queues.TryAdd(queueName, new InMemoryQueue(listener, options)))
             {
@@ -41,7 +41,7 @@ namespace Platibus.InMemory
             return Task.FromResult(true);
         }
 
-        public Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal)
+        public Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
         {
             InMemoryQueue queue;
             if (!_queues.TryGetValue(queueName, out queue))

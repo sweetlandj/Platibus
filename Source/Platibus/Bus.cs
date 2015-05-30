@@ -92,9 +92,8 @@ namespace Platibus
                 var rules = ruleGroup.Value;
                 var handlers = rules.Select(r => r.MessageHandler);
 
-                await _messageQueueingService
-                    .CreateQueue(queueName,
-                        new MessageHandlingListener(this, _messageNamingService, _serializationService, handlers));
+                var queueListener = new MessageHandlingListener(this, _messageNamingService, _serializationService, handlers);
+                await _messageQueueingService.CreateQueue(queueName, queueListener);
             }
 
             var outboundQueueListener = new OutboundQueueListener(_transportService, _messageJournalingService, uri =>
@@ -229,7 +228,7 @@ namespace Platibus
             var message = BuildMessage(content, prototypicalHeaders, options);
             if (_messageJournalingService != null)
             {
-                await _messageJournalingService.MessagePublished(message);
+                await _messageJournalingService.MessagePublished(message, cancellationToken);
             }
 
             await _transportService.PublishMessage(message, topic, cancellationToken);
@@ -336,7 +335,7 @@ namespace Platibus
 
                 if (_messageJournalingService != null)
                 {
-                    await _messageJournalingService.MessageSent(message);
+                    await _messageJournalingService.MessageSent(message, cancellationToken);
                 }
             }
         }
@@ -494,7 +493,7 @@ namespace Platibus
 
                 if (_messageJournalingService != null)
                 {
-                    await _messageJournalingService.MessageSent(message);
+                    await _messageJournalingService.MessageSent(message, cancellationToken);
                 }
             }
         }

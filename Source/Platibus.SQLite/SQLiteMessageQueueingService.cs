@@ -24,6 +24,7 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Security.Principal;
+using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
 
@@ -60,8 +61,7 @@ namespace Platibus.SQLite
             }
         }
 
-        public async Task CreateQueue(QueueName queueName, IQueueListener listener,
-            QueueOptions options = default(QueueOptions))
+        public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions), CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
             var queue = new SQLiteMessageQueue(_baseDirectory, queueName, listener, options);
@@ -74,7 +74,7 @@ namespace Platibus.SQLite
             Log.DebugFormat("SQLite queue \"{0}\" created successfully", queueName);
         }
 
-        public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal)
+        public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
         {
             SQLiteMessageQueue queue;
             if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);

@@ -42,6 +42,7 @@ namespace Platibus
 
         public override string ToString()
         {
+            // ReSharper disable once ImpureMethodCallOnReadonlyValueField
             return _value.ToString();
         }
 
@@ -52,6 +53,7 @@ namespace Platibus
 
         public override int GetHashCode()
         {
+            // ReSharper disable once ImpureMethodCallOnReadonlyValueField
             return _value.GetHashCode();
         }
 
@@ -72,6 +74,7 @@ namespace Platibus
 
         public static implicit operator string(MessageId messageId)
         {
+            // ReSharper disable once ImpureMethodCallOnReadonlyValueField
             return messageId._value.ToString();
         }
 

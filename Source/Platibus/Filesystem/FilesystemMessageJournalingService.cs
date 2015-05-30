@@ -22,10 +22,15 @@
 
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Platibus.Filesystem
 {
+    /// <summary>
+    /// A message journaling service that stored journaled messages on the
+    /// filesystem.
+    /// </summary>
     public class FilesystemMessageJournalingService : IMessageJournalingService
     {
         private readonly DirectoryInfo _baseDirectory;
@@ -33,6 +38,19 @@ namespace Platibus.Filesystem
         private readonly DirectoryInfo _sentDirectory;
         private readonly DirectoryInfo _publishedDirectory;
 
+        /// <summary>
+        /// Creates a new <see cref="FilesystemMessageJournalingService"/> that
+        /// will store journaled messages in the specified <paramref name="baseDirectory"/>.
+        /// </summary>
+        /// <remarks>
+        /// Journaled messages will be organized in date-based subdirectories
+        /// underneath the <paramref name="baseDirectory"/>.  This is primarily
+        /// to avoid issues with large numbers of files in a single directory (which
+        /// causes problems for NTFS and Windows Explorer) but also provides a
+        /// straightforward means of archival and cleanup.
+        /// </remarks>
+        /// <param name="baseDirectory">The base directory underneath which journaled
+        /// messages will be stored.</param>
         public FilesystemMessageJournalingService(DirectoryInfo baseDirectory = null)
         {
             if (baseDirectory == null)
@@ -46,26 +64,38 @@ namespace Platibus.Filesystem
             _publishedDirectory = new DirectoryInfo(Path.Combine(_baseDirectory.FullName, "published"));
         }
 
+        /// <summary>
+        /// Initializes a newly created <see cref="FilesystemMessageJournalingService"/>
+        /// by creating any directories that do not yet exist.
+        /// </summary>
         public void Init()
         {
+            _baseDirectory.Refresh();
             if (!_baseDirectory.Exists)
             {
                 _baseDirectory.Create();
+                _baseDirectory.Refresh();
             }
 
+            _receivedDirectory.Refresh();
             if (!_receivedDirectory.Exists)
             {
                 _receivedDirectory.Create();
+                _receivedDirectory.Refresh();
             }
 
+            _sentDirectory.Refresh();
             if (!_sentDirectory.Exists)
             {
                 _sentDirectory.Create();
+                _sentDirectory.Refresh();
             }
 
+            _publishedDirectory.Refresh();
             if (!_publishedDirectory.Exists)
             {
                 _publishedDirectory.Create();
+                _publishedDirectory.Refresh();
             }
         }
 
@@ -83,43 +113,56 @@ namespace Platibus.Filesystem
             return new DirectoryInfo(path);
         }
 
-        public async Task MessageReceived(Message message)
+        public async Task MessageReceived(Message message, CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var receivedDate = message.Headers.Received;
             var directory = GetJournalDirectory(_receivedDirectory, receivedDate);
+            directory.Refresh();
             if (!directory.Exists)
             {
                 directory.Create();
+                directory.Refresh();
             }
-            await MessageFile.Create(directory, message, null);
+            await MessageFile.Create(directory, message, null, cancellationToken);
         }
 
-        public async Task MessageSent(Message message)
+        public async Task MessageSent(Message message, CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var sentDate = message.Headers.Sent;
             var directory = GetJournalDirectory(_sentDirectory, sentDate);
+            directory.Refresh();
             if (!directory.Exists)
             {
                 directory.Create();
+                directory.Refresh();
             }
-            await MessageFile.Create(directory, message, null);
+            await MessageFile.Create(directory, message, null, cancellationToken);
         }
 
-        public async Task MessagePublished(Message message)
+        public async Task MessagePublished(Message message, CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var publishedDate = message.Headers.Published;
             var topic = message.Headers.Topic;
             var topicDirectory = new DirectoryInfo(Path.Combine(_publishedDirectory.FullName, topic));
+
+            topicDirectory.Refresh();
             if (!topicDirectory.Exists)
             {
                 topicDirectory.Create();
+                topicDirectory.Refresh();
             }
+
             var directory = GetJournalDirectory(topicDirectory, publishedDate);
+            directory.Refresh();
             if (!directory.Exists)
             {
                 directory.Create();
+                directory.Refresh();
             }
-            await MessageFile.Create(directory, message, null);
+            await MessageFile.Create(directory, message, null, cancellationToken);
         }
     }
 }

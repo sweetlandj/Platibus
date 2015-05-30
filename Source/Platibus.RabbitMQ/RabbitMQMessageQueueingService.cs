@@ -24,6 +24,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Security.Principal;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
 using RabbitMQ.Client;
@@ -60,7 +61,7 @@ namespace Platibus.RabbitMQ
             }
         }
 
-        public Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = new QueueOptions())
+        public Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions), CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
             return Task.Run(() =>
@@ -78,7 +79,7 @@ namespace Platibus.RabbitMQ
             });
         }
 
-        public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal)
+        public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
             RabbitMQQueue queue;

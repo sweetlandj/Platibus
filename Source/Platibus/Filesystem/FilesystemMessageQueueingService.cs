@@ -24,6 +24,7 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Security.Principal;
+using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
 
@@ -48,8 +49,7 @@ namespace Platibus.Filesystem
             _baseDirectory = baseDirectory;
         }
 
-        public async Task CreateQueue(QueueName queueName, IQueueListener listener,
-            QueueOptions options = default(QueueOptions))
+        public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions), CancellationToken cancellationToken = default(CancellationToken))
         {
             var queueDirectory = new DirectoryInfo(Path.Combine(_baseDirectory.FullName, queueName));
             var queue = new FilesystemMessageQueue(queueDirectory, listener, options);
@@ -58,21 +58,21 @@ namespace Platibus.Filesystem
                 throw new QueueAlreadyExistsException(queueName);
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             Log.DebugFormat("Initializing filesystem queue named \"{0}\" in path \"{1}\"...", queueName, queueDirectory);
-            await queue.Init();
+            await queue.Init(cancellationToken);
             Log.DebugFormat("Filesystem queue \"{0}\" created successfully", queueName);
         }
 
-        public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal)
+        public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
         {
             FilesystemMessageQueue queue;
             if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
 
-            Log.DebugFormat("Enqueueing message ID {0} in filesystem queue \"{1}\"...", message.Headers.MessageId,
-                queueName);
-            await queue.Enqueue(message, senderPrincipal);
-            Log.DebugFormat("Message ID {0} enqueued successfully in filesystem queue \"{1}\"",
-                message.Headers.MessageId, queueName);
+            Log.DebugFormat("Enqueueing message ID {0} in filesystem queue \"{1}\"...", message.Headers.MessageId, queueName);
+            await queue.Enqueue(message, senderPrincipal, cancellationToken);
+            Log.DebugFormat("Message ID {0} enqueued successfully in filesystem queue \"{1}\"", message.Headers.MessageId, queueName);
         }
 
         public void Init()

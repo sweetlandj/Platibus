@@ -60,6 +60,7 @@ namespace Platibus
 
         public override string ToString()
         {
+            // ReSharper disable once ImpureMethodCallOnReadonlyValueField
             return _value.ToString("d");
         }
 
@@ -95,6 +96,7 @@ namespace Platibus
 
         public int CompareTo(MessageImportance other)
         {
+            // ReSharper disable once ImpureMethodCallOnReadonlyValueField
             return _value.CompareTo(other._value);
         }
     }

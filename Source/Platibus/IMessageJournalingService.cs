@@ -20,14 +20,45 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Platibus
 {
+    /// <summary>
+    /// An interface that describes and object that journals message activity
+    /// for diagnostics and troubleshooting purposes.
+    /// </summary>
     public interface IMessageJournalingService
     {
-        Task MessageReceived(Message message);
-        Task MessageSent(Message message);
-        Task MessagePublished(Message message);
+        /// <summary>
+        /// Journals a message received by the application
+        /// </summary>
+        /// <param name="message">The message that was received</param>
+        /// <param name="cancellationToken">A token used by the caller to
+        /// request cancelation of the journal operation</param>
+        /// <returns>Returns a task that will be completed when the 
+        /// received message has been successfully journaled</returns>
+        Task MessageReceived(Message message, CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <summary>
+        /// Journals a message that was sent by the application
+        /// </summary>
+        /// <param name="message">The message that was sent</param>
+        /// <param name="cancellationToken">A token used by the caller to
+        /// request cancelation of the journal operation</param>
+        /// <returns>Returns a task that will be completed when the 
+        /// sent message has been successfully journaled</returns>
+        Task MessageSent(Message message, CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <summary>
+        /// Journals a message that was published by the application
+        /// </summary>
+        /// <param name="message">The message that was published</param>
+        /// <param name="cancellationToken">A token used by the caller to
+        /// request cancelation of the journal operation</param>
+        /// <returns>Returns a task that will be completed when the 
+        /// sent message has been successfully journaled</returns>
+        Task MessagePublished(Message message, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Principal;
+using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
 
@@ -65,8 +66,7 @@ namespace Platibus.SQL
             }
         }
 
-        public async Task CreateQueue(QueueName queueName, IQueueListener listener,
-            QueueOptions options = default(QueueOptions))
+        public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions), CancellationToken cancellationToken = default(CancellationToken))
         {
             var queue = new SQLMessageQueue(_connectionProvider, _dialect, queueName, listener, options);
             if (!_queues.TryAdd(queueName, queue))
@@ -79,7 +79,7 @@ namespace Platibus.SQL
             Log.DebugFormat("SQL queue \"{0}\" created successfully", queueName);
         }
 
-        public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal)
+        public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
         {
             SQLMessageQueue queue;
             if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
