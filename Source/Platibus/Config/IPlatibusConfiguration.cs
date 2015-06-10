@@ -33,7 +33,7 @@ namespace Platibus.Config
         IMessageQueueingService MessageQueueingService { get; }
 
         IEnumerable<TopicName> Topics { get; }
-        IEnumerable<KeyValuePair<EndpointName, IEndpoint>> Endpoints { get; }
+        IEndpointCollection Endpoints { get; }
         IEnumerable<ISendRule> SendRules { get; }
         IEnumerable<IHandlingRule> HandlingRules { get; }
         IEnumerable<ISubscription> Subscriptions { get; }

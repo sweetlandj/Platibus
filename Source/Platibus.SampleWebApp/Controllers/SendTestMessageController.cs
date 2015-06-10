@@ -15,7 +15,7 @@ namespace Platibus.SampleWebApp.Controllers
             _busManager = BusManager.GetInstance();
         }
 
-        public async Task<ActionResult> Index()
+        public ActionResult Index()
         {
             return View(new SendTestMessage
             {
@@ -31,7 +31,6 @@ namespace Platibus.SampleWebApp.Controllers
             {
                 var sendOptions = new SendOptions
                 {
-                    UseDurableTransport = sendTestMessage.UseDurableTransport,
                     ContentType = sendTestMessage.ContentType,
                     Importance = sendTestMessage.Importance
                 };

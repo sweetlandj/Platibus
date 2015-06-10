@@ -33,19 +33,88 @@ using Common.Logging;
 
 namespace Platibus.Http
 {
-    public class HttpTransportService : ITransportService
+    public class HttpTransportService : ITransportService, IQueueListener
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Http);
 
         private readonly Uri _baseUri;
+        private readonly IEndpointCollection _endpoints;
+        private readonly IMessageQueueingService _messageQueueingService;
+        private readonly IMessageJournalingService _messageJournalingService;
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
+        private readonly QueueName _outboundQueueName;
 
-        public HttpTransportService(Uri baseUri, ISubscriptionTrackingService subscriptionTrackingService)
+        public HttpTransportService(Uri baseUri, IEndpointCollection endpoints, IMessageQueueingService messageQueueingService, IMessageJournalingService messageJournalingService, ISubscriptionTrackingService subscriptionTrackingService)
         {
             if (baseUri == null) throw new ArgumentNullException("baseUri");
+            if (messageQueueingService == null) throw new ArgumentNullException("messageQueueingService");
             if (subscriptionTrackingService == null) throw new ArgumentNullException("subscriptionTrackingService");
+
             _baseUri = baseUri;
+            _endpoints = endpoints == null
+                ? ReadOnlyEndpointCollection.Empty
+                : new ReadOnlyEndpointCollection(endpoints);
+
+            _messageQueueingService = messageQueueingService;
+            _messageJournalingService = messageJournalingService;
             _subscriptionTrackingService = subscriptionTrackingService;
+            _outboundQueueName = "Outbound";
+        }
+
+        public async Task Init(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            await _messageQueueingService.CreateQueue(_outboundQueueName, this, cancellationToken: cancellationToken);
+        }
+
+        public async Task MessageReceived(Message message, IQueuedMessageContext context,
+            CancellationToken cancellationToken = new CancellationToken())
+        {
+            IEndpoint endpoint;
+            IEndpointCredentials credentials = null;
+            if (_endpoints.TryGetEndpointByUri(message.Headers.Destination, out endpoint))
+            {
+                credentials = endpoint.Credentials;
+            }
+            cancellationToken.ThrowIfCancellationRequested();
+            await TransportMessage(message, credentials, cancellationToken);
+            await context.Acknowledge();
+        }
+
+        
+
+        public async Task SendMessage(Message message, IEndpointCredentials credentials = null,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            if (message == null) throw new ArgumentNullException("message");
+            if (message.Headers.Destination == null) throw new ArgumentException("Message has no destination");
+
+            if (message.Headers.Importance == MessageImportance.Critical)
+            {
+                await _messageQueueingService.EnqueueMessage(_outboundQueueName, message, null, cancellationToken);
+                return;
+            }
+
+            await TransportMessage(message, credentials, cancellationToken);
+        }
+
+        public async Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken)
+        {
+            var subscribers = await _subscriptionTrackingService.GetSubscribers(topicName, cancellationToken);
+            var transportTasks = new List<Task>();
+
+            // ReSharper disable once LoopCanBeConvertedToQuery
+            foreach (var subscriber in subscribers)
+            {
+                var perEndpointHeaders = new MessageHeaders(message.Headers)
+                {
+                    Destination = subscriber
+                };
+
+                var addressedMessage = new Message(perEndpointHeaders, message.Content);
+                transportTasks.Add(TransportMessage(addressedMessage, null, cancellationToken));
+            }
+
+            await Task.WhenAll(transportTasks);
         }
 
         private static HttpClient GetClient(Uri uri, IEndpointCredentials credentials)
@@ -69,11 +138,9 @@ namespace Platibus.Http
             return httpClient;
         }
 
-        public async Task SendMessage(Message message, IEndpointCredentials credentials = null,
+        private async Task TransportMessage(Message message, IEndpointCredentials credentials,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (message == null) throw new ArgumentNullException("message");
-            if (message.Headers.Destination == null) throw new ArgumentException("Message has no destination");
             try
             {
                 var httpContent = new StringContent(message.Content);
@@ -88,6 +155,11 @@ namespace Platibus.Http
                 var httpResponseMessage = await httpClient.PostAsync(relativeUri, httpContent, cancellationToken);
 
                 HandleHttpErrorResponse(httpResponseMessage);
+
+                if (_messageJournalingService != null)
+                {
+                    await _messageJournalingService.MessageSent(message, cancellationToken);
+                }
             }
             catch (TransportException)
             {
@@ -114,26 +186,6 @@ namespace Platibus.Http
 
                 throw new TransportException(errorMessage, ex);
             }
-        }
-
-        public async Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken)
-        {
-            var subscribers = await _subscriptionTrackingService.GetSubscribers(topicName, cancellationToken);
-            var transportTasks = new List<Task>();
-
-            // ReSharper disable once LoopCanBeConvertedToQuery
-            foreach (var subscriber in subscribers)
-            {
-                var perEndpointHeaders = new MessageHeaders(message.Headers)
-                {
-                    Destination = subscriber
-                };
-
-                var addressedMessage = new Message(perEndpointHeaders, message.Content);
-                transportTasks.Add(SendMessage(addressedMessage, null, cancellationToken));
-            }
-
-            await Task.WhenAll(transportTasks);
         }
 
         // ReSharper disable once UnusedMethodReturnValue.Local
@@ -216,7 +268,7 @@ namespace Platibus.Http
             }
         }
 
-        public async Task SendSubscriptionRequest(Uri publisherUri, IEndpointCredentials credentials, TopicName topic,
+        private async Task SendSubscriptionRequest(Uri publisherUri, IEndpointCredentials credentials, TopicName topic,
             TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (publisherUri == null) throw new ArgumentNullException("publisherUri");
@@ -285,33 +337,39 @@ namespace Platibus.Http
 
         private static void HandleCommunicationException(Exception ex, Uri uri)
         {
-            var hre = ex as HttpRequestException;
-            if (hre != null && hre.InnerException != null)
+            var handled = false;
+            while (!handled)
             {
-                HandleCommunicationException(hre.InnerException, uri);
-                return;
-            }
-
-            var we = ex as WebException;
-            if (we != null)
-            {
-                switch (we.Status)
+                var hre = ex as HttpRequestException;
+                if (hre != null && hre.InnerException != null)
                 {
-                    case WebExceptionStatus.NameResolutionFailure:
-                        throw new NameResolutionFailedException(uri.Host);
-                    case WebExceptionStatus.ConnectFailure:
-                        throw new ConnectionRefusedException(uri.Host, uri.Port, ex.InnerException ?? ex);
+                    ex = hre.InnerException;
+                    continue;
                 }
-            }
 
-            var se = ex as SocketException;
-            if (se != null)
-            {
-                switch (se.SocketErrorCode)
+                var we = ex as WebException;
+                if (we != null)
                 {
-                    case SocketError.ConnectionRefused:
-                        throw new ConnectionRefusedException(uri.Host, uri.Port, ex.InnerException ?? ex);
+                    switch (we.Status)
+                    {
+                        case WebExceptionStatus.NameResolutionFailure:
+                            throw new NameResolutionFailedException(uri.Host);
+                        case WebExceptionStatus.ConnectFailure:
+                            throw new ConnectionRefusedException(uri.Host, uri.Port, ex.InnerException ?? ex);
+                    }
                 }
+
+                var se = ex as SocketException;
+                if (se != null)
+                {
+                    switch (se.SocketErrorCode)
+                    {
+                        case SocketError.ConnectionRefused:
+                            throw new ConnectionRefusedException(uri.Host, uri.Port, ex.InnerException ?? ex);
+                    }
+                }
+
+                handled = true;
             }
         }
 

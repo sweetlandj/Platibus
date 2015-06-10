@@ -38,7 +38,7 @@ namespace Platibus.Config
     /// </remarks>
     public class PlatibusConfiguration : IPlatibusConfiguration
     {
-        private readonly IDictionary<EndpointName, IEndpoint> _endpoints = new Dictionary<EndpointName, IEndpoint>();
+        private readonly EndpointCollection _endpoints = new EndpointCollection();
         private readonly IList<IHandlingRule> _handlingRules = new List<IHandlingRule>();
         private readonly IList<ISendRule> _sendRules = new List<ISendRule>();
         private readonly IList<ISubscription> _subscriptions = new List<ISubscription>();
@@ -49,7 +49,7 @@ namespace Platibus.Config
         public IMessageJournalingService MessageJournalingService { get; set; }
         public IMessageQueueingService MessageQueueingService { get; set; }
 
-        public IEnumerable<KeyValuePair<EndpointName, IEndpoint>> Endpoints
+        public IEndpointCollection Endpoints
         {
             get { return _endpoints; }
         }
@@ -85,8 +85,7 @@ namespace Platibus.Config
         {
             if (name == null) throw new ArgumentNullException("name");
             if (endpoint == null) throw new ArgumentNullException("endpoint");
-            if (_endpoints.ContainsKey(name)) throw new EndpointAlreadyExistsException(name);
-            _endpoints[name] = endpoint;
+            _endpoints.Add(name, endpoint);
         }
 
         public void AddTopic(TopicName topic)
@@ -119,12 +118,7 @@ namespace Platibus.Config
         public IEndpoint GetEndpoint(EndpointName endpointName)
         {
             if (endpointName == null) throw new ArgumentNullException("endpointName");
-            IEndpoint endpoint;
-            if (!_endpoints.TryGetValue(endpointName, out endpoint) || endpoint == null)
-            {
-                throw new EndpointNotFoundException(endpointName);
-            }
-            return endpoint;
+            return _endpoints[endpointName];
         }
     }
 }

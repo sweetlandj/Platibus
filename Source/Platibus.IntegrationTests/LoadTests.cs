@@ -76,12 +76,16 @@ namespace Platibus.IntegrationTests
             Assert.That(elapsed, Is.LessThan(TimeSpan.FromSeconds(20)));
         }
 
-        private async Task<TimeSpan> RunTest(int messageCount, bool durable = false)
+        private static async Task<TimeSpan> RunTest(int messageCount, bool durable = false)
         {
             return await With.HttpHostedBusInstances(async (platibus0, platibus1) =>
             {
                 var sw = Stopwatch.StartNew();
-                var sendOptions = new SendOptions {UseDurableTransport = durable};
+                var sendOptions = new SendOptions
+                {
+                    Importance = durable ? MessageImportance.Critical : MessageImportance.Low
+                };
+
                 var repliesReceieved = Enumerable.Range(0, messageCount)
                     .Select(async i =>
                     {

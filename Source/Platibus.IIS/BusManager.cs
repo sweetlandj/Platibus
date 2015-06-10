@@ -18,6 +18,8 @@ namespace Platibus.IIS
         private IIISConfiguration _configuration;
         private Uri _baseUri;
         private ISubscriptionTrackingService _subscriptionTrackingService;
+        private IMessageQueueingService _messageQueueingService;
+        private IMessageJournalingService _messageJournalingService;
         private HttpTransportService _transportService;
         private Bus _bus;
         private IHttpResourceRouter _resourceRouter;
@@ -45,8 +47,12 @@ namespace Platibus.IIS
             _configuration = await IISConfigurationManager.LoadConfiguration();
             _baseUri = _configuration.BaseUri;
             _subscriptionTrackingService = _configuration.SubscriptionTrackingService;
-            _transportService = new HttpTransportService(_baseUri, _subscriptionTrackingService);
+            _messageQueueingService = _configuration.MessageQueueingService;
+            _messageJournalingService = _configuration.MessageJournalingService;
+            var endpoints = _configuration.Endpoints;
+            _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, _messageJournalingService, _subscriptionTrackingService);
             _bus = new Bus(_configuration, _baseUri, _transportService);
+            await _transportService.Init(cancellationToken);
             await _bus.Init(cancellationToken);
             _resourceRouter = new ResourceTypeDictionaryRouter
             {
@@ -73,6 +79,9 @@ namespace Platibus.IIS
             if (disposing)
             {
                 _bus.TryDispose();
+                _transportService.TryDispose();
+                _messageQueueingService.TryDispose();
+                _messageJournalingService.TryDispose();
                 _subscriptionTrackingService.TryDispose();
             }
         }

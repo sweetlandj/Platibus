@@ -58,8 +58,6 @@ namespace Platibus.SampleWebApp.Models
 
         public string MessageText { get; set; }
 
-        public bool UseDurableTransport { get; set; }
-
         public bool ErrorsOccurred { get; set; }
         public string ErrorMessage { get; set; }
 

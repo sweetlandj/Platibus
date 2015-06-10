@@ -76,6 +76,7 @@
     </Compile>
     <Compile Include="Config\ClientCredentialType.cs" />
     <Compile Include="Config\Extensibility\ProviderHelper.cs" />
+    <Compile Include="EndpointCollection.cs" />
     <Compile Include="Http\AuthenticationSchemeElement.cs" />
     <Compile Include="Http\AuthenticationSchemesElementCollection.cs" />
     <Compile Include="Http\HttpServerConfigurationManager.cs" />
@@ -83,12 +84,15 @@
     <Compile Include="Http\HttpServerConfiguration.cs" />
     <Compile Include="Http\HttpServerConfigurationSection.cs" />
     <Compile Include="Http\HttpExceptionHandler.cs" />
+    <Compile Include="Http\OutboundQueueListener.cs" />
+    <Compile Include="IEndpointCollection.cs" />
     <Compile Include="LoopbackHost.cs" />
     <Compile Include="MessageImportance.cs" />
     <Compile Include="Http\HttpEndpointCredentialsVisitor.cs" />
     <Compile Include="InMemory\InMemoryServicesProvider.cs" />
     <Compile Include="MessageHandler.cs" />
     <Compile Include="MessageNotAcknowledgedException.cs" />
+    <Compile Include="ReadOnlyEndpointCollection.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="ObservableExtensions.cs" />
     <Compile Include="Security\BasicAuthCredentials.cs" />

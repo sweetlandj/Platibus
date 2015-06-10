@@ -59,16 +59,21 @@
     <Compile Include="..\Copyright.cs">
       <Link>Properties\Copyright.cs</Link>
     </Compile>
+    <Compile Include="IRabbitMQHostConfiguration.cs" />
     <Compile Include="MessageFormatException.cs" />
     <Compile Include="MessageReader.cs" />
     <Compile Include="MessageWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RabbitMQHelper.cs" />
+    <Compile Include="RabbitMQHostConfiguration.cs" />
+    <Compile Include="RabbitMQHostConfigurationManager.cs" />
+    <Compile Include="RabbitMQHostConfigurationSection.cs" />
     <Compile Include="RabbitMQLoggingCategories.cs" />
     <Compile Include="RabbitMQMessageQueueingService.cs" />
     <Compile Include="RabbitMQQueue.cs" />
     <Compile Include="RabbitMQQueuedMessageContext.cs" />
     <Compile Include="RabbitMQServicesProvider.cs" />
+    <Compile Include="RabbitMQHost.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

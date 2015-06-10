@@ -52,7 +52,7 @@ namespace Platibus.IntegrationTests
                 {
                     await platibus0.Send(message, new SendOptions
                     {
-                        UseDurableTransport = false
+                        Importance = MessageImportance.Low
                     });
                 }
                 catch (Exception ex)
@@ -84,7 +84,7 @@ namespace Platibus.IntegrationTests
                 {
                     await platibus0.Send(message, new SendOptions
                     {
-                        UseDurableTransport = false
+                        Importance = MessageImportance.Low
                     });
                 }
                 catch (Exception ex)

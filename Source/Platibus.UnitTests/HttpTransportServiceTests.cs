@@ -74,7 +74,7 @@ namespace Platibus.UnitTests
                 Path = "/platibus.test/"
             }.Uri;
 
-            var transportService = new HttpTransportService(endpoint, new InMemorySubscriptionTrackingService());
+            var transportService = new HttpTransportService(endpoint, ReadOnlyEndpointCollection.Empty, new InMemoryMessageQueueingService(), null, new InMemorySubscriptionTrackingService());
 
             var message = new Message(new MessageHeaders
             {
@@ -111,7 +111,7 @@ namespace Platibus.UnitTests
                 Path = "/platibus.test/"
             }.Uri;
 
-            var transportService = new HttpTransportService(endpoint, new InMemorySubscriptionTrackingService());
+            var transportService = new HttpTransportService(endpoint, ReadOnlyEndpointCollection.Empty, new InMemoryMessageQueueingService(), null, new InMemorySubscriptionTrackingService());
 
             var message = new Message(new MessageHeaders
             {

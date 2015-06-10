@@ -31,7 +31,6 @@ namespace Platibus
         public DateTime Expiration { get; set; }
         public uint Retries { get; set; }
         public TimeSpan RetryInterval { get; set; }
-        public bool UseDurableTransport { get; set; }
         public MessageImportance Importance { get; set; }
     }
 }

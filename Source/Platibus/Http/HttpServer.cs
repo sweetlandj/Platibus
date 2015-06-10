@@ -72,7 +72,9 @@ namespace Platibus.Http
         private bool _disposed;
         private readonly Uri _baseUri;
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
-        private readonly ITransportService _transportService;
+        private readonly IMessageQueueingService _messageQueueingService;
+        private readonly IMessageJournalingService _messageJournalingService;
+        private readonly HttpTransportService _transportService;
         private readonly Bus _bus;
         private readonly IHttpResourceRouter _resourceRouter;
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
@@ -87,7 +89,7 @@ namespace Platibus.Http
 
         public Task<ITransportService> GetTransportService()
         {
-            return Task.FromResult(_transportService);
+            return Task.FromResult<ITransportService>(_transportService);
         }
 
         public IBus Bus
@@ -99,7 +101,10 @@ namespace Platibus.Http
         {
             _baseUri = configuration.BaseUri;
             _subscriptionTrackingService = configuration.SubscriptionTrackingService;
-            _transportService = new HttpTransportService(_baseUri, _subscriptionTrackingService);
+            _messageQueueingService = configuration.MessageQueueingService;
+            _messageJournalingService = configuration.MessageJournalingService;
+            var endpoints = configuration.Endpoints;
+            _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, _messageJournalingService, _subscriptionTrackingService);
             _bus = new Bus(configuration, _baseUri, _transportService);
 
             _resourceRouter = new ResourceTypeDictionaryRouter
@@ -130,8 +135,9 @@ namespace Platibus.Http
         {
             if (_httpListener.IsListening) return;
 
+            await _transportService.Init(cancellationToken);
             await _bus.Init(cancellationToken);
-
+            
             Log.InfoFormat("Starting HTTP server listening on {0}...", _baseUri);
             _httpListener.Start();
             Log.InfoFormat("HTTP started successfully");
@@ -203,12 +209,17 @@ namespace Platibus.Http
         {
             if (_disposed) return;
 
-            _cancellationTokenSource.Cancel();
-            _bus.TryDispose();
-            _subscriptionTrackingService.TryDispose();
-
             Log.Info("Stopping HTTP server...");
             _httpListener.Stop();
+
+            _cancellationTokenSource.Cancel();
+
+            _bus.TryDispose();
+            _transportService.TryDispose();
+            _messageQueueingService.TryDispose();
+            _messageJournalingService.TryDispose();
+            _subscriptionTrackingService.TryDispose();
+
             try
             {
                 _httpListener.Close();
