@@ -29,4 +29,9 @@ namespace Platibus
     {
         Task HandleMessage(object message, IMessageContext messageContext, CancellationToken cancellationToken);
     }
+
+    public interface IMessageHandler<in TMessage>
+    {
+        Task HandleMessage(TMessage message, IMessageContext messageContext, CancellationToken cancellationToken);
+    }
 }

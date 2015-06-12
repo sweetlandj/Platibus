@@ -42,6 +42,21 @@ namespace Platibus
             : base(handleMessage)
         {
         }
+
+        public static DelegateMessageHandler<T> For<T>(Func<T, IMessageContext, Task> handleMessage)
+        {
+            return new DelegateMessageHandler<T>(handleMessage);
+        }
+
+        public static DelegateMessageHandler<T> For<T>(Func<T, IMessageContext, CancellationToken, Task> handleMessage)
+        {
+            return new DelegateMessageHandler<T>(handleMessage);
+        }
+
+        public static DelegateMessageHandler<T> For<T>(Action<T, IMessageContext> handleMessage)
+        {
+            return new DelegateMessageHandler<T>(handleMessage);
+        }
     }
 
     public class DelegateMessageHandler<TContent> : IMessageHandler
@@ -70,21 +85,6 @@ namespace Platibus
             CancellationToken cancellationToken)
         {
             return _handleMessage((TContent) message, messageContext, cancellationToken);
-        }
-
-        public static DelegateMessageHandler<T> For<T>(Func<T, IMessageContext, Task> handleMessage)
-        {
-            return new DelegateMessageHandler<T>(handleMessage);
-        }
-
-        public static DelegateMessageHandler<T> For<T>(Func<T, IMessageContext, CancellationToken, Task> handleMessage)
-        {
-            return new DelegateMessageHandler<T>(handleMessage);
-        }
-
-        public static DelegateMessageHandler<T> For<T>(Action<T, IMessageContext> handleMessage)
-        {
-            return new DelegateMessageHandler<T>(handleMessage);
         }
     }
 }

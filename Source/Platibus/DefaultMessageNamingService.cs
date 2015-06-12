@@ -21,16 +21,14 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
-using System.Runtime.Caching;
 
 namespace Platibus
 {
-    public class DefaultMessageNamingService : IMessageNamingService, IDisposable
+    public class DefaultMessageNamingService : IMessageNamingService
     {
-        private readonly MemoryCache _nameTypeCache = new MemoryCache("DefaultMessageNamingService");
-
-        private bool _disposed;
+        private readonly ConcurrentDictionary<MessageName, Type> _messageTypesByName = new ConcurrentDictionary<MessageName, Type>();
 
         public MessageName GetNameForType(Type messageType)
         {
@@ -39,40 +37,15 @@ namespace Platibus
 
         public Type GetTypeForName(MessageName messageName)
         {
-            Type type = null;
-            if (messageName != null)
-            {
-                type = _nameTypeCache.Get(messageName) as Type;
-            }
-
-            if (type == null && messageName != null)
-            {
-                type = Type.GetType(messageName) ?? AppDomain.CurrentDomain
-                    .GetAssemblies()
-                    .Select(assembly => assembly.GetType(messageName))
-                    .FirstOrDefault(t => t != null);
-
-                if (type != null)
-                {
-                    _nameTypeCache[messageName] = type;
-                }
-            }
-            return type;
+            return _messageTypesByName.GetOrAdd(messageName, name => FindTypeByName(name));
         }
 
-        public void Dispose()
+        private static Type FindTypeByName(string typeName)
         {
-            if (_disposed) return;
-            Dispose(true);
-            _disposed = true;
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                _nameTypeCache.Dispose();
-            }
+            return Type.GetType(typeName) ?? AppDomain.CurrentDomain
+                .GetAssemblies()
+                .Select(assembly => assembly.GetType(typeName))
+                .FirstOrDefault(t => t != null);
         }
     }
 }

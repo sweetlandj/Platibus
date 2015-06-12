@@ -35,6 +35,13 @@ namespace Platibus.Config
             configuration.AddHandlingRule(specification, messageHandler, queueName);
         }
 
+        public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration, string namePattern,
+            IMessageHandler<TContent> messageHandler, QueueName queueName = null)
+        {
+            var specification = new MessageNamePatternSpecification(namePattern);
+            configuration.AddHandlingRule(specification, GenericMessageHandlerAdapter.For(messageHandler), queueName);
+        }
+
         public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration,
             IMessageSpecification specification,
             Func<TContent, IMessageContext, Task> handleContent, QueueName queueName = null)

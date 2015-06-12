@@ -31,7 +31,7 @@ namespace Platibus.Serialization
     {
         private readonly IDictionary<string, ISerializer> _serializers = new Dictionary<string, ISerializer>();
 
-        public DefaultSerializationService()
+        public DefaultSerializationService(bool useDataContractSerializer = false)
         {
             var applicationJson = NormalizeContentType("application/json");
             var defaultJsonSerializer = new NewtonsoftJsonSerializer();
@@ -39,7 +39,10 @@ namespace Platibus.Serialization
 
             var applicationXml = NormalizeContentType("application/xml");
             var textXml = NormalizeContentType("text/xml");
-            var defaultXmlSerializer = new XmlSerializerAdapter();
+            var defaultXmlSerializer = useDataContractSerializer 
+                ? new DataContractSerializerAdapter()
+                : new XmlSerializerAdapter() as ISerializer;
+
             _serializers[applicationXml] = defaultXmlSerializer;
             _serializers[textXml] = defaultXmlSerializer;
 
