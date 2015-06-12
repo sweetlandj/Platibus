@@ -40,6 +40,7 @@ namespace Platibus.RabbitMQ
 
         private readonly Encoding _encoding;
         private readonly IConnectionFactory _connectionFactory;
+
         private IConnection _connection;
         private bool _disposed;
 
@@ -57,26 +58,40 @@ namespace Platibus.RabbitMQ
         {
             if (_connection == null)
             {
-                _connection = _connectionFactory.CreateConnection();
+                _connection = OpenConnection();
+            }
+        }
+
+        private IConnection OpenConnection()
+        {
+            var connection = _connectionFactory.CreateConnection();
+            connection.ConnectionShutdown += (sender, args) => Reconnect();
+            return connection;
+        }
+
+        private void Reconnect()
+        {
+            _connection = OpenConnection();
+            foreach (var queue in _queues)
+            {
+                _queues[queue.Key] = queue.Value.Reconnect(_connection);
             }
         }
 
         public Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions), CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
-            return Task.Run(() =>
+            var queue = new RabbitMQQueue(queueName, listener, _connection, _encoding, options);
+            if (!_queues.TryAdd(queueName, queue))
             {
-                var queue = new RabbitMQQueue(queueName, listener, _connection, _encoding, options);
-                if (!_queues.TryAdd(queueName, queue))
-                {
-                    throw new QueueAlreadyExistsException(queueName);
-                }
+                throw new QueueAlreadyExistsException(queueName);
+            }
 
-                Log.DebugFormat("Initializing RabbitMQ queue \"{0}\"", queueName);
-                queue.Init();
-                Log.DebugFormat("RabbitMQ queue \"{0}\" created successfully", queueName);
-                return Task.FromResult(true);
-            });
+            Log.DebugFormat("Initializing RabbitMQ queue \"{0}\"", queueName);
+            queue.Init();
+            Log.DebugFormat("RabbitMQ queue \"{0}\" created successfully", queueName);
+
+            return Task.FromResult(true);
         }
 
         public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
@@ -85,11 +100,11 @@ namespace Platibus.RabbitMQ
             RabbitMQQueue queue;
             if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
 
-            Log.DebugFormat("Enqueueing message ID {0} in RabbitMQ queue \"{1}\"...", message.Headers.MessageId,
-                queueName);
+            Log.DebugFormat("Enqueueing message ID {0} in RabbitMQ queue \"{1}\"...", message.Headers.MessageId, queueName);
+
             await queue.Enqueue(message, senderPrincipal);
-            Log.DebugFormat("Message ID {0} enqueued successfully in RabbitMQ queue \"{1}\"", message.Headers.MessageId,
-                queueName);
+            
+            Log.DebugFormat("Message ID {0} enqueued successfully in RabbitMQ queue \"{1}\"", message.Headers.MessageId, queueName);
         }
 
         public void DeleteQueue(QueueName queueName)

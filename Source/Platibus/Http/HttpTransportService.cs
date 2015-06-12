@@ -80,8 +80,6 @@ namespace Platibus.Http
             await context.Acknowledge();
         }
 
-        
-
         public async Task SendMessage(Message message, IEndpointCredentials credentials = null,
             CancellationToken cancellationToken = default(CancellationToken))
         {

@@ -74,6 +74,23 @@ namespace Platibus.RabbitMQ
             _cancellationTokenSource = new CancellationTokenSource();
         }
 
+        public RabbitMQQueue Reconnect(IConnection newConnection)
+        {
+            Dispose();
+
+            var newQueue = new RabbitMQQueue(_queueName, _listener, newConnection, _encoding,
+                new QueueOptions
+                {
+                    AutoAcknowledge = _autoAcknowledge,
+                    ConcurrencyLimit = _concurrencyLimit,
+                    MaxAttempts = _maxAttempts,
+                    RetryDelay = _retryDelay
+                });
+
+            newQueue.Init();
+            return newQueue;
+        }
+
         public void Init()
         {
             using (var channel = _connection.CreateModel())
@@ -125,20 +142,25 @@ namespace Platibus.RabbitMQ
         {
             Task.Run(() =>
             {
-                using (var channel = _connection.CreateModel())
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    channel.BasicQos(0, 1, false);
-                    Log.DebugFormat("RabbitMQ channel number \"{0}\" initialized", channel.ChannelNumber);
-
-                    var consumer = new QueueingBasicConsumer(channel);
-                    channel.BasicConsume(_queueName, _autoAcknowledge, consumerTag, consumer);
-
-                    while (!cancellationToken.IsCancellationRequested)
+                    using (var channel = _connection.CreateModel())
                     {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        var delivery = consumer.Queue.Dequeue();
-                        HandleDelivery(channel, delivery, cancellationToken);
-                    }
+                        var channelOk = true;
+                        channel.ModelShutdown += (sender, args) => channelOk = false;
+
+                        channel.BasicQos(0, 1, false);
+                        Log.DebugFormat("RabbitMQ channel number \"{0}\" initialized", channel.ChannelNumber);
+
+                        var consumer = new QueueingBasicConsumer(channel);
+                        channel.BasicConsume(_queueName, _autoAcknowledge, consumerTag, consumer);
+
+                        while (!cancellationToken.IsCancellationRequested && channelOk)
+                        {
+                            var delivery = consumer.Queue.Dequeue();
+                            HandleDelivery(channel, delivery, cancellationToken);
+                        }
+                    }    
                 }
             }, cancellationToken);
         }
@@ -148,8 +170,9 @@ namespace Platibus.RabbitMQ
             try
             {
                 // Put on the thread pool to avoid deadlock
-                var acknowleged =
-                    Task.Run(() => DispatchToListener(delivery, cancellationToken), cancellationToken).Result;
+                var acknowleged = Task.Run(() => DispatchToListener(delivery, cancellationToken),
+                    cancellationToken).Result;
+
                 if (acknowleged)
                 {
                     Log.DebugFormat(
