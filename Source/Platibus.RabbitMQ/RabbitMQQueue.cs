@@ -25,6 +25,7 @@ namespace Platibus.RabbitMQ
         private readonly IQueueListener _listener;
         private readonly Encoding _encoding;
 
+        private readonly TimeSpan _ttl;
         private readonly int _maxAttempts;
         private readonly TimeSpan _retryDelay;
         private readonly CancellationTokenSource _cancellationTokenSource;
@@ -49,6 +50,7 @@ namespace Platibus.RabbitMQ
             _listener = listener;
             _connection = connection;
             _encoding = encoding ?? Encoding.UTF8;
+            _ttl = options.TTL;
             _maxAttempts = Math.Max(options.MaxAttempts, 1);
             _retryDelay = options.RetryDelay < TimeSpan.Zero ? TimeSpan.Zero : options.RetryDelay;
             _cancellationTokenSource = new CancellationTokenSource();
@@ -72,6 +74,11 @@ namespace Platibus.RabbitMQ
                 {
                     {"x-dead-letter-exchange", _deadLetterExchange},
                 };
+
+                if (_ttl > TimeSpan.Zero)
+                {
+                    queueArgs["x-expires"] = _ttl;
+                }
 
                 channel.ExchangeDeclare(_queueExchange, "direct", true, false, null);
                 channel.ExchangeDeclare(_deadLetterExchange, "direct", true, false, null);

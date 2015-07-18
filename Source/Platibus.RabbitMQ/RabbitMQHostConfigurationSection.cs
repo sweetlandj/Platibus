@@ -50,7 +50,7 @@ namespace Platibus.RabbitMQ
             set { base[MaxAttemptsPropertyName] = value; }
         }
 
-        [ConfigurationProperty(RetryDelayPropertyName, DefaultValue = 10)]
+        [ConfigurationProperty(RetryDelayPropertyName, DefaultValue = "00:00:05")]
         public TimeSpan RetryDelay
         {
             get { return (TimeSpan)base[RetryDelayPropertyName]; }

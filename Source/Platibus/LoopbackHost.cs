@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Config;
+using Platibus.InMemory;
 
 namespace Platibus
 {
@@ -48,7 +49,7 @@ namespace Platibus
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
             _baseUri = new Uri("http://localhost");
-            _bus = new Bus(configuration, _baseUri, _transportService);
+            _bus = new Bus(configuration, _baseUri, _transportService, new InMemoryMessageQueueingService());
             _transportService = new LoopbackTransportService(_bus.HandleMessage);
         }
 

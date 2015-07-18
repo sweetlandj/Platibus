@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using Common.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -12,26 +13,45 @@ namespace Platibus.RabbitMQ
     /// </summary>
     class ManagedConnection : IConnection
     {
+        private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
+
         private readonly object _syncRoot = new object();
+        private readonly string _managedConnectionId;
         private readonly IConnectionFactory _connectionFactory;
         private volatile IConnection _connection;
 
-        public ManagedConnection(IConnectionFactory connectionFactory)
+        private bool _destroyed;
+
+        public ManagedConnection(Uri uri)
         {
-            if (connectionFactory == null) throw new ArgumentNullException("connectionFactory");
-            _connectionFactory = connectionFactory;
+            if (uri == null) throw new ArgumentNullException("uri");
+
+            var managedConnectionIdBuilder = new UriBuilder(uri)
+            {
+                // Sanitize credentials
+                UserName = "",
+                Password = ""
+            };
+            _managedConnectionId = managedConnectionIdBuilder.Uri.ToString();
+            _connectionFactory = new ConnectionFactory {Uri = uri.ToString()};
+
+            Log.InfoFormat("Establishing managed connection to {0}...", _managedConnectionId);
+            _connection = _connectionFactory.CreateConnection();
         }
 
         private IConnection Connection
         {
             get
             {
+                CheckDestroyed();
                 var myConnection = _connection;
                 if (myConnection != null && myConnection.IsOpen) return myConnection;
                 lock (_syncRoot)
                 {
                     myConnection = _connection;
                     if (myConnection != null && myConnection.IsOpen) return myConnection;
+
+                    Log.InfoFormat("Reconnecting to {0}...", _managedConnectionId);
 
                     myConnection = _connectionFactory.CreateConnection();
                     myConnection.CallbackException += CallbackException;
@@ -73,6 +93,30 @@ namespace Platibus.RabbitMQ
 
         public void Dispose()
         {
+        }
+
+        private void CheckDestroyed()
+        {
+            if (_destroyed) throw new ObjectDisposedException(GetType().FullName);
+        }
+
+        ~ManagedConnection()
+        {
+            Destroy(false);
+        }
+
+        public void Destroy(bool disposing)
+        {
+            if (_destroyed) return;
+            _destroyed = true;
+            if (disposing)
+            {
+                Log.InfoFormat("Destroying managed connection to {0}...", _managedConnectionId);
+                _connection.TryDispose();
+                _connection = null;    
+            }
+            _destroyed = true;
+            GC.SuppressFinalize(this);
         }
 
         public void Abort()

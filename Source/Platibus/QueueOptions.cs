@@ -59,5 +59,10 @@ namespace Platibus
         ///     The amount of time to wait before putting an unacknowledged message back on the queue.
         /// </summary>
         public TimeSpan RetryDelay { get; set; }
+
+        /// <summary>
+        /// The maximum amount of time the queue should live.
+        /// </summary>
+        public TimeSpan TTL { get; set; }
     }
 }

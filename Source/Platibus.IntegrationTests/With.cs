@@ -24,6 +24,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Platibus.Http;
+using Platibus.RabbitMQ;
 
 namespace Platibus.IntegrationTests
 {
@@ -45,7 +46,7 @@ namespace Platibus.IntegrationTests
             using (var server0 = await HttpServer.Start("platibus.http0"))
             using (var server1 = await HttpServer.Start("platibus.http1"))
             {
-                // Give HTTP listeners time to initialize
+                // Give HTTP servers time to initialize
                 await Task.Delay(TimeSpan.FromSeconds(1));
 
                 return await test(server0.Bus, server1.Bus);
@@ -68,10 +69,33 @@ namespace Platibus.IntegrationTests
             using (var server0 = await HttpServer.Start("platibus.http-basic0"))
             using (var server1 = await HttpServer.Start("platibus.http-basic1"))
             {
-                // Give HTTP listeners time to initialize
+                // Give HTTP servers time to initialize
                 await Task.Delay(TimeSpan.FromSeconds(1));
 
                 return await test(server0.Bus, server1.Bus);
+            }
+        }
+
+        public static async Task RabbitMQHostedBusInstances(Func<IBus, IBus, Task> test)
+        {
+            await RabbitMQHostedBusInstances(async (bus0, bus1) =>
+            {
+                await test(bus0, bus1);
+                return true;
+            });
+        }
+
+        public static async Task<TResult> RabbitMQHostedBusInstances<TResult>(Func<IBus, IBus, Task<TResult>> test)
+        {
+            Cleanup();
+
+            using (var host0 = await RabbitMQHost.Start("platibus.rabbitmq0"))
+            using (var host1 = await RabbitMQHost.Start("platibus.rabbitmq1"))
+            {
+                // Give Rabbit MQ hosts time to initialize
+                await Task.Delay(TimeSpan.FromSeconds(1));
+
+                return await test(host0.Bus, host1.Bus);
             }
         }
 

@@ -51,7 +51,7 @@ namespace Platibus.IIS
             _messageJournalingService = _configuration.MessageJournalingService;
             var endpoints = _configuration.Endpoints;
             _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, _messageJournalingService, _subscriptionTrackingService);
-            _bus = new Bus(_configuration, _baseUri, _transportService);
+            _bus = new Bus(_configuration, _baseUri, _transportService, _messageQueueingService);
             await _transportService.Init(cancellationToken);
             await _bus.Init(cancellationToken);
             _resourceRouter = new ResourceTypeDictionaryRouter

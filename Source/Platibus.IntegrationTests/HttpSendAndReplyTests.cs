@@ -29,7 +29,7 @@ using NUnit.Framework;
 
 namespace Platibus.IntegrationTests
 {
-    internal class SendAndObserveReplyTests
+    internal class HttpSendAndReplyTests
     {
         private static readonly Random RNG = new Random();
 

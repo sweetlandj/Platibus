@@ -27,8 +27,6 @@ namespace Platibus.Config
     public class PlatibusConfigurationSection : ConfigurationSection
     {
         private const string JournalingPropertyName = "journaling";
-        private const string QueueingPropertyName = "queueing";
-
         private const string TimeoutsPropertyName = "timeouts";
         private const string EndpointsPropertyName = "endpoints";
         private const string TopicsPropertyName = "topics";
@@ -48,13 +46,6 @@ namespace Platibus.Config
         {
             get { return (JournalingElement) base[JournalingPropertyName]; }
             set { base[JournalingPropertyName] = value; }
-        }
-
-        [ConfigurationProperty(QueueingPropertyName)]
-        public QueueingElement Queueing
-        {
-            get { return (QueueingElement) base[QueueingPropertyName]; }
-            set { base[QueueingPropertyName] = value; }
         }
 
         [ConfigurationProperty(TimeoutsPropertyName)]

@@ -1,15 +1,17 @@
 ﻿
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Common.Logging;
 
 namespace Platibus.RabbitMQ
 {
     public class RabbitMQHost : ITransportService, IQueueListener, IDisposable
     {
+        private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
+
         /// <summary>
         /// Creates and starts a new <see cref="RabbitMQHost"/> based on the configuration
         /// in the named configuration section.
@@ -44,15 +46,21 @@ namespace Platibus.RabbitMQ
             return server;
         }
 
+        private const string InboxQueueName = "inbox";
+
         private readonly IConnectionManager _connectionManager;
         private readonly Uri _baseUri;
         private readonly Encoding _encoding;
-
         private readonly RabbitMQQueue _inboundQueue;
         private readonly Bus _bus;
         private readonly ConcurrentDictionary<SubscriptionKey, RabbitMQQueue> _subscriptions = new ConcurrentDictionary<SubscriptionKey, RabbitMQQueue>(); 
 
         private bool _disposed;
+
+        public Bus Bus
+        {
+            get { return _bus; }
+        }
 
         private RabbitMQHost(IRabbitMQHostConfiguration configuration)
         {
@@ -60,9 +68,10 @@ namespace Platibus.RabbitMQ
 
             _baseUri = configuration.BaseUri;
             _connectionManager = new ConnectionManager();
-
             _encoding = configuration.Encoding ?? Encoding.UTF8;
-            var inboundQueueName = configuration.BaseUri.GetInboundQueueName();
+            
+            var messageQueueingService = new RabbitMQMessageQueueingService(_baseUri, _connectionManager, _encoding);
+
             var inboundQueueOptions = new QueueOptions
             {
                 AutoAcknowledge = configuration.AutoAcknowledge,
@@ -72,16 +81,23 @@ namespace Platibus.RabbitMQ
             };
 
             var connection = _connectionManager.GetConnection(_baseUri);
-            _inboundQueue = new RabbitMQQueue(inboundQueueName, this, connection, _encoding, inboundQueueOptions);
-            _bus = new Bus(configuration, configuration.BaseUri, this);
+            using (var channel = connection.CreateModel())
+            {
+                foreach (var topicName in configuration.Topics)
+                {
+                    var exchangeName = topicName.GetTopicExchangeName();
+                    Log.DebugFormat("Initializing fanout exchange '{0}' for topic '{1}'...", exchangeName, topicName);
+                    channel.ExchangeDeclare(exchangeName, "fanout", true);
+                }
+            }
+
+            Log.DebugFormat("Initializing inbox queue '{0}'...", InboxQueueName);
+            _inboundQueue = new RabbitMQQueue(InboxQueueName, this, connection, _encoding, inboundQueueOptions);
+            _bus = new Bus(configuration, configuration.BaseUri, this, messageQueueingService);
         }
 
         private async Task Init(CancellationToken cancellationToken = default(CancellationToken))
         {
-            // TODO: Set up topic exchanges and queues
-            
-            // TODO: Establish and init subscription queues
-
             await _bus.Init(cancellationToken);
             _inboundQueue.Init();
         }
@@ -89,8 +105,6 @@ namespace Platibus.RabbitMQ
         public async Task MessageReceived(Message message, IQueuedMessageContext context,
             CancellationToken cancellationToken = new CancellationToken())
         {
-            // TODO: Figure out how to capture principal on sent messages
-
             // For now, allow exceptions to propagate and be handled by the RabbitMQQueue
             await _bus.HandleMessage(message, null);
             await context.Acknowledge();
@@ -101,15 +115,14 @@ namespace Platibus.RabbitMQ
         {
             CheckDisposed();
             var destination = message.Headers.Destination;
-            var destinationQueueName = message.Headers.Destination.GetInboundQueueName();
             var connection = _connectionManager.GetConnection(destination);
-            await RabbitMQHelper.PublishMessage(message, Thread.CurrentPrincipal, connection, destinationQueueName);
+            await RabbitMQHelper.PublishMessage(message, Thread.CurrentPrincipal, connection, InboxQueueName);
         }
 
         public async Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken)
         {
             CheckDisposed();
-            var publisherTopicExchange = _baseUri.GetTopicExchangeName(topicName);
+            var publisherTopicExchange = topicName.GetTopicExchangeName();
             var connection = _connectionManager.GetConnection(_baseUri);
             await RabbitMQHelper.PublishMessage(message, Thread.CurrentPrincipal, connection, null, publisherTopicExchange);
         }
@@ -124,22 +137,20 @@ namespace Platibus.RabbitMQ
             _subscriptions.GetOrAdd(subscriptionKey, key =>
             {
                 var connection = _connectionManager.GetConnection(endpointUri);
-                var publisherTopicExchange = endpoint.Address.GetTopicExchangeName(topicName);
+                var publisherTopicExchange = topicName.GetTopicExchangeName();
+                
+                Log.DebugFormat("Creating subscription queue '{0}'...", subscriptionQueueName);
+                var subscriptionQueue = new RabbitMQQueue(subscriptionQueueName, this, connection, _encoding);
+                subscriptionQueue.Init();
+
                 using (var channel = connection.CreateModel())
                 {
-                    var arguments = new Dictionary<string, object>();
-                    if (ttl > TimeSpan.Zero)
-                    {
-                        arguments["x-expires"] = (int)ttl.TotalMilliseconds;
-                    }
-                    
-                    channel.QueueDeclare(subscriptionQueueName, true, false, false, arguments);
-                    channel.ExchangeDeclare(publisherTopicExchange, "Topic", true, false, null);
-                    channel.QueueBind(subscriptionQueueName, publisherTopicExchange, "", null);
+                    Log.DebugFormat("Binding subscription queue '{0}' to topic exchange '{1}'...", subscriptionQueueName, publisherTopicExchange);
+                    channel.ExchangeDeclare(publisherTopicExchange, "fanout", true);
+                    channel.QueueBind(subscriptionQueueName, publisherTopicExchange, "", null);    
                 }
-                var newSubscription = new RabbitMQQueue(subscriptionQueueName, this, connection, _encoding);
-                newSubscription.Init();
-                return newSubscription;
+                
+                return subscriptionQueue;
             });
             return Task.FromResult(true);
         }
@@ -167,6 +178,10 @@ namespace Platibus.RabbitMQ
             if (disposing)
             {
                 _bus.TryDispose();
+                foreach (var subscriptionQueue in _subscriptions)
+                {
+                    subscriptionQueue.TryDispose();
+                }
                 _inboundQueue.TryDispose();
                 _connectionManager.TryDispose();
             }

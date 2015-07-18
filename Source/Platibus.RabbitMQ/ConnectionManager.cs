@@ -47,7 +47,7 @@ namespace Platibus.RabbitMQ
                 {
                     ManagedConnection connection;
                     _managedConnections.TryRemove(uri, out connection);
-                    CloseManagedConnection(connection);
+                    DestroyManagedConnection(connection);
                 }
             }
         }
@@ -59,19 +59,15 @@ namespace Platibus.RabbitMQ
 
         private static ManagedConnection CreateManagedConnection(Uri uri)
         {
-            var connectionFactory = new ConnectionFactory
-            {
-                Uri = uri.ToString()
-            };
-            return new ManagedConnection(connectionFactory);
+            return new ManagedConnection(uri);
         }
 
-        private static void CloseManagedConnection(IConnection connection)
+        private static void DestroyManagedConnection(ManagedConnection connection)
         {
             if (connection == null) return;
             try
             {
-                connection.Close();
+                connection.Destroy(true);
             }
             catch (Exception ex)
             {

@@ -23,10 +23,12 @@ namespace Platibus.Http
         }
 
         public ISubscriptionTrackingService SubscriptionTrackingService { get; set; }
+        public IMessageQueueingService MessageQueueingService { get; set; }
 
         public HttpServerConfiguration()
         {
             SubscriptionTrackingService = new InMemorySubscriptionTrackingService();
+            MessageQueueingService = new InMemoryMessageQueueingService();
         }
     }
 }

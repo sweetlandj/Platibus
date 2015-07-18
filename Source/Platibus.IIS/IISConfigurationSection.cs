@@ -8,6 +8,7 @@ namespace Platibus.IIS
     {
         private const string BaseUriPropertyName = "baseUri";
         private const string SubscriptionTrackingPropertyName = "subscriptionTracking";
+        private const string QueueingPropertyName = "queueing";
 
         [ConfigurationProperty(BaseUriPropertyName)]
         public Uri BaseUri
@@ -21,6 +22,13 @@ namespace Platibus.IIS
         {
             get { return (SubscriptionTrackingElement) base[SubscriptionTrackingPropertyName]; }
             set { base[SubscriptionTrackingPropertyName] = value; }
+        }
+
+        [ConfigurationProperty(QueueingPropertyName)]
+        public QueueingElement Queueing
+        {
+            get { return (QueueingElement) base[QueueingPropertyName]; }
+            set { base[QueueingPropertyName] = value; }
         }
     }
 }

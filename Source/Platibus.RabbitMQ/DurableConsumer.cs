@@ -61,7 +61,9 @@ namespace Platibus.RabbitMQ
 
         private void Consume(CancellationToken cancellationToken)
         {
-            EventingBasicConsumer consumer = null;
+            const int dequeueTimeout = 1000;
+
+            QueueingBasicConsumer consumer = null;
             while (!cancellationToken.IsCancellationRequested)
             {   
                 try
@@ -74,9 +76,25 @@ namespace Platibus.RabbitMQ
 
                     if (consumer == null)
                     {
-                        consumer = new EventingBasicConsumer(_channel);
-                        consumer.Received += (sender, args) => _consume(_channel, args, cancellationToken);
+                        Log.DebugFormat("Initializing consumer '{0}' on channel number '{1}'...", _consumerTag, _channel.ChannelNumber);
+                        consumer = new QueueingBasicConsumer(_channel);
                         _channel.BasicConsume(_queueName, _autoAcknowledge, _consumerTag, consumer);
+                    }
+
+                    BasicDeliverEventArgs delivery;
+                    var deliveryReceived = consumer.Queue.Dequeue(dequeueTimeout, out delivery);
+                    if (deliveryReceived)
+                    {
+                        Log.DebugFormat("Consumer '{0}' received delivery '{1}'", _consumerTag, delivery.DeliveryTag);
+                        try
+                        {
+                            _consume(_channel, delivery, cancellationToken);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error("Unhandled exception in callback", ex);
+                            _channel.BasicNack(delivery.DeliveryTag, true, false);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -94,7 +112,7 @@ namespace Platibus.RabbitMQ
                 cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
-                    Log.Debug("Attempting to create RabbitMQ channel...");
+                    Log.DebugFormat("Attempting to create RabbitMQ channel for consumer '{0}'...", _consumerTag);
                     channel = _connection.CreateModel();
                     Log.DebugFormat("RabbitMQ channel number \"{0}\" created successfully", channel.ChannelNumber);
                     channel.BasicQos(0, 1, false);

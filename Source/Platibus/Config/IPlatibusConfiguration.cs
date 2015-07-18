@@ -30,7 +30,6 @@ namespace Platibus.Config
         ISerializationService SerializationService { get; }
         IMessageNamingService MessageNamingService { get; }
         IMessageJournalingService MessageJournalingService { get; }
-        IMessageQueueingService MessageQueueingService { get; }
 
         IEnumerable<TopicName> Topics { get; }
         IEndpointCollection Endpoints { get; }

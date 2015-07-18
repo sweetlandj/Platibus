@@ -54,20 +54,21 @@ namespace Platibus
         private readonly Uri _baseUri;
         private readonly ITransportService _transportService;
 
-        public Bus(IPlatibusConfiguration configuration, Uri baseUri, ITransportService transportService)
+        public Bus(IPlatibusConfiguration configuration, Uri baseUri, ITransportService transportService, IMessageQueueingService messageQueueingService)
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
             if (baseUri == null) throw new ArgumentNullException("baseUri");
             if (transportService == null) throw new ArgumentNullException("transportService");
+            if (messageQueueingService == null) throw new ArgumentNullException("messageQueueingService");
 
             _baseUri = baseUri;
             _transportService = transportService;
+            _messageQueueingService = messageQueueingService;
 
             // TODO: Throw configuration exception if message queueing service, message naming
             // service, or serialization service are null
 
             _messageJournalingService = configuration.MessageJournalingService;
-            _messageQueueingService = configuration.MessageQueueingService;
             _messageNamingService = configuration.MessageNamingService;
             _serializationService = configuration.SerializationService;
 

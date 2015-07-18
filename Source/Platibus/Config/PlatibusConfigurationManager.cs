@@ -95,10 +95,6 @@ namespace Platibus.Config
                 configuration.MessageJournalingService = await InitMessageJournalingService(journaling);
             }
 
-            var queueing = configSection.Queueing ?? new QueueingElement();
-            configuration.MessageQueueingService = await InitMessageQueueingService(queueing);
-
-
             IEnumerable<SendRuleElement> sendRules = configSection.SendRules;
             foreach (var sendRule in sendRules)
             {

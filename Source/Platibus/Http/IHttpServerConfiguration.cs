@@ -20,5 +20,10 @@ namespace Platibus.Http
         /// The subscription tracking service implementation
         /// </summary>
         ISubscriptionTrackingService SubscriptionTrackingService { get; }
+
+        /// <summary>
+        /// The message queueing service implementation
+        /// </summary>
+        IMessageQueueingService MessageQueueingService { get; }
     }
 }

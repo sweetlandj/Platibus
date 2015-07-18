@@ -26,7 +26,7 @@ using NUnit.Framework;
 
 namespace Platibus.IntegrationTests
 {
-    internal class PubSubTests
+    internal class HttpPubSubTests
     {
         private static readonly Random RNG = new Random();
 
@@ -46,6 +46,7 @@ namespace Platibus.IntegrationTests
                 await platibus0.Publish(publication, "Topic0");
 
                 var publicationReceived = await TestPublicationHandler.WaitHandle.WaitOneAsync(TimeSpan.FromSeconds(3));
+                Assert.That(publicationReceived, Is.True);
             });
         }
     }

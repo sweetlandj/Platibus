@@ -12,8 +12,6 @@ namespace Platibus.RabbitMQ
 {
     public static class RabbitMQHelper
     {
-        private const string QueueExchangePrefix = "platibus";
-
         public static IConnection Connect(this Uri uri)
         {            
             return new ConnectionFactory
@@ -30,51 +28,34 @@ namespace Platibus.RabbitMQ
             return Regex.Replace(str, @"[^\w_\.\-\:]+", @"_");
         }
 
-        public static string GetInboundQueueName(this Uri baseUri)
-        {
-            if (baseUri == null) throw new ArgumentNullException("baseUri");
-            return QueueExchangePrefix + "-in";
-        }
-
-        public static string GetOutboundQueueName(this Uri baseUri)
-        {
-            if (baseUri == null) throw new ArgumentNullException("baseUri");
-            return QueueExchangePrefix + "-out";
-        }
-
-        public static string GetTopicQueueName(this TopicName topicName)
-        {
-            if (topicName == null) throw new ArgumentNullException("topicName");
-            return QueueExchangePrefix + "-" + ReplaceInvalidChars(topicName);
-        }
-
-        public static string GetTopicExchangeName(this Uri publisherUri, TopicName topicName)
-        {
-            return QueueExchangePrefix + "-" + ReplaceInvalidChars(topicName) + "-x";
-        }
-
         public static QueueName GetRetryQueueName(this QueueName queueName)
         {
             if (queueName == null) throw new ArgumentNullException("queueName");
-            return QueueExchangePrefix + "-" + ReplaceInvalidChars(queueName) + "-R";
+            return ReplaceInvalidChars(queueName) + "-R";
         }
 
         public static string GetExchangeName(this QueueName queueName)
         {
             if (queueName == null) throw new ArgumentNullException("queueName");
-            return QueueExchangePrefix + "-" + ReplaceInvalidChars(queueName) + "-X";
+            return ReplaceInvalidChars(queueName) + "-X";
+        }
+
+        public static string GetTopicExchangeName(this TopicName queueName)
+        {
+            if (queueName == null) throw new ArgumentNullException("queueName");
+            return "topic-" + ReplaceInvalidChars(queueName) + "-X";
         }
 
         public static string GetRetryExchangeName(this QueueName queueName)
         {
             if (queueName == null) throw new ArgumentNullException("queueName");
-            return QueueExchangePrefix + "-" + ReplaceInvalidChars(queueName) + "-RX";
+            return ReplaceInvalidChars(queueName) + "-RX";
         }
 
         public static string GetDeadLetterExchangeName(this QueueName queueName)
         {
             if (queueName == null) throw new ArgumentNullException("queueName");
-            return QueueExchangePrefix + "-" + ReplaceInvalidChars(queueName) + "-DLX";
+            return ReplaceInvalidChars(queueName) + "-DLX";
         }
 
         public static string GetSubscriptionQueueName(this Uri subscriberUri, TopicName topicName)
@@ -94,7 +75,7 @@ namespace Platibus.RabbitMQ
                 hostPortVhost += "_" + ReplaceInvalidChars(vhost);
             }
 
-            return QueueExchangePrefix + "-" + ReplaceInvalidChars(topicName) + "-" + hostPortVhost;
+            return ReplaceInvalidChars(topicName) + "-" + hostPortVhost;
         }
 
         public static async Task PublishMessage(Message message, IPrincipal principal, IConnection connection,

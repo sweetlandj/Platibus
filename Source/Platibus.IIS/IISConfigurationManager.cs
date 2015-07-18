@@ -23,6 +23,7 @@ namespace Platibus.IIS
 
             var subscriptionTracking = configSection.SubscriptionTracking ?? new SubscriptionTrackingElement();
             configuration.SubscriptionTrackingService = await InitSubscriptionTrackingService(subscriptionTracking);
+            configuration.MessageQueueingService = await PlatibusConfigurationManager.InitMessageQueueingService(configSection.Queueing);
 
             return configuration;
         }

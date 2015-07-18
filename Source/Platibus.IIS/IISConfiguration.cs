@@ -1,5 +1,6 @@
 ﻿using System;
 using Platibus.Config;
+using Platibus.InMemory;
 
 namespace Platibus.IIS
 {
@@ -14,5 +15,12 @@ namespace Platibus.IIS
         }
 
         public ISubscriptionTrackingService SubscriptionTrackingService { get; set; }
+        public IMessageQueueingService MessageQueueingService { get; set; }
+
+        public IISConfiguration()
+        {
+            SubscriptionTrackingService = new InMemorySubscriptionTrackingService();
+            MessageQueueingService = new InMemoryMessageQueueingService();
+        }
     }
 }

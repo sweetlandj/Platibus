@@ -105,7 +105,7 @@ namespace Platibus.Http
             _messageJournalingService = configuration.MessageJournalingService;
             var endpoints = configuration.Endpoints;
             _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, _messageJournalingService, _subscriptionTrackingService);
-            _bus = new Bus(configuration, _baseUri, _transportService);
+            _bus = new Bus(configuration, _baseUri, _transportService, _messageQueueingService);
 
             _resourceRouter = new ResourceTypeDictionaryRouter
             {

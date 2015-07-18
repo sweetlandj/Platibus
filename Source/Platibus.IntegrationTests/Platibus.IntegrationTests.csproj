@@ -81,14 +81,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="RabbitMQPubSubTests.cs" />
     <Compile Include="With.cs" />
     <Compile Include="IntegrationTestConfigurationHook.cs" />
     <Compile Include="LoadTests.cs" />
     <Compile Include="TestPublicationHandler.cs" />
-    <Compile Include="PubSubTests.cs" />
+    <Compile Include="HttpPubSubTests.cs" />
     <Compile Include="TestHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SendAndObserveReplyTests.cs" />
+    <Compile Include="HttpSendAndReplyTests.cs" />
     <Compile Include="TestLoggingCategories.cs" />
     <Compile Include="TestMessage.cs" />
     <Compile Include="TestPublication.cs" />
@@ -106,6 +107,10 @@
     <ProjectReference Include="..\Platibus.IIS\Platibus.IIS.csproj">
       <Project>{bf2c4b39-5e10-4115-beff-8340982cda72}</Project>
       <Name>Platibus.IIS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Platibus.RabbitMQ\Platibus.RabbitMQ.csproj">
+      <Project>{CE776EC9-C665-44BF-8EDD-45678D269112}</Project>
+      <Name>Platibus.RabbitMQ</Name>
     </ProjectReference>
     <ProjectReference Include="..\Platibus.SQLite\Platibus.SQLite.csproj">
       <Project>{a23be958-6524-4c9c-8957-1c3debb0780c}</Project>

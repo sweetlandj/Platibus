@@ -22,7 +22,6 @@
 
 using System;
 using System.Collections.Generic;
-using Platibus.InMemory;
 using Platibus.Serialization;
 
 namespace Platibus.Config
@@ -47,7 +46,6 @@ namespace Platibus.Config
         public IMessageNamingService MessageNamingService { get; set; }
         public ISerializationService SerializationService { get; set; }
         public IMessageJournalingService MessageJournalingService { get; set; }
-        public IMessageQueueingService MessageQueueingService { get; set; }
 
         public IEndpointCollection Endpoints
         {
@@ -78,7 +76,6 @@ namespace Platibus.Config
         {
             MessageNamingService = new DefaultMessageNamingService();
             SerializationService = new DefaultSerializationService();
-            MessageQueueingService = new InMemoryMessageQueueingService();
         }
 
         public void AddEndpoint(EndpointName name, IEndpoint endpoint)
