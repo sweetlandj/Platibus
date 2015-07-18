@@ -61,8 +61,7 @@ namespace Platibus.RabbitMQ
 
         private void Consume(CancellationToken cancellationToken)
         {
-            const int dequeueTimeout = 1000;
-            QueueingBasicConsumer consumer = null;
+            EventingBasicConsumer consumer = null;
             while (!cancellationToken.IsCancellationRequested)
             {   
                 try
@@ -75,14 +74,9 @@ namespace Platibus.RabbitMQ
 
                     if (consumer == null)
                     {
-                        consumer = new QueueingBasicConsumer(_channel);
+                        consumer = new EventingBasicConsumer(_channel);
+                        consumer.Received += (sender, args) => _consume(_channel, args, cancellationToken);
                         _channel.BasicConsume(_queueName, _autoAcknowledge, _consumerTag, consumer);
-                    }
-
-                    BasicDeliverEventArgs delivery;
-                    if (consumer.Queue.Dequeue(dequeueTimeout, out delivery))
-                    {
-                        _consume(_channel, delivery, cancellationToken);
                     }
                 }
                 catch (Exception ex)
