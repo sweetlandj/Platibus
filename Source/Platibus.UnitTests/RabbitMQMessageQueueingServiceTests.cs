@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ namespace Platibus.UnitTests
 {
     internal class RabbitMQMessageQueueingServiceTests
     {
-        public static readonly Uri RabbitMQUri = new Uri("amqp://localhost:5672");
+        public static readonly Uri RabbitMQUri = new Uri("amqp://localhost:5672/test");
 
         [Test]
         public async Task Given_Existing_Queue_When_New_Message_Queued_Then_Listener_Should_Fire()
@@ -19,7 +20,6 @@ namespace Platibus.UnitTests
             var listenerCalledEvent = new ManualResetEvent(false);
             var queueName = new QueueName(Guid.NewGuid().ToString());
             var rmqQueueingService = new RabbitMQMessageQueueingService(RabbitMQUri);
-            rmqQueueingService.Init();
 
             try
             {
@@ -58,7 +58,8 @@ namespace Platibus.UnitTests
             }
             finally
             {
-                rmqQueueingService.DeleteQueue(queueName);
+                rmqQueueingService.Dispose();
+                DeleteQueue(queueName);
             }
         }
 
@@ -68,7 +69,6 @@ namespace Platibus.UnitTests
             var listenerCalledEvent = new ManualResetEvent(false);
             var queueName = new QueueName(Guid.NewGuid().ToString());
             var rmqQueueingService = new RabbitMQMessageQueueingService(RabbitMQUri);
-            rmqQueueingService.Init();
             try
             {
                 var mockListener = new Mock<IQueueListener>();
@@ -110,7 +110,8 @@ namespace Platibus.UnitTests
             }
             finally
             {
-                rmqQueueingService.DeleteQueue(queueName);
+                rmqQueueingService.Dispose();
+                DeleteQueue(queueName);
             }
         }
 
@@ -120,7 +121,6 @@ namespace Platibus.UnitTests
             var listenerCalledEvent = new ManualResetEvent(false);
             var queueName = new QueueName(Guid.NewGuid().ToString());
             var rmqQueueingService = new RabbitMQMessageQueueingService(RabbitMQUri);
-            rmqQueueingService.Init();
 
             try
             {
@@ -165,7 +165,8 @@ namespace Platibus.UnitTests
             }
             finally
             {
-                rmqQueueingService.DeleteQueue(queueName);
+                rmqQueueingService.Dispose();
+                DeleteQueue(queueName);
             }
         }
 
@@ -174,7 +175,6 @@ namespace Platibus.UnitTests
         {
             var queueName = new QueueName(Guid.NewGuid().ToString());
             var rmqQueueingService = new RabbitMQMessageQueueingService(RabbitMQUri);
-            rmqQueueingService.Init();
 
             try
             {
@@ -213,7 +213,8 @@ namespace Platibus.UnitTests
             }
             finally
             {
-                rmqQueueingService.DeleteQueue(queueName);
+                rmqQueueingService.Dispose();
+                DeleteQueue(queueName);
             }
         }
 
@@ -236,8 +237,35 @@ namespace Platibus.UnitTests
             {
                 // We have to declare the queue as a persistence queue because this is 
                 // called before the queue is created by the RabbitMQQueueingService
-                channel.QueueDeclare(queueName, true, false, false, null);
+                var deadLetterExchange = queueName.GetDeadLetterExchangeName();
+                var queueArgs = new Dictionary<string, object>
+                {
+                    {"x-dead-letter-exchange", deadLetterExchange}
+                };
+                channel.ExchangeDeclare(deadLetterExchange, "direct", true, false, null);
+                channel.QueueDeclare(queueName, true, false, false, queueArgs);
                 await RabbitMQHelper.PublishMessage(message, Thread.CurrentPrincipal, channel, queueName);
+            }
+        }
+
+        private static void DeleteQueue(QueueName queueName)
+        {
+            var connectionFactory = new ConnectionFactory { Uri = RabbitMQUri.ToString() };
+            using (var connection = connectionFactory.CreateConnection())
+            using (var channel = connection.CreateModel())
+            {
+                // We have to declare the queue as a persistence queue because this is 
+                // called before the queue is created by the RabbitMQQueueingService
+                var queueExchange = queueName.GetExchangeName();
+                var retryExchange = queueName.GetRetryExchangeName();
+                var deadLetterExchange = queueName.GetDeadLetterExchangeName();
+                var retryQueueName = queueName.GetRetryQueueName();
+
+                channel.QueueDeleteNoWait(queueName, false, false);
+                channel.QueueDeleteNoWait(retryQueueName, false, false);
+                channel.ExchangeDeleteNoWait(queueExchange, false);
+                channel.ExchangeDeleteNoWait(retryExchange, false);
+                channel.ExchangeDeleteNoWait(deadLetterExchange, false);
             }
         }
 
@@ -247,7 +275,6 @@ namespace Platibus.UnitTests
             var listenerCalledEvent = new ManualResetEvent(false);
             var queueName = new QueueName(Guid.NewGuid().ToString());
             var rmqQueueingService = new RabbitMQMessageQueueingService(RabbitMQUri);
-            rmqQueueingService.Init();
 
             try
             {
@@ -285,7 +312,8 @@ namespace Platibus.UnitTests
             }
             finally
             {
-                rmqQueueingService.DeleteQueue(queueName);
+                DeleteQueue(queueName);
+                rmqQueueingService.Dispose();
             }
         }
 
@@ -294,7 +322,6 @@ namespace Platibus.UnitTests
         {
             var queueName = new QueueName(Guid.NewGuid().ToString());
             var rmqQueueingService = new RabbitMQMessageQueueingService(RabbitMQUri);
-            rmqQueueingService.Init();
 
             try
             {
@@ -308,7 +335,7 @@ namespace Platibus.UnitTests
 
                 await Task.WhenAll(existingMessages.Select(msg => StageExistingMessage(msg, queueName)));
 
-                var newMessages = Enumerable.Range(11, 20)
+                var newMessages = Enumerable.Range(11, 10)
                     .Select(i => new Message(new MessageHeaders
                     {
                         {HeaderName.ContentType, "text/plain"},
@@ -354,7 +381,9 @@ namespace Platibus.UnitTests
             }
             finally
             {
-                rmqQueueingService.DeleteQueue(queueName);
+                
+                rmqQueueingService.Dispose();
+                DeleteQueue(queueName);
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿// The MIT License (MIT)
+﻿// The MIT License (MIT) 
 // 
 // Copyright (c) 2014 Jesse Sweetland
 // 
@@ -27,7 +27,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
-using RabbitMQ.Client;
 
 namespace Platibus.RabbitMQ
 {
@@ -39,49 +38,29 @@ namespace Platibus.RabbitMQ
             new ConcurrentDictionary<QueueName, RabbitMQQueue>();
 
         private readonly Encoding _encoding;
-        private readonly IConnectionFactory _connectionFactory;
-
-        private IConnection _connection;
+        private readonly Uri _uri;
+        private readonly IConnectionManager _connectionManager;
+        private readonly bool _disposeConnectionManager;
         private bool _disposed;
 
-        public RabbitMQMessageQueueingService(Uri uri, Encoding encoding = null)
+        public RabbitMQMessageQueueingService(Uri uri, IConnectionManager connectionManager = null, Encoding encoding = null)
         {
             if (uri == null) throw new ArgumentNullException("uri");
-            _connectionFactory = new ConnectionFactory
+            _uri = uri;
+            if (connectionManager == null)
             {
-                Uri = uri.ToString()
-            };
+                connectionManager = new ConnectionManager();
+                _disposeConnectionManager = true;
+            }
+            _connectionManager = connectionManager;
             _encoding = encoding ?? Encoding.UTF8;
-        }
-
-        public void Init()
-        {
-            if (_connection == null)
-            {
-                _connection = OpenConnection();
-            }
-        }
-
-        private IConnection OpenConnection()
-        {
-            var connection = _connectionFactory.CreateConnection();
-            connection.ConnectionShutdown += (sender, args) => Reconnect();
-            return connection;
-        }
-
-        private void Reconnect()
-        {
-            _connection = OpenConnection();
-            foreach (var queue in _queues)
-            {
-                _queues[queue.Key] = queue.Value.Reconnect(_connection);
-            }
         }
 
         public Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions), CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
-            var queue = new RabbitMQQueue(queueName, listener, _connection, _encoding, options);
+            var connection = _connectionManager.GetConnection(_uri);
+            var queue = new RabbitMQQueue(queueName, listener, connection, _encoding, options);
             if (!_queues.TryAdd(queueName, queue))
             {
                 throw new QueueAlreadyExistsException(queueName);
@@ -141,9 +120,12 @@ namespace Platibus.RabbitMQ
             {
                 foreach (var queue in _queues.Values)
                 {
-                    queue.Dispose();
+                    queue.TryDispose();
                 }
-                _connection.Close();
+                if (_disposeConnectionManager)
+                {
+                    _connectionManager.TryDispose();
+                }
             }
             _disposed = true;
         }

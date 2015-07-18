@@ -42,8 +42,8 @@ namespace Platibus.IntegrationTests
         {
             Cleanup();
 
-            using (var server0 = await HttpServer.Start("platibus0"))
-            using (var server1 = await HttpServer.Start("platibus1"))
+            using (var server0 = await HttpServer.Start("platibus.http0"))
+            using (var server1 = await HttpServer.Start("platibus.http1"))
             {
                 // Give HTTP listeners time to initialize
                 await Task.Delay(TimeSpan.FromSeconds(1));
@@ -65,8 +65,8 @@ namespace Platibus.IntegrationTests
         {
             Cleanup();
 
-            using (var server0 = await HttpServer.Start("platibus0-basic"))
-            using (var server1 = await HttpServer.Start("platibus1-basic"))
+            using (var server0 = await HttpServer.Start("platibus.http-basic0"))
+            using (var server1 = await HttpServer.Start("platibus.http-basic1"))
             {
                 // Give HTTP listeners time to initialize
                 await Task.Delay(TimeSpan.FromSeconds(1));

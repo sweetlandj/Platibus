@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Principal;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Platibus.Security;
 using RabbitMQ.Client;
@@ -10,19 +12,89 @@ namespace Platibus.RabbitMQ
 {
     public static class RabbitMQHelper
     {
+        private const string QueueExchangePrefix = "platibus";
+
+        public static IConnection Connect(this Uri uri)
+        {            
+            return new ConnectionFactory
+            {
+                HostName = uri.Host,
+                Port = uri.Port,
+                VirtualHost = uri.AbsolutePath
+            }.CreateConnection();
+        }
+
+        public static string ReplaceInvalidChars(string str)
+        {
+            if (string.IsNullOrWhiteSpace(str)) throw new ArgumentNullException("str");
+            return Regex.Replace(str, @"[^\w_\.\-\:]+", @"_");
+        }
+
+        public static string GetInboundQueueName(this Uri baseUri)
+        {
+            if (baseUri == null) throw new ArgumentNullException("baseUri");
+            return QueueExchangePrefix + "-in";
+        }
+
+        public static string GetOutboundQueueName(this Uri baseUri)
+        {
+            if (baseUri == null) throw new ArgumentNullException("baseUri");
+            return QueueExchangePrefix + "-out";
+        }
+
+        public static string GetTopicQueueName(this TopicName topicName)
+        {
+            if (topicName == null) throw new ArgumentNullException("topicName");
+            return QueueExchangePrefix + "-" + ReplaceInvalidChars(topicName);
+        }
+
+        public static string GetTopicExchangeName(this Uri publisherUri, TopicName topicName)
+        {
+            return QueueExchangePrefix + "-" + ReplaceInvalidChars(topicName) + "-x";
+        }
+
         public static QueueName GetRetryQueueName(this QueueName queueName)
         {
-            return queueName + "-R";
+            if (queueName == null) throw new ArgumentNullException("queueName");
+            return QueueExchangePrefix + "-" + ReplaceInvalidChars(queueName) + "-R";
         }
 
         public static string GetExchangeName(this QueueName queueName)
         {
-            return queueName + "-X";
+            if (queueName == null) throw new ArgumentNullException("queueName");
+            return QueueExchangePrefix + "-" + ReplaceInvalidChars(queueName) + "-X";
         }
 
         public static string GetRetryExchangeName(this QueueName queueName)
         {
-            return queueName + "-RX";
+            if (queueName == null) throw new ArgumentNullException("queueName");
+            return QueueExchangePrefix + "-" + ReplaceInvalidChars(queueName) + "-RX";
+        }
+
+        public static string GetDeadLetterExchangeName(this QueueName queueName)
+        {
+            if (queueName == null) throw new ArgumentNullException("queueName");
+            return QueueExchangePrefix + "-" + ReplaceInvalidChars(queueName) + "-DLX";
+        }
+
+        public static string GetSubscriptionQueueName(this Uri subscriberUri, TopicName topicName)
+        {
+            if (subscriberUri == null) throw new ArgumentNullException("subscriberUri");
+            if (topicName == null) throw new ArgumentNullException("topicName");
+
+            var hostPortVhost = ReplaceInvalidChars(subscriberUri.Host);
+            if (subscriberUri.Port > 0)
+            {
+                hostPortVhost += "_" + subscriberUri.Port;
+            }
+
+            var vhost = subscriberUri.AbsolutePath.Trim('/');
+            if (!string.IsNullOrWhiteSpace(vhost))
+            {
+                hostPortVhost += "_" + ReplaceInvalidChars(vhost);
+            }
+
+            return QueueExchangePrefix + "-" + ReplaceInvalidChars(topicName) + "-" + hostPortVhost;
         }
 
         public static async Task PublishMessage(Message message, IPrincipal principal, IConnection connection,
@@ -37,6 +109,9 @@ namespace Platibus.RabbitMQ
         public static async Task PublishMessage(Message message, IPrincipal principal, IModel channel,
             QueueName queueName, string exchange = "", Encoding encoding = null, int attempts = 0)
         {
+            if (message == null) throw new ArgumentNullException("message");
+            if (channel == null) throw new ArgumentNullException("channel");
+
             if (encoding == null)
             {
                 encoding = Encoding.UTF8;

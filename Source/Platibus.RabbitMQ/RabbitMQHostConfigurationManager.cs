@@ -17,12 +17,17 @@ namespace Platibus.RabbitMQ
 
             var configuration = await PlatibusConfigurationManager.LoadConfiguration<RabbitMQHostConfiguration>(sectionName);
 
-            configuration.ServerUrl = configSection.ServerUrl ??
-                                      new Uri(RabbitMQHostConfigurationSection.DefaultServerUrl);
+            configuration.BaseUri = configSection.BaseUri 
+                ?? new Uri(RabbitMQHostConfigurationSection.DefaultBaseUri);
 
             configuration.Encoding = string.IsNullOrWhiteSpace(configSection.Encoding) 
                 ? Encoding.UTF8 
                 : Encoding.GetEncoding(configSection.Encoding);
+
+            configuration.AutoAcknowledge = configSection.AutoAcknowledge;
+            configuration.ConcurrencyLimit = configSection.ConcurrencyLimit;
+            configuration.MaxAttempts = configuration.MaxAttempts;
+            configuration.RetryDelay = configuration.RetryDelay;
             
             return configuration;
         }

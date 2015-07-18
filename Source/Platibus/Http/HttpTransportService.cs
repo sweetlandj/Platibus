@@ -187,17 +187,16 @@ namespace Platibus.Http
         }
 
         // ReSharper disable once UnusedMethodReturnValue.Local
-        public async Task Subscribe(Uri publisherUri, TopicName topicName, TimeSpan ttl = default(TimeSpan),
-            IEndpointCredentials credentials = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task Subscribe(IEndpoint endpoint, TopicName topicName, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
         {
             while (!cancellationToken.IsCancellationRequested)
             {
                 TimeSpan retryOrRenewAfter;
                 try
                 {
-                    Log.DebugFormat("Sending subscription request for topic {0} to {1}...", topicName, publisherUri);
+                    Log.DebugFormat("Sending subscription request for topic {0} to {1}...", topicName, endpoint);
 
-                    await SendSubscriptionRequest(publisherUri, credentials, topicName, TimeSpan.FromHours(1), cancellationToken);
+                    await SendSubscriptionRequest(endpoint, topicName, TimeSpan.FromHours(1), cancellationToken);
 
                     if (ttl <= TimeSpan.Zero)
                     {
@@ -213,7 +212,7 @@ namespace Platibus.Http
                     retryOrRenewAfter = TimeSpan.FromTicks(ttl.Ticks/2);
                     Log.DebugFormat(
                         "Subscription request for topic {0} successfuly sent to {1}.  Subscription TTL is {2} and is scheduled to auto-renew in {3}",
-                        topicName, publisherUri, ttl, retryOrRenewAfter);
+                        topicName, endpoint, ttl, retryOrRenewAfter);
                 }
                 catch (EndpointNotFoundException enfe)
                 {
@@ -221,7 +220,7 @@ namespace Platibus.Http
                     // so we cannot determine the URI.  This is an unrecoverable
                     // error, so simply return.
                     Log.ErrorFormat("Fatal error subscribing to topic {0} of endpoint \"{1}\"", enfe, topicName,
-                        publisherUri);
+                        endpoint);
                     return;
                 }
                 catch (NameResolutionFailedException nrfe)
@@ -231,7 +230,7 @@ namespace Platibus.Http
                     // In either case, retry after 30 seconds.
                     retryOrRenewAfter = TimeSpan.FromSeconds(30);
                     Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", nrfe,
-                        topicName, publisherUri, retryOrRenewAfter);
+                        topicName, endpoint, retryOrRenewAfter);
                 }
                 catch (ConnectionRefusedException cre)
                 {
@@ -240,7 +239,7 @@ namespace Platibus.Http
                     // In either case, retry after 30 seconds.
                     retryOrRenewAfter = TimeSpan.FromSeconds(30);
                     Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", cre,
-                        topicName, publisherUri, retryOrRenewAfter);
+                        topicName, endpoint, retryOrRenewAfter);
                 }
                 catch (InvalidRequestException ire)
                 {
@@ -248,7 +247,7 @@ namespace Platibus.Http
                     // topic does not exist.  In any case, retrying would be
                     // fruitless, so just return.
                     Log.ErrorFormat("Fatal error subscribing to topic {0} of endpoint {1}", ire, topicName,
-                        publisherUri);
+                        endpoint);
                     return;
                 }
                 catch (TransportException te)
@@ -258,7 +257,7 @@ namespace Platibus.Http
                     // themselves.  Retry in 30 seconds.
                     retryOrRenewAfter = TimeSpan.FromSeconds(30);
                     Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", te,
-                        topicName, publisherUri, retryOrRenewAfter);
+                        topicName, endpoint, retryOrRenewAfter);
                 }
 
                 await Task.Delay(retryOrRenewAfter, cancellationToken);
@@ -266,15 +265,15 @@ namespace Platibus.Http
             }
         }
 
-        private async Task SendSubscriptionRequest(Uri publisherUri, IEndpointCredentials credentials, TopicName topic,
+        private async Task SendSubscriptionRequest(IEndpoint endpoint, TopicName topic,
             TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (publisherUri == null) throw new ArgumentNullException("publisherUri");
+            if (endpoint == null) throw new ArgumentNullException("endpoint");
             if (topic == null) throw new ArgumentNullException("topic");
             
             try
             {
-                var httpClient = GetClient(publisherUri, credentials);
+                var httpClient = GetClient(endpoint.Address, endpoint.Credentials);
 
                 var urlSafeTopicName = HttpUtility.UrlEncode(topic);
                 var relativeUri = string.Format("topic/{0}/subscriber?uri={1}", urlSafeTopicName, _baseUri);
@@ -297,10 +296,10 @@ namespace Platibus.Http
             catch (Exception ex)
             {
                 var errorMessage = string.Format("Error sending subscription request for topic {0} of publisher {1}",
-                    topic, publisherUri);
+                    topic, endpoint.Address);
                 Log.ErrorFormat(errorMessage, ex);
 
-                HandleCommunicationException(ex, publisherUri);
+                HandleCommunicationException(ex, endpoint.Address);
 
                 throw new TransportException(errorMessage, ex);
             }

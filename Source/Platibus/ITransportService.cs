@@ -61,18 +61,15 @@ namespace Platibus
         /// Subscribes to messages published to the specified <paramref name="topicName"/>
         /// by the application at the provided <paramref name="publisherUri"/>.
         /// </summary>
-        /// <param name="publisherUri">The base URI of the publishing application.</param>
-        /// <param name="ttl">(Optional) The Time To Live (TTL) for the subscription
-        /// on the publishing application if it is not renewed.</param>
-        /// <param name="credentials">The credentials required to subscribe to the
-        /// publishing application, if applicable.</param>
+        /// <param name="endpoint"></param>
         /// <param name="topicName">The name of the topic to which the caller is
-        /// subscribing.</param>
+        ///     subscribing.</param>
+        /// <param name="ttl">(Optional) The Time To Live (TTL) for the subscription
+        ///     on the publishing application if it is not renewed.</param>
         /// <param name="cancellationToken">A token used by the caller to
-        /// indicate if and when the subscription should be canceled.</param>
+        ///     indicate if and when the subscription should be canceled.</param>
         /// <returns>Returns a long-running task that will be completed when the 
         /// subscription is canceled by the caller or a non-recoverable error occurs.</returns>
-        Task Subscribe(Uri publisherUri, TopicName topicName, TimeSpan ttl, IEndpointCredentials credentials,
-            CancellationToken cancellationToken = default(CancellationToken));
+        Task Subscribe(IEndpoint endpoint, TopicName topicName, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

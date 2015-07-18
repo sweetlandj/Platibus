@@ -54,8 +54,7 @@ namespace Platibus
             await Task.Run(() => _accept(message, Thread.CurrentPrincipal), cancellationToken);
         }
 
-        public Task Subscribe(Uri publisherUri, TopicName topicName, TimeSpan ttl, IEndpointCredentials credentials,
-            CancellationToken cancellationToken = new CancellationToken())
+        public Task Subscribe(IEndpoint endpoint, TopicName topicName, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
         {
             return Task.FromResult(false);
         }

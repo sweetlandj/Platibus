@@ -102,9 +102,8 @@ namespace Platibus
                 // canceled via the supplied cancelation token, so we shouldn't
                 // await it.
 
-                var subscriptionTask = _transportService.Subscribe(
-                    endpoint.Address, subscription.Topic, subscription.TTL,
-                    endpoint.Credentials, _cancellationTokenSource.Token);
+                var subscriptionTask = _transportService.Subscribe(endpoint, subscription.Topic, subscription.TTL,
+                    _cancellationTokenSource.Token);
 
                 _subscriptionTasks.Add(subscriptionTask);
             }
