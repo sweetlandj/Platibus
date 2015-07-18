@@ -127,16 +127,16 @@ namespace Platibus.RabbitMQ
             await RabbitMQHelper.PublishMessage(message, Thread.CurrentPrincipal, connection, null, publisherTopicExchange);
         }
 
-        public Task Subscribe(IEndpoint endpoint, TopicName topicName, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
+        public Task Subscribe(IEndpoint publisher, TopicName topicName, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
 
-            var endpointUri = endpoint.Address;
-            var subscriptionQueueName = endpointUri.GetSubscriptionQueueName(topicName);
-            var subscriptionKey = new SubscriptionKey(endpointUri, subscriptionQueueName);
+            var publisherUri = publisher.Address;
+            var subscriptionQueueName = _baseUri.GetSubscriptionQueueName(topicName);
+            var subscriptionKey = new SubscriptionKey(publisherUri, subscriptionQueueName);
             _subscriptions.GetOrAdd(subscriptionKey, key =>
             {
-                var connection = _connectionManager.GetConnection(endpointUri);
+                var connection = _connectionManager.GetConnection(publisherUri);
                 var publisherTopicExchange = topicName.GetTopicExchangeName();
                 
                 Log.DebugFormat("Creating subscription queue '{0}'...", subscriptionQueueName);
