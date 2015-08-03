@@ -25,17 +25,35 @@ using System.Runtime.Serialization;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// Thrown to indicate that at least one endpoint is required e.g. when
+    /// intializing a <see cref="ISendRule"/>.
+    /// </summary>
     [Serializable]
     public class EndpointRequiredException : ApplicationException
     {
+        /// <summary>
+        /// Initializes a new <see cref="EndpointRequiredException"/>
+        /// </summary>
         public EndpointRequiredException()
         {
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="EndpointRequiredException"/> with
+        /// a detail message.
+        /// </summary>
+        /// <param name="message">An optional detail message</param>
         public EndpointRequiredException(string message) : base(message)
         {
         }
 
+        /// <summary>
+        /// Initializes a serialized <see cref="EndpointRequiredException"/>
+        /// from a streaming context.
+        /// </summary>
+        /// <param name="info">The serialization info</param>
+        /// <param name="context">The streaming context</param>
         public EndpointRequiredException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {

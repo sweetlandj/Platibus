@@ -74,6 +74,7 @@ namespace Platibus.Config
                         credentials = new BasicAuthCredentials(un, pw);
                         break;
                     case ClientCredentialType.Windows:
+                    case ClientCredentialType.NTLM:
                         credentials = new DefaultCredentials();
                         break;
                 }

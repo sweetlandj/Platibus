@@ -22,8 +22,23 @@
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// An interface that describes a set of conditions that must be satisfied
+    /// pertaining to a message.
+    /// </summary>
+    /// <remarks>
+    /// Message specifications are used, for example, in <see cref="ISendRule"/>s
+    /// to determine whether a rule applies to a particular message.
+    /// </remarks>
     public interface IMessageSpecification
     {
+        /// <summary>
+        /// Indicates whether the specification is satisfied by the 
+        /// supplied <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message in question</param>
+        /// <returns>Returns <c>true</c> if the specification is
+        /// satisfied by the message; <c>false</c> otherwise.</returns>
         bool IsSatisfiedBy(Message message);
     }
 }

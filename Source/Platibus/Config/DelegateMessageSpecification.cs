@@ -24,21 +24,50 @@ using System;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// An implementation of <see cref="IMessageSpecification"/> that uses a
+    /// specified function delegate to determine whether a message satisfies
+    /// the conditions for which the specification is being used (e.g. whether
+    /// a <see cref="ISendRule"/> applies).
+    /// </summary>
     public class DelegateMessageSpecification : IMessageSpecification
     {
         private readonly Func<Message, bool> _delegate;
 
+        /// <summary>
+        /// Initializes a new <see cref="DelegateMessageSpecification"/> with
+        /// the specified function <paramref name="delegate"/>.
+        /// </summary>
+        /// <param name="delegate">The function used to determine whether
+        /// messages satisfy the specification</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="delegate"/>
+        /// is <c>null</c></exception>
         public DelegateMessageSpecification(Func<Message, bool> @delegate)
         {
             if (@delegate == null) throw new ArgumentNullException("delegate");
             _delegate = @delegate;
         }
 
+        /// <summary>
+        /// Indicates whether the specification is satisfied by the 
+        /// supplied <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message in question</param>
+        /// <returns>Returns <c>true</c> if the specification is
+        /// satisfied by the message; <c>false</c> otherwise.</returns>
         public bool IsSatisfiedBy(Message message)
         {
             return _delegate(message);
         }
 
+        /// <summary>
+        /// Implicitly casts a function delegate to a 
+        /// <see cref="DelegateMessageSpecification"/>.
+        /// </summary>
+        /// <param name="delegate">The function delegate</param>
+        /// <returns>Returns <c>null</c> if <paramref name="delegate"/> is
+        /// <c>null</c> or a new <see cref="DelegateMessageSpecification"/> wrapping
+        /// the <paramref name="delegate"/> otherwise.</returns>
         public static implicit operator DelegateMessageSpecification(Func<Message, bool> @delegate)
         {
             return @delegate == null ? null : new DelegateMessageSpecification(@delegate);

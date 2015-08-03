@@ -26,10 +26,23 @@ using System.Linq;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// 
+    /// </summary>
     internal class SendRule : ISendRule
     {
         private readonly IEnumerable<EndpointName> _endpoints;
         private readonly IMessageSpecification _specification;
+
+        public IMessageSpecification Specification
+        {
+            get { return _specification; }
+        }
+
+        public IEnumerable<EndpointName> Endpoints
+        {
+            get { return _endpoints; }
+        }
 
         public SendRule(IMessageSpecification specification, IEnumerable<EndpointName> endpoints)
         {
@@ -46,16 +59,6 @@ namespace Platibus.Config
         public SendRule(IMessageSpecification specification, params EndpointName[] endpoints)
             : this(specification, (IEnumerable<EndpointName>) endpoints)
         {
-        }
-
-        public IMessageSpecification Specification
-        {
-            get { return _specification; }
-        }
-
-        public IEnumerable<EndpointName> Endpoints
-        {
-            get { return _endpoints; }
         }
     }
 }

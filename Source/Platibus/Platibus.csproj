@@ -185,7 +185,6 @@
     <Compile Include="Config\EndpointAlreadyExistsException.cs" />
     <Compile Include="Config\EndpointElement.cs" />
     <Compile Include="Config\EndpointElementCollection.cs" />
-    <Compile Include="Config\EndpointNotFoundException.cs" />
     <Compile Include="Config\EndpointRequiredException.cs" />
     <Compile Include="Config\IMessageSpecification.cs" />
     <Compile Include="Config\IPlatibusConfiguration.cs" />

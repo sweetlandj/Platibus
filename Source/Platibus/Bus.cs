@@ -247,10 +247,12 @@ namespace Platibus
         private IEnumerable<KeyValuePair<EndpointName, IEndpoint>> GetEndpointsForMessage(Message message)
         {
             return _sendRules
-                .Where(r => r.Specification.IsSatisfiedBy(message))
-                .SelectMany(r => r.Endpoints)
-                .Join(_endpoints, n => n, d => d.Key, (n, d) => new {Name = n, Endpoint = d.Value})
-                .ToDictionary(x => x.Name, x => x.Endpoint);
+                .Where(rule => rule.Specification.IsSatisfiedBy(message))
+                .SelectMany(rule => rule.Endpoints)
+                .Join(_endpoints,
+                    endpointName => endpointName,
+                    endpointEntry => endpointEntry.Key,
+                    (_, endpointEntry) => endpointEntry);
         }
 
         internal async Task SendReply(BusMessageContext messageContext, object replyContent,

@@ -25,6 +25,10 @@ using System.Configuration;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// A configuration element used to define an endpoint to which messages can
+    /// be sent or from which messages can be received by way of subscription.
+    /// </summary>
     public class EndpointElement : ConfigurationElement
     {
         private const string NamePropertyName = "name";
@@ -33,6 +37,9 @@ namespace Platibus.Config
         private const string UsernamePropertyName = "username";
         private const string PasswordPropertyName = "password";
 
+        /// <summary>
+        /// The endoint name.  Must be unique.
+        /// </summary>
         [ConfigurationProperty(NamePropertyName, IsRequired = true, IsKey = true)]
         public string Name
         {
@@ -40,6 +47,10 @@ namespace Platibus.Config
             set { base[NamePropertyName] = value; }
         }
 
+        /// <summary>
+        /// The base URI of the endpoint.  Format varies depending on the type
+        /// of transport.
+        /// </summary>
         [ConfigurationProperty(AddressPropertyName, IsRequired = true)]
         public Uri Address
         {
@@ -54,14 +65,20 @@ namespace Platibus.Config
             set { base[AddressPropertyName] = value; }
         }
 
-        [ConfigurationProperty(CredentialTypePropertyName, IsRequired = false, DefaultValue = ClientCredentialType.None)
-        ]
+        /// <summary>
+        /// (Optional) The type of client credentials required to connect to the endpoint.
+        /// </summary>
+        [ConfigurationProperty(CredentialTypePropertyName, IsRequired = false, DefaultValue = ClientCredentialType.None)]
         public ClientCredentialType CredentialType
         {
             get { return (ClientCredentialType) base[CredentialTypePropertyName]; }
             set { base[CredentialTypePropertyName] = value; }
         }
 
+        /// <summary>
+        /// (Optional) The username used to authenticate with the endpoint.  Required
+        /// if <see cref="CredentialType"/> is <see cref="ClientCredentialType.Basic"/>.
+        /// </summary>
         [ConfigurationProperty(UsernamePropertyName, IsRequired = false)]
         public string Username
         {
@@ -69,6 +86,10 @@ namespace Platibus.Config
             set { base[UsernamePropertyName] = value; }
         }
 
+        /// <summary>
+        /// (Optional) The password used to authenticate with the endpoint.  Required
+        /// if <see cref="CredentialType"/> is <see cref="ClientCredentialType.Basic"/>.
+        /// </summary>
         [ConfigurationProperty(PasswordPropertyName, IsRequired = false)]
         public string Password
         {

@@ -26,32 +26,54 @@ using System.Security.Permissions;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// Thrown to indicate that an endpoint with the specified name has already
+    /// been defined elsewhere in the application configuration.
+    /// </summary>
     [Serializable]
     public class EndpointAlreadyExistsException : ApplicationException
     {
-        private readonly EndpointName _endpoint;
+        private readonly EndpointName _endpointName;
 
-        public EndpointAlreadyExistsException(EndpointName endpoint)
+        /// <summary>
+        /// The endpoint name that has already been defined.
+        /// </summary>
+        public EndpointName EndpointName
         {
-            _endpoint = endpoint;
+            get { return _endpointName; }
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="EndpointAlreadyExistsException"/> with
+        /// the specified <paramref name="endpointName"/>
+        /// </summary>
+        /// <param name="endpointName">The endpoint name that already exists</param>
+        public EndpointAlreadyExistsException(EndpointName endpointName)
+        {
+            _endpointName = endpointName;
+        }
+
+        /// <summary>
+        /// Initializes a serialized <see cref="EndpointAlreadyExistsException"/>
+        /// from a streaming context.
+        /// </summary>
+        /// <param name="info">The serialization info</param>
+        /// <param name="context">The streaming context</param>
         public EndpointAlreadyExistsException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _endpoint = info.GetString("endpoint");
+            _endpointName = info.GetString("_endpointName");
         }
 
-        public EndpointName EndpointName
-        {
-            get { return _endpoint; }
-        }
-
+        /// <summary>
+        /// When overridden in a derived class, sets the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> with information about the exception.
+        /// </summary>
+        /// <param name="info">The <see cref="T:System.Runtime.Serialization.SerializationInfo"/> that holds the serialized object data about the exception being thrown. </param><param name="context">The <see cref="T:System.Runtime.Serialization.StreamingContext"/> that contains contextual information about the source or destination. </param><exception cref="T:System.ArgumentNullException">The <paramref name="info"/> parameter is a null reference (Nothing in Visual Basic). </exception><filterpriority>2</filterpriority><PermissionSet><IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="*AllFiles*" PathDiscovery="*AllFiles*"/><IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="SerializationFormatter"/></PermissionSet>
         [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("endpoint", _endpoint);
+            info.AddValue("_endpointName", _endpointName);
         }
     }
 }
