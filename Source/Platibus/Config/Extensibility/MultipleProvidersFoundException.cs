@@ -28,18 +28,56 @@ using System.Security.Permissions;
 
 namespace Platibus.Config.Extensibility
 {
+    /// <summary>
+    /// An exception thrown to indicate that there were more than one suitable types 
+    /// found in the application domain associated with a provider name and having
+    /// the same priority.
+    /// </summary>
+    /// <seealso cref="ProviderAttribute"/>
+    /// <seealso cref="ProviderHelper"/>
     [Serializable]
     public class MultipleProvidersFoundException : Exception
     {
         private readonly string _providerName;
         private readonly Type[] _providers;
 
+        /// <summary>
+        /// The provider name for which multiple types were found in the
+        /// application domain.
+        /// </summary>
+        public string ProviderName
+        {
+            get { return _providerName; }
+        }
+
+        /// <summary>
+        /// The types found in the app domain having the same
+        /// <see cref="ProviderName"/>.
+        /// </summary>
+        public IEnumerable<Type> Providers
+        {
+            get { return _providers; }
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="MultipleProvidersFoundException"/>
+        /// for the specified <paramref name="providerName"/> and types.
+        /// </summary>
+        /// <param name="providerName">The provider name</param>
+        /// <param name="providers">The types found in the application
+        /// domain having the provider name</param>
         public MultipleProvidersFoundException(string providerName, IEnumerable<Type> providers) : base(providerName)
         {
             _providerName = providerName;
             _providers = providers != null ? providers.Where(t => t != null).ToArray() : new Type[0];
         }
 
+        /// <summary>
+        /// Initializes a serialized <see cref="MultipleProvidersFoundException"/>
+        /// from a streaming context.
+        /// </summary>
+        /// <param name="info">The serialization info</param>
+        /// <param name="context">The streaming context</param>
         public MultipleProvidersFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -47,16 +85,10 @@ namespace Platibus.Config.Extensibility
             _providers = (Type[]) info.GetValue("providers", typeof (Type[]));
         }
 
-        public string ProviderName
-        {
-            get { return _providerName; }
-        }
-
-        public IEnumerable<Type> Providers
-        {
-            get { return _providers; }
-        }
-
+        /// <summary>
+        /// When overridden in a derived class, sets the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> with information about the exception.
+        /// </summary>
+        /// <param name="info">The <see cref="T:System.Runtime.Serialization.SerializationInfo"/> that holds the serialized object data about the exception being thrown. </param><param name="context">The <see cref="T:System.Runtime.Serialization.StreamingContext"/> that contains contextual information about the source or destination. </param><exception cref="T:System.ArgumentNullException">The <paramref name="info"/> parameter is a null reference (Nothing in Visual Basic). </exception><filterpriority>2</filterpriority><PermissionSet><IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="*AllFiles*" PathDiscovery="*AllFiles*"/><IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="SerializationFormatter"/></PermissionSet>
         [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {

@@ -24,8 +24,20 @@ using System.Threading.Tasks;
 
 namespace Platibus.Config.Extensibility
 {
+    /// <summary>
+    /// A factory for initializing a <see cref="IMessageJournalingService"/>
+    /// during bus initialization.
+    /// </summary>
     public interface IMessageJournalingServiceProvider
     {
+        /// <summary>
+        /// Creates an initializes a <see cref="IMessageJournalingService"/>
+        /// based on the provideds <paramref name="configuration"/>.
+        /// </summary>
+        /// <param name="configuration">The journaling configuration
+        /// element.</param>
+        /// <returns>Returns a task whose result is an initialized
+        /// <see cref="IMessageJournalingService"/>.</returns>
         Task<IMessageJournalingService> CreateMessageJournalingService(JournalingElement configuration);
     }
 }

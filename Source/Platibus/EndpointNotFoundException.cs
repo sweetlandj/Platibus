@@ -21,13 +21,14 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Security.Permissions;
 
 namespace Platibus
 {
     [Serializable]
-    public class EndpointNotFoundException : ApplicationException
+    public class EndpointNotFoundException : KeyNotFoundException
     {
         private readonly EndpointName _endpoint;
         private readonly Uri _uri;

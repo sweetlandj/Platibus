@@ -121,5 +121,17 @@ namespace Platibus.Config
                 .OrderByDescending(x => attributeMember(x.Attribute))
                 .Select(x => x.Type);
         }
+
+        public static IEnumerable<IGrouping<TKey, Type>> GroupBy<TAttribute, TKey>(this IEnumerable<Type> source,
+            Func<TAttribute, TKey> attributeMember) where TAttribute : Attribute
+        {
+            return source.Select(t => new
+            {
+                Type = t,
+                Attribute = t.GetCustomAttribute<TAttribute>()
+            })
+                .Where(x => x.Attribute != null)
+                .GroupBy(x => attributeMember(x.Attribute), x => x.Type);
+        }
     }
 }

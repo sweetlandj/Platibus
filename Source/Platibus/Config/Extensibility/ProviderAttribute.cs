@@ -24,18 +24,82 @@ using System;
 
 namespace Platibus.Config.Extensibility
 {
+    /// <summary>
+    /// Associates the decorated type with a provider name.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Decorated types must have a default constructor and must implement at 
+    /// least one of the following interfaces:
+    /// </para>
+    /// <list type="table">
+    /// <listheader>
+    /// <term>Interface</term>
+    /// <description>Description</description>
+    /// </listheader>
+    /// <item>
+    /// <term><see cref="IMessageJournalingServiceProvider"/></term>
+    /// <description>Indicates that the decorated type provides a
+    /// <see cref="IMessageJournalingService"/>.  The <see cref="Name"/> 
+    /// specified in <see cref="ProviderAttribute"/> corresponds to the value of 
+    /// the <see cref="JournalingElement.Provider"/> property in a
+    /// <see cref="JournalingElement"/>.</description>
+    /// </item>
+    /// <item>
+    /// <term><see cref="IMessageQueueingServiceProvider"/></term>
+    /// <description>Indicates that the decorated type provides a
+    /// <see cref="IMessageQueueingService"/>.  The <see cref="Name"/> 
+    /// specified in <see cref="ProviderAttribute"/> corresponds to the value of 
+    /// the <see cref="QueueingElement.Provider"/> property in a
+    /// <see cref="QueueingElement"/>.</description>
+    /// </item>
+    /// <item>
+    /// <term><see cref="ISubscriptionTrackingServiceProvider"/></term>
+    /// <description>Indicates that the decorated type provides a
+    /// <see cref="ISubscriptionTrackingService"/>.  The <see cref="Name"/> 
+    /// specified in <see cref="ProviderAttribute"/> corresponds to the value of 
+    /// the <see cref="QueueingElement.Provider"/> property in a
+    /// <see cref="QueueingElement"/>.</description>
+    /// </item>
+    /// </list>
+    /// </remarks>
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public class ProviderAttribute : Attribute
     {
         private readonly string _name;
 
+        /// <summary>
+        /// The provider name
+        /// </summary>
+        /// <remarks>
+        /// The provider name is the value specified in configuration files
+        /// to indicate that the decorated type should be used to provide
+        /// service implementations during initialization.
+        /// </remarks>
         public string Name
         {
             get { return _name; }
         }
 
+        /// <summary>
+        /// The relative priority of the provider
+        /// </summary>
+        /// <remarks>
+        /// In the case in which there are multiple providers of the same
+        /// name, the priority is used to indicate which provider should be
+        /// preferred.  Higher values take precedence.  This is useful when
+        /// overriding default provider implementations.
+        /// </remarks>
         public int Priority { get; set; }
 
+        /// <summary>
+        /// Initializes a new <see cref="ProviderAttribute"/> with the
+        /// specified <paramref name="name"/>.
+        /// </summary>
+        /// <param name="name">The provider name to associate with the
+        /// decorated type.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="name"/>
+        /// is <c>null</c> or whitespace.</exception>
         public ProviderAttribute(string name)
         {
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
