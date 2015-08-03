@@ -22,10 +22,28 @@
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// An interface describing an object that maps a set of messages onto
+    /// a message handler and queue.
+    /// </summary>
     public interface IHandlingRule
     {
-        IMessageSpecification MessageSpecification { get; }
+        /// <summary>
+        /// The message specification that selects messages to which the
+        /// handling rule applies.
+        /// </summary>
+        IMessageSpecification Specification { get; }
+
+        /// <summary>
+        /// The message handler to which messages matching the 
+        /// <see cref="Specification"/> will be routed
+        /// </summary>
         IMessageHandler MessageHandler { get; }
+
+        /// <summary>
+        /// The name of the queue in which matching messages will be placed
+        /// while they await handling
+        /// </summary>
         QueueName QueueName { get; }
     }
 }

@@ -24,10 +24,30 @@ using System;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// An interface describing a subscription to a topic hosted on a local or
+    /// remote bus instance
+    /// </summary>
     public interface ISubscription
     {
+        /// <summary>
+        /// The name of the publisher endpoint
+        /// </summary>
         EndpointName Publisher { get; }
+
+        /// <summary>
+        /// The name of the topic
+        /// </summary>
         TopicName Topic { get; }
+
+        /// <summary>
+        /// The Time-To-Live (TTL) for the subscription
+        /// </summary>
+        /// <remarks>
+        /// Subscriptions will regularly be renewed, but the TTL serves as a
+        /// "dead man's switch" that will cause the subscription to be terminated
+        /// if not renewed within that span of time.
+        /// </remarks>
         TimeSpan TTL { get; }
     }
 }

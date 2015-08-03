@@ -25,13 +25,40 @@ using System.Threading.Tasks;
 
 namespace Platibus
 {
+    /// <summary>
+    /// An interface that describes an object that handles (processes) incoming
+    /// messages.
+    /// </summary>
     public interface IMessageHandler
     {
-        Task HandleMessage(object message, IMessageContext messageContext, CancellationToken cancellationToken);
+        /// <summary>
+        /// Handles (processes) an incoming message.
+        /// </summary>
+        /// <param name="content">The deserialied content (body) of the message</param>
+        /// <param name="messageContext">The context in which the message was received
+        /// including message metadata</param>
+        /// <param name="cancellationToken">A cancellation token used by the host to
+        /// indicate that message handling should stop as soon as feasible.</param>
+        /// <returns>Returns a task that completes when the message has been handled</returns>
+        Task HandleMessage(object content, IMessageContext messageContext, CancellationToken cancellationToken);
     }
 
-    public interface IMessageHandler<in TMessage>
+    /// <summary>
+    /// An interface that describes an object that handles (processes) incoming
+    /// messages with a specific type of deserialized content.
+    /// </summary>
+    /// <typeparam name="TContent">The type of content expected</typeparam>
+    public interface IMessageHandler<in TContent>
     {
-        Task HandleMessage(TMessage message, IMessageContext messageContext, CancellationToken cancellationToken);
+        /// <summary>
+        /// Handles (processes) an incoming message.
+        /// </summary>
+        /// <param name="content">The deserialied content (body) of the message</param>
+        /// <param name="messageContext">The context in which the message was received
+        /// including message metadata</param>
+        /// <param name="cancellationToken">A cancellation token used by the host to
+        /// indicate that message handling should stop as soon as feasible.</param>
+        /// <returns>Returns a task that completes when the message has been handled</returns>
+        Task HandleMessage(TContent content, IMessageContext messageContext, CancellationToken cancellationToken);
     }
 }

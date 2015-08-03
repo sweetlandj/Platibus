@@ -22,9 +22,9 @@ namespace Platibus.UnitTests
 
             var messageRoutes = configuration.HandlingRules.ToList();
             Assert.That(messageRoutes.Count, Is.EqualTo(1));
-            Assert.That(messageRoutes[0].MessageSpecification, Is.InstanceOf<MessageNamePatternSpecification>());
+            Assert.That(messageRoutes[0].Specification, Is.InstanceOf<MessageNamePatternSpecification>());
 
-            var namePatternSpec = (MessageNamePatternSpecification) messageRoutes[0].MessageSpecification;
+            var namePatternSpec = (MessageNamePatternSpecification) messageRoutes[0].Specification;
             Assert.That(namePatternSpec.NameRegex.ToString(), Is.EqualTo(".*(?i)example.*"));
 
             Assert.That(messageRoutes[0].MessageHandler, Is.InstanceOf<MessageHandlerStub>());

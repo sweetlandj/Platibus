@@ -39,7 +39,7 @@ namespace Platibus.IntegrationTests
             get { return "PublicationHandler"; }
         }
 
-        public Task HandleMessage(object message, IMessageContext messageContext, CancellationToken cancellationToken)
+        public Task HandleMessage(object content, IMessageContext messageContext, CancellationToken cancellationToken)
         {
             MessageReceivedEvent.Set();
             messageContext.Acknowledge();

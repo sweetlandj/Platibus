@@ -306,7 +306,7 @@ namespace Platibus
             {
                 // Message expiration handled in MessageHandlingListener
                 tasks.AddRange(_handlingRules
-                    .Where(r => r.MessageSpecification.IsSatisfiedBy(message))
+                    .Where(r => r.Specification.IsSatisfiedBy(message))
                     .Select(rule => rule.QueueName)
                     .Distinct()
                     .Select(q => _messageQueueingService.EnqueueMessage(q, message, senderPrincipal)));
@@ -323,7 +323,7 @@ namespace Platibus
         {
             var messageContext = new BusMessageContext(this, message.Headers, senderPrincipal);
             var handlers = _handlingRules
-                .Where(r => r.MessageSpecification.IsSatisfiedBy(message))
+                .Where(r => r.Specification.IsSatisfiedBy(message))
                 .Select(rule => rule.MessageHandler)
                 .ToList();
 

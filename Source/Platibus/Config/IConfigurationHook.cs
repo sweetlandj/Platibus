@@ -23,14 +23,14 @@
 namespace Platibus.Config
 {
     /// <summary>
-    ///     Interface used by application developers to provide programmatic configuration
-    ///     during bus initialization.
+    /// Interface used by application developers to provide programmatic configuration
+    /// during bus initialization.
     /// </summary>
     public interface IConfigurationHook
     {
         /// <summary>
-        ///     Called during bus initialization to allow application developers an
-        ///     opportunity to modify the configuration before the bus is initialized.
+        /// Called during bus initialization to allow application developers an
+        /// opportunity to modify the configuration before the bus is initialized.
         /// </summary>
         /// <param name="configuration">The bus configuration.</param>
         void Configure(PlatibusConfiguration configuration);

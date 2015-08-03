@@ -28,11 +28,11 @@ namespace Platibus.UnitTests
             get { return "TestMessageHandler"; }
         }
 
-        public Task HandleMessage(object message, IMessageContext messageContext,
+        public Task HandleMessage(object content, IMessageContext messageContext,
             CancellationToken cancellationToken = default(CancellationToken))
         {
             Log.DebugFormat("Handling message ID {0}...", messageContext.Headers.MessageId);
-            HandledMessageQueue.Enqueue(message);
+            HandledMessageQueue.Enqueue(content);
             messageContext.Acknowledge();
             MessageReceivedEvent.Set();
             return Task.FromResult(true);

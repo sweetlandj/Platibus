@@ -88,6 +88,7 @@
     <Compile Include="Http\HttpExceptionHandler.cs" />
     <Compile Include="Http\OutboundQueueListener.cs" />
     <Compile Include="IEndpointCollection.cs" />
+    <Compile Include="IMessageHandler.cs" />
     <Compile Include="LoopbackHost.cs" />
     <Compile Include="MessageImportance.cs" />
     <Compile Include="Http\HttpEndpointCredentialsVisitor.cs" />
@@ -235,7 +236,6 @@
     <Compile Include="MessageHeaders.cs" />
     <Compile Include="ITopic.cs" />
     <Compile Include="IMessageContext.cs" />
-    <Compile Include="IMessageHandler.cs" />
     <Compile Include="IEndpoint.cs" />
     <Compile Include="IBus.cs" />
     <Compile Include="MessageId.cs" />

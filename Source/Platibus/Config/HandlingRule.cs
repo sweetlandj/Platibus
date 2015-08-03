@@ -27,37 +27,77 @@ using System.Text;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// The default <see cref="IHandlingRule"/> implementation
+    /// </summary>
     public class HandlingRule : IHandlingRule
     {
         private readonly IMessageHandler _messageHandler;
         private readonly QueueName _queueName;
-        private readonly IMessageSpecification _messageSpecification;
+        private readonly IMessageSpecification _specification;
 
-        public IMessageSpecification MessageSpecification
+        /// <summary>
+        /// The message specification that selects messages to which the
+        /// handling rule applies
+        /// </summary>
+        public IMessageSpecification Specification
         {
-            get { return _messageSpecification; }
+            get { return _specification; }
         }
 
+        /// <summary>
+        /// The message handler to which messages matching the 
+        /// <see cref="Specification"/> will be routed
+        /// </summary>
         public IMessageHandler MessageHandler
         {
             get { return _messageHandler; }
         }
 
+        /// <summary>
+        /// The name of the queue in which matching messages will be placed
+        /// while they await handling
+        /// </summary>
         public QueueName QueueName
         {
             get { return _queueName; }
         }
 
-        public HandlingRule(IMessageSpecification messageSpecification, IMessageHandler messageHandler,
+        /// <summary>
+        /// Initializes a new <see cref="HandlingRule"/> with the supplied message
+        /// <paramref name="specification"/>, <see cref="MessageHandler"/>, and
+        /// <paramref name="queueName"/>.
+        /// </summary>
+        /// <param name="specification">The message specification that selects messages 
+        /// to which the handling rule applies</param>
+        /// <param name="messageHandler">The handler to which messages matching the
+        /// specification will be routed</param>
+        /// <param name="queueName">(Optional) The name of the queue in which matching
+        /// messages will be placed while they await handling</param>
+        /// <remarks>
+        /// If the <paramref name="queueName"/> is ommitted, a default queue name will
+        /// be generated based on the MD5 hash of the full type name of the supplied
+        /// <paramref name="messageHandler"/>
+        /// </remarks>
+        /// <seealso cref="GenerateQueueName"/>
+        public HandlingRule(IMessageSpecification specification, IMessageHandler messageHandler,
             QueueName queueName = null)
         {
-            if (messageSpecification == null) throw new ArgumentNullException("messageSpecification");
+            if (specification == null) throw new ArgumentNullException("specification");
             if (messageHandler == null) throw new ArgumentNullException("messageHandler");
-            _messageSpecification = messageSpecification;
+            _specification = specification;
             _messageHandler = messageHandler;
             _queueName = queueName ?? GenerateQueueName(messageHandler);
         }
 
+        /// <summary>
+        /// Deterministically generates a queue name for a 
+        /// <paramref name="messageHandler"/> based on the MD5 hash of its full
+        /// type name
+        /// </summary>
+        /// <param name="messageHandler">The message handler</param>
+        /// <returns>A unique and deterministic queue name based on the message
+        /// handler type</returns>
         public static QueueName GenerateQueueName(IMessageHandler messageHandler)
         {
             // Produce a short type name that is safe (ish?) from collisions

@@ -18,9 +18,9 @@ namespace Platibus.SampleWebApp.Controllers
             _repository = repository;
         }
 
-        public async Task HandleMessage(object message, IMessageContext context, CancellationToken cancellationToken)
+        public async Task HandleMessage(object content, IMessageContext context, CancellationToken cancellationToken)
         {
-            var testMessage = (TestMessage) message;
+            var testMessage = (TestMessage) content;
 
             Log.DebugFormat("[Process {0}, Thread {1}, AppDomain {2}]",
                 Process.GetCurrentProcess().Id,

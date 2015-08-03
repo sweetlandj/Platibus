@@ -81,10 +81,10 @@ namespace Platibus
             _handleMessage = (msg, ctx, tok) => Task.Run(() => handleMessage(msg, ctx), tok);
         }
 
-        public Task HandleMessage(object message, IMessageContext messageContext,
+        public Task HandleMessage(object content, IMessageContext messageContext,
             CancellationToken cancellationToken)
         {
-            return _handleMessage((TContent) message, messageContext, cancellationToken);
+            return _handleMessage((TContent) content, messageContext, cancellationToken);
         }
     }
 }

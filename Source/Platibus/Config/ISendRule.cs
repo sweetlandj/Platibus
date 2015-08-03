@@ -24,9 +24,22 @@ using System.Collections.Generic;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// An interface describing an object that maps a set of messages onto
+    /// a set of destination endpoints.
+    /// </summary>
     public interface ISendRule
     {
+        /// <summary>
+        /// The message specification that selects messages to which the
+        /// send rule applies.
+        /// </summary>
         IMessageSpecification Specification { get; }
+
+        /// <summary>
+        /// The set of endpoints to which messages that match the
+        /// <see cref="Specification"/> should be sent.
+        /// </summary>
         IEnumerable<EndpointName> Endpoints { get; }
     }
 }
