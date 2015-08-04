@@ -25,20 +25,24 @@ using System.Threading.Tasks;
 
 namespace Platibus
 {
+    /// <summary>
+    /// A context in which a message is dequeued for processing
+    /// </summary>
     public interface IQueuedMessageContext
     {
         /// <summary>
-        ///     Message headers
+        /// Metadata associated with the message
         /// </summary>
         IMessageHeaders Headers { get; }
 
         /// <summary>
-        ///     The identity of the sender
+        /// The identity of the sender
         /// </summary>
         IPrincipal SenderPrincipal { get; }
 
         /// <summary>
-        ///     Acknowledge receipt of the message, indicating that the message should be removed from the queue.
+        /// Acknowledges receipt of the message, indicating that the message should be 
+        /// removed from the queue
         /// </summary>
         Task Acknowledge();
     }

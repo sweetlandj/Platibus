@@ -25,6 +25,9 @@ using System.Diagnostics;
 
 namespace Platibus
 {
+    /// <summary>
+    /// An amplified value type that provides equality semantics for header names
+    /// </summary>
     [DebuggerDisplay("{_value,nq}")]
     public class HeaderName : IEquatable<HeaderName>
     {
@@ -102,6 +105,17 @@ namespace Platibus
 
         private readonly string _value;
 
+        /// <summary>
+        /// Initializes a new <see cref="HeaderName"/> with the specified <paramref name="value"/>
+        /// </summary>
+        /// <param name="value">The header name as a string</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is
+        /// <c>null</c> or whitespace</exception>
+        /// <exception cref="FormatException">Thrown if <paramref name="value"/> contains invalid
+        /// characters</exception>
+        /// <remarks>
+        /// Header names may not contain the character ':'
+        /// </remarks>
         public HeaderName(string value)
         {
             if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException("value");
@@ -109,42 +123,98 @@ namespace Platibus
             _value = value.Trim();
         }
 
+        /// <summary>
+        /// Determines whether another <paramref name="headerName"/> is equal to this one
+        /// </summary>
+        /// <param name="headerName">The other header name</param>
+        /// <returns>Returns <c>true</c> if the other <paramref name="headerName"/> is equal
+        /// to this one; <c>fale</c> otherwise</returns>
         public bool Equals(HeaderName headerName)
         {
             if (ReferenceEquals(null, headerName)) return false;
             return string.Equals(_value, headerName._value, StringComparison.InvariantCultureIgnoreCase);
         }
 
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>
+        /// A string that represents the current object.
+        /// </returns>
+        /// <filterpriority>2</filterpriority>
         public override string ToString()
         {
             return _value;
         }
 
+        /// <summary>
+        /// Determines whether the specified <see cref="T:System.Object"/> is equal to the current <see cref="T:System.Object"/>.
+        /// </summary>
+        /// <returns>
+        /// true if the specified object  is equal to the current object; otherwise, false.
+        /// </returns>
+        /// <param name="obj">The object to compare with the current object. </param><filterpriority>2</filterpriority>
         public override bool Equals(object obj)
         {
             return Equals(obj as HeaderName);
         }
 
+        /// <summary>
+        /// Serves as a hash function for a particular type. 
+        /// </summary>
+        /// <returns>
+        /// A hash code for the current <see cref="T:System.Object"/>.
+        /// </returns>
+        /// <filterpriority>2</filterpriority>
         public override int GetHashCode()
         {
             return _value.ToLowerInvariant().GetHashCode();
         }
 
+        /// <summary>
+        /// Overloaded equality operator used to determine whether two <see cref="HeaderName"/>
+        /// objects are equal
+        /// </summary>
+        /// <param name="left">The left operand</param>
+        /// <param name="right">The right operand</param>
+        /// <returns>Returns <c>true</c> if the two header names are equal; <c>false</c>
+        /// otherwise</returns>
         public static bool operator ==(HeaderName left, HeaderName right)
         {
             return Equals(left, right);
         }
 
+        /// <summary>
+        /// Overloaded inequality operator used to determine whether two <see cref="HeaderName"/>
+        /// objects are not equal
+        /// </summary>
+        /// <param name="left">The left operand</param>
+        /// <param name="right">The right operand</param>
+        /// <returns>Returns <c>true</c> if the two header names are not equal; <c>false</c>
+        /// otherwise</returns>
         public static bool operator !=(HeaderName left, HeaderName right)
         {
             return !Equals(left, right);
         }
 
+        /// <summary>
+        /// Implicitly casts a string into a <see cref="HeaderName"/>
+        /// </summary>
+        /// <param name="value">The header name as a string</param>
+        /// <returns>Returns <c>null</c> if <paramref name="value"/> is <c>null</c> or
+        /// whitespace; otherwise returns a new <see cref="HeaderName"/> instance
+        /// with the specified <paramref name="value"/></returns>
         public static implicit operator HeaderName(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? null : new HeaderName(value);
         }
 
+        /// <summary>
+        /// Implicitly casts a <see cref="HeaderName"/> object to a string
+        /// </summary>
+        /// <param name="headerName">The header name object</param>
+        /// <returns>Returns <c>null</c> if <paramref name="headerName"/> is <c>null</c>;
+        /// otherwise returns the value of the <paramref name="headerName"/> object</returns>
         public static implicit operator string(HeaderName headerName)
         {
             return headerName == null ? null : headerName._value;

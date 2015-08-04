@@ -24,9 +24,22 @@ using System;
 
 namespace Platibus
 {
+    /// <summary>
+    /// An interface describing a message that has been sent via the bus
+    /// </summary>
     public interface ISentMessage
     {
+        /// <summary>
+        /// The message ID that was assigned to the message
+        /// </summary>
         MessageId MessageId { get; }
+
+        /// <summary>
+        /// An observable stream of events to which the caller can subscribe
+        /// in order to be notified of replies, errors, or other conditions
+        /// </summary>
+        /// <returns>Returns an observable stream of events to which the caller 
+        /// can subscribe</returns>
         IObservable<object> ObserveReplies();
     }
 }

@@ -25,8 +25,20 @@ using System.Threading.Tasks;
 
 namespace Platibus
 {
+    /// <summary>
+    /// An interface describing objects that listen for messages that receive
+    /// messages off of a queue and are responsible for processing them
+    /// </summary>
     public interface IQueueListener
     {
+        /// <summary>
+        /// Handles a message that is received off of a queue
+        /// </summary>
+        /// <param name="message">The message that was received</param>
+        /// <param name="context">The context in which the message was dequeued</param>
+        /// <param name="cancellationToken">A cancellation token provided by the
+        /// queue that can be used to cancel message processing</param>
+        /// <returns>Returns a task that completes when the message is processed</returns>
         Task MessageReceived(Message message, IQueuedMessageContext context,
             CancellationToken cancellationToken = default(CancellationToken));
     }

@@ -25,23 +25,112 @@ using System.Collections.Generic;
 
 namespace Platibus
 {
+    /// <summary>
+    /// Interface providing access to the metadata transmitted with the
+    /// message content
+    /// </summary>
     public interface IMessageHeaders : IEnumerable<KeyValuePair<HeaderName, string>>
     {
+        /// <summary>
+        /// Returns the value of the specified <paramref name="header"/>
+        /// as a string
+        /// </summary>
+        /// <param name="header">The name of the header</param>
+        /// <returns>The value of the specified header, or <c>null</c>
+        /// if that header is not present</returns>
         string this[HeaderName header] { get; }
+
+        /// <summary>
+        /// Returns the unique identifier associated with the message
+        /// </summary>
         MessageId MessageId { get; }
+
+        /// <summary>
+        /// Returns the name of the message
+        /// </summary>
+        /// <remarks>
+        /// The message name is used to identify an appropriate type for
+        /// content deserialization
+        /// </remarks>
+        /// <seealso cref="IMessageNamingService"/>
         MessageName MessageName { get; }
+
+        /// <summary>
+        /// Returns the date and time at which the message expires
+        /// </summary>
+        /// <remarks>
+        /// Expired messages should not be handled (UTC)
+        /// </remarks>
         DateTime Expires { get; }
+
+        /// <summary>
+        /// Returns the base URI of the endpoint from which the message
+        /// was sent
+        /// </summary>
         Uri Origination { get; }
+        
+        /// <summary>
+        /// Returns the base URI of the endpoint to which replies should
+        /// be sent (if different than the <see cref="Origination"/>)
+        /// </summary>
         Uri ReplyTo { get; }
+
+        /// <summary>
+        /// Returns the base URI of the endpoint to which the message
+        /// was or is to be sent
+        /// </summary>
         Uri Destination { get; }
+
+        /// <summary>
+        /// Returns the message ID of the message to which this message
+        /// is a reply
+        /// </summary>
         MessageId RelatedTo { get; }
+
+        /// <summary>
+        /// Returns the date and time the message was published (UTC)
+        /// </summary>
         DateTime Published { get; }
+
+        /// <summary>
+        /// Returns the name of the topic to which the message was published
+        /// </summary>
         TopicName Topic { get; }
+
+        /// <summary>
+        /// Returns the date and time the message was sent (UTC)
+        /// </summary>
         DateTime Sent { get; }
+
+        /// <summary>
+        /// Returns the date and time the message was received (UTC)
+        /// </summary>
         DateTime Received { get; }
+
+        /// <summary>
+        /// Returns the MIME type of the message content
+        /// </summary>
         string ContentType { get; }
+
+        /// <summary>
+        /// Returns the importance of the message
+        /// </summary>
         MessageImportance Importance { get; }
+
+        /// <summary>
+        /// Returns the specified header value as a URI
+        /// </summary>
+        /// <param name="headerName">The name of the header</param>
+        /// <returns>Returns the specified header value as URI if it exists,
+        /// <c>null</c> otherwise</returns>
         Uri GetUri(HeaderName headerName);
+
+        /// <summary>
+        /// Returns the specified header value as a UTC date/time
+        /// </summary>
+        /// <param name="headerName">The name of the header</param>
+        /// <returns>Returns the specified header value as UTC date/time if 
+        /// it exists, <c>null</c> otherwise</returns>
         DateTime? GetDateTime(HeaderName headerName);
     }
 }

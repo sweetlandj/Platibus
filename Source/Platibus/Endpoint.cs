@@ -25,58 +25,57 @@ using System.Diagnostics;
 
 namespace Platibus
 {
-    [DebuggerDisplay("{_uri,nq}")]
-    public class Endpoint : IEndpoint, IEquatable<Endpoint>
+    /// <summary>
+    /// A basic implementation of <see cref="IEndpoint"/>
+    /// </summary>
+    [DebuggerDisplay("{_address,nq}")]
+    public class Endpoint : IEndpoint
     {
-        private readonly Uri _uri;
+        private readonly Uri _address;
         private readonly IEndpointCredentials _credentials;
 
-        public Endpoint(Uri uri, IEndpointCredentials credentials = null)
+        /// <summary>
+        /// Initializes a new <see cref="Endpoint"/> with the specified address
+        /// and credentials
+        /// </summary>
+        /// <param name="address">The endoint address</param>
+        /// <param name="credentials">(Optional) The credentials required to
+        /// connect to the endpoint</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="address"/>
+        /// is <c>null</c></exception>
+        public Endpoint(Uri address, IEndpointCredentials credentials = null)
         {
-            if (uri == null) throw new ArgumentNullException("uri");
-            _uri = uri;
+            if (address == null) throw new ArgumentNullException("address");
+            _address = address;
             _credentials = credentials;
         }
 
+        /// <summary>
+        /// The base URI used to connect to the endpoint
+        /// </summary>
         public Uri Address
         {
-            get { return _uri; }
+            get { return _address; }
         }
 
+        /// <summary>
+        /// The credentials required to connect to the endpoint
+        /// </summary>
         public IEndpointCredentials Credentials
         {
             get { return _credentials; }
         }
 
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>
+        /// A string that represents the current object.
+        /// </returns>
+        /// <filterpriority>2</filterpriority>
         public override string ToString()
         {
-            return _uri.ToString();
-        }
-
-        public override int GetHashCode()
-        {
-            return _uri.GetHashCode();
-        }
-
-        public virtual bool Equals(Endpoint endpoint)
-        {
-            if (ReferenceEquals(null, endpoint)) return false;
-            return _uri.Equals(endpoint._uri);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as Endpoint);
-        }
-
-        public static bool operator ==(Endpoint left, Endpoint right)
-        {
-            return Equals(left, right);
-        }
-
-        public static bool operator !=(Endpoint left, Endpoint right)
-        {
-            return !Equals(left, right);
+            return _address.ToString();
         }
     }
 }

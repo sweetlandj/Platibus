@@ -24,9 +24,20 @@ using System;
 
 namespace Platibus
 {
+    /// <summary>
+    /// An interface that describes a local or remote location to which
+    /// messages can be sent or from which messages can be received
+    /// </summary>
     public interface IEndpoint
     {
+        /// <summary>
+        /// The base URI used to connect to the endpoint
+        /// </summary>
         Uri Address { get; }
+
+        /// <summary>
+        /// The credentials required to connect to the endpoint
+        /// </summary>
         IEndpointCredentials Credentials { get; }
     }
 }
