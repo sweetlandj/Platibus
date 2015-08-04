@@ -24,10 +24,16 @@ using System.Configuration;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// Configuration element for topics
+    /// </summary>
     public class TopicElement : ConfigurationElement
     {
         private const string NamePropertyName = "name";
 
+        /// <summary>
+        /// The name of the topic
+        /// </summary>
         [ConfigurationProperty(NamePropertyName, IsRequired = true, IsKey = true)]
         public string Name
         {

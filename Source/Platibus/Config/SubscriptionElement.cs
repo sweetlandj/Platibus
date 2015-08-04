@@ -25,26 +25,43 @@ using System.Configuration;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// Configuration element for subscriptions
+    /// </summary>
     public class SubscriptionElement : ConfigurationElement
     {
-        public const string EndpointPropertyName = "endpoint";
-        public const string TopicPropertyName = "topic";
-        public const string TTLPropertyName = "ttl";
+        private const string EndpointPropertyName = "endpoint";
+        private const string TopicPropertyName = "topic";
+        private const string TTLPropertyName = "ttl";
 
-        [ConfigurationProperty(EndpointPropertyName, IsRequired = true)]
+        /// <summary>
+        /// The name of the endpoint in which the topic is hosted
+        /// </summary>
+        [ConfigurationProperty(EndpointPropertyName, IsRequired = true, IsKey = true)]
         public string Endpoint
         {
             get { return (string) base[EndpointPropertyName]; }
             set { base[EndpointPropertyName] = value; }
         }
 
-        [ConfigurationProperty(TopicPropertyName, IsRequired = true)]
+        /// <summary>
+        /// The name of the topic
+        /// </summary>
+        [ConfigurationProperty(TopicPropertyName, IsRequired = true, IsKey = true)]
         public string Topic
         {
             get { return (string) base[TopicPropertyName]; }
             set { base[TopicPropertyName] = value; }
         }
 
+        /// <summary>
+        /// The Time-To-Live (TTL) for the subscription
+        /// </summary>
+        /// <remarks>
+        /// Subscriptions will regularly be renewed, but the TTL serves as a
+        /// "dead man's switch" that will cause the subscription to be terminated
+        /// if not renewed within that span of time.
+        /// </remarks>
         [ConfigurationProperty(TTLPropertyName, DefaultValue = "24:00:00")]
         public TimeSpan TTL
         {

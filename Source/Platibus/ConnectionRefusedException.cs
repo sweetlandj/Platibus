@@ -26,12 +26,22 @@ using System.Security.Permissions;
 
 namespace Platibus
 {
+    /// <summary>
+    /// Exception thrown to indicate that a connection to a remote bus instance
+    /// was refused
+    /// </summary>
     [Serializable]
     public class ConnectionRefusedException : TransportException
     {
         private readonly string _host;
         private readonly int _port;
 
+        /// <summary>
+        /// Initializes a new <see cref="ConnectionRefusedException"/> with the
+        /// specified <paramref name="host"/> and <paramref name="port"/>
+        /// </summary>
+        /// <param name="host">The host that refused the connection</param>
+        /// <param name="port">The port on which the connection was refused</param>
         public ConnectionRefusedException(string host, int port)
             : base(string.Format("Connection refused to {0}:{1}", host, port))
         {
@@ -39,6 +49,14 @@ namespace Platibus
             _port = port;
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="ConnectionRefusedException"/> with the
+        /// specified <paramref name="host"/>, <paramref name="port"/>, and nested
+        /// exception
+        /// </summary>
+        /// <param name="host">The host that refused the connection</param>
+        /// <param name="port">The port on which the connection was refused</param>
+        /// <param name="innerException">The nested exception</param>
         public ConnectionRefusedException(string host, int port, Exception innerException)
             : base(string.Format("Connection refused to {0}:{1}", host, port), innerException)
         {
@@ -46,18 +64,30 @@ namespace Platibus
             _port = port;
         }
 
+        /// <summary>
+        /// Initializes a serialized <see cref="ConnectionRefusedException"/> from a
+        /// streaming context
+        /// </summary>
+        /// <param name="info">The serialization info</param>
+        /// <param name="context">The streaming context</param>
         public ConnectionRefusedException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _host = info.GetString("host");
-            _port = info.GetInt32("port");
+            _host = info.GetString("Host");
+            _port = info.GetInt32("Port");
         }
 
+        /// <summary>
+        /// The host that refused the connection
+        /// </summary>
         public string Host
         {
             get { return _host; }
         }
 
+        /// <summary>
+        /// The port on which the connection was refused
+        /// </summary>
         public int Port
         {
             get { return _port; }
@@ -67,8 +97,8 @@ namespace Platibus
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("host", _host);
-            info.AddValue("port", _port);
+            info.AddValue("Host", _host);
+            info.AddValue("Port", _port);
         }
     }
 }

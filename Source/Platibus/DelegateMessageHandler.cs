@@ -26,61 +26,164 @@ using System.Threading.Tasks;
 
 namespace Platibus
 {
+    /// <summary>
+    /// An <see cref="IMessageHandler"/> implementation that wraps a function or
+    /// action delegate to handle messages
+    /// </summary>
+    /// <remarks>
+    /// This implementation enables developers to use simple lamba expressions to
+    /// handle messages rather than creating many implementations of the 
+    /// <see cref="IMessageHandler"/> interface.
+    /// </remarks>
     public class DelegateMessageHandler : DelegateMessageHandler<object>
     {
+        /// <summary>
+        /// Initializes a new <see cref="DelegateMessageHandler"/> with the specified
+        /// function delegate
+        /// </summary>
+        /// <param name="handleMessage">The function delegate that will handle the message</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="handleMessage"/> is
+        /// <c>null</c></exception>
         public DelegateMessageHandler(Func<object, IMessageContext, Task> handleMessage)
             : base(handleMessage)
         {
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="DelegateMessageHandler"/> with the specified
+        /// function delegate
+        /// </summary>
+        /// <param name="handleMessage">The function delegate that will handle the message</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="handleMessage"/> is
+        /// <c>null</c></exception>
         public DelegateMessageHandler(Func<object, IMessageContext, CancellationToken, Task> handleMessage)
             : base(handleMessage)
         {
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="DelegateMessageHandler"/> with the specified
+        /// action delegate
+        /// </summary>
+        /// <param name="handleMessage">The actiopn delegate that will handle the message</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="handleMessage"/> is
+        /// <c>null</c></exception>
         public DelegateMessageHandler(Action<object, IMessageContext> handleMessage)
             : base(handleMessage)
         {
         }
 
-        public static DelegateMessageHandler<T> For<T>(Func<T, IMessageContext, Task> handleMessage)
+        /// <summary>
+        /// Factory method for creating new <see cref="DelegateMessageHandler{TContent}"/>
+        /// instances for specific types of content
+        /// </summary>
+        /// <typeparam name="TContent">The type of content expected by the handler</typeparam>
+        /// <param name="handleMessage">The function delegate for handling the message</param>
+        /// <returns>Returns an instance of <see cref="DelegateMessageHandler{TContent}"/> that
+        /// wraps the specified <paramref name="handleMessage"/> delegate</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="handleMessage"/> is
+        /// <c>null</c></exception>
+        public static DelegateMessageHandler<TContent> For<TContent>(Func<TContent, IMessageContext, Task> handleMessage)
         {
-            return new DelegateMessageHandler<T>(handleMessage);
+            return new DelegateMessageHandler<TContent>(handleMessage);
         }
 
-        public static DelegateMessageHandler<T> For<T>(Func<T, IMessageContext, CancellationToken, Task> handleMessage)
+        /// <summary>
+        /// Factory method for creating new <see cref="DelegateMessageHandler{TContent}"/>
+        /// instances for specific types of content
+        /// </summary>
+        /// <typeparam name="TContent">The type of content expected by the handler</typeparam>
+        /// <param name="handleMessage">The function delegate for handling the message</param>
+        /// <returns>Returns an instance of <see cref="DelegateMessageHandler{TContent}"/> that
+        /// wraps the specified <paramref name="handleMessage"/> delegate</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="handleMessage"/> is
+        /// <c>null</c></exception>
+        public static DelegateMessageHandler<TContent> For<TContent>(Func<TContent, IMessageContext, CancellationToken, Task> handleMessage)
         {
-            return new DelegateMessageHandler<T>(handleMessage);
+            return new DelegateMessageHandler<TContent>(handleMessage);
         }
 
-        public static DelegateMessageHandler<T> For<T>(Action<T, IMessageContext> handleMessage)
+        /// <summary>
+        /// Factory method for creating new <see cref="DelegateMessageHandler{TContent}"/>
+        /// instances for specific types of content
+        /// </summary>
+        /// <typeparam name="TContent">The type of content expected by the handler</typeparam>
+        /// <param name="handleMessage">The action delegate for handling the message</param>
+        /// <returns>Returns an instance of <see cref="DelegateMessageHandler{TContent}"/> that
+        /// wraps the specified <paramref name="handleMessage"/> delegate</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="handleMessage"/> is
+        /// <c>null</c></exception>
+        public static DelegateMessageHandler<TContent> For<TContent>(Action<TContent, IMessageContext> handleMessage)
         {
-            return new DelegateMessageHandler<T>(handleMessage);
+            return new DelegateMessageHandler<TContent>(handleMessage);
         }
     }
 
+    /// <summary>
+    /// An <see cref="IMessageHandler"/> implementation that wraps a function or
+    /// action delegate to handle messages
+    /// </summary>
+    /// <typeparam name="TContent">The type of content expected by the handler</typeparam>
+    /// <remarks>
+    /// This implementation enables developers to use simple lamba expressions to
+    /// handle messages rather than creating many implementations of the 
+    /// <see cref="IMessageHandler"/> interface.
+    /// </remarks>
     public class DelegateMessageHandler<TContent> : IMessageHandler
     {
         private readonly Func<TContent, IMessageContext, CancellationToken, Task> _handleMessage;
 
+        /// <summary>
+        /// Initializes a new <see cref="DelegateMessageHandler"/> with the specified
+        /// function delegate
+        /// </summary>
+        /// <param name="handleMessage">The function delegate that will handle the message</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="handleMessage"/> is
+        /// <c>null</c></exception>
         public DelegateMessageHandler(Func<TContent, IMessageContext, Task> handleMessage)
         {
             if (handleMessage == null) throw new ArgumentNullException("handleMessage");
             _handleMessage = (msg, ctx, tok) => handleMessage(msg, ctx);
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="DelegateMessageHandler"/> with the specified
+        /// function delegate
+        /// </summary>
+        /// <param name="handleMessage">The function delegate that will handle the message</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="handleMessage"/> is
+        /// <c>null</c></exception>
         public DelegateMessageHandler(Func<TContent, IMessageContext, CancellationToken, Task> handleMessage)
         {
             if (handleMessage == null) throw new ArgumentNullException("handleMessage");
             _handleMessage = handleMessage;
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="DelegateMessageHandler"/> with the specified
+        /// action delegate
+        /// </summary>
+        /// <param name="handleMessage">The action delegate that will handle the message</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="handleMessage"/> is
+        /// <c>null</c></exception>
         public DelegateMessageHandler(Action<TContent, IMessageContext> handleMessage)
         {
             if (handleMessage == null) throw new ArgumentNullException("handleMessage");
             _handleMessage = (msg, ctx, tok) => Task.Run(() => handleMessage(msg, ctx), tok);
         }
 
+        /// <summary>
+        /// Handles (processes) an incoming message.
+        /// </summary>
+        /// <param name="content">The deserialied content (body) of the message</param>
+        /// <param name="messageContext">The context in which the message was received
+        /// including message metadata</param>
+        /// <param name="cancellationToken">A cancellation token used by the host to
+        /// indicate that message handling should stop as soon as feasible.</param>
+        /// <returns>Returns a task that completes when the message has been handled</returns>
+        /// <remarks>
+        /// Invokes the function or action delegate specified in the constructor
+        /// </remarks>
         public Task HandleMessage(object content, IMessageContext messageContext,
             CancellationToken cancellationToken)
         {

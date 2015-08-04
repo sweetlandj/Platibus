@@ -25,6 +25,9 @@ using System.Diagnostics;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// A basic implementation of <see cref="ISubscription"/>
+    /// </summary>
     [DebuggerDisplay("{ToString,nq}")]
     public class Subscription : ISubscription, IEquatable<Subscription>
     {
@@ -32,6 +35,18 @@ namespace Platibus.Config
         private readonly TopicName _topic;
         private readonly TimeSpan _ttl;
 
+        /// <summary>
+        /// Initializes a new <see cref="Subscription"/> to the specified
+        /// <paramref name="endpoint"/> and <paramref name="topic"/> with the
+        /// specified <paramref name="ttl"/>
+        /// </summary>
+        /// <param name="endpoint">The endpoint in which the <paramref name="topic"/>
+        /// is hosted</param>
+        /// <param name="topic">The topic being subscribed to</param>
+        /// <param name="ttl">The maximum amount of time the subscription will
+        /// be effective unless it is renewed</param>
+        /// <exception cref="ArgumentNullException">If <paramref name="endpoint"/> or
+        /// <paramref name="topic"/> are <c>null</c></exception>
         public Subscription(EndpointName endpoint, TopicName topic, TimeSpan ttl)
         {
             if (endpoint == null) throw new ArgumentNullException("endpoint");
@@ -45,6 +60,14 @@ namespace Platibus.Config
             _ttl = ttl;
         }
 
+        /// <summary>
+        /// Indicates whether another subscription is equal to this one
+        /// </summary>
+        /// <param name="subscription">The other subscription</param>
+        /// <returns>
+        /// Returns <c>true</c> if the current object is equal to the other 
+        /// <paramref name="subscription"/>; <c>false</c> otherwise
+        /// </returns>
         public bool Equals(Subscription subscription)
         {
             return subscription != null
@@ -52,26 +75,54 @@ namespace Platibus.Config
                    && _topic.Equals(subscription._topic);
         }
 
-        public EndpointName Publisher
+        /// <summary>
+        /// The name of the publisher endpoint
+        /// </summary>
+        public EndpointName Endpoint
         {
             get { return _endpoint; }
         }
 
+        /// <summary>
+        /// The name of the topic
+        /// </summary>
         public TopicName Topic
         {
             get { return _topic; }
         }
 
+        /// <summary>
+        /// The Time-To-Live (TTL) for the subscription
+        /// </summary>
+        /// <remarks>
+        /// Subscriptions will regularly be renewed, but the TTL serves as a
+        /// "dead man's switch" that will cause the subscription to be terminated
+        /// if not renewed within that span of time.
+        /// </remarks>
         public TimeSpan TTL
         {
             get { return _ttl; }
         }
 
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>
+        /// A string that represents the current object.
+        /// </returns>
+        /// <filterpriority>2</filterpriority>
         public override string ToString()
         {
             return string.Format("{0}@{1}", _topic, _endpoint);
         }
 
+        /// <summary>
+        /// Serves as a hash function for a particular type. 
+        /// </summary>
+        /// <returns>
+        /// A hash code for the current <see cref="T:System.Object"/>.
+        /// </returns>
+        /// <filterpriority>2</filterpriority>
         public override int GetHashCode()
         {
             var hashCode = _endpoint.GetHashCode();
@@ -79,6 +130,13 @@ namespace Platibus.Config
             return hashCode;
         }
 
+        /// <summary>
+        /// Determines whether the specified <see cref="T:System.Object"/> is equal to the current <see cref="T:System.Object"/>.
+        /// </summary>
+        /// <returns>
+        /// true if the specified object  is equal to the current object; otherwise, false.
+        /// </returns>
+        /// <param name="obj">The object to compare with the current object. </param><filterpriority>2</filterpriority>
         public override bool Equals(object obj)
         {
             return Equals(obj as Subscription);

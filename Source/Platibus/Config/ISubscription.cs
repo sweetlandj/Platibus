@@ -33,7 +33,7 @@ namespace Platibus.Config
         /// <summary>
         /// The name of the publisher endpoint
         /// </summary>
-        EndpointName Publisher { get; }
+        EndpointName Endpoint { get; }
 
         /// <summary>
         /// The name of the topic

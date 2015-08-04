@@ -21,13 +21,22 @@
 // THE SOFTWARE.
 
 using System.Configuration;
+using Platibus.Config.Extensibility;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// Configuration element for message queueing
+    /// </summary>
     public class QueueingElement : ExtensibleConfigurationElement
     {
         private const string ProviderPropertyName = "provider";
 
+        /// <summary>
+        /// The name of the message journaling service provider
+        /// </summary>
+        /// <seealso cref="IMessageQueueingServiceProvider"/>
+        /// <seealso cref="ProviderAttribute"/>
         [ConfigurationProperty(ProviderPropertyName, DefaultValue = "Filesystem")]
         public string Provider
         {

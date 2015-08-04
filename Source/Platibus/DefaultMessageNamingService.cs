@@ -26,15 +26,30 @@ using System.Linq;
 
 namespace Platibus
 {
+    /// <summary>
+    /// A basic implementation of <see cref="IMessageNamingService"/> that used
+    /// the full name of the message type as the message name
+    /// </summary>
     public class DefaultMessageNamingService : IMessageNamingService
     {
         private readonly ConcurrentDictionary<MessageName, Type> _messageTypesByName = new ConcurrentDictionary<MessageName, Type>();
 
+        /// <summary>
+        /// Returns the canonical message name for a given type
+        /// </summary>
+        /// <param name="messageType">The message type</param>
+        /// <returns>The canonical name associated with the type</returns>
         public MessageName GetNameForType(Type messageType)
         {
             return messageType.FullName;
         }
 
+        /// <summary>
+        /// Returns the type associated with a canonical message name
+        /// </summary>
+        /// <param name="messageName">The canonical message name</param>
+        /// <returns>The type best suited to deserialized content for messages
+        /// with the specified <paramref name="messageName"/></returns>
         public Type GetTypeForName(MessageName messageName)
         {
             return _messageTypesByName.GetOrAdd(messageName, name => FindTypeByName(name));

@@ -26,23 +26,42 @@ using System.Security.Permissions;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// Exception thrown to indicate that the same topic name has been added
+    /// more than once
+    /// </summary>
     [Serializable]
     public class TopicAlreadyExistsException : ApplicationException
     {
         private readonly TopicName _topic;
 
+        /// <summary>
+        /// Initializes a new <see cref="TopicAlreadyExistsException"/> with
+        /// the specified <paramref name="topic"/>
+        /// </summary>
+        /// <param name="topic">The name of the topic that was added multiple
+        /// time</param>
         public TopicAlreadyExistsException(TopicName topic)
         {
             _topic = topic;
         }
 
+        /// <summary>
+        /// Initializes a serialized <see cref="TopicAlreadyExistsException"/>
+        /// from a streaming context
+        /// </summary>
+        /// <param name="info">The serialization info</param>
+        /// <param name="context">The streaming context</param>
         public TopicAlreadyExistsException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _topic = info.GetString("topic");
+            _topic = info.GetString("Topic");
         }
 
-        public TopicName TopicName
+        /// <summary>
+        /// The name of the topic that was added multiple times
+        /// </summary>
+        public TopicName Topic
         {
             get { return _topic; }
         }
@@ -51,7 +70,7 @@ namespace Platibus.Config
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("topic", _topic);
+            info.AddValue("Topic", _topic);
         }
     }
 }

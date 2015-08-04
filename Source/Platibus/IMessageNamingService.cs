@@ -24,9 +24,26 @@ using System;
 
 namespace Platibus
 {
+    /// <summary>
+    /// A service that maps CLR types onto message names (and vice versa) to
+    /// convey type information in remote instances to aid with deserialization
+    /// of message content
+    /// </summary>
     public interface IMessageNamingService
     {
+        /// <summary>
+        /// Returns the canonical message name for a given type
+        /// </summary>
+        /// <param name="messageType">The message type</param>
+        /// <returns>The canonical name associated with the type</returns>
         MessageName GetNameForType(Type messageType);
+
+        /// <summary>
+        /// Returns the type associated with a canonical message name
+        /// </summary>
+        /// <param name="messageName">The canonical message name</param>
+        /// <returns>The type best suited to deserialized content for messages
+        /// with the specified <paramref name="messageName"/></returns>
         Type GetTypeForName(MessageName messageName);
     }
 }

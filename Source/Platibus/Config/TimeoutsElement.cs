@@ -25,10 +25,16 @@ using System.Configuration;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// Configuration element for miscellaneous timeout values
+    /// </summary>
     public class TimeoutsElement : ConfigurationElement
     {
         private const string ReplyTimemoutPropertyName = "replyTimeout";
 
+        /// <summary>
+        /// The maximum amount of time to wait for a reply to be received
+        /// </summary>
         [ConfigurationProperty(ReplyTimemoutPropertyName, DefaultValue = "00:05:00")]
         [TimeSpanValidator(MinValueString = "00:00:00")]
         public TimeSpan ReplyTimeout

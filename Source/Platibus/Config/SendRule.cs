@@ -27,23 +27,42 @@ using System.Linq;
 namespace Platibus.Config
 {
     /// <summary>
-    /// 
+    /// Basic send rule implementation
     /// </summary>
-    internal class SendRule : ISendRule
+    public class SendRule : ISendRule
     {
         private readonly IEnumerable<EndpointName> _endpoints;
         private readonly IMessageSpecification _specification;
 
+        /// <summary>
+        /// The message specification that selects messages to which the
+        /// send rule applies.
+        /// </summary>
         public IMessageSpecification Specification
         {
             get { return _specification; }
         }
 
+        /// <summary>
+        /// The set of endpoints to which messages that match the
+        /// <see cref="ISendRule.Specification"/> should be sent.
+        /// </summary>
         public IEnumerable<EndpointName> Endpoints
         {
             get { return _endpoints; }
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="SendRule"/> with the provided
+        /// <paramref name="specification"/> and <paramref name="endpoints"/>
+        /// </summary>
+        /// <param name="specification">The message specification used to
+        /// determine whether this rule applies to a particular message</param>
+        /// <param name="endpoints">The endpoints to which messages matching
+        /// the specification will be sent</param>
+        /// <exception cref="ArgumentNullException">If either argument is <c>null</c></exception>
+        /// <exception cref="EndpointRequiredException">If <paramref name="endpoints"/>
+        /// is empty or contains only <c>null</c> elements</exception>
         public SendRule(IMessageSpecification specification, IEnumerable<EndpointName> endpoints)
         {
             if (specification == null) throw new ArgumentNullException("specification");
@@ -56,6 +75,17 @@ namespace Platibus.Config
             _endpoints = endpointList.Where(x => x != null).ToList();
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="SendRule"/> with the provided
+        /// <paramref name="specification"/> and <paramref name="endpoints"/>
+        /// </summary>
+        /// <param name="specification">The message specification used to
+        /// determine whether this rule applies to a particular message</param>
+        /// <param name="endpoints">The endpoints to which messages matching
+        /// the specification will be sent</param>
+        /// <exception cref="ArgumentNullException">If either argument is <c>null</c></exception>
+        /// <exception cref="EndpointRequiredException">If <paramref name="endpoints"/>
+        /// is empty or contains only <c>null</c> elements</exception>
         public SendRule(IMessageSpecification specification, params EndpointName[] endpoints)
             : this(specification, (IEnumerable<EndpointName>) endpoints)
         {

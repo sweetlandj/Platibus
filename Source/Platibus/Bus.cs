@@ -33,6 +33,9 @@ using Platibus.Serialization;
 
 namespace Platibus
 {
+    /// <summary>
+    /// Default <see cref="IBus"/> implementation
+    /// </summary>
     public class Bus : IBus, IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Core);
@@ -54,6 +57,15 @@ namespace Platibus
         private readonly Uri _baseUri;
         private readonly ITransportService _transportService;
 
+        /// <summary>
+        /// Initializes a new <see cref="Bus"/> with the specified configuration and services
+        /// provided by the host
+        /// </summary>
+        /// <param name="configuration">The core bus configuration</param>
+        /// <param name="baseUri">The base URI provided by the host</param>
+        /// <param name="transportService">The transport service provided by the host</param>
+        /// <param name="messageQueueingService">The message queueing service provided by the host</param>
+        /// <exception cref="ArgumentNullException">Thrown if any of the parameters are <c>null</c></exception>
         public Bus(IPlatibusConfiguration configuration, Uri baseUri, ITransportService transportService, IMessageQueueingService messageQueueingService)
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
@@ -79,6 +91,16 @@ namespace Platibus
             _subscriptions = configuration.Subscriptions.ToList();
         }
 
+        /// <summary>
+        /// Initializes the bus instance
+        /// </summary>
+        /// <param name="cancellationToken">(Optional) A cancellation token provided by the
+        /// caller that can be used to indicate that initialization should be canceled</param>
+        /// <returns>Returns a task that will complete when bus initialization is complete</returns>
+        /// <remarks>
+        /// During initialization all handler queues are initialized and listeners are started.
+        /// Additionally, subscriptions are initiated through the <see cref="ITransportService"/>.
+        /// </remarks>
         public async Task Init(CancellationToken cancellationToken = default(CancellationToken))
         {
             var handlingRulesGroupedByQueueName = _handlingRules
@@ -97,7 +119,7 @@ namespace Platibus
 
             foreach (var subscription in _subscriptions)
             {
-                var endpoint = _endpoints[subscription.Publisher];
+                var endpoint = _endpoints[subscription.Endpoint];
 
                 // The returned task will no complete until the subscription is
                 // canceled via the supplied cancelation token, so we shouldn't
@@ -110,6 +132,12 @@ namespace Platibus
             }
         }
 
+        /// <summary>
+        ///     Sends a <paramref name="content" /> to default configured endpoints.
+        /// </summary>
+        /// <param name="content">The content to send.</param>
+        /// <param name="options">Optional settings that influence how the message is sent.</param>
+        /// <param name="cancellationToken">An optional cancellation token</param>
         public async Task<ISentMessage> Send(object content, SendOptions options = default(SendOptions),
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -146,6 +174,14 @@ namespace Platibus
             return sentMessage;
         }
 
+        /// <summary>
+        ///     Sends <paramref name="content" /> to a single caller-specified
+        ///     <paramref name="endpointName" />.
+        /// </summary>
+        /// <param name="content">The message to send.</param>
+        /// <param name="endpointName">The name of the endpoint to which the message should be sent.</param>
+        /// <param name="options">Optional settings that influence how the message is sent.</param>
+        /// <param name="cancellationToken">An optional cancellation token</param>
         public async Task<ISentMessage> Send(object content, EndpointName endpointName,
             SendOptions options = default(SendOptions), CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -172,24 +208,34 @@ namespace Platibus
             return sentMessage;
         }
 
-        public async Task<ISentMessage> Send(object content, Uri endpointUri, IEndpointCredentials credentials = null,
+        /// <summary>
+        ///     Sends <paramref name="content" /> to a single caller-specified
+        ///     endpoint <paramref name="endpointAddress" />.
+        /// </summary>
+        /// <param name="content">The message to send.</param>
+        /// <param name="endpointAddress">The URI of the endpoint to which the message should be sent.</param>
+        /// <param name="credentials">Optional credentials for authenticating with the endpoint
+        /// at the specified URI.</param>
+        /// <param name="options">Optional settings that influence how the message is sent.</param>
+        /// <param name="cancellationToken">An optional cancellation token</param>
+        public async Task<ISentMessage> Send(object content, Uri endpointAddress, IEndpointCredentials credentials = null,
             SendOptions options = default(SendOptions),
             CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
 
             if (content == null) throw new ArgumentNullException("content");
-            if (endpointUri == null) throw new ArgumentNullException("endpointUri");
+            if (endpointAddress == null) throw new ArgumentNullException("endpointAddress");
 
             var headers = new MessageHeaders
             {
-                Destination = endpointUri
+                Destination = endpointAddress
             };
 
             var message = BuildMessage(content, headers, options);
 
             Log.DebugFormat("Sending message ID {0} to \"{2}\"...",
-                message.Headers.MessageId, endpointUri);
+                message.Headers.MessageId, endpointAddress);
 
             // Create the sent message before transporting it in order to ensure that the
             // reply stream is cached before any replies arrive.
@@ -198,6 +244,13 @@ namespace Platibus
             return sentMessage;
         }
 
+        /// <summary>
+        ///     Publishes <paramref name="content" /> to the specified
+        ///     <paramref name="topic" />.
+        /// </summary>
+        /// <param name="content">The message to publish.</param>
+        /// <param name="topic">The topic to which the message should be published.</param>
+        /// <param name="cancellationToken">An optional cancellation token</param>
         public async Task Publish(object content, TopicName topic,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -278,6 +331,12 @@ namespace Platibus
             await _transportService.SendMessage(replyMessage, credentials, cancellationToken);
         }
 
+        /// <summary>
+        /// Called by the host when a new message arrives to handle the message
+        /// </summary>
+        /// <param name="message">The new message</param>
+        /// <param name="principal">The sender principal</param>
+        /// <returns>Returns a task that completes when message handling is complete</returns>
         public async Task HandleMessage(Message message, IPrincipal principal)
         {
             if (_messageJournalingService != null)
@@ -374,6 +433,10 @@ namespace Platibus
             Dispose(false);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
             if (_disposed) return;
@@ -382,6 +445,17 @@ namespace Platibus
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Disposes of managed and unmanaged resources
+        /// </summary>
+        /// <param name="disposing"><c>true</c> if called from the
+        /// <see cref="Dispose"/> method; <c>false</c> if called from the
+        /// finalizer</param>
+        /// <remarks>
+        /// Unmanaged resources should be disposed regardless of the value
+        /// of the <paramref name="disposing"/> parameter; managed resources
+        /// should only be disposed if <paramref name="disposing"/> is <c>true</c>
+        /// </remarks>
         protected virtual void Dispose(bool disposing)
         {
             _cancellationTokenSource.Cancel();

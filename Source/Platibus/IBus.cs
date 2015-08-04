@@ -29,46 +29,46 @@ namespace Platibus
     public interface IBus
     {
         /// <summary>
-        ///     Sends a <paramref name="message" /> to default configured endpoints.
+        ///     Sends <paramref name="content" /> to default configured endpoints.
         /// </summary>
-        /// <param name="message">The message to send.</param>
+        /// <param name="content">The content to send.</param>
         /// <param name="options">Optional settings that influence how the message is sent.</param>
         /// <param name="cancellationToken">An optional cancellation token</param>
-        Task<ISentMessage> Send(object message, SendOptions options = default(SendOptions),
+        Task<ISentMessage> Send(object content, SendOptions options = default(SendOptions),
             CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
-        ///     Sends a <paramref name="message" /> to a single caller-specified
-        ///     <paramref name="endpoint" />.
+        ///     Sends <paramref name="content" /> to a single caller-specified
+        ///     <paramref name="endpointName" />.
         /// </summary>
-        /// <param name="message">The message to send.</param>
-        /// <param name="endpoint">The endpoint to which the message should be sent.</param>
+        /// <param name="content">The message to send.</param>
+        /// <param name="endpointName">The endpoint to which the message should be sent.</param>
         /// <param name="options">Optional settings that influence how the message is sent.</param>
         /// <param name="cancellationToken">An optional cancellation token</param>
-        Task<ISentMessage> Send(object message, EndpointName endpoint, SendOptions options = default(SendOptions),
+        Task<ISentMessage> Send(object content, EndpointName endpointName, SendOptions options = default(SendOptions),
             CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
-        ///     Sends a <paramref name="message" /> to a single caller-specified
-        ///     endpoint <paramref name="uri" />.
+        ///     Sends <paramref name="content" /> to a single caller-specified
+        ///     endpoint <paramref name="endpointAddress" />.
         /// </summary>
-        /// <param name="message">The message to send.</param>
-        /// <param name="uri">The URI of the endpoint to which the message should be sent.</param>
+        /// <param name="content">The message to send.</param>
+        /// <param name="endpointAddress">The URI of the endpoint to which the message should be sent.</param>
         /// <param name="credentials">Optional credentials for authenticating with the endpoint
         /// at the specified URI.</param>
         /// <param name="options">Optional settings that influence how the message is sent.</param>
         /// <param name="cancellationToken">An optional cancellation token</param>
-        Task<ISentMessage> Send(object message, Uri uri, IEndpointCredentials credentials = null,
+        Task<ISentMessage> Send(object content, Uri endpointAddress, IEndpointCredentials credentials = null,
             SendOptions options = default(SendOptions),
             CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
-        ///     Publishes a <paramref name="message" /> to the specified
+        ///     Publishes <paramref name="content" /> to the specified
         ///     <paramref name="topic" />.
         /// </summary>
-        /// <param name="message">The message to publish.</param>
+        /// <param name="content">The message to publish.</param>
         /// <param name="topic">The topic to which the message should be published.</param>
         /// <param name="cancellationToken">An optional cancellation token</param>
-        Task Publish(object message, TopicName topic, CancellationToken cancellationToken = default(CancellationToken));
+        Task Publish(object content, TopicName topic, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

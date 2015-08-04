@@ -24,22 +24,31 @@ using System.Configuration;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// Configuration element for send rules
+    /// </summary>
     public class SendRuleElement : ConfigurationElement
     {
         private const string NamePatternPropertyName = "namePattern";
         private const string EndpointPropertyName = "endpoint";
 
-        [ConfigurationProperty(NamePatternPropertyName)]
+        /// <summary>
+        /// A regular expression used to match message names
+        /// </summary>
+        [ConfigurationProperty(NamePatternPropertyName, IsRequired = true, IsKey = true)]
         public string NamePattern
         {
-            get { return (string) base[NamePatternPropertyName]; }
+            get { return base[NamePatternPropertyName] as string; }
             set { base[NamePatternPropertyName] = value; }
         }
 
-        [ConfigurationProperty(EndpointPropertyName, IsRequired = true)]
+        /// <summary>
+        /// The name of the endpoint to which matching messages should be sent
+        /// </summary>
+        [ConfigurationProperty(EndpointPropertyName, IsRequired = true, IsKey = true)]
         public string Endpoint
         {
-            get { return (string) base[EndpointPropertyName]; }
+            get { return base[EndpointPropertyName] as string; }
             set { base[EndpointPropertyName] = value; }
         }
     }

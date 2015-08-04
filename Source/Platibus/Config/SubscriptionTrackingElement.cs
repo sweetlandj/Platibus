@@ -21,13 +21,26 @@
 // THE SOFTWARE.
 
 using System.Configuration;
+using Platibus.Config.Extensibility;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// Configuration element for subscription tracking
+    /// </summary>
+    /// <remarks>
+    /// This element may or may not be applicable depending on the type of
+    /// host and transport
+    /// </remarks>
     public class SubscriptionTrackingElement : ExtensibleConfigurationElement
     {
         private const string ProviderPropertyName = "provider";
 
+        /// <summary>
+        /// The name of the subscriptin tracking service provider
+        /// </summary>
+        /// <seealso cref="ISubscriptionTrackingService"/>
+        /// <seealso cref="ProviderAttribute"/>
         [ConfigurationProperty(ProviderPropertyName, DefaultValue = "Filesystem")]
         public string Provider
         {
