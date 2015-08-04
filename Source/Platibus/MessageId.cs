@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2014 Jesse Sweetland
+// Copyright (c) 2015 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,32 +25,68 @@ using System.Diagnostics;
 
 namespace Platibus
 {
+    /// <summary>
+    /// A globally unique vaue that identifies a message
+    /// </summary>
     [DebuggerDisplay("{_value,nq}")]
     public struct MessageId : IEquatable<MessageId>
     {
         private readonly Guid _value;
 
+        /// <summary>
+        /// Initializes a new <see cref="MessageId"/> with the specified
+        /// GUID value
+        /// </summary>
+        /// <param name="value">A GUID value</param>
         public MessageId(Guid value)
         {
             _value = value;
         }
 
+        /// <summary>
+        /// Indicates whether another <paramref name="messageId"/> instance
+        /// is equal to this one
+        /// </summary>
+        /// <param name="messageId">The other message ID</param>
+        /// <returns>Returns <c>true</c> if the other <paramref name="messageId"/>
+        /// is equal to this one; <c>false</c> otherwise.</returns>
         public bool Equals(MessageId messageId)
         {
             return _value == messageId._value;
         }
 
+        /// <summary>
+        /// Returns the fully qualified type name of this instance.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="T:System.String"/> containing a fully qualified type name.
+        /// </returns>
+        /// <filterpriority>2</filterpriority>
         public override string ToString()
         {
             // ReSharper disable once ImpureMethodCallOnReadonlyValueField
             return _value.ToString();
         }
 
+        /// <summary>
+        /// Indicates whether this instance and a specified object are equal.
+        /// </summary>
+        /// <returns>
+        /// true if <paramref name="obj"/> and this instance are the same type and represent the same value; otherwise, false.
+        /// </returns>
+        /// <param name="obj">Another object to compare to. </param><filterpriority>2</filterpriority>
         public override bool Equals(object obj)
         {
             return (obj is MessageId) && Equals((MessageId) obj);
         }
 
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>
+        /// A 32-bit signed integer that is the hash code for this instance.
+        /// </returns>
+        /// <filterpriority>2</filterpriority>
         public override int GetHashCode()
         {
             // ReSharper disable once ImpureMethodCallOnReadonlyValueField
@@ -88,6 +124,10 @@ namespace Platibus
             return messageId == null ? Guid.Empty : messageId._value;
         }
 
+        /// <summary>
+        /// Factory method for generating new message IDs
+        /// </summary>
+        /// <returns>A new message ID</returns>
         public static MessageId Generate()
         {
             return new MessageId(Guid.NewGuid());

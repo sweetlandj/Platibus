@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2014 Jesse Sweetland
+// Copyright (c) 2015 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,24 +26,32 @@ using System.Threading.Tasks;
 
 namespace Platibus
 {
+    /// <summary>
+    /// Extension methods for working with <see cref="ISentMessage"/>s
+    /// </summary>
     public static class SentMessageExtensions
     {
+        /// <summary>
+        /// Observes the sent message replies until the first reply is received
+        /// or a timeout occurs
+        /// </summary>
+        /// <param name="sentMessage">The sent message</param>
+        /// <param name="timeout">The maximum amount of time to wait for a reply</param>
+        /// <returns>Returns a task whose result will be the deserialized content of the 
+        /// reply message</returns>
         public static async Task<object> GetReply(this ISentMessage sentMessage, TimeSpan timeout = default(TimeSpan))
         {
             object reply = null;
-            var replyReceivedEvent = new ManualResetEvent(false);
-            var subscription = sentMessage.ObserveReplies().Subscribe(r =>
+            using (var replyReceivedEvent = new ManualResetEvent(false))
+            using (sentMessage.ObserveReplies().Subscribe(r =>
             {
                 reply = r;
                 // ReSharper disable once AccessToDisposedClosure
                 replyReceivedEvent.Set();
-            });
-
-            await replyReceivedEvent.WaitOneAsync(timeout);
-
-            subscription.Dispose();
-            replyReceivedEvent.Dispose();
-
+            }))
+            {
+                await replyReceivedEvent.WaitOneAsync(timeout);    
+            }
             return reply;
         }
     }

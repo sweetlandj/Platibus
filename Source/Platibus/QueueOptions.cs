@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2014 Jesse Sweetland
+// Copyright (c) 2015 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,16 @@ using System;
 
 namespace Platibus
 {
+    /// <summary>
+    /// Options for setting behavior on queues
+    /// </summary>
     public struct QueueOptions
     {
-        public const int DefaultConcurrencyLimit = 16;
+        /// <summary>
+        /// The default concurrency limit, i.e. the maximum number of concurrent worker
+        /// processes that read from the same queue
+        /// </summary>
+        public const int DefaultConcurrencyLimit = 4;
 
         /// <summary>
         ///     The maximum number of messages that will be processed concurrently.

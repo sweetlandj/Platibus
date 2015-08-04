@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2014 Jesse Sweetland
+// Copyright (c) 2015 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,8 +26,23 @@ using System.Threading.Tasks;
 
 namespace Platibus
 {
+    /// <summary>
+    /// Extension methods for working with wait handles in an async context
+    /// </summary>
     public static class WaitHandleExtensions
     {
+        /// <summary>
+        /// Returns a task that will complete when the specified 
+        /// <paramref name="waitHandle"/> is set or the specified 
+        /// <paramref name="timeout"/> is reached.
+        /// </summary>
+        /// <param name="waitHandle">The wait handle</param>
+        /// <param name="timeout">The maximum amount of time to wait
+        /// for the wait handle to be set</param>
+        /// <returns>
+        /// Returns a task whose result will be <c>true</c> if the wait 
+        /// handle is set or <c>false</c> if the wait times out
+        /// </returns>
         public static Task<bool> WaitOneAsync(this WaitHandle waitHandle, TimeSpan timeout = default(TimeSpan))
         {
             var tcs = new TaskCompletionSource<bool>(false);

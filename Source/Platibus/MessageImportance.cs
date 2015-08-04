@@ -3,6 +3,10 @@ using System.Diagnostics;
 
 namespace Platibus
 {
+    /// <summary>
+    /// An indication of how important a message is and therefore how it should be
+    /// handled by both the sender and the recipient
+    /// </summary>
     [DebuggerDisplay("{_value,nq}")]
     public struct MessageImportance : IComparable<MessageImportance>
     {

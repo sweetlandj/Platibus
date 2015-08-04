@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2014 Jesse Sweetland
+// Copyright (c) 2015 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,23 +25,47 @@ using System.Runtime.Serialization;
 
 namespace Platibus
 {
+    /// <summary>
+    /// Thrown to indicate that an error occurred while transporting a message
+    /// from one bus instance to another
+    /// </summary>
     [Serializable]
     public class TransportException : ApplicationException
     {
+        /// <summary>
+        /// Initializes a new <see cref="TransportException"/>
+        /// </summary>
         public TransportException()
         {
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="TransportException"/> with a detail
+        /// message
+        /// </summary>
+        /// <param name="message">The detail message</param>
         public TransportException(string message)
             : base(message)
         {
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="TransportException"/> with a detail
+        /// message and nested exception
+        /// </summary>
+        /// <param name="message">The detail message</param>
+        /// <param name="innerException">The nested exception</param>
         public TransportException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
+        /// <summary>
+        /// Initializes a serialized <see cref="TransportException"/> from a
+        /// streaming context
+        /// </summary>
+        /// <param name="info">The serialization info</param>
+        /// <param name="context">The streaming context</param>
         public TransportException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {

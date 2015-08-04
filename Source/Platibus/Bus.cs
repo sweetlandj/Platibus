@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2014 Jesse Sweetland
+// Copyright (c) 2015 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -264,7 +264,7 @@ namespace Platibus
             IEndpoint replyToEndpoint;
             IEndpointCredentials credentials = null;
             var replyTo = messageContext.Headers.ReplyTo ?? messageContext.Headers.Origination;
-            if (_endpoints.TryGetEndpointByUri(replyTo, out replyToEndpoint))
+            if (_endpoints.TryGetEndpointByAddress(replyTo, out replyToEndpoint))
             {
                 credentials = replyToEndpoint.Credentials;
             }

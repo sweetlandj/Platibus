@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2014 Jesse Sweetland
+// Copyright (c) 2015 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -193,6 +193,7 @@ namespace Platibus.Filesystem
                     return;
                 }
 
+                // TODO: Use TTL/Expiry instead of max attempts per queue
                 if (attemptCount >= _maxAttempts)
                 {
                     Log.WarnFormat("Maximum attempts to proces message file {0} exceeded", queuedMessage.File);

@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2014 Jesse Sweetland
+// Copyright (c) 2015 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,16 +21,46 @@
 // THE SOFTWARE.
 
 using System;
+using Platibus.Serialization;
 
 namespace Platibus
 {
+    /// <summary>
+    /// Parameters that influence how a message is sent
+    /// </summary>
     public struct SendOptions
     {
+        /// <summary>
+        /// The MIME type of the message content
+        /// </summary>
+        /// <remarks>
+        /// This influences how the message will be serialized.  For example,
+        /// if the content type is "application/json", then the body will be a
+        /// serialized JSON string; if the content type is "application/xml"
+        /// then the content will be an XML string; and if the content type is
+        /// "application/octet-stream" then the content will be a base-64
+        /// encoded byte stream.  Which content types are supported and how
+        /// they are serialized depends on the <see cref="ISerializationService"/>
+        /// used.
+        /// </remarks>
         public string ContentType { get; set; }
+
+        /// <summary>
+        /// The maximum Time To Live (TTL) for the message.  When the TTL expires
+        /// all attempts to deliver or handle the message will stop
+        /// </summary>
         public TimeSpan TTL { get; set; }
-        public DateTime Expiration { get; set; }
-        public uint Retries { get; set; }
-        public TimeSpan RetryInterval { get; set; }
+
+        /// <summary>
+        /// The importance of the message
+        /// </summary>
+        /// <remarks>
+        /// Message importance influences whether messages are queued by the
+        /// sender, queued by the receiver, or both.  For instance, 
+        /// <see cref="MessageImportance.Critical"/> messages will be queued
+        /// on both sides and every attempt will be made to deliver and handle
+        /// them at least once.
+        /// </remarks>
         public MessageImportance Importance { get; set; }
     }
 }

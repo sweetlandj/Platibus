@@ -31,9 +31,9 @@ namespace Platibus
             }
         }
 
-        public bool TryGetEndpointByUri(Uri uri, out IEndpoint endpoint)
+        public bool TryGetEndpointByAddress(Uri address, out IEndpoint endpoint)
         {
-            endpoint = _endpoints.Values.FirstOrDefault(e => Equals(uri, e.Address));
+            endpoint = _endpoints.Values.FirstOrDefault(e => Equals(address, e.Address));
             return endpoint != null;
         }
 
