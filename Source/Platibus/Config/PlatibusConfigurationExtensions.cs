@@ -26,70 +26,188 @@ using System.Threading.Tasks;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// Extension methods for <see cref="PlatibusConfiguration"/> objects to
+    /// simplify the structure and syntax for adding rules.
+    /// </summary>
     public static class PlatibusConfigurationExtensions
     {
+        /// <summary>
+        /// Adds a handling rule based on message name pattern matching
+        /// </summary>
+        /// <param name="configuration">The configuration object to which the
+        /// handling rule is being added</param>
+        /// <param name="namePattern">A regular expression used to match
+        /// message names</param>
+        /// <param name="messageHandler">The message handler to which matching
+        /// messages will be routed</param>
+        /// <param name="queueName">(Optional) The name of the queue to which
+        /// the handler will be attached</param>
         public static void AddHandlingRule(this PlatibusConfiguration configuration, string namePattern,
             IMessageHandler messageHandler, QueueName queueName = null)
         {
             var specification = new MessageNamePatternSpecification(namePattern);
-            configuration.AddHandlingRule(specification, messageHandler, queueName);
+            var handlingRule = new HandlingRule(specification, messageHandler, queueName);
+            configuration.AddHandlingRule(handlingRule);
         }
 
+        /// <summary>
+        /// Adds a handling rule based on message name pattern matching
+        /// </summary>
+        /// <typeparam name="TContent">The type of deserialized message 
+        /// content expected</typeparam>
+        /// <param name="configuration">The configuration object to which the
+        /// handling rule is being added</param>
+        /// <param name="namePattern">A regular expression used to match
+        /// message names</param>
+        /// <param name="messageHandler">The message handler to which matching
+        /// messages will be routed</param>
+        /// <param name="queueName">(Optional) The name of the queue to which
+        /// the handler will be attached</param>
         public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration, string namePattern,
             IMessageHandler<TContent> messageHandler, QueueName queueName = null)
         {
             var specification = new MessageNamePatternSpecification(namePattern);
-            configuration.AddHandlingRule(specification, GenericMessageHandlerAdapter.For(messageHandler), queueName);
+            var genericMessageHandler = GenericMessageHandlerAdapter.For(messageHandler);
+            var handlingRule = new HandlingRule(specification, genericMessageHandler, queueName);
+            configuration.AddHandlingRule(handlingRule);
         }
 
+        /// <summary>
+        /// Adds a handling rule based on the supplied message specification and
+        /// function delegate
+        /// </summary>
+        /// <typeparam name="TContent">The type of deserialized message 
+        /// content expected</typeparam>
+        /// <param name="configuration">The configuration object to which the
+        /// handling rule is being added</param>
+        /// <param name="specification">The message specification used to match
+        /// messages for the handler</param>
+        /// <param name="handleContent">A function delegate that will be used to
+        /// handle messages</param>
+        /// <param name="queueName">(Optional) The name of the queue to which
+        /// the handler will be attached</param>
         public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration,
             IMessageSpecification specification,
             Func<TContent, IMessageContext, Task> handleContent, QueueName queueName = null)
         {
             var messageHandler = DelegateMessageHandler.For(handleContent);
-            configuration.AddHandlingRule(specification, messageHandler, queueName);
+            var handlingRule = new HandlingRule(specification, messageHandler, queueName);
+            configuration.AddHandlingRule(handlingRule);
         }
 
+        /// <summary>
+        /// Adds a handling rule based on the supplied message specification and
+        /// function delegate
+        /// </summary>
+        /// <typeparam name="TContent">The type of deserialized message 
+        /// content expected</typeparam>
+        /// <param name="configuration">The configuration object to which the
+        /// handling rule is being added</param>
+        /// <param name="specification">The message specification used to match
+        /// messages for the handler</param>
+        /// <param name="handleContent">A function delegate that will be used to
+        /// handle messages</param>
+        /// <param name="queueName">(Optional) The name of the queue to which
+        /// the handler will be attached</param>
         public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration,
             IMessageSpecification specification,
             Func<TContent, IMessageContext, CancellationToken, Task> handleContent,
             QueueName queueName = null)
         {
             var messageHandler = DelegateMessageHandler.For(handleContent);
-            configuration.AddHandlingRule(specification, messageHandler, queueName);
+            var handlingRule = new HandlingRule(specification, messageHandler, queueName);
+            configuration.AddHandlingRule(handlingRule);
         }
 
+        /// <summary>
+        /// Adds a handling rule based on the supplied message specification and
+        /// action delegate
+        /// </summary>
+        /// <typeparam name="TContent">The type of deserialized message 
+        /// content expected</typeparam>
+        /// <param name="configuration">The configuration object to which the
+        /// handling rule is being added</param>
+        /// <param name="specification">The message specification used to match
+        /// messages for the handler</param>
+        /// <param name="handleContent">An action delegate that will be used to
+        /// handle messages</param>
+        /// <param name="queueName">(Optional) The name of the queue to which
+        /// the handler will be attached</param>
         public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration,
             IMessageSpecification specification, Action<TContent, IMessageContext> handleContent,
             QueueName queueName = null)
         {
             var messageHandler = DelegateMessageHandler.For(handleContent);
-            configuration.AddHandlingRule(specification, messageHandler, queueName);
+            var handlingRule = new HandlingRule(specification, messageHandler, queueName);
+            configuration.AddHandlingRule(handlingRule);
         }
 
+        /// <summary>
+        /// Adds a handling rule based on the a name pattern and function delegate
+        /// </summary>
+        /// <typeparam name="TContent">The type of deserialized message 
+        /// content expected</typeparam>
+        /// <param name="configuration">The configuration object to which the
+        /// handling rule is being added</param>
+        /// <param name="namePattern">A regular expression used to match message
+        /// names for the handler</param>
+        /// <param name="handleContent">A function delegate that will be used to
+        /// handle messages</param>
+        /// <param name="queueName">(Optional) The name of the queue to which
+        /// the handler will be attached</param>
         public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration, string namePattern,
             Func<TContent, IMessageContext, Task> handleContent, QueueName queueName = null)
         {
             var specification = new MessageNamePatternSpecification(namePattern);
             var messageHandler = DelegateMessageHandler.For(handleContent);
-            configuration.AddHandlingRule(specification, messageHandler, queueName);
+            var handlingRule = new HandlingRule(specification, messageHandler, queueName);
+            configuration.AddHandlingRule(handlingRule);
         }
 
+        /// <summary>
+        /// Adds a handling rule based on the a name pattern and function delegate
+        /// </summary>
+        /// <typeparam name="TContent">The type of deserialized message 
+        /// content expected</typeparam>
+        /// <param name="configuration">The configuration object to which the
+        /// handling rule is being added</param>
+        /// <param name="namePattern">A regular expression used to match message
+        /// names for the handler</param>
+        /// <param name="handleContent">A function delegate that will be used to
+        /// handle messages</param>
+        /// <param name="queueName">(Optional) The name of the queue to which
+        /// the handler will be attached</param>
         public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration, string namePattern,
             Func<TContent, IMessageContext, CancellationToken, Task> handleContent,
             QueueName queueName = null)
         {
             var specification = new MessageNamePatternSpecification(namePattern);
             var messageHandler = DelegateMessageHandler.For(handleContent);
-            configuration.AddHandlingRule(specification, messageHandler, queueName);
+            var handlingRule = new HandlingRule(specification, messageHandler, queueName);
+            configuration.AddHandlingRule(handlingRule);
         }
 
+        /// <summary>
+        /// Adds a handling rule based on the a name pattern and action delegate
+        /// </summary>
+        /// <typeparam name="TContent">The type of deserialized message 
+        /// content expected</typeparam>
+        /// <param name="configuration">The configuration object to which the
+        /// handling rule is being added</param>
+        /// <param name="namePattern">A regular expression used to match message
+        /// names for the handler</param>
+        /// <param name="handleContent">An action delegate that will be used to
+        /// handle messages</param>
+        /// <param name="queueName">(Optional) The name of the queue to which
+        /// the handler will be attached</param>
         public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration, string namePattern,
             Action<TContent, IMessageContext> handleContent, QueueName queueName = null)
         {
             var specification = new MessageNamePatternSpecification(namePattern);
             var messageHandler = DelegateMessageHandler.For(handleContent);
-            configuration.AddHandlingRule(specification, messageHandler, queueName);
+            var handlingRule = new HandlingRule(specification, messageHandler, queueName);
+            configuration.AddHandlingRule(handlingRule);
         }
     }
 }

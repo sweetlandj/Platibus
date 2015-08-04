@@ -21,14 +21,21 @@
 // THE SOFTWARE.
 
 using System.Configuration;
+using Platibus.Config.Extensibility;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// Configuration element for message journaling
+    /// </summary>
     public class JournalingElement : ExtensibleConfigurationElement
     {
         private const string EnabledPropertyName = "enabled";
         private const string ProviderPropertyName = "provider";
 
+        /// <summary>
+        /// Indicates whether message journaling is enabled
+        /// </summary>
         [ConfigurationProperty(EnabledPropertyName, DefaultValue = true)]
         public bool IsEnabled
         {
@@ -36,6 +43,11 @@ namespace Platibus.Config
             set { base[EnabledPropertyName] = value; }
         }
 
+        /// <summary>
+        /// The name of the message journaling service provider
+        /// </summary>
+        /// <seealso cref="IMessageJournalingServiceProvider"/>
+        /// <seealso cref="ProviderAttribute"/>
         [ConfigurationProperty(ProviderPropertyName)]
         public string Provider
         {

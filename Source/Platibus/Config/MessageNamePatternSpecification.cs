@@ -20,24 +20,50 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Text.RegularExpressions;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// An <see cref="IMessageSpecification"/> implementation that matches
+    /// messages based on the value of the <see cref="HeaderName.MessageName"/> 
+    /// header.
+    /// </summary>
     public class MessageNamePatternSpecification : IMessageSpecification
     {
         private readonly Regex _nameRegex;
 
-        public MessageNamePatternSpecification(string namePattern)
-        {
-            _nameRegex = string.IsNullOrWhiteSpace(namePattern) ? null : new Regex(namePattern, RegexOptions.Compiled);
-        }
-
+        /// <summary>
+        /// The regular expression used to match message names
+        /// </summary>
         public Regex NameRegex
         {
             get { return _nameRegex; }
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="MessageNamePatternSpecification"/>
+        /// that will match message names using the specified regular
+        /// expression
+        /// </summary>
+        /// <param name="namePattern">A regular expression used to match
+        /// message names</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="namePattern"/>
+        /// is <c>null</c> or whitespace</exception>
+        public MessageNamePatternSpecification(string namePattern)
+        {
+            if (string.IsNullOrWhiteSpace(namePattern)) throw new ArgumentNullException("namePattern");
+            _nameRegex = new Regex(namePattern, RegexOptions.Compiled);
+        }
+
+        /// <summary>
+        /// Indicates whether the specification is satisfied by the 
+        /// supplied <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message in question</param>
+        /// <returns>Returns <c>true</c> if the specification is
+        /// satisfied by the message; <c>false</c> otherwise.</returns>
         public bool IsSatisfiedBy(Message message)
         {
             var messageName = (string)message.Headers.MessageName ?? "";

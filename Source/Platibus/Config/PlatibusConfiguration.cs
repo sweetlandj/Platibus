@@ -27,13 +27,13 @@ using Platibus.Serialization;
 namespace Platibus.Config
 {
     /// <summary>
-    ///     Concrete mutable implementation of <see cref="IPlatibusConfiguration" /> used for
-    ///     programmatically configuring the bus.
+    /// Concrete mutable implementation of <see cref="IPlatibusConfiguration" /> used for
+    /// programmatically configuring the bus.
     /// </summary>
     /// <remarks>
-    ///     This class is not threadsafe.  The caller must provide synchronization if there is
-    ///     a possibility for multiple threads to make conccurrent updates to instances of this
-    ///     class.
+    /// This class is not threadsafe.  The caller must provide synchronization if there is
+    /// a possibility for multiple threads to make conccurrent updates to instances of this
+    /// class.
     /// </remarks>
     public class PlatibusConfiguration : IPlatibusConfiguration
     {
@@ -43,41 +43,87 @@ namespace Platibus.Config
         private readonly IList<ISubscription> _subscriptions = new List<ISubscription>();
         private readonly IList<TopicName> _topics = new List<TopicName>();
 
+        /// <summary>
+        /// The service used to map content object types onto canonical names
+        /// to facilitate deserialization
+        /// </summary>
         public IMessageNamingService MessageNamingService { get; set; }
+
+        /// <summary>
+        /// The service used to serialize and deserialize message content
+        /// </summary>
         public ISerializationService SerializationService { get; set; }
+
+        /// <summary>
+        /// A service used to track and record the sending, receipt, and 
+        /// publication of messages.
+        /// </summary>
         public IMessageJournalingService MessageJournalingService { get; set; }
 
+        /// <summary>
+        /// The set of known endpoints and their addresses
+        /// </summary>
         public IEndpointCollection Endpoints
         {
             get { return _endpoints; }
         }
 
+        /// <summary>
+        /// The topics to which messages can be published
+        /// </summary>
         public IEnumerable<TopicName> Topics
         {
             get { return _topics; }
         }
 
+        /// <summary>
+        /// Rules that specify the endpoints to which messages should be sent
+        /// </summary>
         public IEnumerable<ISendRule> SendRules
         {
             get { return _sendRules; }
         }
 
+        /// <summary>
+        /// Rules that specify the handlers to which inbound messages should be
+        /// routed
+        /// </summary>
         public IEnumerable<IHandlingRule> HandlingRules
         {
             get { return _handlingRules; }
         }
 
+        /// <summary>
+        /// Subscriptions to topics hosted in local or remote bus instances
+        /// </summary>
         public IEnumerable<ISubscription> Subscriptions
         {
             get { return _subscriptions; }
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="PlatibusConfiguration"/> instance with
+        /// the default message naming and serialization services.
+        /// </summary>
+        /// <seealso cref="DefaultMessageNamingService"/>
+        /// <seealso cref="DefaultSerializationService"/>
         public PlatibusConfiguration()
         {
             MessageNamingService = new DefaultMessageNamingService();
             SerializationService = new DefaultSerializationService();
         }
 
+        /// <summary>
+        /// Adds a named endpoint to the configuration
+        /// </summary>
+        /// <param name="name">The name of the endpoint</param>
+        /// <param name="endpoint">The endpoint</param>
+        /// <remarks>
+        /// Named endpoints must be added before messages can be sent or
+        /// subscriptions can be created
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">Thrown if either argument
+        /// is <c>null</c></exception>
         public void AddEndpoint(EndpointName name, IEndpoint endpoint)
         {
             if (name == null) throw new ArgumentNullException("name");
@@ -85,6 +131,13 @@ namespace Platibus.Config
             _endpoints.Add(name, endpoint);
         }
 
+        /// <summary>
+        /// Adds a topic to the configuration
+        /// </summary>
+        /// <param name="topic">The name of the topic</param>
+        /// <remarks>
+        /// Topics must be explicitly added in order to publish messages to them
+        /// </remarks>
         public void AddTopic(TopicName topic)
         {
             if (topic == null) throw new ArgumentNullException("topic");
@@ -92,30 +145,35 @@ namespace Platibus.Config
             _topics.Add(topic);
         }
 
+        /// <summary>
+        /// Adds a rule governing to which endpoints messages will be sent
+        /// </summary>
+        /// <param name="sendRule">The send rule</param>
         public void AddSendRule(ISendRule sendRule)
         {
             if (sendRule == null) throw new ArgumentNullException("sendRule");
             _sendRules.Add(sendRule);
         }
 
-        public void AddHandlingRule(IMessageSpecification specification, IMessageHandler messageHandler,
-            QueueName queueName = null)
+        /// <summary>
+        /// Adds a rule governing the handlers and queues to which incoming
+        /// messages will be routed
+        /// </summary>
+        /// <param name="handlingRule">The handling rule</param>
+        public void AddHandlingRule(IHandlingRule handlingRule)
         {
-            if (specification == null) throw new ArgumentNullException("specification");
-            if (messageHandler == null) throw new ArgumentNullException("messageHandler");
-            _handlingRules.Add(new HandlingRule(specification, messageHandler, queueName));
+            if (handlingRule == null) throw new ArgumentNullException("handlingRule");
+            _handlingRules.Add(handlingRule);
         }
 
+        /// <summary>
+        /// Adds a subscription to a local or remote topic
+        /// </summary>
+        /// <param name="subscription">The subscription</param>
         public void AddSubscription(ISubscription subscription)
         {
             if (subscription == null) throw new ArgumentNullException("subscription");
             _subscriptions.Add(subscription);
-        }
-
-        public IEndpoint GetEndpoint(EndpointName endpointName)
-        {
-            if (endpointName == null) throw new ArgumentNullException("endpointName");
-            return _endpoints[endpointName];
         }
     }
 }

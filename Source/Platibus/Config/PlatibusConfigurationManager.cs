@@ -34,16 +34,50 @@ using Platibus.Serialization;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// Factory class used to initialize <see cref="PlatibusConfiguration"/> objects from
+    /// declarative configuration elements in application configuration files.
+    /// </summary>
     public static class PlatibusConfigurationManager
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
 
+        /// <summary>
+        /// Initializes and returns a <see cref="PlatibusConfiguration"/> instance based on
+        /// the <see cref="PlatibusConfigurationSection"/> with the specified 
+        /// <paramref name="sectionName"/>
+        /// </summary>
+        /// <param name="sectionName">(Optional) The name of the configuration section 
+        /// (default is "platibus")</param>
+        /// <param name="processConfigurationHooks">(Optional) Whether to initialize and
+        /// process implementations of <see cref="IConfigurationHook"/> found in the
+        /// application domain (default is true)</param>
+        /// <returns>Returns a task whose result will be an initialized 
+        /// <see cref="PlatibusConfiguration"/> object</returns>
+        /// <seealso cref="PlatibusConfigurationSection"/>
+        /// <seealso cref="IConfigurationHook"/>
         public static Task<PlatibusConfiguration> LoadConfiguration(string sectionName = "platibus",
             bool processConfigurationHooks = true)
         {
             return LoadConfiguration<PlatibusConfiguration>(sectionName, processConfigurationHooks);
         }
 
+        /// <summary>
+        /// Initializes and returns a <see cref="TConfig"/> instance based on
+        /// the <see cref="PlatibusConfigurationSection"/> with the specified 
+        /// <paramref name="sectionName"/>
+        /// </summary>
+        /// <typeparam name="TConfig">A type that inherits <see cref="PlatibusConfiguration"/>
+        /// and has a default constructor</typeparam>
+        /// <param name="sectionName">(Optional) The name of the configuration section 
+        /// (default is "platibus")</param>
+        /// <param name="processConfigurationHooks">(Optional) Whether to initialize and
+        /// process implementations of <see cref="IConfigurationHook"/> found in the
+        /// application domain (default is true)</param>
+        /// <returns>Returns a task whose result will be an initialized 
+        /// <see cref="TConfig"/> object</returns>
+        /// <seealso cref="PlatibusConfigurationSection"/>
+        /// <seealso cref="IConfigurationHook"/>
         public static Task<TConfig> LoadConfiguration<TConfig>(string sectionName, bool processConfigurationHooks = true)
             where TConfig : PlatibusConfiguration, new()
         {
@@ -53,9 +87,27 @@ namespace Platibus.Config
             return LoadConfiguration<TConfig>(configSection, processConfigurationHooks);
         }
 
+        /// <summary>
+        /// Initializes and returns a <see cref="TConfig"/> instance based on
+        /// the supplied <see cref="PlatibusConfigurationSection"/>
+        /// </summary>
+        /// <typeparam name="TConfig">A type that inherits <see cref="PlatibusConfiguration"/>
+        /// and has a default constructor</typeparam>
+        /// <param name="configSection">The configuration section</param>
+        /// <param name="processConfigurationHooks">(Optional) Whether to initialize and
+        /// process implementations of <see cref="IConfigurationHook"/> found in the
+        /// application domain (default is true)</param>
+        /// <returns>Returns a task whose result will be an initialized 
+        /// <see cref="TConfig"/> object</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="configSection"/>
+        /// is <c>null</c></exception>
+        /// <seealso cref="PlatibusConfigurationSection"/>
+        /// <seealso cref="IConfigurationHook"/>
         public static async Task<TConfig> LoadConfiguration<TConfig>(PlatibusConfigurationSection configSection,
             bool processConfigurationHooks = true) where TConfig : PlatibusConfiguration, new()
         {
+            if (configSection == null) throw new ArgumentNullException("configSection");
+
             var configuration = new TConfig
             {
                 SerializationService = new DefaultSerializationService(),
@@ -120,8 +172,18 @@ namespace Platibus.Config
             return configuration;
         }
 
+        /// <summary>
+        /// Helper method to initialize message queueing services based on the
+        /// supplied configuration element
+        /// </summary>
+        /// <param name="config">The queueing configuration element</param>
+        /// <returns>Returns a task whose result is an initialized message queueing service</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="config"/> is
+        /// <c>null</c></exception>
         public static Task<IMessageQueueingService> InitMessageQueueingService(QueueingElement config)
         {
+            if (config == null) throw new ArgumentNullException("config");
+
             var providerName = config.Provider;
             IMessageQueueingServiceProvider provider;
             if (string.IsNullOrWhiteSpace(providerName))
@@ -138,8 +200,18 @@ namespace Platibus.Config
             return provider.CreateMessageQueueingService(config);
         }
 
+        /// <summary>
+        /// Helper method to initialize message journaling services based on the
+        /// supplied configuration element
+        /// </summary>
+        /// <param name="config">The journaling configuration element</param>
+        /// <returns>Returns a task whose result is an initialized message journaling service</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="config"/> is
+        /// <c>null</c></exception>
         public static Task<IMessageJournalingService> InitMessageJournalingService(JournalingElement config)
         {
+            if (config == null) throw new ArgumentNullException("config");
+
             var providerName = config.Provider;
             if (string.IsNullOrWhiteSpace(providerName))
             {
@@ -153,7 +225,17 @@ namespace Platibus.Config
             return provider.CreateMessageJournalingService(config);
         }
 
-
+        /// <summary>
+        /// Helper method that ensures a path is rooted.
+        /// </summary>
+        /// <param name="path">The path</param>
+        /// <remarks>
+        /// If the specified <paramref name="path"/> is rooted then it is returned unchanged.
+        /// Otherwise it is appended to the base directory of the application domain to form
+        /// an absolute rooted path.
+        /// </remarks>
+        /// <returns>Returns a rooted path based on the provided <paramref name="path"/> and
+        /// the application domain base directory</returns>
         public static string GetRootedPath(string path)
         {
             if (Path.IsPathRooted(path)) return path;
@@ -162,6 +244,12 @@ namespace Platibus.Config
             return Path.Combine(appDomainDir, path);
         }
 
+        /// <summary>
+        /// Helper method to locate, initialize, and invoke all types inheriting from
+        /// <see cref="IConfigurationHook"/> found in the application domain
+        /// </summary>
+        /// <param name="configuration">The configuration that will be passed to the
+        /// configuration hooks</param>
         public static void ProcessConfigurationHooks(PlatibusConfiguration configuration)
         {
             if (configuration == null) return;
