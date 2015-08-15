@@ -26,32 +26,54 @@ using System.Security.Permissions;
 
 namespace Platibus
 {
+    /// <summary>
+    /// Thrown to indicate that a hostname could not be resolved when attempting
+    /// to send a message from one application to another
+    /// </summary>
     [Serializable]
     public class NameResolutionFailedException : TransportException
     {
         private readonly string _hostname;
 
+        /// <summary>
+        /// Initializes a new <see cref="NameResolutionFailedException"/> with
+        /// the specified <paramref name="hostname"/>
+        /// </summary>
+        /// <param name="hostname">The hostname that failed to resolve</param>
         public NameResolutionFailedException(string hostname)
             : base(string.Format("Failed to resolve hostname: {0}", hostname))
         {
         }
 
+        /// <summary>
+        /// Initializes a serialized <see cref="NameResolutionFailedException"/> from
+        /// a streaming context
+        /// </summary>
+        /// <param name="info">The serialization info</param>
+        /// <param name="context">The streaming context</param>
         public NameResolutionFailedException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _hostname = info.GetString("hostname");
+            _hostname = info.GetString("Hostname");
         }
 
+        /// <summary>
+        /// The hostname that failed to resolve
+        /// </summary>
         public string Hostname
         {
             get { return _hostname; }
         }
 
+        /// <summary>
+        /// When overridden in a derived class, sets the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> with information about the exception.
+        /// </summary>
+        /// <param name="info">The <see cref="T:System.Runtime.Serialization.SerializationInfo"/> that holds the serialized object data about the exception being thrown. </param><param name="context">The <see cref="T:System.Runtime.Serialization.StreamingContext"/> that contains contextual information about the source or destination. </param><exception cref="T:System.ArgumentNullException">The <paramref name="info"/> parameter is a null reference (Nothing in Visual Basic). </exception><filterpriority>2</filterpriority><PermissionSet><IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="*AllFiles*" PathDiscovery="*AllFiles*"/><IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="SerializationFormatter"/></PermissionSet>
         [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("hostname", _hostname);
+            info.AddValue("Hostname", _hostname);
         }
     }
 }

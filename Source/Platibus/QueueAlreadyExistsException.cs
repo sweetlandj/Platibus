@@ -26,32 +26,54 @@ using System.Security.Permissions;
 
 namespace Platibus
 {
+    /// <summary>
+    /// Thrown to indicate that a queue already exists, i.e. when creating
+    /// queues during initialization
+    /// </summary>
     [Serializable]
     public class QueueAlreadyExistsException : ApplicationException
     {
-        private readonly QueueName _queue;
+        private readonly QueueName _queueName;
 
-        public QueueAlreadyExistsException(QueueName queue) : base(queue)
+        /// <summary>
+        /// Initializes a new <see cref="QueueAlreadyExistsException"/> with the
+        /// specified <paramref name="queueName"/>
+        /// </summary>
+        /// <param name="queueName">The name of the queue that already exists</param>
+        public QueueAlreadyExistsException(QueueName queueName) : base(queueName)
         {
-            _queue = queue;
+            _queueName = queueName;
         }
 
+        /// <summary>
+        /// Initializes a serialized <see cref="QueueAlreadyExistsException"/> from
+        /// a streaming context
+        /// </summary>
+        /// <param name="info">The serialization info</param>
+        /// <param name="context">The streaming context</param>
         public QueueAlreadyExistsException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _queue = info.GetString("queue");
+            _queueName = info.GetString("QueueName");
         }
 
-        public QueueName Queue
+        /// <summary>
+        /// The name of the queue that already exists
+        /// </summary>
+        public QueueName QueueName
         {
-            get { return _queue; }
+            get { return _queueName; }
         }
 
+        /// <summary>
+        /// When overridden in a derived class, sets the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> with information about the exception.
+        /// </summary>
+        /// <param name="info">The <see cref="T:System.Runtime.Serialization.SerializationInfo"/> that holds the serialized object data about the exception being thrown. </param><param name="context">The <see cref="T:System.Runtime.Serialization.StreamingContext"/> that contains contextual information about the source or destination. </param><exception cref="T:System.ArgumentNullException">The <paramref name="info"/> parameter is a null reference (Nothing in Visual Basic). </exception><filterpriority>2</filterpriority><PermissionSet><IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="*AllFiles*" PathDiscovery="*AllFiles*"/><IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="SerializationFormatter"/></PermissionSet>
         [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("queue", (string) _queue);
+            info.AddValue("QueueName", (string)_queueName);
         }
     }
 }

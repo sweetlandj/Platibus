@@ -13,20 +13,40 @@ namespace Platibus
     [Serializable]
     public class MessageNotAcknowledgedException : ApplicationException
     {
+        /// <summary>
+        /// Initializes a new <see cref="MessageNotAcknowledgedException"/>
+        /// </summary>
         public MessageNotAcknowledgedException()
         {
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="MessageNotAcknowledgedException"/>
+        /// with the specified detail message
+        /// </summary>
+        /// <param name="message">The detail message</param>
         public MessageNotAcknowledgedException(string message)
             : base(message)
         {
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="MessageNotAcknowledgedException"/>
+        /// with the specified detail message and nested exception
+        /// </summary>
+        /// <param name="message">The detail message</param>
+        /// <param name="innerException">The nested exception</param>
         public MessageNotAcknowledgedException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
+        /// <summary>
+        /// Initializes a serialized <see cref="MessageNotAcknowledgedException"/>
+        /// from a streaming context
+        /// </summary>
+        /// <param name="info">The serialization info</param>
+        /// <param name="context">The streaming context</param>
         public MessageNotAcknowledgedException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
