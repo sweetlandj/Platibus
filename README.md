@@ -4,7 +4,7 @@ Platibus is a decentralized asynchronous messaging framework designed to be plat
 
 ## Package Installation
 
-Platibus is distributed as a set of NuGet packages hosted on nuget.org.  To install the base library, search for and install the package `Pluribus` in the NuGet package manager or run the following PowerShell command from the NuGet Package Manager Console:
+Platibus is distributed as a set of NuGet packages hosted on nuget.org.  To install the base library, search for and install the package `Platibus` in the NuGet package manager or run the following PowerShell command from the NuGet Package Manager Console:
 
 ```PM> Install-Package Platibus```
 
