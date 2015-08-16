@@ -6,7 +6,7 @@ namespace Platibus.SQL
     /// <summary>
     /// An interface that describes a database connection factory
     /// </summary>
-    public interface IDbConnectionProvider : IDisposable
+    public interface IDbConnectionProvider
     {
         /// <summary>
         /// Produces a database connection

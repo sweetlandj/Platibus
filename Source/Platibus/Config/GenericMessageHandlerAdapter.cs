@@ -13,7 +13,7 @@ namespace Platibus.Config
         /// <summary>
         /// Creates a new <see cref="GenericMessageHandlerAdapter{TContent}"/> instance
         /// that wraps the specified <paramref name="genericContent"/>, adapting it
-        /// to the parameterless <see cref="TContent"/> interface.
+        /// to the parameterless <see cref="GenericMessageHandlerAdapter{TContent}"/> interface.
         /// </summary>
         /// <typeparam name="TContent">The type of content handled</typeparam>
         /// <param name="genericContent">A generic type handler targeting messages

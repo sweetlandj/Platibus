@@ -25,8 +25,23 @@ using System.Linq;
 
 namespace Platibus
 {
+    /// <summary>
+    /// An object that determines whether two groups of message headers are equal
+    /// </summary>
     public class MessageHeadersEqualityComparer : IEqualityComparer<IMessageHeaders>
     {
+        /// <summary>
+        /// Determines whether two sets of message headers are equal by comparing
+        /// their header names and values
+        /// </summary>
+        /// <param name="x">The first set of headers to compare</param>
+        /// <param name="y">The other set of headers to compare</param>
+        /// <returns>Returns <c>true</c> if both sets of headers are equal; <c>false</c>
+        /// otherwise</returns>
+        /// <remarks>
+        /// Two sets of message headers are equal if they contain exactly the same
+        /// header names with exactly the same values
+        /// </remarks>
         public bool Equals(IMessageHeaders x, IMessageHeaders y)
         {
             if (ReferenceEquals(x, y)) return true;
@@ -35,9 +50,14 @@ namespace Platibus
             return x.Count() == y.Count() && x.All(xel => Equals(xel.Value, y[xel.Key]));
         }
 
-        public int GetHashCode(IMessageHeaders obj)
+        /// <summary>
+        /// Returns a hash code for a set of message headers
+        /// </summary>
+        /// <param name="headers">The message headers</param>
+        /// <returns>Returns a hash code for the specified message headers</returns>
+        public int GetHashCode(IMessageHeaders headers)
         {
-            return obj == null ? 0 : obj.Aggregate(0, (current, entry) => (current*397) ^ entry.Key.GetHashCode());
+            return headers == null ? 0 : headers.Aggregate(0, (current, entry) => (current*397) ^ entry.Key.GetHashCode());
         }
     }
 }

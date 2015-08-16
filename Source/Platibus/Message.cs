@@ -24,11 +24,22 @@ using System;
 
 namespace Platibus
 {
+    /// <summary>
+    /// Represents a message with its headers and serialized content
+    /// </summary>
     public class Message
     {
         private readonly string _content;
         private readonly IMessageHeaders _headers;
 
+        /// <summary>
+        /// Initializes a new <see cref="Message"/> with the specified <paramref name="headers"/>
+        /// and <paramref name="content"/>
+        /// </summary>
+        /// <param name="headers">The message headers</param>
+        /// <param name="content">The serialized message content</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="headers"/> is
+        /// <c>null</c></exception>
         public Message(IMessageHeaders headers, string content)
         {
             if (headers == null) throw new ArgumentNullException("headers");
@@ -36,11 +47,17 @@ namespace Platibus
             _content = content ?? "";
         }
 
+        /// <summary>
+        /// The message headers
+        /// </summary>
         public IMessageHeaders Headers
         {
             get { return _headers; }
         }
 
+        /// <summary>
+        /// The serialized message content
+        /// </summary>
         public string Content
         {
             get { return _content; }

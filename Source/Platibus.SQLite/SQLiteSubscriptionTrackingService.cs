@@ -63,13 +63,13 @@ namespace Platibus.SQLite
             return connectionProvider;
         }
 
-        protected override Task<SQLSubscription> InsertOrUpdateSubscription(TopicName topicName, Uri subscriber,
+        protected override Task<SQLSubscription> InsertOrUpdateSubscription(TopicName topic, Uri subscriber,
             DateTime expires)
         {
             CheckDisposed();
             var op =
                 new SQLiteOperation<SQLSubscription>(
-                    () => base.InsertOrUpdateSubscription(topicName, subscriber, expires));
+                    () => base.InsertOrUpdateSubscription(topic, subscriber, expires));
             _operationQueue.Post(op);
             return op.Task;
         }
@@ -82,10 +82,10 @@ namespace Platibus.SQLite
             return op.Task;
         }
 
-        protected override Task DeleteSubscription(TopicName topicName, Uri subscriber)
+        protected override Task DeleteSubscription(TopicName topic, Uri subscriber)
         {
             CheckDisposed();
-            var op = new SQLiteOperation(() => base.DeleteSubscription(topicName, subscriber));
+            var op = new SQLiteOperation(() => base.DeleteSubscription(topic, subscriber));
             _operationQueue.Post(op);
             return op.Task;
         }

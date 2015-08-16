@@ -24,8 +24,22 @@ using System.Threading.Tasks;
 
 namespace Platibus.Http
 {
+    /// <summary>
+    /// An interface that describes an object that directs an <see cref="IHttpResourceRequest"/>
+    /// to the appropriate controller or handler
+    /// </summary>
+    /// <seealso cref="IHttpResourceController"/>
     public interface IHttpResourceRouter
     {
+        /// <summary>
+        /// Routes a <paramref name="request"/> and <paramref name="response"/> to
+        /// the appropriate controller
+        /// </summary>
+        /// <param name="request">The request to route</param>
+        /// <param name="response">The response to route</param>
+        /// <returns>
+        /// Returns a task that completes once the request has been routed and handled
+        /// </returns>
         Task Route(IHttpResourceRequest request, IHttpResourceResponse response);
     }
 }

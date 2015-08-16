@@ -11,6 +11,10 @@ using System.Transactions;
 
 namespace Platibus.SQL
 {
+    /// <summary>
+    /// A <see cref="ISubscriptionTrackingService"/> implementation that uses a SQL database to
+    /// store queued messages
+    /// </summary>
     public class SQLSubscriptionTrackingService : ISubscriptionTrackingService, IDisposable
     {
         private readonly IDbConnectionProvider _connectionProvider;
@@ -21,16 +25,37 @@ namespace Platibus.SQL
 
         private bool _disposed;
 
+        /// <summary>
+        /// The connection provider used to obtain connections to the SQL database
+        /// </summary>
         public IDbConnectionProvider ConnectionProvider
         {
             get { return _connectionProvider; }
         }
 
+        /// <summary>
+        /// The SQL dialect
+        /// </summary>
         public ISQLDialect Dialect
         {
             get { return _dialect; }
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="SQLSubscriptionTrackingService"/> with the specified connection
+        /// string settings and dialect
+        /// </summary>
+        /// <param name="connectionStringSettings">The connection string settings to use to connect to
+        /// the SQL database</param>
+        /// <param name="dialect">(Optional) The SQL dialect to use</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionStringSettings"/>
+        /// is <c>null</c></exception>
+        /// <remarks>
+        /// If a SQL dialect is not specified, then one will be selected based on the supplied
+        /// connection string settings
+        /// </remarks>
+        /// <seealso cref="DbExtensions.GetSQLDialect"/>
+        /// <seealso cref="ISQLDialectProvider"/>
         public SQLSubscriptionTrackingService(ConnectionStringSettings connectionStringSettings,
             ISQLDialect dialect = null)
         {
@@ -39,6 +64,15 @@ namespace Platibus.SQL
             _dialect = dialect ?? connectionStringSettings.GetSQLDialect();
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="SQLSubscriptionTrackingService"/> with the specified connection
+        /// provider and dialect
+        /// </summary>
+        /// <param name="connectionProvider">The connection provider to use to connect to
+        /// the SQL database</param>
+        /// <param name="dialect">The SQL dialect to use</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>
+        /// or <paramref name="dialect"/> is <c>null</c></exception>
         public SQLSubscriptionTrackingService(IDbConnectionProvider connectionProvider, ISQLDialect dialect)
         {
             if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
@@ -47,6 +81,10 @@ namespace Platibus.SQL
             _dialect = dialect;
         }
 
+        /// <summary>
+        /// Initializes the subscription tracking service by creating the necessary objects in the
+        /// SQL database
+        /// </summary>
         public async Task Init()
         {
             var connection = _connectionProvider.GetConnection();
@@ -75,30 +113,75 @@ namespace Platibus.SQL
             }
         }
 
+        /// <summary>
+        /// Adds or updates a subscription
+        /// </summary>
+        /// <param name="topic">The topic to which the <paramref name="subscriber"/> is
+        /// subscribing</param>
+        /// <param name="subscriber">The base URI of the subscribing Platibus instance</param>
+        /// <param name="ttl">(Optional) The maximum Time To Live (TTL) for the subscription</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by
+        /// the caller to cancel the addition of the subscription</param>
+        /// <returns>Returns a task that will complete when the subscription has been added or
+        /// updated</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="topic"/> or
+        /// <paramref name="subscriber"/> is <c>null</c></exception>
+        /// <exception cref="ObjectDisposedException">Thrown if the object is already disposed</exception>
         public async Task AddSubscription(TopicName topic, Uri subscriber, TimeSpan ttl = default(TimeSpan),
             CancellationToken cancellationToken = default(CancellationToken))
         {
+            if (topic == null) throw new ArgumentNullException("topic");
+            if (subscriber == null) throw new ArgumentNullException("subscriber");
+
             CheckDisposed();
             var expires = ttl <= TimeSpan.Zero ? DateTime.MaxValue : (DateTime.UtcNow + ttl);
+            cancellationToken.ThrowIfCancellationRequested();
             var subscription = await InsertOrUpdateSubscription(topic, subscriber, expires);
             _subscriptions.AddOrUpdate(topic, new[] {subscription},
                 (t, existing) => new[] {subscription}.Union(existing).ToList());
         }
 
+        /// <summary>
+        /// Removes a subscription
+        /// </summary>
+        /// <param name="topic">The topic to which the <paramref name="subscriber"/> is
+        /// subscribing</param>
+        /// <param name="subscriber">The base URI of the subscribing Platibus instance</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by
+        /// the caller to cancel the subscription removal</param>
+        /// <returns>Returns a task that will complete when the subscription has been removed</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="topic"/> or
+        /// <paramref name="subscriber"/> is <c>null</c></exception>
+        /// <exception cref="ObjectDisposedException">Thrown if the object is already disposed</exception>
         public async Task RemoveSubscription(TopicName topic, Uri subscriber,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            CheckDisposed();
+            if (topic == null) throw new ArgumentNullException("topic");
+            if (subscriber == null) throw new ArgumentNullException("subscriber");
 
+            CheckDisposed();
+            cancellationToken.ThrowIfCancellationRequested();
             await DeleteSubscription(topic, subscriber);
 
             _subscriptions.AddOrUpdate(topic, new SQLSubscription[0],
                 (t, existing) => existing.Where(se => se.Subscriber != subscriber).ToList());
         }
 
+        /// <summary>
+        /// Returns a list of the current, non-expired subscriber URIs for a topic
+        /// </summary>
+        /// <param name="topic">The topic</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by the caller
+        /// to cancel the query</param>
+        /// <returns>Returns a task whose result is the distinct set of base URIs of all Platibus
+        /// instances subscribed to the specified local topic</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="topic"/> is <c>null</c>
+        /// </exception>
         public Task<IEnumerable<Uri>> GetSubscribers(TopicName topic,
             CancellationToken cancellationToken = default(CancellationToken))
         {
+            if (topic == null) throw new ArgumentNullException("topic");
+            
             CheckDisposed();
             IEnumerable<SQLSubscription> subscriptions;
             _subscriptions.TryGetValue(topic, out subscriptions);
@@ -109,8 +192,17 @@ namespace Platibus.SQL
             return Task.FromResult(activeSubscribers);
         }
 
+        /// <summary>
+        /// Inserts or updates a subscription record in the SQL database
+        /// </summary>
+        /// <param name="topic">The topic to which the <paramref name="subscriber"/> is subscribing</param>
+        /// <param name="subscriber">The base URI of the subscribing Platibus instance</param>
+        /// <param name="expires">The date and time at which the subscription will expire</param>
+        /// <returns>Returns a task that will complete when the subscription record has been inserted 
+        /// or updated and whose result will be the an immutable representation of the inserted 
+        /// subscription record</returns>
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual Task<SQLSubscription> InsertOrUpdateSubscription(TopicName topicName, Uri subscriber,
+        protected virtual Task<SQLSubscription> InsertOrUpdateSubscription(TopicName topic, Uri subscriber,
             DateTime expires)
         {
             SQLSubscription subscription;
@@ -124,7 +216,7 @@ namespace Platibus.SQL
                         command.CommandType = CommandType.Text;
                         command.CommandText = _dialect.InsertSubscriptionCommand;
 
-                        command.SetParameter(_dialect.TopicNameParameterName, (string) topicName);
+                        command.SetParameter(_dialect.TopicNameParameterName, (string) topic);
                         command.SetParameter(_dialect.SubscriberParameterName, subscriber.ToString());
                         command.SetParameter(_dialect.ExpiresParameterName, expires);
 
@@ -135,7 +227,7 @@ namespace Platibus.SQL
                             command.ExecuteNonQuery();
                         }
                     }
-                    subscription = new SQLSubscription(topicName, subscriber, expires);
+                    subscription = new SQLSubscription(topic, subscriber, expires);
                     scope.Complete();
                 }
             }
@@ -146,6 +238,11 @@ namespace Platibus.SQL
             return Task.FromResult(subscription);
         }
 
+        /// <summary>
+        /// Selects all of the non-expired subscription records from the SQL database
+        /// </summary>
+        /// <returns>Returns a task that will complete when the subscription records have been
+        /// selected and whose result will be the records that were selected</returns>
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         protected virtual Task<IEnumerable<SQLSubscription>> SelectSubscriptions()
         {
@@ -183,8 +280,15 @@ namespace Platibus.SQL
             return Task.FromResult<IEnumerable<SQLSubscription>>(subscriptions);
         }
 
+        /// <summary>
+        /// Deletes a subscription record from the SQL database
+        /// </summary>
+        /// <param name="topic">The name of the topic</param>
+        /// <param name="subscriber">The base URI of the subscribing Platibus instance</param>
+        /// <returns>Returns a task that will complete when the subscription record
+        /// has been deleted</returns>
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual Task DeleteSubscription(TopicName topicName, Uri subscriber)
+        protected virtual Task DeleteSubscription(TopicName topic, Uri subscriber)
         {
             bool deleted;
             var connection = _connectionProvider.GetConnection();
@@ -197,7 +301,7 @@ namespace Platibus.SQL
                         command.CommandType = CommandType.Text;
                         command.CommandText = _dialect.DeleteSubscriptionCommand;
 
-                        command.SetParameter(_dialect.TopicNameParameterName, (string) topicName);
+                        command.SetParameter(_dialect.TopicNameParameterName, (string) topic);
                         command.SetParameter(_dialect.SubscriberParameterName, subscriber.ToString());
 
                         var rowsAffected = command.ExecuteNonQuery();
@@ -213,11 +317,18 @@ namespace Platibus.SQL
             return Task.FromResult(deleted);
         }
 
+        /// <summary>
+        /// Finalizer method that ensures resources are freed
+        /// </summary>
         ~SQLSubscriptionTrackingService()
         {
             Dispose(false);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
             if (_disposed) return;
@@ -226,15 +337,25 @@ namespace Platibus.SQL
             _disposed = true;
         }
 
+        /// <summary>
+        /// Called by the <see cref="Dispose"/> method or by the finalizer to free held resources
+        /// </summary>
+        /// <param name="disposing">Indicates whether this method is called from the 
+        /// <see cref="Dispose"/> method (<c>true</c>) or from the finalizer (<c>false</c>)</param>
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;
             if (disposing)
             {
-                _connectionProvider.Dispose();
+                _connectionProvider.TryDispose();
             }
         }
 
+        /// <summary>
+        /// Throws an <see cref="ObjectDisposedException"/> if the subscription tracking service has
+        /// been disposed
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown if the object is already disposed</exception>
         protected void CheckDisposed()
         {
             if (_disposed) throw new ObjectDisposedException(GetType().FullName);

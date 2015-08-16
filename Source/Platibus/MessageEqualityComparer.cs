@@ -24,10 +24,21 @@ using System.Collections.Generic;
 
 namespace Platibus
 {
+    /// <summary>
+    /// Determines whether two messages are equal
+    /// </summary>
     public class MessageEqualityComparer : IEqualityComparer<Message>
     {
         private readonly MessageHeadersEqualityComparer _headersEqualityComparer = new MessageHeadersEqualityComparer();
 
+        /// <summary>
+        /// Determines whether two messages are equal
+        /// </summary>
+        /// <param name="x">One of the messages two compare</param>
+        /// <param name="y">The other message to compare</param>
+        /// <returns>
+        /// Returns <c>true</c> if the two messages are equal; <c>false</c> otherwise
+        /// </returns>
         public bool Equals(Message x, Message y)
         {
             if (ReferenceEquals(x, y)) return true;
@@ -40,11 +51,16 @@ namespace Platibus
             return string.Equals(x.Content, y.Content);
         }
 
-        public int GetHashCode(Message obj)
+        /// <summary>
+        /// Returns a hash code for the specified message
+        /// </summary>
+        /// <param name="message">The message</param>
+        /// <returns>Returns a hash code for the specified message</returns>
+        public int GetHashCode(Message message)
         {
-            if (obj == null) return 0;
-            var hashCode = _headersEqualityComparer.GetHashCode(obj.Headers);
-            hashCode = (hashCode*397) ^ (obj.Content == null ? 0 : obj.Content.GetHashCode());
+            if (message == null) return 0;
+            var hashCode = _headersEqualityComparer.GetHashCode(message.Headers);
+            hashCode = (hashCode*397) ^ (message.Content == null ? 0 : message.Content.GetHashCode());
             return hashCode;
         }
     }

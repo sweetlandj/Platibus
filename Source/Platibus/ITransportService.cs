@@ -59,7 +59,7 @@ namespace Platibus
 
         /// <summary>
         /// Subscribes to messages published to the specified <paramref name="topicName"/>
-        /// by the application at the provided <paramref name="publisherUri"/>.
+        /// by the application at the provided <paramref name="endpoint"/>.
         /// </summary>
         /// <param name="endpoint"></param>
         /// <param name="topicName">The name of the topic to which the caller is

@@ -14,7 +14,7 @@ namespace Platibus.Config.Extensibility
 
         /// <summary>
         /// Finds the most appropriate type or subtype of 
-        /// <typeparamref name="TProvider"/> whose type name is <see cref="providerName"/>
+        /// <typeparamref name="TProvider"/> whose type name is <paramref name="providerName"/>
         /// or which has been decorated with a <see cref="ProviderAttribute"/> with the
         /// specified <paramref name="providerName"/>.
         /// </summary>

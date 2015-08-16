@@ -25,8 +25,21 @@ using System.Threading.Tasks;
 
 namespace Platibus.Http
 {
+    /// <summary>
+    /// An object that handles a request involving an HTTP resource
+    /// </summary>
     public interface IHttpResourceController
     {
+        /// <summary>
+        /// Processes the specified <paramref name="request"/> and updates the supplied
+        /// <paramref name="response"/>
+        /// </summary>
+        /// <param name="request">The HTTP resource request to process</param>
+        /// <param name="response">The HTTP response to update</param>
+        /// <param name="subPath">The portion of the request path that remains after the
+        /// request was routed to this controller</param>
+        /// <returns>Returns a task that completes when the request has been processed and the
+        /// response has been updated</returns>
         Task Process(IHttpResourceRequest request, IHttpResourceResponse response, IEnumerable<string> subPath);
     }
 }
