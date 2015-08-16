@@ -4,6 +4,12 @@ using Platibus.Config;
 
 namespace Platibus.Http
 {
+    /// <summary>
+    /// A configuration section for hosting a Platibus instance in a standalone HTTP server
+    /// </summary>
+    /// <seealso cref="IHttpServerConfiguration"/>
+    /// <seealso cref="HttpServerConfigurationManager"/>
+    /// <seealso cref="HttpServer"/>
     public class HttpServerConfigurationSection : PlatibusConfigurationSection
     {
         private const string BaseUriPropertyName = "baseUri";
@@ -11,6 +17,10 @@ namespace Platibus.Http
         private const string SubscriptionTrackingPropertyName = "subscriptionTracking";
         private const string QueueingPropertyName = "queueing";
 
+        /// <summary>
+        /// The base URI for the HTTP server (i.e. the address to which the HTTP
+        /// server will listen)
+        /// </summary>
         [ConfigurationProperty(BaseUriPropertyName)]
         public Uri BaseUri
         {
@@ -18,6 +28,9 @@ namespace Platibus.Http
             set { base[BaseUriPropertyName] = value; }
         }
 
+        /// <summary>
+        /// The authentication schemes to support
+        /// </summary>
         [ConfigurationProperty(AuthenticationSchemesPropertyName)]
         public AuthenticationSchemesElementCollection AuthenticationSchemes
         {
@@ -25,6 +38,9 @@ namespace Platibus.Http
             set { base[AuthenticationSchemesPropertyName] = value; }
         }
 
+        /// <summary>
+        /// Configuration related to tracking subscriptions
+        /// </summary>
         [ConfigurationProperty(SubscriptionTrackingPropertyName)]
         public SubscriptionTrackingElement SubscriptionTracking
         {
@@ -32,6 +48,9 @@ namespace Platibus.Http
             set { base[SubscriptionTrackingPropertyName] = value; }
         }
 
+        /// <summary>
+        /// Configuration related to message queueing
+        /// </summary>
         [ConfigurationProperty(QueueingPropertyName)]
         public QueueingElement Queueing
         {

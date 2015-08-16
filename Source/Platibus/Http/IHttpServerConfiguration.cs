@@ -4,6 +4,9 @@ using Platibus.Config;
 
 namespace Platibus.Http
 {
+    /// <summary>
+    /// Configuration for hosting a Platibus instance in a standalone HTTP server
+    /// </summary>
     public interface IHttpServerConfiguration : IPlatibusConfiguration
     {
         /// <summary>

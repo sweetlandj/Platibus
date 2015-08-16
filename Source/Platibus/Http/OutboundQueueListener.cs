@@ -5,7 +5,7 @@ using Common.Logging;
 
 namespace Platibus.Http
 {
-    public class OutboundQueueListener : IQueueListener
+    internal class OutboundQueueListener : IQueueListener
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Http);
 

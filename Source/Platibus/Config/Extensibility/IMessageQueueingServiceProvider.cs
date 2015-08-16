@@ -26,18 +26,18 @@ namespace Platibus.Config.Extensibility
 {
     /// <summary>
     /// A factory for initializing a <see cref="IMessageQueueingService"/>
-    /// during bus initialization.
+    /// during bus initialization
     /// </summary>
     public interface IMessageQueueingServiceProvider
     {
         /// <summary>
         /// Creates an initializes a <see cref="IMessageQueueingService"/>
-        /// based on the provideds <paramref name="configuration"/>.
+        /// based on the provideds <paramref name="configuration"/>
         /// </summary>
         /// <param name="configuration">The journaling configuration
-        /// element.</param>
+        /// element</param>
         /// <returns>Returns a task whose result is an initialized
-        /// <see cref="IMessageQueueingService"/>.</returns>
+        /// <see cref="IMessageQueueingService"/></returns>
         Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration);
     }
 }

@@ -24,6 +24,9 @@ using System.Configuration;
 
 namespace Platibus.Config
 {
+    /// <summary>
+    /// Common configuration section for hosting a Platibus instance
+    /// </summary>
     public class PlatibusConfigurationSection : ConfigurationSection
     {
         private const string JournalingPropertyName = "journaling";
@@ -33,6 +36,9 @@ namespace Platibus.Config
         private const string SendRulesPropertyName = "sendRules";
         private const string SubscriptionsPropertyName = "subscriptions";
 
+        /// <summary>
+        /// Initializes a new <see cref="PlatibusConfigurationSection"/> with defaults
+        /// </summary>
         public PlatibusConfigurationSection()
         {
             Timeouts = new TimeoutsElement();
@@ -41,6 +47,9 @@ namespace Platibus.Config
             SendRules = new SendRuleElementCollection();
         }
 
+        /// <summary>
+        /// Configuration related to message journaling
+        /// </summary>
         [ConfigurationProperty(JournalingPropertyName, IsRequired = false, DefaultValue = null)]
         public JournalingElement Journaling
         {
@@ -48,6 +57,9 @@ namespace Platibus.Config
             set { base[JournalingPropertyName] = value; }
         }
 
+        /// <summary>
+        /// Configuration related to global timeouts
+        /// </summary>
         [ConfigurationProperty(TimeoutsPropertyName)]
         public TimeoutsElement Timeouts
         {
@@ -55,6 +67,9 @@ namespace Platibus.Config
             set { base[TimeoutsPropertyName] = value; }
         }
 
+        /// <summary>
+        /// Configured endpoints to which messages can be sent or from which messages can be received
+        /// </summary>
         [ConfigurationProperty(EndpointsPropertyName)]
         [ConfigurationCollection(typeof (EndpointElement),
             CollectionType = ConfigurationElementCollectionType.AddRemoveClearMap)]
@@ -64,6 +79,9 @@ namespace Platibus.Config
             set { base[EndpointsPropertyName] = value; }
         }
 
+        /// <summary>
+        /// Configured topics to which messages can be published
+        /// </summary>
         [ConfigurationProperty(TopicsPropertyName)]
         [ConfigurationCollection(typeof (TopicElement),
             CollectionType = ConfigurationElementCollectionType.AddRemoveClearMap)]
@@ -73,6 +91,9 @@ namespace Platibus.Config
             set { base[TopicsPropertyName] = value; }
         }
 
+        /// <summary>
+        /// Rules for sending message to endpoints
+        /// </summary>
         [ConfigurationProperty(SendRulesPropertyName)]
         [ConfigurationCollection(typeof (EndpointElement),
             CollectionType = ConfigurationElementCollectionType.AddRemoveClearMap)]
@@ -82,6 +103,9 @@ namespace Platibus.Config
             set { base[SendRulesPropertyName] = value; }
         }
 
+        /// <summary>
+        /// Configured subscriptions to topics on this or other instances
+        /// </summary>
         [ConfigurationProperty(SubscriptionsPropertyName)]
         [ConfigurationCollection(typeof (EndpointElement),
             CollectionType = ConfigurationElementCollectionType.AddRemoveClearMap)]

@@ -24,8 +24,16 @@ using Platibus.SQL;
 
 namespace Platibus.SQLite
 {
-    internal class SQLiteDialect : CommonSQLDialect
+    /// <summary>
+    /// A <see cref="ISQLDialect"/> for SQLite
+    /// </summary>
+    public class SQLiteDialect : CommonSQLDialect
     {
+        /// <summary>
+        /// The SQLite commands used to create the objects (tables, indexes,
+        /// stored procedures, views, etc.) needed to store queued messages in the 
+        /// SQL database
+        /// </summary>
         public override string CreateMessageQueueingServiceObjectsCommand
         {
             get { return @"
@@ -54,6 +62,11 @@ CREATE INDEX IF NOT EXISTS [PB_QueuedMessages_IX_QueueName]
     ON [PB_QueuedMessages]([QueueName]);"; }
         }
 
+        /// <summary>
+        /// The SQLite commands used to create the objects (tables, indexes,
+        /// stored procedures, views, etc.) needed to store subscription tracking data 
+        /// in the SQL database
+        /// </summary>
         public override string CreateSubscriptionTrackingServiceObjectsCommand
         {
             get { return @"

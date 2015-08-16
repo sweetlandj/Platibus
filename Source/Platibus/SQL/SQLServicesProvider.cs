@@ -5,9 +5,17 @@ using Platibus.Config.Extensibility;
 
 namespace Platibus.SQL
 {
+    /// <summary>
+    /// A provider for SQL-based message queueing and subscription tracking services
+    /// </summary>
     [Provider("SQL")]
     public class SQLServicesProvider : IMessageQueueingServiceProvider, ISubscriptionTrackingServiceProvider
     {
+        /// <summary>
+        /// Returns an SQL-based message queueing service
+        /// </summary>
+        /// <param name="configuration">The queueing configuration element</param>
+        /// <returns>Returns an SQL-based message queueing service</returns>
         public Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
             var connectionName = configuration.GetString("connectionName");
@@ -27,6 +35,11 @@ namespace Platibus.SQL
             return Task.FromResult<IMessageQueueingService>(sqlMessageQueueingService);
         }
 
+        /// <summary>
+        /// Returns an SQL-based subscription tracking service
+        /// </summary>
+        /// <param name="configuration">The subscription tracking configuration element</param>
+        /// <returns>Returns an SQL-based subscription tracking service</returns>
         public async Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
             SubscriptionTrackingElement configuration)
         {

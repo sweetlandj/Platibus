@@ -26,6 +26,9 @@ using Platibus.SQL;
 
 namespace Platibus.SQLite
 {
+    /// <summary>
+    /// A dialect provider for the System.Data.SQLite ADO.NET provider
+    /// </summary>
     [Provider("System.Data.SQLite")]
     public class SQLiteDialectProvider : ISQLDialectProvider
     {

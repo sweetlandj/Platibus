@@ -1,7 +1,15 @@
 ﻿namespace Platibus.SQL
 {
+    /// <summary>
+    /// A <see cref="ISQLDialect"/> for Microsoft SQL server
+    /// </summary>
     public class MSSQLDialect : CommonSQLDialect
     {
+        /// <summary>
+        /// The MS SQL commands used to create the objects (tables, indexes,
+        /// stored procedures, views, etc.) needed to store queued messages in the 
+        /// SQL database
+        /// </summary>
         public override string CreateMessageQueueingServiceObjectsCommand
         {
             get { return @"
@@ -33,6 +41,11 @@ BEGIN
 END"; }
         }
 
+        /// <summary>
+        /// The MS SQL commands used to create the objects (tables, indexes,
+        /// stored procedures, views, etc.) needed to store subscription tracking data 
+        /// in the SQL database
+        /// </summary>
         public override string CreateSubscriptionTrackingServiceObjectsCommand
         {
             get { return @"

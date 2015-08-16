@@ -1,8 +1,15 @@
 ﻿namespace Platibus.Security
 {
+    /// <summary>
+    /// Specifies that the current user's default network credentials should be used
+    /// </summary>
+    /// <remarks>
+    /// This type of endpoint credentials implies integrated Windows (NTLM/Kerberos) 
+    /// authentication
+    /// </remarks>
     public class DefaultCredentials : IEndpointCredentials
     {
-        public void Accept(IEndpointCredentialsVisitor visitor)
+        void IEndpointCredentials.Accept(IEndpointCredentialsVisitor visitor)
         {
             visitor.Visit(this);
         }

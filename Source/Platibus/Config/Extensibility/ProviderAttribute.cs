@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System;
+using Platibus.SQL;
 
 namespace Platibus.Config.Extensibility
 {
@@ -60,6 +61,14 @@ namespace Platibus.Config.Extensibility
     /// specified in <see cref="ProviderAttribute"/> corresponds to the value of 
     /// the <see cref="QueueingElement.Provider"/> property in a
     /// <see cref="QueueingElement"/>.</description>
+    /// </item>
+    /// <item>
+    /// <term><see cref="ISQLDialectProvider"/></term>
+    /// <description>Indicates that the decorated type provides a
+    /// <see cref="ISQLDialect"/>.  The <see cref="Name"/> 
+    /// specified in <see cref="ProviderAttribute"/> corresponds to the name of
+    /// the ADO.NET provider specified in the connection string settings.
+    /// </description>
     /// </item>
     /// </list>
     /// </remarks>
