@@ -49,7 +49,7 @@ namespace Platibus.UnitTests
                     {HeaderName.MessageName, typeof (string).FullName},
                 }, "Hello, world!");
 
-                var transportService = await server.GetTransportService();
+                var transportService = server.TransportService;
                 await transportService.SendMessage(message);
 
                 messageReceived = await messageReceivedEvent

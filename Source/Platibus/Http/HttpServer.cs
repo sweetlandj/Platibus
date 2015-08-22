@@ -82,16 +82,17 @@ namespace Platibus.Http
 
         private Task _listenTask;
 
-        public Task<Uri> GetBaseUri()
+        /// <summary>
+        /// Returns the transport service used by the bus instance
+        /// </summary>
+        public HttpTransportService TransportService
         {
-            return Task.FromResult(_baseUri);
+            get { return _transportService; }
         }
 
-        public Task<ITransportService> GetTransportService()
-        {
-            return Task.FromResult<ITransportService>(_transportService);
-        }
-
+        /// <summary>
+        /// The hosted bus instance
+        /// </summary>
         public IBus Bus
         {
             get { return _bus; }
@@ -165,6 +166,11 @@ namespace Platibus.Http
             }
         }
 
+        /// <summary>
+        /// Accepts an incoming HTTP request
+        /// </summary>
+        /// <param name="context">The HTTP listener context</param>
+        /// <returns>Returns a task that will complete when the request has been handled</returns>
         protected async Task Accept(HttpListenerContext context)
         {
             var resourceRequest = new HttpListenerRequestAdapter(context.Request, context.User);
@@ -190,11 +196,18 @@ namespace Platibus.Http
             }
         }
 
+        /// <summary>
+        /// Finalizer that ensures all resources are released
+        /// </summary>
         ~HttpServer()
         {
             Dispose(false);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
             if (_disposed) return;
@@ -203,6 +216,15 @@ namespace Platibus.Http
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Called by the <see cref="Dispose()"/> method or finalizer to ensure that
+        /// resources are released
+        /// </summary>
+        /// <param name="disposing">Indicates whether this method is called from the 
+        /// <see cref="Dispose()"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
+        /// <remarks>
+        /// This method will not be called more than once
+        /// </remarks>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_bus")]
         protected virtual void Dispose(bool disposing)

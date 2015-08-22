@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Configuration;
 using Platibus.Config.Extensibility;
 using Platibus.SQL;
@@ -32,6 +33,15 @@ namespace Platibus.SQLite
     [Provider("System.Data.SQLite")]
     public class SQLiteDialectProvider : ISQLDialectProvider
     {
+        /// <summary>
+        /// Returns the dialect most appropriate given the specified 
+        /// <paramref name="connectionStringSettings"/>
+        /// </summary>
+        /// <param name="connectionStringSettings">The connection string settings</param>
+        /// <returns>A SQL dialect appropriate for use with connections based on the
+        /// specified <paramref name="connectionStringSettings"/></returns>
+        /// <exception cref="ArgumentNullException">Thrown if 
+        /// <paramref name="connectionStringSettings"/> is <c>null</c></exception>
         public ISQLDialect GetSQLDialect(ConnectionStringSettings connectionStringSettings)
         {
             return new SQLiteDialect();

@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 
 namespace Platibus.SQLite
 {
-    public interface ISQLiteOperation
+    interface ISQLiteOperation
     {
         Task Execute();
     }

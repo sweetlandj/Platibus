@@ -32,6 +32,10 @@ namespace Platibus.IIS
         private IHttpResourceRouter _resourceRouter;
         private bool _disposed;
 
+        /// <summary>
+        /// Provides access to the IIS-hosted bus
+        /// </summary>
+        /// <returns>Returns a task whose result is the bus instance</returns>
         public async Task<IBus> GetBus()
         {
             await _initialization;

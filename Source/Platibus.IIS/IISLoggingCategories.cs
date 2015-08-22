@@ -22,8 +22,14 @@
 
 namespace Platibus.IIS
 {
+    /// <summary>
+    /// Logging categories for events related to IIS hosting
+    /// </summary>
     public static class IISLoggingCategories
     {
+        /// <summary>
+        /// Logging category for events related to IIS hosting
+        /// </summary>
         public const string IIS = "Platibus.IIS";
     }
 }

@@ -8,6 +8,9 @@ using Common.Logging;
 
 namespace Platibus.RabbitMQ
 {
+    /// <summary>
+    /// Hosts for a bus instance whose queueing and transport are based on RabbitMQ queues
+    /// </summary>
     public class RabbitMQHost : ITransportService, IQueueListener, IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
@@ -57,6 +60,9 @@ namespace Platibus.RabbitMQ
 
         private bool _disposed;
 
+        /// <summary>
+        /// The hosted bus instance
+        /// </summary>
         public Bus Bus
         {
             get { return _bus; }
@@ -110,6 +116,17 @@ namespace Platibus.RabbitMQ
             await context.Acknowledge();
         }
 
+        /// <summary>
+        /// Sends a message directly to the application identified by the
+        /// <see cref="IMessageHeaders.Destination"/> header.
+        /// </summary>
+        /// <param name="message">The message to send.</param>
+        /// <param name="credentials">The credentials required to send a 
+        /// message to the specified destination, if applicable.</param>
+        /// <param name="cancellationToken">A token used by the caller to
+        /// indicate if and when the send operation has been canceled.</param>
+        /// <returns>returns a task that completes when the message has
+        /// been successfully sent to the destination.</returns> 
         public async Task SendMessage(Message message, IEndpointCredentials credentials = null,
             CancellationToken cancellationToken = new CancellationToken())
         {
@@ -119,6 +136,15 @@ namespace Platibus.RabbitMQ
             await RabbitMQHelper.PublishMessage(message, Thread.CurrentPrincipal, connection, InboxQueueName);
         }
 
+        /// <summary>
+        /// Publishes a message to a topic.
+        /// </summary>
+        /// <param name="message">The message to publish.</param>
+        /// <param name="topicName">The name of the topic.</param>
+        /// <param name="cancellationToken">A token used by the caller
+        /// to indicate if and when the publish operation has been canceled.</param>
+        /// <returns>returns a task that completes when the message has
+        /// been successfully published to the topic.</returns>
         public async Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken)
         {
             CheckDisposed();
@@ -127,11 +153,24 @@ namespace Platibus.RabbitMQ
             await RabbitMQHelper.PublishMessage(message, Thread.CurrentPrincipal, connection, null, publisherTopicExchange);
         }
 
-        public Task Subscribe(IEndpoint publisher, TopicName topicName, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
+        /// <summary>
+        /// Subscribes to messages published to the specified <paramref name="topicName"/>
+        /// by the application at the provided <paramref name="endpoint"/>.
+        /// </summary>
+        /// <param name="endpoint">The publishing endpoint</param>
+        /// <param name="topicName">The name of the topic to which the caller is
+        ///     subscribing.</param>
+        /// <param name="ttl">(Optional) The Time To Live (TTL) for the subscription
+        ///     on the publishing application if it is not renewed.</param>
+        /// <param name="cancellationToken">A token used by the caller to
+        ///     indicate if and when the subscription should be canceled.</param>
+        /// <returns>Returns a long-running task that will be completed when the 
+        /// subscription is canceled by the caller or a non-recoverable error occurs.</returns>
+        public Task Subscribe(IEndpoint endpoint, TopicName topicName, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
 
-            var publisherUri = publisher.Address;
+            var publisherUri = endpoint.Address;
             var subscriptionQueueName = _baseUri.GetSubscriptionQueueName(topicName);
             var subscriptionKey = new SubscriptionKey(publisherUri, subscriptionQueueName);
             _subscriptions.GetOrAdd(subscriptionKey, key =>
@@ -160,11 +199,18 @@ namespace Platibus.RabbitMQ
             if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }
 
+        /// <summary>
+        /// Finalizer to ensure resources are released
+        /// </summary>
         ~RabbitMQHost()
         {
             Dispose(false);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
             if (_disposed) return;
@@ -173,6 +219,15 @@ namespace Platibus.RabbitMQ
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Called by the <see cref="Dispose()"/> method or finalizer to ensure that
+        /// resources are released
+        /// </summary>
+        /// <param name="disposing">Indicates whether this method is called from the 
+        /// <see cref="Dispose()"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
+        /// <remarks>
+        /// This method will not be called more than once
+        /// </remarks>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_bus"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_inboundQueue")]
         protected virtual void Dispose(bool disposing)
         {

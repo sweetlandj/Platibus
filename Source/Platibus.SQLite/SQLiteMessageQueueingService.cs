@@ -30,7 +30,11 @@ using Common.Logging;
 
 namespace Platibus.SQLite
 {
-    public class SQLiteMessageQueueingService : IMessageQueueingService
+    /// <summary>
+    /// An <see cref="IMessageQueueingService"/> implementation that stores queued
+    /// messages in a SQLite database
+    /// </summary>
+    public class SQLiteMessageQueueingService : IMessageQueueingService, IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(SQLiteLoggingCategories.SQLite);
 
@@ -41,6 +45,16 @@ namespace Platibus.SQLite
 
         private bool _disposed;
 
+        /// <summary>
+        /// Initializes a new <see cref="SQLiteMessageQueueingService"/>
+        /// </summary>
+        /// <param name="baseDirectory">The directory in which the SQLite database files will
+        /// be created</param>
+        /// <remarks>
+        /// If a base directory is not specified then the base directory will default to a
+        /// directory named <c>platibus\queues</c> beneath the current app domain base 
+        /// directory.  If the base directory does not exist it will be created.
+        /// </remarks>
         public SQLiteMessageQueueingService(DirectoryInfo baseDirectory)
         {
             if (baseDirectory == null)
@@ -51,6 +65,12 @@ namespace Platibus.SQLite
             _baseDirectory = baseDirectory;
         }
 
+        /// <summary>
+        /// Initializes the SQLite message queueing service
+        /// </summary>
+        /// <remarks>
+        /// Creates directories if they do not exist
+        /// </remarks>
         public void Init()
         {
             _baseDirectory.Refresh();
@@ -61,6 +81,19 @@ namespace Platibus.SQLite
             }
         }
 
+        /// <summary>
+        /// Establishes a named queue
+        /// </summary>
+        /// <param name="queueName">The name of the queue</param>
+        /// <param name="listener">An object that will receive messages off of the queue for processing</param>
+        /// <param name="options">(Optional) Options that govern how the queue behaves</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used
+        /// by the caller to cancel queue creation if necessary</param>
+        /// <returns>Returns a task that will complete when the queue has been created</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/> or
+        /// <paramref name="listener"/> is <c>null</c></exception>
+        /// <exception cref="QueueAlreadyExistsException">Thrown if a queue with the specified
+        /// name already exists</exception>
         public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions), CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
@@ -74,6 +107,17 @@ namespace Platibus.SQLite
             Log.DebugFormat("SQLite queue \"{0}\" created successfully", queueName);
         }
 
+        /// <summary>
+        /// Enqueues a message on a queue
+        /// </summary>
+        /// <param name="queueName">The name of the queue</param>
+        /// <param name="message">The message to enqueue</param>
+        /// <param name="senderPrincipal">(Optional) The sender principal, if applicable</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be
+        /// used be the caller to cancel the enqueue operation if necessary</param>
+        /// <returns>Returns a task that will complete when the message has been enqueued</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/>
+        /// or <paramref name="message"/> is <c>null</c></exception>
         public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
         {
             SQLiteMessageQueue queue;
@@ -85,11 +129,18 @@ namespace Platibus.SQLite
                 queueName);
         }
 
+        /// <summary>
+        /// Finalizer to ensure all resources are released
+        /// </summary>
         ~SQLiteMessageQueueingService()
         {
             Dispose(false);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
             if (_disposed) return;
@@ -98,6 +149,14 @@ namespace Platibus.SQLite
             _disposed = true;
         }
 
+        /// <summary>
+        /// Called by <see cref="Dispose()"/> or the finalizer to ensure that resources are released
+        /// </summary>
+        /// <param name="disposing">Indicates whether this method is called from the 
+        /// <see cref="Dispose()"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
+        /// <remarks>
+        /// This method will not be called more than once
+        /// </remarks>
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;
@@ -110,7 +169,7 @@ namespace Platibus.SQLite
             }
         }
 
-        protected void CheckDisposed()
+        private void CheckDisposed()
         {
             if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }

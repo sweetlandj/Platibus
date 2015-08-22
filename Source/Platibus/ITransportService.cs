@@ -61,7 +61,7 @@ namespace Platibus
         /// Subscribes to messages published to the specified <paramref name="topicName"/>
         /// by the application at the provided <paramref name="endpoint"/>.
         /// </summary>
-        /// <param name="endpoint"></param>
+        /// <param name="endpoint">The publishing endpoint</param>
         /// <param name="topicName">The name of the topic to which the caller is
         ///     subscribing.</param>
         /// <param name="ttl">(Optional) The Time To Live (TTL) for the subscription

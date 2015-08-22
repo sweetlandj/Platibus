@@ -28,9 +28,20 @@ using Platibus.Config.Extensibility;
 
 namespace Platibus.SQLite
 {
+    /// <summary>
+    /// A provider for SQLite-based message queueing and subscription tracking services
+    /// </summary>
     [Provider("SQLite")]
     public class SQLiteServicesProvider : IMessageQueueingServiceProvider, ISubscriptionTrackingServiceProvider
     {
+        /// <summary>
+        /// Creates an initializes a <see cref="IMessageQueueingService"/>
+        /// based on the provideds <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="configuration">The journaling configuration
+        /// element</param>
+        /// <returns>Returns a task whose result is an initialized
+        /// <see cref="IMessageQueueingService"/></returns>
         public Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
             var path = configuration.GetString("path");
@@ -40,6 +51,14 @@ namespace Platibus.SQLite
             return Task.FromResult<IMessageQueueingService>(sqliteMessageQueueingService);
         }
 
+        /// <summary>
+        /// Creates an initializes a <see cref="ISubscriptionTrackingService"/>
+        /// based on the provideds <paramref name="configuration"/>.
+        /// </summary>
+        /// <param name="configuration">The journaling configuration
+        /// element.</param>
+        /// <returns>Returns a task whose result is an initialized
+        /// <see cref="ISubscriptionTrackingService"/>.</returns>
         public async Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
             SubscriptionTrackingElement configuration)
         {
@@ -50,7 +69,7 @@ namespace Platibus.SQLite
             return sqliteSubscriptionTrackingService;
         }
 
-        public static string GetRootedPath(string path)
+        private static string GetRootedPath(string path)
         {
             var defaultRootedPath = AppDomain.CurrentDomain.BaseDirectory;
             if (string.IsNullOrWhiteSpace(path))
