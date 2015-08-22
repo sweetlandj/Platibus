@@ -426,7 +426,7 @@ namespace Platibus.SQL
         }
 
         /// <summary>
-        /// Helper method to deserialize message headers read from a record in the SQL database
+        /// Helper method to deserialize the sender principal from a record in the SQL database
         /// </summary>
         /// <param name="str">The serialized principal string</param>
         /// <returns>Returns the deserialized principal</returns>
@@ -445,6 +445,14 @@ namespace Platibus.SQL
             }
         }
 
+        /// <summary>
+        /// Helper method to deserialize message headers read from a record in the SQL database
+        /// </summary>
+        /// <param name="headerString">The serialized header string</param>
+        /// <returns>Returns the deserialized headers</returns>
+        /// <remarks>
+        /// This method performs the inverse of <see cref="SerializeHeaders"/>
+        /// </remarks>
         protected virtual IMessageHeaders DeserializeHeaders(string headerString)
         {
             var headers = new MessageHeaders();
@@ -524,16 +532,27 @@ namespace Platibus.SQL
             return headers;
         }
 
+        /// <summary>
+        /// Throws <see cref="ObjectDisposedException"/> if this object has been disposed
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown if this object has been disposed</exception>
         protected virtual void CheckDisposed()
         {
             if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }
 
+        /// <summary>
+        /// Finalizer to ensure that all resources are released
+        /// </summary>
         ~SQLMessageQueue()
         {
             Dispose(false);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
             if (_disposed) return;
@@ -542,6 +561,11 @@ namespace Platibus.SQL
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Called by the <see cref="Dispose()"/> method or by the finalizer to free held resources
+        /// </summary>
+        /// <param name="disposing">Indicates whether this method is called from the 
+        /// <see cref="Dispose()"/> method (<c>true</c>) or from the finalizer (<c>false</c>)</param>
         protected virtual void Dispose(bool disposing)
         {
             _cancellationTokenSource.Cancel();

@@ -125,7 +125,7 @@ namespace Platibus
         }
 
         /// <summary>
-        /// Implicitly casts a string into a <see cref="EndpointName"/>
+        /// Implicitly converts a string into a <see cref="EndpointName"/>
         /// </summary>
         /// <param name="value">The endpoint name as a string</param>
         /// <returns>Returns <c>null</c> if <paramref name="value"/> is <c>null</c> or
@@ -137,7 +137,7 @@ namespace Platibus
         }
 
         /// <summary>
-        /// Implicitly casts a <see cref="EndpointName"/> object to a string
+        /// Implicitly converts a <see cref="EndpointName"/> object to a string
         /// </summary>
         /// <param name="endpointName">The endpoint name object</param>
         /// <returns>Returns <c>null</c> if <paramref name="endpointName"/> is <c>null</c>;

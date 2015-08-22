@@ -428,6 +428,9 @@ namespace Platibus
             if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }
 
+        /// <summary>
+        /// Finalizer to ensure that all resources are disposed
+        /// </summary>
         ~Bus()
         {
             Dispose(false);
@@ -449,7 +452,7 @@ namespace Platibus
         /// Disposes of managed and unmanaged resources
         /// </summary>
         /// <param name="disposing"><c>true</c> if called from the
-        /// <see cref="Dispose"/> method; <c>false</c> if called from the
+        /// <see cref="Dispose()"/> method; <c>false</c> if called from the
         /// finalizer</param>
         /// <remarks>
         /// Unmanaged resources should be disposed regardless of the value

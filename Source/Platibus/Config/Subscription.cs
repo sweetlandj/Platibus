@@ -142,11 +142,25 @@ namespace Platibus.Config
             return Equals(obj as Subscription);
         }
 
+        /// <summary>
+        /// Overrides the default <c>==</c> operator to determine the equality of two subscriptions
+        /// based on value rather than identity
+        /// </summary>
+        /// <param name="left">The subscription on the left side of the operator</param>
+        /// <param name="right">The subscription on the right side of the operator</param>
+        /// <returns>Returns <c>true</c> if the subscriptions are equal; <c>false</c> otherwise</returns>
         public static bool operator ==(Subscription left, Subscription right)
         {
             return Equals(left, right);
         }
 
+        /// <summary>
+        /// Overrides the default <c>!=</c> operator to determine the inequality of two subscriptions
+        /// based on value rather than identity
+        /// </summary>
+        /// <param name="left">The subscription on the left side of the operator</param>
+        /// <param name="right">The subscription on the right side of the operator</param>
+        /// <returns>Returns <c>true</c> if the subscriptions are unequal; <c>false</c> otherwise</returns>
         public static bool operator !=(Subscription left, Subscription right)
         {
             return !Equals(left, right);

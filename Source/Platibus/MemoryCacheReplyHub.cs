@@ -38,7 +38,7 @@ namespace Platibus
 
         /// <summary>
         /// Creates a new <see cref="MemoryCacheReplyHub"/> that will hold sent messages
-        /// in memory until the specified <see cref="replyTimeout"/> has elapsed
+        /// in memory until the specified <paramref name="replyTimeout"/> has elapsed
         /// </summary>
         /// <param name="replyTimeout">The maximum amount of time to hold send messages
         /// in memory before they are evicted from cache</param>
@@ -150,11 +150,11 @@ namespace Platibus
         }
 
         /// <summary>
-        /// Called by the <see cref="Dispose"/> method or finalizer to ensure that
+        /// Called by the <see cref="Dispose()"/> method or finalizer to ensure that
         /// resources are released
         /// </summary>
         /// <param name="disposing">Indicates whether this method is called from the 
-        /// <see cref="Dispose"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
+        /// <see cref="Dispose()"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
         /// <remarks>
         /// This method will not be called more than once
         /// </remarks>

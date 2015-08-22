@@ -28,12 +28,22 @@ using Platibus.Serialization;
 
 namespace Platibus.Http
 {
+    /// <summary>
+    /// An HTTP resource controller for topics and related resources
+    /// </summary>
     public class TopicController : IHttpResourceController
     {
         private readonly NewtonsoftJsonSerializer _serializer = new NewtonsoftJsonSerializer();
         private readonly IList<TopicName> _topics;
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
 
+        /// <summary>
+        /// Initializes a new <see cref="TopicController"/>
+        /// </summary>
+        /// <param name="subscriptionTrackingService">The subscription tracking service</param>
+        /// <param name="topics">The list of defined topics</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="subscriptionTrackingService"/>
+        /// is <c>null</c></exception>
         public TopicController(ISubscriptionTrackingService subscriptionTrackingService, IEnumerable<TopicName> topics)
         {
             if (subscriptionTrackingService == null) throw new ArgumentNullException("subscriptionTrackingService");
@@ -43,6 +53,16 @@ namespace Platibus.Http
                 .ToList();
         }
 
+        /// <summary>
+        /// Processes the specified <paramref name="request"/> and updates the supplied
+        /// <paramref name="response"/>
+        /// </summary>
+        /// <param name="request">The HTTP resource request to process</param>
+        /// <param name="response">The HTTP response to update</param>
+        /// <param name="subPath">The portion of the request path that remains after the
+        /// request was routed to this controller</param>
+        /// <returns>Returns a task that completes when the request has been processed and the
+        /// response has been updated</returns>
         public async Task Process(IHttpResourceRequest request, IHttpResourceResponse response,
             IEnumerable<string> subPath)
         {
@@ -52,7 +72,7 @@ namespace Platibus.Http
             var topicSegments = subPath.ToList();
             if (!topicSegments.Any() && "get".Equals(request.HttpMethod, StringComparison.OrdinalIgnoreCase))
             {
-                await GetTopics(request, response);
+                await GetTopics(response);
                 return;
             }
             if (topicSegments.Any())
@@ -61,8 +81,7 @@ namespace Platibus.Http
                 var nestedResource = topicSegments.Skip(1).FirstOrDefault();
                 if ("subscriber".Equals(nestedResource, StringComparison.OrdinalIgnoreCase))
                 {
-                    var subscriberSubPath = topicSegments.Skip(2);
-                    await PostOrDeleteSubscriber(request, response, topic, subscriberSubPath);
+                    await PostOrDeleteSubscriber(request, response, topic);
                     return;
                 }
             }
@@ -70,7 +89,7 @@ namespace Platibus.Http
             response.StatusCode = 400;
         }
 
-        public async Task GetTopics(IHttpResourceRequest request, IHttpResourceResponse response)
+        private async Task GetTopics(IHttpResourceResponse response)
         {
             var topicList = _topics.Select(t => t.ToString()).ToArray();
             var responseContent = _serializer.Serialize(topicList);
@@ -80,8 +99,8 @@ namespace Platibus.Http
             response.StatusCode = 200;
         }
 
-        public async Task PostOrDeleteSubscriber(IHttpResourceRequest request, IHttpResourceResponse response,
-            TopicName topic, IEnumerable<string> subPath)
+        private async Task PostOrDeleteSubscriber(IHttpResourceRequest request, IHttpResourceResponse response,
+            TopicName topic)
         {
             if (request == null) throw new ArgumentNullException("request");
             if (response == null) throw new ArgumentNullException("response");

@@ -116,7 +116,7 @@ namespace Platibus.Http
         }
 
         /// <summary>
-        /// Implicitly casts a string value into a <see cref="ResourceType"/>
+        /// Implicitly converts a string value into a <see cref="ResourceType"/>
         /// </summary>
         /// <param name="value">The string value</param>
         /// <returns>Returns <c>null</c> if <paramref name="value"/>is <c>null</c> or whitespace;
@@ -128,7 +128,7 @@ namespace Platibus.Http
         }
 
         /// <summary>
-        /// Implicitly casts a <see cref="ResourceType"/> to a string
+        /// Implicitly converts a <see cref="ResourceType"/> to a string
         /// </summary>
         /// <param name="resourceType">The resource type</param>
         /// <returns>Returns <c>null</c> if <paramref name="resourceType"/> is <c>null</c>;

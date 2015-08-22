@@ -101,11 +101,11 @@ namespace Platibus
         }
 
         /// <summary>
-        /// Called by the <see cref="Dispose"/> method or the finalizer to ensure that
+        /// Called by the <see cref="Dispose()"/> method or the finalizer to ensure that
         /// resources are released
         /// </summary>
         /// <param name="disposing">Indicates whether this method is called from the 
-        /// <see cref="Dispose"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
+        /// <see cref="Dispose()"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
         /// <remarks>
         /// This method will not be called more than once
         /// </remarks>

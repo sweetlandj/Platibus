@@ -116,7 +116,7 @@ namespace Platibus
         }
 
         /// <summary>
-        /// Implicitly casts a string value to a <see cref="TopicName"/>
+        /// Implicitly converts a string value to a <see cref="TopicName"/>
         /// </summary>
         /// <param name="value">The string representation of the topic name</param>
         /// <returns>Returns <c>null</c> if <paramref name="value"/> is <c>null</c> or
@@ -128,7 +128,7 @@ namespace Platibus
         }
 
         /// <summary>
-        /// Implicitly casts a <see cref="TopicName"/> to its string representation
+        /// Implicitly converts a <see cref="TopicName"/> to its string representation
         /// </summary>
         /// <param name="topicName">The topic name</param>
         /// <returns>Returns <c>null</c> if <paramref name="topicName"/> is <c>null</c>;

@@ -28,16 +28,35 @@ using System.Threading.Tasks;
 
 namespace Platibus.Http
 {
+    /// <summary>
+    /// An HTTP resource controller for messages and related resources
+    /// </summary>
     public class MessageController : IHttpResourceController
     {
         private readonly Func<Message, IPrincipal, Task> _accept;
 
+        /// <summary>
+        /// Initializes a new <see cref="MessageController"/>
+        /// </summary>
+        /// <param name="accept">A callback inokved when a message resource is posted</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="accept"/> is
+        /// <c>null</c></exception>
         public MessageController(Func<Message, IPrincipal, Task> accept)
         {
             if (accept == null) throw new ArgumentNullException("accept");
             _accept = accept;
         }
 
+        /// <summary>
+        /// Processes the specified <paramref name="request"/> and updates the supplied
+        /// <paramref name="response"/>
+        /// </summary>
+        /// <param name="request">The HTTP resource request to process</param>
+        /// <param name="response">The HTTP response to update</param>
+        /// <param name="subPath">The portion of the request path that remains after the
+        /// request was routed to this controller</param>
+        /// <returns>Returns a task that completes when the request has been processed and the
+        /// response has been updated</returns>
         public async Task Process(IHttpResourceRequest request, IHttpResourceResponse response,
             IEnumerable<string> subPath)
         {
@@ -54,7 +73,7 @@ namespace Platibus.Http
             await Post(request, response);
         }
 
-        public async Task Post(IHttpResourceRequest request, IHttpResourceResponse response)
+        private async Task Post(IHttpResourceRequest request, IHttpResourceResponse response)
         {
             if (request == null) throw new ArgumentNullException("request");
             if (response == null) throw new ArgumentNullException("response");

@@ -179,10 +179,10 @@ namespace Platibus.SQL
         }
 
         /// <summary>
-        /// Called by the <see cref="Dispose"/> method or by the finalizer to free held resources
+        /// Called by the <see cref="Dispose()"/> method or by the finalizer to free held resources
         /// </summary>
         /// <param name="disposing">Indicates whether this method is called from the 
-        /// <see cref="Dispose"/> method (<c>true</c>) or from the finalizer (<c>false</c>)</param>
+        /// <see cref="Dispose()"/> method (<c>true</c>) or from the finalizer (<c>false</c>)</param>
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;

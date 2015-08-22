@@ -5,10 +5,17 @@ using Platibus.Http;
 
 namespace Platibus.IIS
 {
+    /// <summary>
+    /// Initializes an IIS-hosted bus instance
+    /// </summary>
     public class BusManager : IDisposable, IBusManager
     {
         internal static readonly BusManager SingletonInstance = new BusManager();
 
+        /// <summary>
+        /// Returns the singleton <see cref="IBusManager"/> instance
+        /// </summary>
+        /// <returns>Returns the singleton <see cref="IBusManager"/> instance</returns>
         public static IBusManager GetInstance()
         {
             return SingletonInstance;
@@ -31,6 +38,10 @@ namespace Platibus.IIS
             return _bus;
         }
 
+        /// <summary>
+        /// Returns a reference to the HTTP resource router
+        /// </summary>
+        /// <returns>Returns a task whose result is the HTTP resource router</returns>
         public async Task<IHttpResourceRouter> GetResourceRouter()
         {
             await _initialization;
@@ -61,11 +72,18 @@ namespace Platibus.IIS
             };
         }
 
+        /// <summary>
+        /// Finalizer that ensures resources are released
+        /// </summary>
         ~BusManager()
         {
             Dispose(false);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
             if (_disposed) return;
@@ -74,6 +92,15 @@ namespace Platibus.IIS
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Called by the <see cref="Dispose()"/> method or finalizer to ensure that
+        /// resources are released
+        /// </summary>
+        /// <param name="disposing">Indicates whether this method is called from the 
+        /// <see cref="Dispose()"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
+        /// <remarks>
+        /// This method will not be called more than once
+        /// </remarks>
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)

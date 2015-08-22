@@ -198,7 +198,7 @@ namespace Platibus
         }
 
         /// <summary>
-        /// Implicitly casts a string into a <see cref="HeaderName"/>
+        /// Implicitly converts a string into a <see cref="HeaderName"/>
         /// </summary>
         /// <param name="value">The header name as a string</param>
         /// <returns>Returns <c>null</c> if <paramref name="value"/> is <c>null</c> or
@@ -210,7 +210,7 @@ namespace Platibus
         }
 
         /// <summary>
-        /// Implicitly casts a <see cref="HeaderName"/> object to a string
+        /// Implicitly converts a <see cref="HeaderName"/> object to a string
         /// </summary>
         /// <param name="headerName">The header name object</param>
         /// <returns>Returns <c>null</c> if <paramref name="headerName"/> is <c>null</c>;

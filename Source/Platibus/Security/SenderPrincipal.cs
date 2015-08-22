@@ -30,20 +30,36 @@ using System.Security.Principal;
 namespace Platibus.Security
 {
     /// <summary>
-    /// Used to capture sender principal information for authorization checks
-    /// in a way that can be serialized and stored with a queued message.
+    /// A serializable representation of a sender principal
     /// </summary>
+    /// <remarks>
+    /// Ensures that the sender principal can be deserialized in different security
+    /// contexts
+    /// </remarks>
     [Serializable]
     public class SenderPrincipal : IPrincipal, ISerializable
     {
         private readonly SenderIdentity _identity;
         private readonly SenderRole[] _roles;
 
+        /// <summary>
+        /// Gets the identity of the current principal.
+        /// </summary>
+        /// <returns>
+        /// The <see cref="T:System.Security.Principal.IIdentity"/> object associated with the current principal.
+        /// </returns>
         public IIdentity Identity
         {
             get { return _identity; }
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="SenderPrincipal"/> based on the specifieed 
+        /// <paramref name="principal"/>
+        /// </summary>
+        /// <param name="principal">The principal</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="principal"/> is
+        /// <c>null</c></exception>
         public SenderPrincipal(IPrincipal principal)
         {
             if (principal == null) throw new ArgumentNullException("principal");
@@ -74,19 +90,35 @@ namespace Platibus.Security
             }
         }
 
+        /// <summary>
+        /// Initializes a serialized <see cref="SenderPrincipal"/> from a streaming context
+        /// </summary>
+        /// <param name="info">The serialization info</param>
+        /// <param name="context">The streaming context</param>
         protected SenderPrincipal(SerializationInfo info, StreamingContext context)
         {
-            _identity = (SenderIdentity) info.GetValue("identity", typeof (SenderIdentity));
-            _roles = (SenderRole[]) info.GetValue("roles", typeof (SenderRole[]));
+            _identity = (SenderIdentity) info.GetValue("Identity", typeof (SenderIdentity));
+            _roles = (SenderRole[]) info.GetValue("Roles", typeof (SenderRole[]));
         }
 
+        /// <summary>
+        /// Populates a <see cref="T:System.Runtime.Serialization.SerializationInfo"/> with the data needed to serialize the target object.
+        /// </summary>
+        /// <param name="info">The <see cref="T:System.Runtime.Serialization.SerializationInfo"/> to populate with data. </param><param name="context">The destination (see <see cref="T:System.Runtime.Serialization.StreamingContext"/>) for this serialization. </param><exception cref="T:System.Security.SecurityException">The caller does not have the required permission. </exception>
         [SecurityPermission(SecurityAction.Demand, Flags = SecurityPermissionFlag.SerializationFormatter)]
         public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            info.AddValue("identity", _identity);
-            info.AddValue("roles", _roles);
+            info.AddValue("Identity", _identity);
+            info.AddValue("Roles", _roles);
         }
 
+        /// <summary>
+        /// Determines whether the current principal belongs to the specified role.
+        /// </summary>
+        /// <returns>
+        /// true if the current principal is a member of the specified role; otherwise, false.
+        /// </returns>
+        /// <param name="role">The name of the role for which to check membership. </param>
         public bool IsInRole(string role)
         {
             if (string.IsNullOrWhiteSpace(role)) return false;

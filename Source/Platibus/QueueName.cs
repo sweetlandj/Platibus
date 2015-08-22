@@ -121,7 +121,7 @@ namespace Platibus
         }
 
         /// <summary>
-        /// Implicitly casts a string value into a <see cref="QueueName"/>
+        /// Implicitly converts a string value into a <see cref="QueueName"/>
         /// object
         /// </summary>
         /// <param name="value">The string representation of the queue name</param>
@@ -134,7 +134,7 @@ namespace Platibus
         }
 
         /// <summary>
-        /// Implicitly casts a <see cref="QueueName"/> object into its
+        /// Implicitly converts a <see cref="QueueName"/> object into its
         /// string representation
         /// </summary>
         /// <param name="queueName">The queue name object</param>

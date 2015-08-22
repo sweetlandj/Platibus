@@ -68,7 +68,7 @@ namespace Platibus
         }
 
         /// <summary>
-        /// Determines whether another <see cref="importance"/> is equal to this one
+        /// Determines whether another <paramref name="importance"/> is equal to this one
         /// </summary>
         /// <param name="importance">The other message importance</param>
         /// <returns>Returns <c>true</c> if the other message importance is equal to this one;
@@ -153,7 +153,7 @@ namespace Platibus
         }
 
         /// <summary>
-        /// Implicitly casts a <see cref="MessageImportance"/> to an integer
+        /// Implicitly converts a <see cref="MessageImportance"/> to an integer
         /// </summary>
         /// <param name="importance">The message importance</param>
         /// <returns>Returns the integer value of the message importance level</returns>

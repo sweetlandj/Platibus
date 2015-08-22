@@ -28,28 +28,67 @@ using System.Threading.Tasks;
 
 namespace Platibus.Http
 {
+    /// <summary>
+    /// An <see cref="IHttpResourceRouter"/> that treats the first segment of the
+    /// request URL path as the <see cref="ResourceType"/> and routes to the
+    /// <see cref="IHttpResourceController"/> associated with that resource type
+    /// </summary>
     public sealed class ResourceTypeDictionaryRouter : IHttpResourceRouter,
         IEnumerable<KeyValuePair<ResourceType, IHttpResourceController>>
     {
         private readonly IDictionary<ResourceType, IHttpResourceController> _resourceHandlers =
             new Dictionary<ResourceType, IHttpResourceController>();
 
+        /// <summary>
+        /// The resource types that can be routed
+        /// </summary>
+        /// <remarks>
+        /// This set consists of the resource types that have been associated with
+        /// controllers via the 
+        /// <see cref="Add(ResourceType,IHttpResourceController)"/>
+        /// or
+        /// <see cref="Add(KeyValuePair{ResourceType, IHttpResourceController})"/>
+        /// methods
+        /// </remarks>
         public IEnumerable<ResourceType> ResourceTypes
         {
             get { return _resourceHandlers.Keys; }
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="T:System.Collections.Generic.IEnumerator`1"/> that can be used to iterate through the collection.
+        /// </returns>
+        /// <filterpriority>1</filterpriority>
         IEnumerator<KeyValuePair<ResourceType, IHttpResourceController>>
             IEnumerable<KeyValuePair<ResourceType, IHttpResourceController>>.GetEnumerator()
         {
             return _resourceHandlers.GetEnumerator();
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through a collection.
+        /// </summary>
+        /// <returns>
+        /// An <see cref="T:System.Collections.IEnumerator"/> object that can be used to iterate through the collection.
+        /// </returns>
+        /// <filterpriority>2</filterpriority>
         IEnumerator IEnumerable.GetEnumerator()
         {
             return _resourceHandlers.GetEnumerator();
         }
 
+        /// <summary>
+        /// Routes a <paramref name="request"/> and <paramref name="response"/> to
+        /// the appropriate controller
+        /// </summary>
+        /// <param name="request">The request to route</param>
+        /// <param name="response">The response to route</param>
+        /// <returns>
+        /// Returns a task that completes once the request has been routed and handled
+        /// </returns>
         public async Task Route(IHttpResourceRequest request, IHttpResourceResponse response)
         {
             var requestPath = request.Url.AbsolutePath;
@@ -79,19 +118,35 @@ namespace Platibus.Http
             await controller.Process(request, response, subPath);
         }
 
-        public void Add(ResourceType resourceType, IHttpResourceController resourceHandler)
+        /// <summary>
+        /// Adds a route for the specified <paramref name="resourceType"/> and
+        /// <paramref name="controller"/>
+        /// </summary>
+        /// <param name="resourceType">The type of resource to which the route pertains</param>
+        /// <param name="controller">The controller to which requests related to the 
+        /// <paramref name="resourceType"/> should be routed</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="resourceType"/>
+        /// or <paramref name="controller"/> are <c>null</c></exception>
+        public void Add(ResourceType resourceType, IHttpResourceController controller)
         {
             if (resourceType == null) throw new ArgumentNullException("resourceType");
-            if (resourceHandler == null) throw new ArgumentNullException("resourceHandler");
-            _resourceHandlers.Add(resourceType, resourceHandler);
+            if (controller == null) throw new ArgumentNullException("controller");
+            _resourceHandlers.Add(resourceType, controller);
         }
 
-        public void Add(KeyValuePair<ResourceType, IHttpResourceController> entry)
+        /// <summary>
+        /// Adds a route
+        /// </summary>
+        /// <param name="route">A key-value pair consisting of the resource type and controller
+        /// to which requests pertaining to the resource type should be routed</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="route"/>
+        /// is <c>null</c></exception>
+        public void Add(KeyValuePair<ResourceType, IHttpResourceController> route)
         {
-            _resourceHandlers.Add(entry.Key, entry.Value);
+            _resourceHandlers.Add(route.Key, route.Value);
         }
 
-        public IHttpResourceController GetController(ResourceType resourceType)
+        private IHttpResourceController GetController(ResourceType resourceType)
         {
             IHttpResourceController resourceHandler;
             if (_resourceHandlers.TryGetValue(resourceType, out resourceHandler))

@@ -61,7 +61,7 @@ namespace Platibus.Config
         }
 
         /// <summary>
-        /// Implicitly casts a function delegate to a 
+        /// Implicitly converts a function delegate to a 
         /// <see cref="DelegateMessageSpecification"/>.
         /// </summary>
         /// <param name="delegate">The function delegate</param>

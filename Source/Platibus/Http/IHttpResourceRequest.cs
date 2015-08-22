@@ -28,15 +28,49 @@ using System.Text;
 
 namespace Platibus.Http
 {
+    /// <summary>
+    /// An HTTP resource request
+    /// </summary>
     public interface IHttpResourceRequest
     {
+        /// <summary>
+        /// The request URL
+        /// </summary>
         Uri Url { get; }
+
+        /// <summary>
+        /// The HTTP method (GET, POST, PUT, DELETE, etc.)
+        /// </summary>
         string HttpMethod { get; }
+
+        /// <summary>
+        /// HTTP headers
+        /// </summary>
         NameValueCollection Headers { get; }
+
+        /// <summary>
+        /// The parameters parsed from the URL query string
+        /// </summary>
         NameValueCollection QueryString { get; }
+
+        /// <summary>
+        /// The MIME content type of the request content
+        /// </summary>
         string ContentType { get; }
+
+        /// <summary>
+        /// The content encoding
+        /// </summary>
         Encoding ContentEncoding { get; }
+
+        /// <summary>
+        /// A stream from which the request content can be read
+        /// </summary>
         Stream InputStream { get; }
+
+        /// <summary>
+        /// The principal that made the request
+        /// </summary>
         IPrincipal Principal { get; }
     }
 }

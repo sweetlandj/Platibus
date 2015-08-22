@@ -88,7 +88,7 @@ namespace Platibus.Config
         }
 
         /// <summary>
-        /// Initializes and returns a <see cref="TConfig"/> instance based on
+        /// Initializes and returns a <typeparamref name="TConfig"/> instance based on
         /// the supplied <see cref="PlatibusConfigurationSection"/>
         /// </summary>
         /// <typeparam name="TConfig">A type that inherits <see cref="PlatibusConfiguration"/>
@@ -98,7 +98,7 @@ namespace Platibus.Config
         /// process implementations of <see cref="IConfigurationHook"/> found in the
         /// application domain (default is true)</param>
         /// <returns>Returns a task whose result will be an initialized 
-        /// <see cref="TConfig"/> object</returns>
+        /// <typeparamref name="TConfig"/> object</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="configSection"/>
         /// is <c>null</c></exception>
         /// <seealso cref="PlatibusConfigurationSection"/>
@@ -201,7 +201,7 @@ namespace Platibus.Config
         }
 
         /// <summary>
-        /// Helper method to initialize message journaling services based on the
+        /// Helper method to initialize the message journaling service based on the
         /// supplied configuration element
         /// </summary>
         /// <param name="config">The journaling configuration element</param>

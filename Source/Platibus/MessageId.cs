@@ -93,32 +93,71 @@ namespace Platibus
             return _value.GetHashCode();
         }
 
+        /// <summary>
+        /// Overrides the default <c>==</c> operator so that equality is determined based on
+        /// value rather than identity
+        /// </summary>
+        /// <param name="left">The message ID on the left side of the operator</param>
+        /// <param name="right">The message ID on the right side of the operator</param>
+        /// <returns>Returns <c>true</c> if the message IDs are equal; <c>false</c> otherwise</returns>
         public static bool operator ==(MessageId left, MessageId right)
         {
             return Equals(left, right);
         }
 
+        /// <summary>
+        /// Overrides the default <c>!=</c> operator so that inequality is determined based on
+        /// value rather than identity
+        /// </summary>
+        /// <param name="left">The message ID on the left side of the operator</param>
+        /// <param name="right">The message ID on the right side of the operator</param>
+        /// <returns>Returns <c>true</c> if the message IDs are unequal; <c>false</c> otherwise</returns>
         public static bool operator !=(MessageId left, MessageId right)
         {
             return !Equals(left, right);
         }
 
+        /// <summary>
+        /// Implicitly converts a string value to a <see cref="MessageId"/>
+        /// </summary>
+        /// <param name="value">The string value</param>
+        /// <returns>Returns an empty message ID if <paramref name="value"/> is <c>null</c>
+        /// or whitespace; otherwise returns a new <see cref="MessageId"/> based on the 
+        /// value</returns>
+        /// <exception cref="FormatException">Thrown if <paramref name="value"/> is not a valid
+        /// message ID</exception>
         public static implicit operator MessageId(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? new MessageId() : new MessageId(Guid.Parse(value));
         }
 
+        /// <summary>
+        /// Implicitly converts a <see cref="MessageId"/> to its string representation
+        /// </summary>
+        /// <param name="messageId">The message ID</param>
+        /// <returns>Returns the string value of the message ID</returns>
         public static implicit operator string(MessageId messageId)
         {
             // ReSharper disable once ImpureMethodCallOnReadonlyValueField
             return messageId._value.ToString();
         }
 
+        /// <summary>
+        /// Implicitly converts a GUID value to a <see cref="MessageId"/>
+        /// </summary>
+        /// <param name="value">The GUID value</param>
+        /// <returns>Returns <c>null</c> if <paramref name="value"/> is <c>null</c> or whitespace;
+        /// otherwise returns a new <see cref="MessageId"/> based on the value</returns>
         public static implicit operator MessageId(Guid value)
         {
             return new MessageId(value);
         }
 
+        /// <summary>
+        /// Implicitly converts a <see cref="MessageId"/> to its GUID representation
+        /// </summary>
+        /// <param name="messageId">The message ID</param>
+        /// <returns>Returns the GUID value of the message ID</returns>
         public static implicit operator Guid(MessageId messageId)
         {
             return messageId == null ? Guid.Empty : messageId._value;

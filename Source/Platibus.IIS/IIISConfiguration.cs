@@ -3,6 +3,9 @@ using Platibus.Config;
 
 namespace Platibus.IIS
 {
+    /// <summary>
+    /// Extends the base <see cref="IPlatibusConfiguration"/> with IIS-specific configuration
+    /// </summary>
     public interface IIISConfiguration : IPlatibusConfiguration
     {
         /// <summary>

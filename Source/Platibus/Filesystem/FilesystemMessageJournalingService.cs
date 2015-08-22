@@ -113,6 +113,14 @@ namespace Platibus.Filesystem
             return new DirectoryInfo(path);
         }
 
+        /// <summary>
+        /// Journals a message received by the application
+        /// </summary>
+        /// <param name="message">The message that was received</param>
+        /// <param name="cancellationToken">A token used by the caller to
+        /// request cancelation of the journal operation</param>
+        /// <returns>Returns a task that will be completed when the 
+        /// received message has been successfully journaled</returns>
         public async Task MessageReceived(Message message, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -127,6 +135,14 @@ namespace Platibus.Filesystem
             await MessageFile.Create(directory, message, null, cancellationToken);
         }
 
+        /// <summary>
+        /// Journals a message that was sent by the application
+        /// </summary>
+        /// <param name="message">The message that was sent</param>
+        /// <param name="cancellationToken">A token used by the caller to
+        /// request cancelation of the journal operation</param>
+        /// <returns>Returns a task that will be completed when the 
+        /// sent message has been successfully journaled</returns>
         public async Task MessageSent(Message message, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -141,6 +157,14 @@ namespace Platibus.Filesystem
             await MessageFile.Create(directory, message, null, cancellationToken);
         }
 
+        /// <summary>
+        /// Journals a message that was published by the application
+        /// </summary>
+        /// <param name="message">The message that was published</param>
+        /// <param name="cancellationToken">A token used by the caller to
+        /// request cancelation of the journal operation</param>
+        /// <returns>Returns a task that will be completed when the 
+        /// sent message has been successfully journaled</returns>
         public async Task MessagePublished(Message message, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();

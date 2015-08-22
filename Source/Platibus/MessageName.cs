@@ -128,7 +128,7 @@ namespace Platibus
         }
 
         /// <summary>
-        /// Implicitly casts a string value into a <see cref="MessageName"/>
+        /// Implicitly converts a string value into a <see cref="MessageName"/>
         /// object
         /// </summary>
         /// <param name="value">The string representation of the message name</param>
@@ -141,7 +141,7 @@ namespace Platibus
         }
 
         /// <summary>
-        /// Implicitly casts a <see cref="MessageName"/> object into its
+        /// Implicitly converts a <see cref="MessageName"/> object into its
         /// string representation
         /// </summary>
         /// <param name="messageName">The message name object</param>

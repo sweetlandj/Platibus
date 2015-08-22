@@ -31,6 +31,9 @@ using System.Threading.Tasks;
 
 namespace Platibus.Filesystem
 {
+    /// <summary>
+    /// A <see cref="ISubscriptionTrackingService"/> that stores subscriptions as files on disk
+    /// </summary>
     public class FilesystemSubscriptionTrackingService : ISubscriptionTrackingService, IDisposable
     {
         private bool _disposed;
@@ -41,6 +44,18 @@ namespace Platibus.Filesystem
 
         private readonly SemaphoreSlim _fileAccess = new SemaphoreSlim(1);
 
+        /// <summary>
+        /// Initializes a new <see cref="FilesystemSubscriptionTrackingService"/> that will create
+        /// directories and files relative to the specified <paramref name="baseDirectory"/>
+        /// </summary>
+        /// <param name="baseDirectory">(Optional) The directory in which subscription files
+        /// will be stored</param>
+        /// <remarks>
+        /// If a base directory is not specified then the base directory will default to a
+        /// directory named <c>platibus\subscriptions</c> beneath the current app domain base 
+        /// directory.  If the base directory does not exist it will be created in the
+        /// <see cref="Init"/> method.
+        /// </remarks>
         public FilesystemSubscriptionTrackingService(DirectoryInfo baseDirectory = null)
         {
             if (baseDirectory == null)
@@ -121,6 +136,14 @@ namespace Platibus.Filesystem
             return Task.FromResult(activeSubscribers);
         }
 
+        /// <summary>
+        /// Initializes the filesystem subscription tracking service
+        /// </summary>
+        /// <returns>Returns a task that will complete when the filesystem subscription 
+        /// tracking service has finished initializing</returns>
+        /// <remarks>
+        /// Creates directories if they do not exist and loads current subscriptions from disk
+        /// </remarks>
         public Task Init()
         {
             _baseDirectory.Refresh();
@@ -216,11 +239,18 @@ namespace Platibus.Filesystem
             }
         }
 
+        /// <summary>
+        /// Finalizer that ensures that resources are released
+        /// </summary>
         ~FilesystemSubscriptionTrackingService()
         {
             Dispose(false);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
             if (_disposed) return;
@@ -229,6 +259,14 @@ namespace Platibus.Filesystem
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Called by <see cref="Dispose()"/> or the finalizer to ensure that resources are released
+        /// </summary>
+        /// <param name="disposing">Indicates whether this method is called from the 
+        /// <see cref="Dispose()"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
+        /// <remarks>
+        /// This method will not be called more than once
+        /// </remarks>
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)
