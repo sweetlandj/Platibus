@@ -26,19 +26,39 @@ using System.Threading.Tasks;
 
 namespace Platibus
 {
+    /// <summary>
+    /// Uses a memory cache to store sent messages and route related messages to their
+    /// reply stream
+    /// </summary>
     public class MemoryCacheReplyHub : IDisposable
     {
         private bool _disposed;
         private readonly MemoryCache _cache = new MemoryCache("MemoryCacheReplyHub");
         private readonly TimeSpan _replyTimeout;
 
+        /// <summary>
+        /// Creates a new <see cref="MemoryCacheReplyHub"/> that will hold sent messages
+        /// in memory until the specified <see cref="replyTimeout"/> has elapsed
+        /// </summary>
+        /// <param name="replyTimeout">The maximum amount of time to hold send messages
+        /// in memory before they are evicted from cache</param>
         public MemoryCacheReplyHub(TimeSpan replyTimeout)
         {
             _replyTimeout = (replyTimeout <= TimeSpan.Zero) ? TimeSpan.FromMinutes(5) : replyTimeout;
         }
 
+        /// <summary>
+        /// Creates a <see cref="ISentMessage"/> wrapper for the specified 
+        /// <paramref name="message"/> and stores it in cache
+        /// </summary>
+        /// <param name="message">The recently sent message</param>
+        /// <returns>Returns a <see cref="ISentMessage"/> that can be used to listen
+        /// for replies</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="message"/>
+        /// is <c>null</c></exception>
         public ISentMessage CreateSentMessage(Message message)
         {
+            if (message == null) throw new ArgumentNullException("message");
             CheckDisposed();
 
             var messageId = message.Headers.MessageId;
@@ -56,6 +76,15 @@ namespace Platibus
             return new SentMessageWithCachedReplies(messageId, replyStream);
         }
 
+        /// <summary>
+        /// Called by the bus to indicate that a message has been received that is
+        /// related to another message (possibly a reply)
+        /// </summary>
+        /// <param name="reply">The content of the related message</param>
+        /// <param name="relatedToMessageId">The message ID to which this message
+        /// is related</param>
+        /// <returns>Returns a task that will complete when all reply stream
+        /// observers have been notified that a reply was received</returns>
         public Task ReplyReceived(object reply, MessageId relatedToMessageId)
         {
             CheckDisposed();
@@ -71,6 +100,15 @@ namespace Platibus
             });
         }
 
+        /// <summary>
+        /// Called by the bus to indicate that the last message related to the
+        /// specified message ID has been received and the reply stream can be
+        /// completed
+        /// </summary>
+        /// <param name="relatedToMessageId">The message ID to which the replies
+        /// are related</param>
+        /// <returns>Returns a task when all reply stream observers have been 
+        /// notified that the last reply was received</returns>
         public Task NotifyLastReplyReceived(MessageId relatedToMessageId)
         {
             return Task.Run(() =>
@@ -90,11 +128,19 @@ namespace Platibus
             if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }
 
+        /// <summary>
+        /// Finalizer that ensures the memory cache disposed when this object goes
+        /// out of scope
+        /// </summary>
         ~MemoryCacheReplyHub()
         {
             Dispose(false);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
             if (_disposed) return;
@@ -103,6 +149,15 @@ namespace Platibus
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Called by the <see cref="Dispose"/> method or finalizer to ensure that
+        /// resources are released
+        /// </summary>
+        /// <param name="disposing">Indicates whether this method is called from the 
+        /// <see cref="Dispose"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
+        /// <remarks>
+        /// This method will not be called more than once
+        /// </remarks>
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)

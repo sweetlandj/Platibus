@@ -234,7 +234,6 @@
     <Compile Include="TopicNotFoundException.cs" />
     <Compile Include="HeaderName.cs" />
     <Compile Include="MessageHeaders.cs" />
-    <Compile Include="ITopic.cs" />
     <Compile Include="IMessageContext.cs" />
     <Compile Include="IEndpoint.cs" />
     <Compile Include="IBus.cs" />

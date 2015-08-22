@@ -26,8 +26,17 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Platibus.Serialization
 {
+    /// <summary>
+    /// An <see cref="ISerializer"/> implemenation based on the .NET framework
+    /// <see cref="BinaryFormatter"/> in base 64 representation
+    /// </summary>
     public class Base64ObjectSerializer : ISerializer
     {
+        /// <summary>
+        /// Serializes an object into a string
+        /// </summary>
+        /// <param name="obj">The object to serialize</param>
+        /// <returns>Returns the serialized object string</returns>
         public string Serialize(object obj)
         {
             using (var stream = new MemoryStream())
@@ -38,6 +47,12 @@ namespace Platibus.Serialization
             }
         }
 
+        /// <summary>
+        /// Deserializes a string into an object of the specified <paramref name="type"/>
+        /// </summary>
+        /// <param name="str">The serialized object string</param>
+        /// <param name="type">The type of object</param>
+        /// <returns>Returns a deserialized object of the specified type</returns>
         public object Deserialize(string str, Type type)
         {
             if (string.IsNullOrWhiteSpace(str)) return null;
@@ -49,6 +64,12 @@ namespace Platibus.Serialization
             }
         }
 
+        /// <summary>
+        /// Deserializes a string into an object of the specified type <typeparamref name="T"/>
+        /// </summary>
+        /// <typeparam name="T">The object type</typeparam>
+        /// <param name="str">The serialized object string</param>
+        /// <returns>Returns a deserialized object of type <typeparamref name="T"/></returns>
         public T Deserialize<T>(string str)
         {
             if (string.IsNullOrWhiteSpace(str)) return default(T);

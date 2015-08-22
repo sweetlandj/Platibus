@@ -26,32 +26,54 @@ using System.Security.Permissions;
 
 namespace Platibus
 {
+    /// <summary>
+    /// Thrown to indicate that an attempt was made to publish a message to a
+    /// topic that has not been defined
+    /// </summary>
     [Serializable]
     public class TopicNotFoundException : ApplicationException
     {
         private readonly TopicName _topic;
 
+        /// <summary>
+        /// Initializes a new <see cref="TopicNotFoundException"/> with the specified
+        /// <paramref name="topic"/> name
+        /// </summary>
+        /// <param name="topic">The name of the topic that was not found</param>
         public TopicNotFoundException(TopicName topic)
         {
             _topic = topic;
         }
 
+        /// <summary>
+        /// Initializes a serialized <see cref="TopicNotFoundException"/> from a streaming
+        /// context
+        /// </summary>
+        /// <param name="info">The serialization info</param>
+        /// <param name="context">The streaming context</param>
         public TopicNotFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _topic = info.GetString("topic");
+            _topic = info.GetString("Topic");
         }
 
+        /// <summary>
+        /// The name of the topic that was not found
+        /// </summary>
         public TopicName Topic
         {
             get { return _topic; }
         }
 
+        /// <summary>
+        /// When overridden in a derived class, sets the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> with information about the exception.
+        /// </summary>
+        /// <param name="info">The <see cref="T:System.Runtime.Serialization.SerializationInfo"/> that holds the serialized object data about the exception being thrown. </param><param name="context">The <see cref="T:System.Runtime.Serialization.StreamingContext"/> that contains contextual information about the source or destination. </param><exception cref="T:System.ArgumentNullException">The <paramref name="info"/> parameter is a null reference (Nothing in Visual Basic). </exception><filterpriority>2</filterpriority><PermissionSet><IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="*AllFiles*" PathDiscovery="*AllFiles*"/><IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="SerializationFormatter"/></PermissionSet>
         [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("topic", _topic);
+            info.AddValue("Topic", _topic);
         }
     }
 }

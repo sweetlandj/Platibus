@@ -24,13 +24,30 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 
 namespace Platibus.Serialization
 {
+    /// <summary>
+    /// A basic <see cref="ISerializationService"/> implementation that uses a
+    /// dictionary to match MIME content types to registered <see cref="ISerializer"/>
+    /// implementations
+    /// </summary>
     public class DefaultSerializationService : ISerializationService, IEnumerable<KeyValuePair<string, ISerializer>>
     {
         private readonly IDictionary<string, ISerializer> _serializers = new Dictionary<string, ISerializer>();
 
+        /// <summary>
+        /// Initializes a new <see cref="DefaultSerializationService"/>
+        /// </summary>
+        /// <param name="useDataContractSerializer">Whether to use the .NET framework
+        /// data contract serializer (<c>true</c>) or the XML serializer (<c>false</c>)
+        /// for "application/xml" and "text/xml" content types</param>
+        /// <remarks>
+        /// Data contract serialization should only be used if there is a reasonable
+        /// expectation that all types that are serialized are correctly annotated
+        /// with <see cref="DataContractAttribute"/>
+        /// </remarks>
         public DefaultSerializationService(bool useDataContractSerializer = false)
         {
             var applicationJson = NormalizeContentType("application/json");
@@ -53,16 +70,35 @@ namespace Platibus.Serialization
             _serializers[applicationOctetStream] = new Base64ObjectSerializer();
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="T:System.Collections.Generic.IEnumerator`1"/> that can be used to iterate through the collection.
+        /// </returns>
+        /// <filterpriority>1</filterpriority>
         public IEnumerator<KeyValuePair<string, ISerializer>> GetEnumerator()
         {
             return _serializers.GetEnumerator();
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through a collection.
+        /// </summary>
+        /// <returns>
+        /// An <see cref="T:System.Collections.IEnumerator"/> object that can be used to iterate through the collection.
+        /// </returns>
+        /// <filterpriority>2</filterpriority>
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
         }
 
+        /// <summary>
+        /// Returns the most appropriate serializer for the specified content type
+        /// </summary>
+        /// <param name="forContentType">The MIME content type</param>
+        /// <returns>Returns a serializer for the specified content type</returns>
         public ISerializer GetSerializer(string forContentType)
         {
             ISerializer serializer;
@@ -74,12 +110,30 @@ namespace Platibus.Serialization
             return serializer;
         }
 
+        /// <summary>
+        /// Ensures that content type strings are converted to the same case, trimmed,
+        /// etc. so that they can be compared and used as dictionary keys
+        /// </summary>
+        /// <param name="contentType">The content type to normalize</param>
+        /// <returns>A normalized content type string</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="contentType"/>
+        /// is <c>null</c> or whitespace</exception>
         protected string NormalizeContentType(string contentType)
         {
             if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentNullException("contentType");
             return contentType.Split(';').First().Trim().ToLower();
         }
 
+        /// <summary>
+        /// Registers a new serializer for a content type
+        /// </summary>
+        /// <param name="contentType">The content type</param>
+        /// <param name="serializer">The serializer</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="contentType"/>
+        /// or <paramref name="serializer"/> is <c>null</c> or whitespace</exception>
+        /// <remarks>
+        /// Overwrites any previously registered serializers for the specified content type
+        /// </remarks>
         public void Add(string contentType, ISerializer serializer)
         {
             if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentNullException("contentType");
@@ -88,6 +142,17 @@ namespace Platibus.Serialization
             _serializers[key] = serializer;
         }
 
+        /// <summary>
+        /// Registers a new serializer for a content type
+        /// </summary>
+        /// <param name="contentTypeSerializer">A key-value pair consisting of the content
+        /// type and te serializer</param>
+        /// <exception cref="ArgumentNullException">Thrown if
+        /// <paramref name="contentTypeSerializer"/> is <c>null</c></exception>
+        /// <remarks>
+        /// Overwrites any previously registered serializers for the specified content type.
+        /// This method exists to support the list initializer syntax.
+        /// </remarks>
         public void Add(KeyValuePair<string, ISerializer> contentTypeSerializer)
         {
             Add(contentTypeSerializer.Key, contentTypeSerializer.Value);

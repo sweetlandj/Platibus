@@ -63,7 +63,7 @@ namespace Platibus.Config
         }
 
         /// <summary>
-        /// Initializes and returns a <see cref="TConfig"/> instance based on
+        /// Initializes and returns a <typeparamref name="TConfig"/> instance based on
         /// the <see cref="PlatibusConfigurationSection"/> with the specified 
         /// <paramref name="sectionName"/>
         /// </summary>
@@ -75,7 +75,7 @@ namespace Platibus.Config
         /// process implementations of <see cref="IConfigurationHook"/> found in the
         /// application domain (default is true)</param>
         /// <returns>Returns a task whose result will be an initialized 
-        /// <see cref="TConfig"/> object</returns>
+        /// <typeparamref name="TConfig"/> object</returns>
         /// <seealso cref="PlatibusConfigurationSection"/>
         /// <seealso cref="IConfigurationHook"/>
         public static Task<TConfig> LoadConfiguration<TConfig>(string sectionName, bool processConfigurationHooks = true)
