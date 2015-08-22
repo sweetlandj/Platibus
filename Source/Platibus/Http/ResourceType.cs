@@ -25,53 +25,114 @@ using System.Diagnostics;
 
 namespace Platibus.Http
 {
+    /// <summary>
+    /// A type of HTTP resource with which controllers can be associated in order to
+    /// route HTTP resource requests
+    /// </summary>
     [DebuggerDisplay("{_value,nq}")]
     public class ResourceType : IEquatable<ResourceType>
     {
         private readonly string _value;
 
+        /// <summary>
+        /// Initializes a <see cref="ResourceType"/> with the specified string representation
+        /// </summary>
+        /// <param name="value">The string representation of the resource type</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is
+        /// <c>null</c> or whitespace</exception>
         public ResourceType(string value)
         {
             if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException("value");
             _value = value.Trim();
         }
 
+        /// <summary>
+        /// Determines whether another <paramref name="resourceType"/> is equal to this one
+        /// </summary>
+        /// <param name="resourceType">The other resource type</param>
+        /// <returns>Returns <c>true</c> if the other <paramref name="resourceType"/> is equal to
+        /// this on; <c>false</c> otherwise</returns>
         public bool Equals(ResourceType resourceType)
         {
             if (ReferenceEquals(null, resourceType)) return false;
             return string.Equals(_value, resourceType._value, StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Returns the string representation of this HTTP resource type
+        /// </summary>
+        /// <returns>Returns the string representation of this HTTP resource type</returns>
         public override string ToString()
         {
             return _value;
         }
 
+        /// <summary>
+        /// Determines whether the specified <see cref="T:System.Object"/> is equal to the current <see cref="T:System.Object"/>.
+        /// </summary>
+        /// <returns>
+        /// true if the specified object  is equal to the current object; otherwise, false.
+        /// </returns>
+        /// <param name="obj">The object to compare with the current object. </param><filterpriority>2</filterpriority>
         public override bool Equals(object obj)
         {
             return Equals(obj as ResourceType);
         }
 
+        /// <summary>
+        /// Serves as a hash function for a particular type. 
+        /// </summary>
+        /// <returns>
+        /// A hash code for the current <see cref="T:System.Object"/>.
+        /// </returns>
+        /// <filterpriority>2</filterpriority>
         public override int GetHashCode()
         {
             return _value.ToLowerInvariant().GetHashCode();
         }
 
+        /// <summary>
+        /// Overloaded <c>==</c> operator that determines whether two HTTP resource types are equal
+        /// based on value rather than reference
+        /// </summary>
+        /// <param name="left">The resource type on the left side of the operator</param>
+        /// <param name="right">The resource type on the right side of the operator</param>
+        /// <returns>Returns <c>true</c> if the resource types are equal; <c>false</c> otherwise</returns>
         public static bool operator ==(ResourceType left, ResourceType right)
         {
             return Equals(left, right);
         }
 
+        /// <summary>
+        /// Overloaded <c>!=</c> operator that determines whether two HTTP resource types are unequal
+        /// based on value rather than reference
+        /// </summary>
+        /// <param name="left">The resource type on the left side of the operator</param>
+        /// <param name="right">The resource type on the right side of the operator</param>
+        /// <returns>Returns <c>true</c> if the resource types are unequal; <c>false</c> otherwise</returns>
         public static bool operator !=(ResourceType left, ResourceType right)
         {
             return !Equals(left, right);
         }
 
+        /// <summary>
+        /// Implicitly casts a string value into a <see cref="ResourceType"/>
+        /// </summary>
+        /// <param name="value">The string value</param>
+        /// <returns>Returns <c>null</c> if <paramref name="value"/>is <c>null</c> or whitespace;
+        /// otherwise returns a new <see cref="ResourceType"/> instance corresponding to the 
+        /// string value</returns>
         public static implicit operator ResourceType(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? null : new ResourceType(value);
         }
 
+        /// <summary>
+        /// Implicitly casts a <see cref="ResourceType"/> to a string
+        /// </summary>
+        /// <param name="resourceType">The resource type</param>
+        /// <returns>Returns <c>null</c> if <paramref name="resourceType"/> is <c>null</c>;
+        /// otherwise returns the string representation of the resource type</returns>
         public static implicit operator string(ResourceType resourceType)
         {
             return resourceType == null ? null : resourceType._value;

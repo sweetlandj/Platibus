@@ -4,7 +4,7 @@ using System.Web.Mvc;
 
 namespace Platibus.SampleWebApp.Models
 {
-    public class SendTestMessage
+    public class TestMessage
     {
         public string MessageId { get; set; }
         public string Destination { get; set; }
@@ -64,7 +64,7 @@ namespace Platibus.SampleWebApp.Models
         public bool MessageSent { get; set; }
         public string SentMessageId { get; set; }
 
-        public SendTestMessage()
+        public TestMessage()
         {
             ContentType = "application/json";
             Importance = MessageImportance.Normal;

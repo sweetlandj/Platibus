@@ -1,13 +1,13 @@
 ﻿@model Platibus.SampleWebApp.Models.ReceivedMessage
 
 @{
-    ViewBag.Title = "ReceivedMessageDetail";
+    ViewBag.Title = "Received Message";
     Layout = "~/_Layout.cshtml";
 }
 
 <h2>Message @Model.MessageId</h2>
 
-@using (Html.BeginForm("Index", "ViewReceivedMessages", FormMethod.Post))
+@using (Html.BeginForm("Index", "ReceivedMessages", FormMethod.Post))
 {
     <fieldset>
         <div class="row">
@@ -77,7 +77,7 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="form-group">
-                    <a href="@Url.Action("Index", "ViewReceivedMessages")" class="btn btn-default">
+                    <a href="@Url.Action("Index", "ReceivedMessages")" class="btn btn-default">
                         <span class="glyphicon glyphicon-arrow-left"></span>
                         Back
                     </a>

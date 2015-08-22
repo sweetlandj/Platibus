@@ -9,18 +9,18 @@ using Platibus.SampleWebApp.Models;
 
 namespace Platibus.SampleWebApp.Controllers
 {
-    public class ViewReceivedMessagesController : Controller
+    public class ReceivedMessagesController : Controller
     {
         private static readonly ILog Log = LogManager.GetLogger(SampleWebAppLoggingCategories.SampleWebApp);
 
         private readonly ReceivedMessageRepository _repository;
 
-        public ViewReceivedMessagesController(ReceivedMessageRepository repository)
+        public ReceivedMessagesController(ReceivedMessageRepository repository)
         {
             _repository = repository;
         }
 
-        // GET: ViewReceivedMessages
+        // GET: ReceivedMessages
         public async Task<ActionResult> Index()
         {
             Log.DebugFormat("[Process {0}, Thread {1}, AppDomain {2}]",
@@ -28,30 +28,27 @@ namespace Platibus.SampleWebApp.Controllers
                 Thread.CurrentThread.ManagedThreadId,
                 AppDomain.CurrentDomain.Id);
 
-            return View("Index", new ViewReceivedMessages
-            {
-                ReceivedMessages = (await _repository.GetMessages())
-                    .OrderByDescending(msg => msg.Received)
-                    .ToList()
-            });
+            return View("Index", new ReceivedMessages(
+                (await _repository.GetMessages())
+                    .OrderByDescending(msg => msg.Received)));
         }
 
-        public async Task<ActionResult> ClearReceivedMessages()
+        public async Task<ActionResult> Clear()
         {
             await _repository.RemoveAll();
             return await Index();
         }
 
-        public async Task<ActionResult> RemoveReceivedMessage(string messageId)
+        public async Task<ActionResult> Remove(string messageId)
         {
             await _repository.Remove(messageId);
             return await Index();
         }
 
-        public async Task<ActionResult> ViewReceivedMessageDetail(string messageId)
+        public async Task<ActionResult> ReceivedMessage(string messageId)
         {
             var receivedMessage = await _repository.Get(messageId);
-            return View("ReceivedMessageDetail", receivedMessage);
+            return View(receivedMessage);
         }
     }
 }

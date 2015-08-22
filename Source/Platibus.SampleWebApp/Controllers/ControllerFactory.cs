@@ -15,9 +15,9 @@ namespace Platibus.SampleWebApp.Controllers
 
         public override IController CreateController(RequestContext requestContext, string controllerName)
         {
-            if ("ViewReceivedMessages".Equals(controllerName))
+            if ("ReceivedMessages".Equals(controllerName))
             {
-                return new ViewReceivedMessagesController(_receivedMessageRepository);
+                return new ReceivedMessagesController(_receivedMessageRepository);
             }
             return base.CreateController(requestContext, controllerName);
         }

@@ -27,7 +27,7 @@ namespace Platibus.Config
     }
 
     /// <summary>
-    /// An <see cref="TContent"/> implementation that wraps a typed
+    /// An <see cref="IMessageHandler"/> implementation that wraps a typed
     /// <see cref="IMessageHandler{TMessage}"/> instance.
     /// </summary>
     /// <typeparam name="TContent">The type of message content handled

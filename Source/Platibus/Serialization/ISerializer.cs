@@ -24,10 +24,33 @@ using System;
 
 namespace Platibus.Serialization
 {
+    /// <summary>
+    /// An interface describing an object that can serialize objects to strings
+    /// and deserialize strings to objects
+    /// </summary>
     public interface ISerializer
     {
+        /// <summary>
+        /// Serializes an object into a string
+        /// </summary>
+        /// <param name="obj">The object to serialize</param>
+        /// <returns>Returns the serialized object string</returns>
         string Serialize(object obj);
+
+        /// <summary>
+        /// Deserializes a string into an object of the specified <paramref name="type"/>
+        /// </summary>
+        /// <param name="str">The serialized object string</param>
+        /// <param name="type">The type of object</param>
+        /// <returns>Returns a deserialized object of the specified type</returns>
         object Deserialize(string str, Type type);
+
+        /// <summary>
+        /// Deserializes a string into an object of the specified type <typeparamref name="T"/>
+        /// </summary>
+        /// <typeparam name="T">The object type</typeparam>
+        /// <param name="str">The serialized object string</param>
+        /// <returns>Returns a deserialized object of type <typeparamref name="T"/></returns>
         T Deserialize<T>(string str);
     }
 }

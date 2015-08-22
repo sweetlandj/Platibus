@@ -1,4 +1,4 @@
-﻿@model Platibus.SampleWebApp.Models.SendTestMessage
+﻿@model Platibus.SampleWebApp.Models.TestMessage
 
 @{
     ViewBag.Title = "Index";
@@ -23,7 +23,7 @@
 
 <h2>Send Test Message</h2>
 
-@using (Html.BeginForm("SendTestMessage", "SendTestMessage", FormMethod.Post))
+@using (Html.BeginForm("SendTestMessage", "TestMessage", FormMethod.Post))
 {
     <fieldset>
         <div class="form-group">
@@ -50,7 +50,7 @@
         </div>
         <div class="form-group">
             <input type="submit" value="Send" class="btn btn-primary"/>
-            <a href="@Url.Action("Index", "ViewReceivedMessages")" class="btn btn-default">
+            <a href="@Url.Action("Index", "ReceivedMessages")" class="btn btn-default">
                 View Received Messages
                 <span class="glyphicon glyphicon-arrow-right"></span>
             </a>

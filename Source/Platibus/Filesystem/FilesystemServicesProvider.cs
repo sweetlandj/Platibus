@@ -28,10 +28,22 @@ using Platibus.Config.Extensibility;
 
 namespace Platibus.Filesystem
 {
+    /// <summary>
+    /// A provider that returns filesystem based message queueing, message journaling, and
+    /// subscription trakcing services
+    /// </summary>
     [Provider("Filesystem")]
     public class FilesystemServicesProvider : IMessageQueueingServiceProvider, IMessageJournalingServiceProvider,
         ISubscriptionTrackingServiceProvider
     {
+        /// <summary>
+        /// Creates an initializes a <see cref="IMessageQueueingService"/>
+        /// based on the provideds <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="configuration">The journaling configuration
+        /// element</param>
+        /// <returns>Returns a task whose result is an initialized
+        /// <see cref="IMessageQueueingService"/></returns>
         public Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
             var path = configuration.GetString("path");
@@ -41,6 +53,14 @@ namespace Platibus.Filesystem
             return Task.FromResult<IMessageQueueingService>(fsQueueingService);
         }
 
+        /// <summary>
+        /// Creates an initializes a <see cref="IMessageJournalingService"/>
+        /// based on the provideds <paramref name="configuration"/>.
+        /// </summary>
+        /// <param name="configuration">The journaling configuration
+        /// element.</param>
+        /// <returns>Returns a task whose result is an initialized
+        /// <see cref="IMessageJournalingService"/>.</returns>
         public Task<IMessageJournalingService> CreateMessageJournalingService(JournalingElement configuration)
         {
             var path = configuration.GetString("path");
@@ -50,6 +70,14 @@ namespace Platibus.Filesystem
             return Task.FromResult<IMessageJournalingService>(fsJournalingService);
         }
 
+        /// <summary>
+        /// Creates an initializes a <see cref="ISubscriptionTrackingService"/>
+        /// based on the provideds <paramref name="configuration"/>.
+        /// </summary>
+        /// <param name="configuration">The journaling configuration
+        /// element.</param>
+        /// <returns>Returns a task whose result is an initialized
+        /// <see cref="ISubscriptionTrackingService"/>.</returns>
         public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
             SubscriptionTrackingElement configuration)
         {
@@ -60,7 +88,7 @@ namespace Platibus.Filesystem
             return Task.FromResult<ISubscriptionTrackingService>(fsTrackingService);
         }
 
-        public static string GetRootedPath(string path)
+        private static string GetRootedPath(string path)
         {
             var defaultRootedPath = AppDomain.CurrentDomain.BaseDirectory;
             if (string.IsNullOrWhiteSpace(path))

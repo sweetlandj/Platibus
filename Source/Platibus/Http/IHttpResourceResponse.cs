@@ -25,13 +25,42 @@ using System.Text;
 
 namespace Platibus.Http
 {
+    /// <summary>
+    /// A response to a request pertaining to an HTTP resource
+    /// </summary>
+    /// <seealso cref="IHttpResourceRequest"/>
     public interface IHttpResourceResponse
     {
+        /// <summary>
+        /// The HTTP response status code
+        /// </summary>
         int StatusCode { set; }
+
+        /// <summary>
+        /// The HTTP response status description
+        /// </summary>
         string StatusDescription { set; }
+
+        /// <summary>
+        /// The output stream to which response content is written
+        /// </summary>
         Stream OutputStream { get; }
+
+        /// <summary>
+        /// The MIME content type of the response content
+        /// </summary>
         string ContentType { get; set; }
+
+        /// <summary>
+        /// The character encoding of the response content
+        /// </summary>
         Encoding ContentEncoding { get; set; }
+
+        /// <summary>
+        /// Adds a header value to the response
+        /// </summary>
+        /// <param name="header">The name of the header</param>
+        /// <param name="value">The header value</param>
         void AddHeader(string header, string value);
     }
 }

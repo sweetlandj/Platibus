@@ -22,8 +22,17 @@
 
 namespace Platibus.Serialization
 {
+    /// <summary>
+    /// An interface describing an object that provides serializers based on
+    /// MIME content types
+    /// </summary>
     public interface ISerializationService
     {
+        /// <summary>
+        /// Returns the most appropriate serializer for the specified content type
+        /// </summary>
+        /// <param name="forContentType">The MIME content type</param>
+        /// <returns>Returns a serializer for the specified content type</returns>
         ISerializer GetSerializer(string forContentType);
     }
 }

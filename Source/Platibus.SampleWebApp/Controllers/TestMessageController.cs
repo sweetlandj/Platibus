@@ -2,22 +2,21 @@
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using Platibus.IIS;
-using Platibus.SampleWebApp.Models;
 
 namespace Platibus.SampleWebApp.Controllers
 {
-    public class SendTestMessageController : Controller
+    public class TestMessageController : Controller
     {
         private readonly IBusManager _busManager;
 
-        public SendTestMessageController()
+        public TestMessageController()
         {
             _busManager = BusManager.GetInstance();
         }
 
         public ActionResult Index()
         {
-            return View(new SendTestMessage
+            return View(new Models.TestMessage
             {
                 MessageId = MessageId.Generate(),
                 Destination = "http://localhost:52180/platibus",
@@ -25,24 +24,24 @@ namespace Platibus.SampleWebApp.Controllers
             });
         }
 
-        public async Task<ActionResult> SendTestMessage(SendTestMessage sendTestMessage)
+        public async Task<ActionResult> SendTestMessage(Models.TestMessage testMessage)
         {
             try
             {
                 var sendOptions = new SendOptions
                 {
-                    ContentType = sendTestMessage.ContentType,
-                    Importance = sendTestMessage.Importance
+                    ContentType = testMessage.ContentType,
+                    Importance = testMessage.Importance
                 };
 
                 var message = new TestMessage
                 {
-                    Text = sendTestMessage.MessageText
+                    Text = testMessage.MessageText
                 };
 
                 var bus = await _busManager.GetBus();
                 var sentMessage = await bus.Send(message, sendOptions);
-                return View("Index", new SendTestMessage
+                return View("Index", new Models.TestMessage
                 {
                     MessageSent = true,
                     SentMessageId = sentMessage.MessageId
@@ -50,10 +49,10 @@ namespace Platibus.SampleWebApp.Controllers
             }
             catch (Exception ex)
             {
-                sendTestMessage.ErrorsOccurred = true;
-                sendTestMessage.ErrorMessage = ex.ToString();
+                testMessage.ErrorsOccurred = true;
+                testMessage.ErrorMessage = ex.ToString();
             }
-            return View("Index", sendTestMessage);
+            return View("Index", testMessage);
         }
     }
 }

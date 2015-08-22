@@ -15,6 +15,9 @@ using Platibus.Security;
 
 namespace Platibus.SQL
 {
+    /// <summary>
+    /// A message queue based on a SQL database
+    /// </summary>
     public class SQLMessageQueue : IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.SQL);
@@ -34,6 +37,18 @@ namespace Platibus.SQL
         private bool _disposed;
         private int _initialized;
 
+        /// <summary>
+        /// Initializes a new <see cref="SQLMessageQueue"/> with the specified values
+        /// </summary>
+        /// <param name="connectionProvider">The database connection provider</param>
+        /// <param name="dialect">The SQL dialect</param>
+        /// <param name="queueName">The name of the queue</param>
+        /// <param name="listener">The object that will be notified when messages are
+        /// added to the queue</param>
+        /// <param name="options">(Optional) Settings that influence how the queue behaves</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>,
+        /// <paramref name="dialect"/>, <paramref name="queueName"/>, or <paramref name="listener"/>
+        /// are <c>null</c></exception>
         public SQLMessageQueue(IDbConnectionProvider connectionProvider, ISQLDialect dialect, QueueName queueName,
             IQueueListener listener, QueueOptions options = default(QueueOptions))
         {
@@ -63,6 +78,10 @@ namespace Platibus.SQL
             });
         }
 
+        /// <summary>
+        /// Reads previously queued messages from the database and initiates message processing
+        /// </summary>
+        /// <returns>Returns a task that completes when initialization is complete</returns>
         public async Task Init()
         {
             if (Interlocked.Exchange(ref _initialized, 1) == 0)
@@ -74,8 +93,20 @@ namespace Platibus.SQL
             }
         }
 
+        /// <summary>
+        /// Adds a message to the queue
+        /// </summary>
+        /// <param name="message">The message to add</param>
+        /// <param name="senderPrincipal">The principal that sent the message or from whom
+        /// the message was received</param>
+        /// <returns>Returns a task that completes when the message has been added to the queue</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="message"/> is
+        /// <c>null</c></exception>
+        /// <exception cref="ObjectDisposedException">Thrown if this SQL message queue instance
+        /// has already been disposed</exception>
         public async Task Enqueue(Message message, IPrincipal senderPrincipal)
         {
+            if (message == null) throw new ArgumentNullException("message");
             CheckDisposed();
 
             var queuedMessage = await InsertQueuedMessage(message, senderPrincipal);
@@ -84,7 +115,14 @@ namespace Platibus.SQL
             // TODO: handle accepted == false
         }
 
-        // ReSharper disable once UnusedMethodReturnValue.Local
+        /// <summary>
+        /// Initiates a long-running background task that processes messages as they are
+        /// enqueued
+        /// </summary>
+        /// <param name="cancellationToken">A cancellation token that the caller can use
+        /// to cancel the message processing loop</param>
+        /// <returns>Returns a task that completes when the message processing loop has
+        /// terminated</returns>
         protected async Task ProcessQueuedMessages(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -102,7 +140,13 @@ namespace Platibus.SQL
             }
         }
 
-        // ReSharper disable once UnusedMethodReturnValue.Local
+        /// <summary>
+        /// Called by the message processing loop to process an individual message
+        /// </summary>
+        /// <param name="queuedMessage">The queued message to process</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by the caller
+        /// to cancel message processing</param>
+        /// <returns>Returns a task that completes when the queued message is processed</returns>
         protected async Task ProcessQueuedMessage(SQLQueuedMessage queuedMessage, CancellationToken cancellationToken)
         {
             var messageId = queuedMessage.Message.Headers.MessageId;
@@ -168,6 +212,14 @@ namespace Platibus.SQL
             }
         }
 
+        /// <summary>
+        /// Inserts a message into the SQL database
+        /// </summary>
+        /// <param name="message">The message to enqueue</param>
+        /// <param name="senderPrincipal">The principal that sent the message or from whom the
+        /// message was received</param>
+        /// <returns>Returns a task that completes when the message has been inserted into the SQL
+        /// database and whose result is a copy of the inserted record</returns>
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         protected virtual Task<SQLQueuedMessage> InsertQueuedMessage(Message message, IPrincipal senderPrincipal)
         {
@@ -215,6 +267,11 @@ namespace Platibus.SQL
             return Task.FromResult(queuedMessage);
         }
 
+        /// <summary>
+        /// Selects all queued messages from the SQL database
+        /// </summary>
+        /// <returns>Returns a task that completes when all records have been selected and whose
+        /// result is the enumerable sequence of the selected records</returns>
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         protected virtual Task<IEnumerable<SQLQueuedMessage>> SelectQueuedMessages()
         {
@@ -257,6 +314,14 @@ namespace Platibus.SQL
             return Task.FromResult(queuedMessages.AsEnumerable());
         }
 
+        /// <summary>
+        /// Updates an existing queued message in the SQL database
+        /// </summary>
+        /// <param name="queuedMessage">The queued message to update</param>
+        /// <param name="acknowledged">The date and time the message was acknowledged, if applicable</param>
+        /// <param name="abandoned">The date and time the message was abandoned, if applicable</param>
+        /// <param name="attempts">The number of attempts to process the message so far</param>
+        /// <returns>Returns a task that completes when the record has been updated</returns>
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         protected virtual Task UpdateQueuedMessage(SQLQueuedMessage queuedMessage, DateTime? acknowledged,
             DateTime? abandoned, int attempts)
@@ -302,6 +367,12 @@ namespace Platibus.SQL
             }
         }
 
+        /// <summary>
+        /// Helper method to serialize a principal so that it can be inserted into a single
+        /// column in the SQL database
+        /// </summary>
+        /// <param name="principal">The principal to serialize</param>
+        /// <returns>The serialized principal</returns>
         protected virtual string SerializePrincipal(IPrincipal principal)
         {
             if (principal == null) return null;
@@ -316,6 +387,12 @@ namespace Platibus.SQL
             }
         }
 
+        /// <summary>
+        /// A helper method to serialize message headers so that they can be inserted into a
+        /// single column in the SQL database
+        /// </summary>
+        /// <param name="headers">The message headers to serialize</param>
+        /// <returns>Returns the serialized message headers</returns>
         protected virtual string SerializeHeaders(IMessageHeaders headers)
         {
             if (headers == null) return null;
@@ -348,11 +425,19 @@ namespace Platibus.SQL
             }
         }
 
-        private IPrincipal DeserializePrincipal(string base64String)
+        /// <summary>
+        /// Helper method to deserialize message headers read from a record in the SQL database
+        /// </summary>
+        /// <param name="str">The serialized principal string</param>
+        /// <returns>Returns the deserialized principal</returns>
+        /// <remarks>
+        /// This method performs the inverse of <see cref="SerializePrincipal"/>
+        /// </remarks>
+        protected virtual IPrincipal DeserializePrincipal(string str)
         {
-            if (string.IsNullOrWhiteSpace(base64String)) return null;
+            if (string.IsNullOrWhiteSpace(str)) return null;
 
-            var bytes = Convert.FromBase64String(base64String);
+            var bytes = Convert.FromBase64String(str);
             using (var memoryStream = new MemoryStream(bytes))
             {
                 var formatter = new BinaryFormatter();
@@ -360,7 +445,7 @@ namespace Platibus.SQL
             }
         }
 
-        private IMessageHeaders DeserializeHeaders(string headerString)
+        protected virtual IMessageHeaders DeserializeHeaders(string headerString)
         {
             var headers = new MessageHeaders();
             if (string.IsNullOrWhiteSpace(headerString)) return headers;

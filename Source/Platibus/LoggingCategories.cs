@@ -22,14 +22,44 @@
 
 namespace Platibus
 {
+    /// <summary>
+    /// Discrete categories to which Platibus log messages are written
+    /// </summary>
     public static class LoggingCategories
     {
+        /// <summary>
+        /// Category for log events related to core functionality
+        /// </summary>
         public const string Core = "Platibus";
+
+        /// <summary>
+        /// Category for log events related to configuration
+        /// </summary>
         public const string Config = "Platibus.Config";
+
+        /// <summary>
+        /// Category for log events related to filesystem-based services
+        /// </summary>
         public const string Filesystem = "Platibus.Filesystem";
+
+        /// <summary>
+        /// Category for log events related to serialization
+        /// </summary>
         public const string Serialization = "Platibus.Serialization";
+
+        /// <summary>
+        /// Category for log events related to HTTP hosting or transport
+        /// </summary>
         public const string Http = "Platibus.Http";
+
+        /// <summary>
+        /// Category for log events related to IIS hosting
+        /// </summary>
         public const string IIS = "Platibus.IIS";
+
+        /// <summary>
+        /// Category for log events related to SQL-based services
+        /// </summary>
         public const string SQL = "Platibus.SQL";
     }
 }

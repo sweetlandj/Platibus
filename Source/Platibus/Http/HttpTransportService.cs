@@ -33,6 +33,10 @@ using Common.Logging;
 
 namespace Platibus.Http
 {
+    /// <summary>
+    /// An <see cref="ITransportService"/> that uses the HTTP protocol to transmit messages
+    /// between Platibus instances
+    /// </summary>
     public class HttpTransportService : ITransportService, IQueueListener
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Http);
@@ -44,6 +48,19 @@ namespace Platibus.Http
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
         private readonly QueueName _outboundQueueName;
 
+        /// <summary>
+        /// Initializes a new <see cref="HttpTransportService"/>
+        /// </summary>
+        /// <param name="baseUri">The base URI of the local Platibus instance</param>
+        /// <param name="endpoints">The configured endpoints for the local Platibus instance</param>
+        /// <param name="messageQueueingService">The service used to queue outbound messages</param>
+        /// <param name="messageJournalingService">The service used to record when messages are
+        /// sent</param>
+        /// <param name="subscriptionTrackingService">The service used to track subscriptions to
+        /// local topics</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="baseUri"/>, 
+        /// <paramref name="messageQueueingService"/>, or <paramref name="subscriptionTrackingService"/>
+        /// are <c>null</c></exception>
         public HttpTransportService(Uri baseUri, IEndpointCollection endpoints, IMessageQueueingService messageQueueingService, IMessageJournalingService messageJournalingService, ISubscriptionTrackingService subscriptionTrackingService)
         {
             if (baseUri == null) throw new ArgumentNullException("baseUri");
@@ -61,11 +78,25 @@ namespace Platibus.Http
             _outboundQueueName = "Outbound";
         }
 
+        /// <summary>
+        /// Performs final initialization of the transport service
+        /// </summary>
+        /// <param name="cancellationToken">A cancellation token that can be used by the caller
+        /// can use to cancel the initialization process</param>
+        /// <returns>Returns a task that completes when initialization is complete</returns>
         public async Task Init(CancellationToken cancellationToken = default(CancellationToken))
         {
             await _messageQueueingService.CreateQueue(_outboundQueueName, this, cancellationToken: cancellationToken);
         }
 
+        /// <summary>
+        /// Handles a message that is received off of a queue
+        /// </summary>
+        /// <param name="message">The message that was received</param>
+        /// <param name="context">The context in which the message was dequeued</param>
+        /// <param name="cancellationToken">A cancellation token provided by the
+        /// queue that can be used to cancel message processing</param>
+        /// <returns>Returns a task that completes when the message is processed</returns>
         public async Task MessageReceived(Message message, IQueuedMessageContext context,
             CancellationToken cancellationToken = new CancellationToken())
         {
@@ -80,6 +111,17 @@ namespace Platibus.Http
             await context.Acknowledge();
         }
 
+        /// <summary>
+        /// Sends a message directly to the application identified by the
+        /// <see cref="IMessageHeaders.Destination"/> header.
+        /// </summary>
+        /// <param name="message">The message to send.</param>
+        /// <param name="credentials">The credentials required to send a 
+        /// message to the specified destination, if applicable.</param>
+        /// <param name="cancellationToken">A token used by the caller to
+        /// indicate if and when the send operation has been canceled.</param>
+        /// <returns>returns a task that completes when the message has
+        /// been successfully sent to the destination.</returns> 
         public async Task SendMessage(Message message, IEndpointCredentials credentials = null,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -95,6 +137,15 @@ namespace Platibus.Http
             await TransportMessage(message, credentials, cancellationToken);
         }
 
+        /// <summary>
+        /// Publishes a message to a topic.
+        /// </summary>
+        /// <param name="message">The message to publish.</param>
+        /// <param name="topicName">The name of the topic.</param>
+        /// <param name="cancellationToken">A token used by the caller
+        /// to indicate if and when the publish operation has been canceled.</param>
+        /// <returns>returns a task that completes when the message has
+        /// been successfully published to the topic.</returns>
         public async Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken)
         {
             var subscribers = await _subscriptionTrackingService.GetSubscribers(topicName, cancellationToken);
@@ -186,7 +237,19 @@ namespace Platibus.Http
             }
         }
 
-        // ReSharper disable once UnusedMethodReturnValue.Local
+        /// <summary>
+        /// Subscribes to messages published to the specified <paramref name="topicName"/>
+        /// by the application at the provided <paramref name="endpoint"/>.
+        /// </summary>
+        /// <param name="endpoint"></param>
+        /// <param name="topicName">The name of the topic to which the caller is
+        ///     subscribing.</param>
+        /// <param name="ttl">(Optional) The Time To Live (TTL) for the subscription
+        ///     on the publishing application if it is not renewed.</param>
+        /// <param name="cancellationToken">A token used by the caller to
+        ///     indicate if and when the subscription should be canceled.</param>
+        /// <returns>Returns a long-running task that will be completed when the 
+        /// subscription is canceled by the caller or a non-recoverable error occurs.</returns>
         public async Task Subscribe(IEndpoint endpoint, TopicName topicName, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
         {
             while (!cancellationToken.IsCancellationRequested)

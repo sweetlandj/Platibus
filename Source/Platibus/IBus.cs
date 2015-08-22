@@ -26,6 +26,9 @@ using System.Threading.Tasks;
 
 namespace Platibus
 {
+    /// <summary>
+    /// An interface describing the available bus operations
+    /// </summary>
     public interface IBus
     {
         /// <summary>

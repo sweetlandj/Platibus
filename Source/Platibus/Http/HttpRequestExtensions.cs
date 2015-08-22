@@ -26,13 +26,27 @@ using System.Threading.Tasks;
 
 namespace Platibus.Http
 {
+    /// <summary>
+    /// Extension methods for working with HTTP resource requests
+    /// </summary>
     public static class HttpResourceRequestExtensions
     {
+        /// <summary>
+        /// Indicates whether a <paramref name="request"/> is a POST method request
+        /// </summary>
+        /// <param name="request">The request</param>
+        /// <returns>Returns <c>true</c> if the request is a POST method request</returns>
         public static bool IsPost(this IHttpResourceRequest request)
         {
             return request != null && "POST".Equals(request.HttpMethod, StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Reads the entire content of an HTTP resource request as a string
+        /// </summary>
+        /// <param name="request">The request</param>
+        /// <returns>Returns a task whose result is the content of the <paramref name="request"/>
+        /// as a string</returns>
         public static async Task<string> ReadContentAsString(this IHttpResourceRequest request)
         {
             if (request == null) return null;
