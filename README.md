@@ -2,6 +2,8 @@
 
 Platibus is a decentralized asynchronous messaging framework designed to be platform and language agnostic.  The goal of this project is to make durable asynchronous transmission and processing of messages as simple as possible.
 
+Version 2.0 is coming soon!  Please visit the Wiki (https://github.com/sweetlandj/Platibus/wiki) for updated documentation.
+
 ## Package Installation
 
 Platibus is distributed as a set of NuGet packages hosted on nuget.org.  To install the base library, search for and install the package `Platibus` in the NuGet package manager or run the following PowerShell command from the NuGet Package Manager Console:
