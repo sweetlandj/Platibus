@@ -29,6 +29,9 @@ using System.Threading.Tasks;
 
 namespace Platibus.RabbitMQ
 {
+    /// <summary>
+    /// An object that writes messages to streams
+    /// </summary>
     public class MessageWriter : IDisposable
     {
         private readonly bool _leaveOpen;
@@ -36,6 +39,17 @@ namespace Platibus.RabbitMQ
 
         private bool _disposed;
 
+        /// <summary>
+        /// Initializes a new <see cref="MessageWriter"/> that outputs to the specified
+        /// text <paramref name="writer"/>
+        /// </summary>
+        /// <param name="writer">The text writer to which messages will be written</param>
+        /// <param name="leaveOpen">(Optional) Whether to leave the supplied 
+        /// <paramref name="writer"/> open when this object is disposed</param>
+        /// <remarks>
+        /// By default, the <paramref name="writer"/> will be closed when this object is
+        /// disposed
+        /// </remarks>
         public MessageWriter(TextWriter writer, bool leaveOpen = false)
         {
             if (writer == null) throw new ArgumentNullException("writer");
@@ -43,6 +57,19 @@ namespace Platibus.RabbitMQ
             _leaveOpen = leaveOpen;
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="MessageWriter"/> that outputs to the specified
+        /// <paramref name="stream"/>
+        /// </summary>
+        /// <param name="stream">The stream to which messages will be written</param>
+        /// <param name="encoding">(Optional) The encoding to use when converting text to 
+        /// bytes</param>
+        /// <param name="leaveOpen">(Optional) Whether to leave the supplied 
+        /// <paramref name="stream"/> open when this object is disposed</param>
+        /// <remarks>
+        /// By default, UTF-8 encoding is used and the <paramref name="stream"/> will be 
+        /// closed when this object is disposed.
+        /// </remarks>
         public MessageWriter(Stream stream, Encoding encoding = null, bool leaveOpen = false)
         {
             if (stream == null) throw new ArgumentNullException("stream");
@@ -50,6 +77,12 @@ namespace Platibus.RabbitMQ
             _leaveOpen = leaveOpen;
         }
 
+        /// <summary>
+        /// Writes the sender principal to the underlying stream
+        /// </summary>
+        /// <param name="principal">The sender principal</param>
+        /// <returns>Returns a task that completes when the principal has been written
+        /// to the underlying stream</returns>
         public async Task WritePrincipal(IPrincipal principal)
         {
             if (principal != null)
@@ -67,6 +100,12 @@ namespace Platibus.RabbitMQ
             await _writer.WriteLineAsync();
         }
 
+        /// <summary>
+        /// Writes a message to the underlying stream
+        /// </summary>
+        /// <param name="message">The message</param>
+        /// <returns>Returns a task that completes when the message has been
+        /// written to the underlying stream </returns>
         public async Task WriteMessage(Message message)
         {
             if (message == null) throw new ArgumentNullException("message");
@@ -110,11 +149,18 @@ namespace Platibus.RabbitMQ
             }
         }
 
+        /// <summary>
+        /// Finalizer that ensures that all resources are released
+        /// </summary>
         ~MessageWriter()
         {
             Dispose(false);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
             if (_disposed) return;
@@ -123,6 +169,15 @@ namespace Platibus.RabbitMQ
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Called by the <see cref="Dispose()"/> method or finalizer to ensure that
+        /// resources are released
+        /// </summary>
+        /// <param name="disposing">Indicates whether this method is called from the 
+        /// <see cref="Dispose()"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
+        /// <remarks>
+        /// This method will not be called more than once
+        /// </remarks>
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)

@@ -14,6 +14,12 @@ namespace Platibus.RabbitMQ
         private readonly ConcurrentDictionary<Uri, ManagedConnection> _managedConnections = new ConcurrentDictionary<Uri, ManagedConnection>();
         private volatile bool _disposed;
 
+        /// <summary>
+        /// Returns a RabbitMQ connection to the server at the specified
+        /// <paramref name="uri"/>
+        /// </summary>
+        /// <param name="uri">The URI of the RabbitMQ server</param>
+        /// <returns>Returns a connection to the specified RabbitMQ server</returns>
         public IConnection GetConnection(Uri uri)
         {
             CheckDisposed();
@@ -21,12 +27,19 @@ namespace Platibus.RabbitMQ
             return _managedConnections.GetOrAdd(uri, CreateManagedConnection);
         }
 
+        /// <summary>
+        /// Finalizer that ensures all resources are released
+        /// </summary>
         ~ConnectionManager()
         {
             if (_disposed) return;
             Dispose(false);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
             if (_disposed) return;
@@ -39,6 +52,15 @@ namespace Platibus.RabbitMQ
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Called by the <see cref="Dispose()"/> method or finalizer to ensure that
+        /// resources are released
+        /// </summary>
+        /// <param name="disposing">Indicates whether this method is called from the 
+        /// <see cref="Dispose()"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
+        /// <remarks>
+        /// This method will not be called more than once
+        /// </remarks>
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)

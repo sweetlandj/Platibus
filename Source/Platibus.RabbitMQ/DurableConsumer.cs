@@ -8,7 +8,7 @@ using RabbitMQ.Client.Events;
 
 namespace Platibus.RabbitMQ
 {
-    public class DurableConsumer : IDisposable
+    class DurableConsumer : IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
 

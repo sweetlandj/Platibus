@@ -11,6 +11,9 @@ using RabbitMQ.Client.Events;
 
 namespace Platibus.RabbitMQ
 {
+    /// <summary>
+    /// A logical Platibus queue implemented with RabbitMQ queues and exchanges
+    /// </summary>
     public class RabbitMQQueue : IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
@@ -34,6 +37,17 @@ namespace Platibus.RabbitMQ
         private readonly IConnection _connection;
         private bool _disposed;
 
+        /// <summary>
+        /// Initializes a new <see cref="RabbitMQQueue"/>
+        /// </summary>
+        /// <param name="queueName">The name of the queue</param>
+        /// <param name="listener">The listener that will receive new messages off of the queue</param>
+        /// <param name="connection">The connection to the RabbitMQ server</param>
+        /// <param name="encoding">(Optional) The encoding to use when converting serialized message 
+        /// content to byte streams</param>
+        /// <param name="options">(Optional) Queueing options</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/>, 
+        /// <paramref name="listener"/>, or <paramref name="connection"/> is <c>null</c></exception>
         public RabbitMQQueue(QueueName queueName, IQueueListener listener, IConnection connection,
             Encoding encoding = null, QueueOptions options = default(QueueOptions))
         {
@@ -66,6 +80,9 @@ namespace Platibus.RabbitMQ
             }
         }
 
+        /// <summary>
+        /// Initializes RabbitMQ queues and exchanges
+        /// </summary>
         public void Init()
         {
             using (var channel = _connection.CreateModel())
@@ -103,12 +120,21 @@ namespace Platibus.RabbitMQ
             }
         }
 
+        /// <summary>
+        /// Enqueues a message
+        /// </summary>
+        /// <param name="message">The message to enqueue</param>
+        /// <param name="principal">The sender principal</param>
+        /// <returns>Returns a task that completes when the message has been enqueued</returns>
         public Task Enqueue(Message message, IPrincipal principal)
         {
             CheckDisposed();
             return RabbitMQHelper.PublishMessage(message, principal, _connection, null, _queueExchange, _encoding);
         }
         
+        /// <summary>
+        /// Deletes the RabbitMQ queues and exchanges
+        /// </summary>
         public void Delete()
         {
             CheckDisposed();
@@ -197,16 +223,27 @@ namespace Platibus.RabbitMQ
             }
         }
 
+        /// <summary>
+        /// Throws an exception if this object has already been disposed
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed</exception>
         protected void CheckDisposed()
         {
             if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }
 
+        /// <summary>
+        /// Finalizer that ensures all resources are released
+        /// </summary>
         ~RabbitMQQueue()
         {
             Dispose(false);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
             if (_disposed) return;
@@ -215,6 +252,15 @@ namespace Platibus.RabbitMQ
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Called by the <see cref="Dispose()"/> method or finalizer to ensure that
+        /// resources are released
+        /// </summary>
+        /// <param name="disposing">Indicates whether this method is called from the 
+        /// <see cref="Dispose()"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
+        /// <remarks>
+        /// This method will not be called more than once
+        /// </remarks>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
         protected virtual void Dispose(bool disposing)
         {

@@ -22,8 +22,14 @@
 
 namespace Platibus.RabbitMQ
 {
+    /// <summary>
+    /// Logging categories for messages related to RabbitMQ
+    /// </summary>
     public static class RabbitMQLoggingCategories
     {
+        /// <summary>
+        /// Logging category for messages related to RabbitMQ
+        /// </summary>
         public const string RabbitMQ = "RabbitMQ";
     }
 }

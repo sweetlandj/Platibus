@@ -64,7 +64,6 @@
     <Compile Include="IConnectionManager.cs" />
     <Compile Include="IRabbitMQHostConfiguration.cs" />
     <Compile Include="ManagedConnection.cs" />
-    <Compile Include="MessageFormatException.cs" />
     <Compile Include="MessageReader.cs" />
     <Compile Include="MessageWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

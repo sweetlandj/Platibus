@@ -6,9 +6,20 @@ using Platibus.Config.Extensibility;
 
 namespace Platibus.RabbitMQ
 {
+    /// <summary>
+    /// Provider for services based on RabbitMQ
+    /// </summary>
     [Provider("RabbitMQ")]
     public class RabbitMQServicesProvider : IMessageQueueingServiceProvider
     {
+        /// <summary>
+        /// Creates an initializes a <see cref="IMessageQueueingService"/>
+        /// based on the provideds <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="configuration">The journaling configuration
+        /// element</param>
+        /// <returns>Returns a task whose result is an initialized
+        /// <see cref="IMessageQueueingService"/></returns>
         public Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
             var uri = configuration.GetUri("uri") ?? new Uri("amqp://localhost:5672");

@@ -30,6 +30,9 @@ using Common.Logging;
 
 namespace Platibus.RabbitMQ
 {
+    /// <summary>
+    /// An <see cref="IMessageQueueingService"/> implementation based on RabbitMQ
+    /// </summary>
     public class RabbitMQMessageQueueingService : IMessageQueueingService, IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
@@ -43,6 +46,15 @@ namespace Platibus.RabbitMQ
         private readonly bool _disposeConnectionManager;
         private bool _disposed;
 
+        /// <summary>
+        /// Initializes a new <see cref="RabbitMQMessageQueueingService"/>
+        /// </summary>
+        /// <param name="uri">The URI of the RabbitMQ server</param>
+        /// <param name="connectionManager">(Optional) The connection manager</param>
+        /// <param name="encoding">(Optional) The encoding to use for converting serialized
+        /// message content to byte streams</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="uri"/> is
+        /// <c>null</c></exception>
         public RabbitMQMessageQueueingService(Uri uri, IConnectionManager connectionManager = null, Encoding encoding = null)
         {
             if (uri == null) throw new ArgumentNullException("uri");
@@ -56,6 +68,19 @@ namespace Platibus.RabbitMQ
             _encoding = encoding ?? Encoding.UTF8;
         }
 
+        /// <summary>
+        /// Establishes a named queue
+        /// </summary>
+        /// <param name="queueName">The name of the queue</param>
+        /// <param name="listener">An object that will receive messages off of the queue for processing</param>
+        /// <param name="options">(Optional) Options that govern how the queue behaves</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used
+        /// by the caller to cancel queue creation if necessary</param>
+        /// <returns>Returns a task that will complete when the queue has been created</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/> or
+        /// <paramref name="listener"/> is <c>null</c></exception>
+        /// <exception cref="QueueAlreadyExistsException">Thrown if a queue with the specified
+        /// name already exists</exception>
         public Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions), CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
@@ -73,6 +98,17 @@ namespace Platibus.RabbitMQ
             return Task.FromResult(true);
         }
 
+        /// <summary>
+        /// Enqueues a message on a queue
+        /// </summary>
+        /// <param name="queueName">The name of the queue</param>
+        /// <param name="message">The message to enqueue</param>
+        /// <param name="senderPrincipal">(Optional) The sender principal, if applicable</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be
+        /// used be the caller to cancel the enqueue operation if necessary</param>
+        /// <returns>Returns a task that will complete when the message has been enqueued</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/>
+        /// or <paramref name="message"/> is <c>null</c></exception>
         public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
@@ -86,6 +122,10 @@ namespace Platibus.RabbitMQ
             Log.DebugFormat("Message ID {0} enqueued successfully in RabbitMQ queue \"{1}\"", message.Headers.MessageId, queueName);
         }
 
+        /// <summary>
+        /// Deletes the specified queue and its underlying RabbitMQ objects
+        /// </summary>
+        /// <param name="queueName">The name of the queue to delete</param>
         public void DeleteQueue(QueueName queueName)
         {
             CheckDisposed();
@@ -100,11 +140,18 @@ namespace Platibus.RabbitMQ
             if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }
 
+        /// <summary>
+        /// Finalizer that ensures all resources are released
+        /// </summary>
         ~RabbitMQMessageQueueingService()
         {
             Dispose(false);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
             if (_disposed) return;
@@ -113,6 +160,15 @@ namespace Platibus.RabbitMQ
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Called by the <see cref="Dispose()"/> method or finalizer to ensure that
+        /// resources are released
+        /// </summary>
+        /// <param name="disposing">Indicates whether this method is called from the 
+        /// <see cref="Dispose()"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
+        /// <remarks>
+        /// This method will not be called more than once
+        /// </remarks>
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;

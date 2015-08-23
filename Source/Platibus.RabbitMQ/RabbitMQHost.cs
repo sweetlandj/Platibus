@@ -108,6 +108,14 @@ namespace Platibus.RabbitMQ
             _inboundQueue.Init();
         }
 
+        /// <summary>
+        /// Handles a message that is received off of a queue
+        /// </summary>
+        /// <param name="message">The message that was received</param>
+        /// <param name="context">The context in which the message was dequeued</param>
+        /// <param name="cancellationToken">A cancellation token provided by the
+        /// queue that can be used to cancel message processing</param>
+        /// <returns>Returns a task that completes when the message is processed</returns>
         public async Task MessageReceived(Message message, IQueuedMessageContext context,
             CancellationToken cancellationToken = new CancellationToken())
         {
