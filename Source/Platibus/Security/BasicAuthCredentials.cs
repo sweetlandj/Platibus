@@ -3,7 +3,7 @@
     /// <summary>
     /// Endpoint crentials consisting of a basic username and password
     /// </summary>
-    public class BasicAuthCredentials : IEndpointCredentials
+    public sealed class BasicAuthCredentials : IEndpointCredentials
     {
         private readonly string _username;
         private readonly string _password;

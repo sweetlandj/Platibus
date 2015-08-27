@@ -7,7 +7,7 @@
     /// This type of endpoint credentials implies integrated Windows (NTLM/Kerberos) 
     /// authentication
     /// </remarks>
-    public class DefaultCredentials : IEndpointCredentials
+    public sealed class DefaultCredentials : IEndpointCredentials
     {
         void IEndpointCredentials.Accept(IEndpointCredentialsVisitor visitor)
         {
