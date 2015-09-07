@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Platibus.Security;
 using Platibus.Serialization;
 
 namespace Platibus.Http
@@ -36,18 +37,22 @@ namespace Platibus.Http
         private readonly NewtonsoftJsonSerializer _serializer = new NewtonsoftJsonSerializer();
         private readonly IList<TopicName> _topics;
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
+        private readonly IAuthorizationService _authorizationService;
 
         /// <summary>
         /// Initializes a new <see cref="TopicController"/>
         /// </summary>
         /// <param name="subscriptionTrackingService">The subscription tracking service</param>
         /// <param name="topics">The list of defined topics</param>
+        /// <param name="authorizationService">(Optional) Used to determine whether
+        /// a requestor is authorized to subscribe to a topic</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="subscriptionTrackingService"/>
         /// is <c>null</c></exception>
-        public TopicController(ISubscriptionTrackingService subscriptionTrackingService, IEnumerable<TopicName> topics)
+        public TopicController(ISubscriptionTrackingService subscriptionTrackingService, IEnumerable<TopicName> topics, IAuthorizationService authorizationService = null)
         {
             if (subscriptionTrackingService == null) throw new ArgumentNullException("subscriptionTrackingService");
             _subscriptionTrackingService = subscriptionTrackingService;
+            _authorizationService = authorizationService;
             _topics = (topics ?? Enumerable.Empty<TopicName>())
                 .Where(t => t != null)
                 .ToList();
@@ -121,12 +126,26 @@ namespace Platibus.Http
                 return;
             }
 
+            var authorized = _authorizationService == null
+                             || await _authorizationService.IsAuthorizedToSubscribe(request.Principal, topic);
+
+            if (!authorized)
+            {
+                response.StatusCode = 401;
+                response.StatusDescription = "Unauthorized";
+                return;
+            }
+
             if ("delete".Equals(request.HttpMethod, StringComparison.OrdinalIgnoreCase))
             {
+                // TODO: Verify that the subscriber is the one deleting the subscription
+                // Ideas: Issue another HTTP request back to the subscriber to verify?
+                //        Require the subscriber to specify a subscription ID (GUID?)
+                //        when subscribing and then supply the same ID when unsubscribing?
                 await _subscriptionTrackingService.RemoveSubscription(topic, subscriber);
             }
             else
-            {
+            {   
                 var ttlStr = request.QueryString["ttl"];
                 var ttl = string.IsNullOrWhiteSpace(ttlStr)
                     ? default(TimeSpan)

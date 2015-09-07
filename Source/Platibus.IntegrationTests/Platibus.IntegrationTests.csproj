@@ -83,6 +83,7 @@
   <ItemGroup>
     <Compile Include="RabbitMQPubSubTests.cs" />
     <Compile Include="RabbitMQSendAndReplyTests.cs" />
+    <Compile Include="TestAuthorizationService.cs" />
     <Compile Include="With.cs" />
     <Compile Include="IntegrationTestConfigurationHook.cs" />
     <Compile Include="LoadTests.cs" />

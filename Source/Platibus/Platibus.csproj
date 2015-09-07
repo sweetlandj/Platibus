@@ -62,6 +62,7 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Threading.Tasks.Dataflow, Version=4.5.24.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.Tpl.Dataflow.4.5.24\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
@@ -82,6 +83,8 @@
     <Compile Include="EndpointCollection.cs" />
     <Compile Include="Http\AuthenticationSchemeElement.cs" />
     <Compile Include="Http\AuthenticationSchemesElementCollection.cs" />
+    <Compile Include="Http\BasicAuthorizationService.cs" />
+    <Compile Include="Security\IAuthorizationService.cs" />
     <Compile Include="Http\HttpServerConfigurationManager.cs" />
     <Compile Include="Http\IHttpServerConfiguration.cs" />
     <Compile Include="Http\HttpServerConfiguration.cs" />
@@ -197,7 +200,6 @@
     <Compile Include="Config\SendRule.cs" />
     <Compile Include="Config\SendRuleElement.cs" />
     <Compile Include="Config\SendRuleElementCollection.cs" />
-    <Compile Include="Config\TimeoutsElement.cs" />
     <Compile Include="Config\TopicElement.cs" />
     <Compile Include="Config\TopicElementCollection.cs" />
     <Compile Include="EndpointName.cs" />

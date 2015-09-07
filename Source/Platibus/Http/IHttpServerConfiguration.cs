@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using Platibus.Config;
+using Platibus.Security;
 
 namespace Platibus.Http
 {
@@ -28,5 +29,11 @@ namespace Platibus.Http
         /// The message queueing service implementation
         /// </summary>
         IMessageQueueingService MessageQueueingService { get; }
+
+        /// <summary>
+        /// An optional component used to restrict access for callers to send
+        /// messages or subscribe to topics
+        /// </summary>
+        IAuthorizationService AuthorizationService { get; }
     }
 }

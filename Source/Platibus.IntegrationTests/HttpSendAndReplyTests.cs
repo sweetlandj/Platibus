@@ -138,7 +138,8 @@ namespace Platibus.IntegrationTests
         [Test]
         public async Task When_Sending_And_Replying_With_Basic_Auth_Replies_Should_Be_Observed()
         {
-            await With.HttpHostedBusInstancesBasicAuth(async (platibus0, platibus1) =>
+            var authService = new TestAuthorizationService("platibus", "Pbu$", true, true);
+            await With.HttpHostedBusInstancesBasicAuth(authService, async (platibus0, platibus1) =>
             {
                 var replyReceivedEvent = new ManualResetEvent(false);
                 var repliesCompletedEvent = new ManualResetEvent(false);
@@ -170,6 +171,35 @@ namespace Platibus.IntegrationTests
 
                 var reply = replies.First();
                 Assert.That(reply, Is.InstanceOf<TestReply>());
+            });
+        }
+
+        [Test]
+        public async Task When_Sending_And_Replying_With_Basic_Auth_Invalid_Credentials_401_Returned()
+        {
+            var authService = new TestAuthorizationService("platibus", "wr0ngP@ss", true, true);
+            await With.HttpHostedBusInstancesBasicAuth(authService, async (platibus0, platibus1) =>
+            {
+                var message = new TestMessage
+                {
+                    GuidData = Guid.NewGuid(),
+                    IntData = RNG.Next(0, int.MaxValue),
+                    StringData = "Hello, world!",
+                    DateData = DateTime.UtcNow
+                };
+
+                Exception exception = null;
+                try
+                {
+                    var sentMessage = await platibus0.Send(message);
+                }
+                catch (Exception e)
+                {
+                    exception = e;
+                }
+                
+                Assert.That(exception, Is.Not.Null);
+                Assert.That(exception, Is.InstanceOf<UnauthorizedAccessException>());
             });
         }
     }

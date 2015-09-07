@@ -1,6 +1,7 @@
 ﻿using System;
 using Platibus.Config;
 using Platibus.InMemory;
+using Platibus.Security;
 
 namespace Platibus.IIS
 {
@@ -29,6 +30,12 @@ namespace Platibus.IIS
         /// The message queueing service implementation
         /// </summary>
         public IMessageQueueingService MessageQueueingService { get; set; }
+
+        /// <summary>
+        /// An optional component used to restrict access for callers to send
+        /// messages or subscribe to topics
+        /// </summary>
+        public IAuthorizationService AuthorizationService { get; set; }
 
         /// <summary>
         /// Initializes a new <see cref="IISConfiguration"/> with defaults

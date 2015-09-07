@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Collections.Generic;
 using Platibus.Serialization;
 
@@ -31,6 +32,12 @@ namespace Platibus.Config
     /// </summary>
     public interface IPlatibusConfiguration
     {
+        /// <summary>
+        /// The maximum amount of time to wait for a reply to a sent message
+        /// before clearing references and freeing held resources
+        /// </summary>
+        TimeSpan ReplyTimeout { get; }
+
         /// <summary>
         /// The service used to serialize and deserialize message content
         /// </summary>

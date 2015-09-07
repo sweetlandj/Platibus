@@ -108,10 +108,11 @@ namespace Platibus.Http
             _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, _messageJournalingService, _subscriptionTrackingService);
             _bus = new Bus(configuration, _baseUri, _transportService, _messageQueueingService);
 
+            var authorizationService = configuration.AuthorizationService;
             _resourceRouter = new ResourceTypeDictionaryRouter
             {
-                {"message", new MessageController(_bus.HandleMessage)},
-                {"topic", new TopicController(_subscriptionTrackingService, configuration.Topics)}
+                {"message", new MessageController(_bus.HandleMessage, authorizationService)},
+                {"topic", new TopicController(_subscriptionTrackingService, configuration.Topics, authorizationService)}
             };
             _httpListener = InitHttpListener(_baseUri, configuration.AuthenticationSchemes);
         }

@@ -110,6 +110,7 @@ namespace Platibus.Config
 
             var configuration = new TConfig
             {
+                ReplyTimeout = configSection.ReplyTimeout,
                 SerializationService = new DefaultSerializationService(),
                 MessageNamingService = new DefaultMessageNamingService()
             };

@@ -69,10 +69,12 @@ namespace Platibus.IIS
             _bus = new Bus(_configuration, _baseUri, _transportService, _messageQueueingService);
             await _transportService.Init(cancellationToken);
             await _bus.Init(cancellationToken);
+
+            var authorizationService = _configuration.AuthorizationService;
             _resourceRouter = new ResourceTypeDictionaryRouter
             {
-                {"message", new MessageController(_bus.HandleMessage)},
-                {"topic", new TopicController(_subscriptionTrackingService, _configuration.Topics)}
+                {"message", new MessageController(_bus.HandleMessage, authorizationService)},
+                {"topic", new TopicController(_subscriptionTrackingService, _configuration.Topics, authorizationService)}
             };
         }
 

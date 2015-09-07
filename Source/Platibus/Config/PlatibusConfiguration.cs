@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using Platibus.Security;
 using Platibus.Serialization;
 
 namespace Platibus.Config
@@ -42,6 +43,12 @@ namespace Platibus.Config
         private readonly IList<ISendRule> _sendRules = new List<ISendRule>();
         private readonly IList<ISubscription> _subscriptions = new List<ISubscription>();
         private readonly IList<TopicName> _topics = new List<TopicName>();
+
+        /// <summary>
+        /// The maximum amount of time to wait for a reply to a sent message
+        /// before clearing references and freeing held resources
+        /// </summary>
+        public TimeSpan ReplyTimeout { get; set; }
 
         /// <summary>
         /// The service used to map content object types onto canonical names

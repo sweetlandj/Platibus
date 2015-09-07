@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Configuration;
 
 namespace Platibus.Config
@@ -30,7 +31,7 @@ namespace Platibus.Config
     public class PlatibusConfigurationSection : ConfigurationSection
     {
         private const string JournalingPropertyName = "journaling";
-        private const string TimeoutsPropertyName = "timeouts";
+        private const string ReplyTimeoutPropertyName = "replyTimeout";
         private const string EndpointsPropertyName = "endpoints";
         private const string TopicsPropertyName = "topics";
         private const string SendRulesPropertyName = "sendRules";
@@ -41,7 +42,6 @@ namespace Platibus.Config
         /// </summary>
         public PlatibusConfigurationSection()
         {
-            Timeouts = new TimeoutsElement();
             Endpoints = new EndpointElementCollection();
             Topics = new TopicElementCollection();
             SendRules = new SendRuleElementCollection();
@@ -58,13 +58,14 @@ namespace Platibus.Config
         }
 
         /// <summary>
-        /// Configuration related to global timeouts
+        /// The maximum amount of time to wait for a reply to a sent message
+        /// before clearing references and freeing held resources
         /// </summary>
-        [ConfigurationProperty(TimeoutsPropertyName)]
-        public TimeoutsElement Timeouts
+        [ConfigurationProperty(ReplyTimeoutPropertyName)]
+        public TimeSpan ReplyTimeout
         {
-            get { return (TimeoutsElement) base[TimeoutsPropertyName]; }
-            set { base[TimeoutsPropertyName] = value; }
+            get { return (TimeSpan) base[ReplyTimeoutPropertyName]; }
+            set { base[ReplyTimeoutPropertyName] = value; }
         }
 
         /// <summary>

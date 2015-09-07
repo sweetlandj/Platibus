@@ -25,6 +25,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Platibus.Http;
 using Platibus.RabbitMQ;
+using Platibus.Security;
 
 namespace Platibus.IntegrationTests
 {
@@ -53,21 +54,27 @@ namespace Platibus.IntegrationTests
             }
         }
 
-        public static async Task HttpHostedBusInstancesBasicAuth(Func<IBus, IBus, Task> test)
+        public static async Task HttpHostedBusInstancesBasicAuth(IAuthorizationService authService, Func<IBus, IBus, Task> test)
         {
-            await HttpHostedBusInstancesBasicAuth(async (bus0, bus1) =>
+            await HttpHostedBusInstancesBasicAuth(authService, async (bus0, bus1) =>
             {
                 await test(bus0, bus1);
                 return true;
             });
         }
 
-        public static async Task<TResult> HttpHostedBusInstancesBasicAuth<TResult>(Func<IBus, IBus, Task<TResult>> test)
+        public static async Task<TResult> HttpHostedBusInstancesBasicAuth<TResult>(IAuthorizationService authService, Func<IBus, IBus, Task<TResult>> test)
         {
             Cleanup();
 
-            using (var server0 = await HttpServer.Start("platibus.http-basic0"))
-            using (var server1 = await HttpServer.Start("platibus.http-basic1"))
+            var config0 = await HttpServerConfigurationManager.LoadConfiguration("platibus.http-basic0");
+            var config1 = await HttpServerConfigurationManager.LoadConfiguration("platibus.http-basic1");
+
+            config0.AuthorizationService = authService;
+            config1.AuthorizationService = authService;
+
+            using (var server0 = await HttpServer.Start(config0))
+            using (var server1 = await HttpServer.Start(config1))
             {
                 // Give HTTP servers time to initialize
                 await Task.Delay(TimeSpan.FromSeconds(1));

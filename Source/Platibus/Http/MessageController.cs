@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Principal;
 using System.Threading.Tasks;
+using Platibus.Security;
 
 namespace Platibus.Http
 {
@@ -34,17 +35,21 @@ namespace Platibus.Http
     public class MessageController : IHttpResourceController
     {
         private readonly Func<Message, IPrincipal, Task> _accept;
+        private readonly IAuthorizationService _authorizationService;
 
         /// <summary>
         /// Initializes a new <see cref="MessageController"/>
         /// </summary>
         /// <param name="accept">A callback inokved when a message resource is posted</param>
+        /// <param name="authorizationService">(Optional) Used to determine whether
+        /// a requestor is authorized to post messages</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="accept"/> is
         /// <c>null</c></exception>
-        public MessageController(Func<Message, IPrincipal, Task> accept)
+        public MessageController(Func<Message, IPrincipal, Task> accept, IAuthorizationService authorizationService = null)
         {
             if (accept == null) throw new ArgumentNullException("accept");
             _accept = accept;
+            _authorizationService = authorizationService;
         }
 
         /// <summary>
@@ -57,8 +62,7 @@ namespace Platibus.Http
         /// request was routed to this controller</param>
         /// <returns>Returns a task that completes when the request has been processed and the
         /// response has been updated</returns>
-        public async Task Process(IHttpResourceRequest request, IHttpResourceResponse response,
-            IEnumerable<string> subPath)
+        public async Task Process(IHttpResourceRequest request, IHttpResourceResponse response, IEnumerable<string> subPath)
         {
             if (request == null) throw new ArgumentNullException("request");
             if (response == null) throw new ArgumentNullException("response");
@@ -77,6 +81,16 @@ namespace Platibus.Http
         {
             if (request == null) throw new ArgumentNullException("request");
             if (response == null) throw new ArgumentNullException("response");
+
+            var authorized = _authorizationService == null ||
+                             await _authorizationService.IsAuthorizedToSendMessages(request.Principal);
+
+            if (!authorized)
+            {
+                response.StatusCode = 401;
+                response.StatusDescription = "Unauthorized";
+                return;
+            }
 
             var flattenedHeaders = request.Headers.AllKeys
                 .ToDictionary(k => k, k => request.Headers[k]);
