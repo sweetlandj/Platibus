@@ -151,10 +151,8 @@ namespace Platibus.Http
         // ReSharper disable once UnusedMethodReturnValue.Local
         private async Task Listen(CancellationToken cancellationToken = default(CancellationToken))
         {
-            while (_httpListener.IsListening)
+            while (_httpListener.IsListening && !cancellationToken.IsCancellationRequested)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
                 var context = await _httpListener.GetContextAsync();
 
                 Log.DebugFormat("Accepting {0} request for resource {1} from {2}...",

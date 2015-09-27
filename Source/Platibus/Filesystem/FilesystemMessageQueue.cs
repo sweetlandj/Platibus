@@ -127,8 +127,6 @@ namespace Platibus.Filesystem
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
                 var nextQueuedMessage = await _queuedMessages.ReceiveAsync(cancellationToken);
 
                 // We don't want to wait on this task; we want to allow concurrent processing

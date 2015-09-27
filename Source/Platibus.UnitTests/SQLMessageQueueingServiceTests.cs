@@ -32,11 +32,15 @@ namespace Platibus.UnitTests
         [Test]
         public async Task When_New_Message_Queued_Then_Listener_Should_Fire()
         {
+            var message = new Message(new MessageHeaders
+            {
+                {HeaderName.ContentType, "text/plain"},
+                {HeaderName.MessageId, Guid.NewGuid().ToString()}
+            }, "Hello, world!");
+
             var listenerCalledEvent = new ManualResetEvent(false);
             var connectionStringSettings = GetConnectionStringSettings();
-            var sqlQueueingService = new SQLMessageQueueingService(connectionStringSettings);
-            sqlQueueingService.Init();
-
+           
             var mockListener = new Mock<IQueueListener>();
             mockListener.Setup(
                 x =>
@@ -50,39 +54,40 @@ namespace Platibus.UnitTests
                 .Returns(Task.FromResult(true));
 
             var queueName = new QueueName(Guid.NewGuid().ToString());
-            await sqlQueueingService.CreateQueue(queueName, mockListener.Object, new QueueOptions {MaxAttempts = 1});
 
-            var message = new Message(new MessageHeaders
+            using (var cts = new CancellationTokenSource())
+            using (var sqlQueueingService = new SQLMessageQueueingService(connectionStringSettings))
             {
-                {HeaderName.ContentType, "text/plain"},
-                {HeaderName.MessageId, Guid.NewGuid().ToString()}
-            }, "Hello, world!");
-
-            await sqlQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal);
-            await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(1));
+                var ct = cts.Token;
+                sqlQueueingService.Init();
+                await sqlQueueingService.CreateQueue(queueName, mockListener.Object, new QueueOptions {MaxAttempts = 1}, ct);
+                await sqlQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal, ct);
+                await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(1));
+            }
 
             var messageEqualityComparer = new MessageEqualityComparer();
-            mockListener.Verify(
-                x =>
-                    x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
-                        It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
+            mockListener.Verify(x =>
+                x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                    It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
         }
 
         [Test]
         public async Task Given_Queued_Message_When_Context_Acknowledged_Then_Message_Should_Be_Acknowledged()
         {
+            var message = new Message(new MessageHeaders
+            {
+                {HeaderName.ContentType, "text/plain"},
+                {HeaderName.MessageId, Guid.NewGuid().ToString()}
+            }, "Hello, world!");
+
             var listenerCalledEvent = new ManualResetEvent(false);
             var connectionStringSettings = GetConnectionStringSettings();
             var queueName = new QueueName(Guid.NewGuid().ToString());
-
-            var sqlQueueingService = new SQLMessageQueueingService(connectionStringSettings);
-            sqlQueueingService.Init();
-
+            
             var mockListener = new Mock<IQueueListener>();
-            mockListener.Setup(
-                x =>
-                    x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
-                        It.IsAny<CancellationToken>()))
+            mockListener.Setup(x =>
+                x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
+                    It.IsAny<CancellationToken>()))
                 .Callback<Message, IQueuedMessageContext, CancellationToken>((msg, ctx, ct) =>
                 {
                     ctx.Acknowledge();
@@ -90,32 +95,31 @@ namespace Platibus.UnitTests
                 })
                 .Returns(Task.FromResult(true));
 
-            await sqlQueueingService.CreateQueue(queueName, mockListener.Object, new QueueOptions {MaxAttempts = 1});
-
-            var message = new Message(new MessageHeaders
+            using (var cts = new CancellationTokenSource())
+            using (var sqlQueueingService = new SQLMessageQueueingService(connectionStringSettings))
             {
-                {HeaderName.ContentType, "text/plain"},
-                {HeaderName.MessageId, Guid.NewGuid().ToString()}
-            }, "Hello, world!");
+                var ct = cts.Token;
+                sqlQueueingService.Init();
 
-            await sqlQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal);
-            await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(1));
+                await sqlQueueingService.CreateQueue(queueName, mockListener.Object, new QueueOptions {MaxAttempts = 1}, ct);
+                await sqlQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal, ct);
+                await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(1));
 
-            // The listener is called before the row is updated, so there is a possible
-            // race condition here.  Wait for a second to allow the update to take place
-            // before enumerating the rows to see that they were actually deleted.
-            await Task.Delay(TimeSpan.FromSeconds(1));
+                // The listener is called before the row is updated, so there is a possible
+                // race condition here.  Wait for a second to allow the update to take place
+                // before enumerating the rows to see that they were actually deleted.
+                await Task.Delay(TimeSpan.FromSeconds(1), ct);
 
-            var messageEqualityComparer = new MessageEqualityComparer();
-            mockListener.Verify(
-                x =>
+                var messageEqualityComparer = new MessageEqualityComparer();
+                mockListener.Verify(x =>
                     x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
                         It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
 
-            var sqlQueueInspector = new SQLMessageQueueInspector(sqlQueueingService, queueName);
-            var queuedMessages = (await sqlQueueInspector.EnumerateMessages()).ToList();
+                var sqlQueueInspector = new SQLMessageQueueInspector(sqlQueueingService, queueName);
+                var queuedMessages = (await sqlQueueInspector.EnumerateMessages()).ToList();
 
-            Assert.That(queuedMessages, Is.Empty);
+                Assert.That(queuedMessages, Is.Empty);
+            }
         }
 
         [Test]

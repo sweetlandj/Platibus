@@ -14,8 +14,8 @@ namespace Platibus.UnitTests
 
         protected DirectoryInfo GetTempDirectory()
         {
-            var tempPath = Path.Combine(Path.GetTempPath(), "Platibus.UnitTests",
-                DateTime.Now.ToString("yyyyMMddHHmmss"));
+            var ts = DateTime.Now.ToString("yyyyMMddHHmmss"); 
+            var tempPath = Path.Combine(Path.GetTempPath(), "Platibus.UnitTests", ts);
             var tempDir = new DirectoryInfo(tempPath);
             if (!tempDir.Exists)
             {
@@ -29,10 +29,7 @@ namespace Platibus.UnitTests
         {
             var tempDir = GetTempDirectory();
             Log.DebugFormat("Temp directory: {0}", tempDir);
-
-            var fsSubscriptionService = new FilesystemSubscriptionTrackingService(tempDir);
-            await fsSubscriptionService.Init();
-
+            
             var topicNames = Enumerable.Range(0, 10)
                 .Select(i => new TopicName("Topic-" + i));
 
@@ -47,14 +44,22 @@ namespace Platibus.UnitTests
                         }))
                 .ToList();
 
-            await Task.WhenAll(subscriptions.Select(s => fsSubscriptionService.AddSubscription(s.Topic, s.Subscriber)));
-
-            var subscriptionsByTopic = subscriptions.GroupBy(s => s.Topic);
-            foreach (var grouping in subscriptionsByTopic)
+            using (var fsSubscriptionService = new FilesystemSubscriptionTrackingService(tempDir))
             {
-                var expectedSubscribers = grouping.Select(g => g.Subscriber).ToList();
-                var actualSubscribers = await fsSubscriptionService.GetSubscribers(grouping.Key);
-                Assert.That(actualSubscribers, Is.EquivalentTo(expectedSubscribers));
+                await fsSubscriptionService.Init();
+                var tasks = subscriptions
+                    .Select(s => fsSubscriptionService.AddSubscription(s.Topic, s.Subscriber))
+                    .ToList();
+
+                await Task.WhenAll(tasks);
+
+                var subscriptionsByTopic = subscriptions.GroupBy(s => s.Topic);
+                foreach (var grouping in subscriptionsByTopic)
+                {
+                    var expectedSubscribers = grouping.Select(g => g.Subscriber).ToList();
+                    var actualSubscribers = await fsSubscriptionService.GetSubscribers(grouping.Key);
+                    Assert.That(actualSubscribers, Is.EquivalentTo(expectedSubscribers));
+                }
             }
         }
 
@@ -63,21 +68,23 @@ namespace Platibus.UnitTests
         {
             var tempDir = GetTempDirectory();
             Log.DebugFormat("Temp directory: {0}", tempDir);
-
-            var fsSubscriptionService = new FilesystemSubscriptionTrackingService(tempDir);
-            await fsSubscriptionService.Init();
-
-            var topic = "topic-0";
+            
+            const string topic = "topic-0";
             var subscriber = new Uri("http://localhost/platibus");
-            await fsSubscriptionService.AddSubscription(topic, subscriber);
 
-            var subscribers = await fsSubscriptionService.GetSubscribers(topic);
-            Assert.That(subscribers, Has.Member(subscriber));
+            using (var fsSubscriptionService = new FilesystemSubscriptionTrackingService(tempDir))
+            {
+                await fsSubscriptionService.Init();
+                await fsSubscriptionService.AddSubscription(topic, subscriber);
 
-            await fsSubscriptionService.RemoveSubscription(topic, subscriber);
+                var subscribers = await fsSubscriptionService.GetSubscribers(topic);
+                Assert.That(subscribers, Has.Member(subscriber));
 
-            var subscribersAfterRemoval = await fsSubscriptionService.GetSubscribers(topic);
-            Assert.That(subscribersAfterRemoval, Has.No.Member(subscriber));
+                await fsSubscriptionService.RemoveSubscription(topic, subscriber);
+
+                var subscribersAfterRemoval = await fsSubscriptionService.GetSubscribers(topic);
+                Assert.That(subscribersAfterRemoval, Has.No.Member(subscriber));
+            }
         }
 
         [Test]
@@ -86,17 +93,19 @@ namespace Platibus.UnitTests
             var tempDir = GetTempDirectory();
             Log.DebugFormat("Temp directory: {0}", tempDir);
 
-            var fsSubscriptionService = new FilesystemSubscriptionTrackingService(tempDir);
-            await fsSubscriptionService.Init();
-
-            var topic = "topic-0";
+            const string topic = "topic-0";
             var subscriber = new Uri("http://localhost/platibus");
-            await fsSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromMilliseconds(1));
 
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            using (var fsSubscriptionService = new FilesystemSubscriptionTrackingService(tempDir))
+            {
+                await fsSubscriptionService.Init();
+                await fsSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromMilliseconds(1));
 
-            var subscribers = await fsSubscriptionService.GetSubscribers(topic);
-            Assert.That(subscribers, Has.No.Member(subscriber));
+                await Task.Delay(TimeSpan.FromMilliseconds(100));
+
+                var subscribers = await fsSubscriptionService.GetSubscribers(topic);
+                Assert.That(subscribers, Has.No.Member(subscriber));
+            }
         }
 
         [Test]
@@ -104,23 +113,25 @@ namespace Platibus.UnitTests
         {
             var tempDir = GetTempDirectory();
             Log.DebugFormat("Temp directory: {0}", tempDir);
-
-            var fsSubscriptionService = new FilesystemSubscriptionTrackingService(tempDir);
-            await fsSubscriptionService.Init();
-
-            var topic = "topic-0";
+            
+            const string topic = "topic-0";
             var subscriber = new Uri("http://localhost/platibus");
-            await fsSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromMilliseconds(1));
 
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            using (var fsSubscriptionService = new FilesystemSubscriptionTrackingService(tempDir))
+            {
+                await fsSubscriptionService.Init();
+                await fsSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromMilliseconds(1));
 
-            var subscribers = await fsSubscriptionService.GetSubscribers(topic);
-            Assert.That(subscribers, Has.No.Member(subscriber));
+                await Task.Delay(TimeSpan.FromMilliseconds(100));
 
-            await fsSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromSeconds(5));
+                var subscribers = await fsSubscriptionService.GetSubscribers(topic);
+                Assert.That(subscribers, Has.No.Member(subscriber));
 
-            var subscribersAfterRenewal = await fsSubscriptionService.GetSubscribers(topic);
-            Assert.That(subscribersAfterRenewal, Has.Member(subscriber));
+                await fsSubscriptionService.AddSubscription(topic, subscriber, TimeSpan.FromSeconds(5));
+
+                var subscribersAfterRenewal = await fsSubscriptionService.GetSubscribers(topic);
+                Assert.That(subscribersAfterRenewal, Has.Member(subscriber));
+            }
         }
 
         [Test]
@@ -128,10 +139,7 @@ namespace Platibus.UnitTests
         {
             var tempDir = GetTempDirectory();
             Log.DebugFormat("Temp directory: {0}", tempDir);
-
-            var fsSubscriptionService = new FilesystemSubscriptionTrackingService(tempDir);
-            await fsSubscriptionService.Init();
-
+            
             var topicNames = Enumerable.Range(0, 10)
                 .Select(i => new TopicName("Topic-" + i));
 
@@ -146,21 +154,29 @@ namespace Platibus.UnitTests
                         }))
                 .ToList();
 
-            await Task.WhenAll(subscriptions.Select(s => fsSubscriptionService.AddSubscription(s.Topic, s.Subscriber)));
+            using (var fsSubscriptionService = new FilesystemSubscriptionTrackingService(tempDir))
+            {
+                await fsSubscriptionService.Init();
+                var tasks = subscriptions
+                    .Select(s => fsSubscriptionService.AddSubscription(s.Topic, s.Subscriber))
+                    .ToList();
+                await Task.WhenAll(tasks);
+            }
 
             // Next, initialize a new FilesystemSubscriptionService instance
             // with the same directory and observe that the subscriptions
             // are returned as expected.
-
-            var fsSubscriptionService2 = new FilesystemSubscriptionTrackingService(tempDir);
-            await fsSubscriptionService2.Init();
-
-            var subscriptionsByTopic = subscriptions.GroupBy(s => s.Topic);
-            foreach (var grouping in subscriptionsByTopic)
+            using (var fsSubscriptionService2 = new FilesystemSubscriptionTrackingService(tempDir))
             {
-                var expectedSubscribers = grouping.Select(g => g.Subscriber).ToList();
-                var actualSubscribers = await fsSubscriptionService2.GetSubscribers(grouping.Key);
-                Assert.That(actualSubscribers, Is.EquivalentTo(expectedSubscribers));
+                await fsSubscriptionService2.Init();
+
+                var subscriptionsByTopic = subscriptions.GroupBy(s => s.Topic);
+                foreach (var grouping in subscriptionsByTopic)
+                {
+                    var expectedSubscribers = grouping.Select(g => g.Subscriber).ToList();
+                    var actualSubscribers = await fsSubscriptionService2.GetSubscribers(grouping.Key);
+                    Assert.That(actualSubscribers, Is.EquivalentTo(expectedSubscribers));
+                }
             }
         }
     }
