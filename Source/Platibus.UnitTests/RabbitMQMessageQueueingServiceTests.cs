@@ -12,7 +12,7 @@ namespace Platibus.UnitTests
 {
     internal class RabbitMQMessageQueueingServiceTests
     {
-        public static readonly Uri RabbitMQUri = new Uri("amqp://localhost:5672/test");
+        public static readonly Uri RabbitMQUri = new Uri("amqp://test:test@localhost:5672/test");
 
         [Test]
         public async Task Given_Existing_Queue_When_New_Message_Queued_Then_Listener_Should_Fire()
