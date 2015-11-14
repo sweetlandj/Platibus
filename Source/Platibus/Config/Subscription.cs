@@ -43,18 +43,15 @@ namespace Platibus.Config
         /// <param name="endpoint">The endpoint in which the <paramref name="topic"/>
         /// is hosted</param>
         /// <param name="topic">The topic being subscribed to</param>
-        /// <param name="ttl">The maximum amount of time the subscription will
+        /// <param name="ttl">Optional.  The maximum amount of time the subscription will
         /// be effective unless it is renewed</param>
         /// <exception cref="ArgumentNullException">If <paramref name="endpoint"/> or
         /// <paramref name="topic"/> are <c>null</c></exception>
-        public Subscription(EndpointName endpoint, TopicName topic, TimeSpan ttl)
+        public Subscription(EndpointName endpoint, TopicName topic, TimeSpan ttl = default(TimeSpan))
         {
             if (endpoint == null) throw new ArgumentNullException("endpoint");
             if (topic == null) throw new ArgumentNullException("topic");
-            if (ttl <= TimeSpan.Zero)
-            {
-                ttl = TimeSpan.FromHours(24);
-            }
+            
             _topic = topic;
             _endpoint = endpoint;
             _ttl = ttl;
