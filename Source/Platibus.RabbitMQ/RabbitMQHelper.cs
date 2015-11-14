@@ -192,7 +192,7 @@ namespace Platibus.RabbitMQ
                 await messageWriter.WriteMessage(message);
                 var messageBody = stringWriter.ToString();
                 var properties = channel.CreateBasicProperties();
-                properties.SetPersistent(true);
+                properties.Persistent = true;
                 properties.ContentEncoding = Encoding.UTF8.HeaderName;
                 properties.ContentType = message.Headers.ContentType;
                 properties.MessageId = message.Headers.MessageId.ToString();
