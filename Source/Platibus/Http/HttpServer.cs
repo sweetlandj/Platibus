@@ -151,18 +151,24 @@ namespace Platibus.Http
         // ReSharper disable once UnusedMethodReturnValue.Local
         private async Task Listen(CancellationToken cancellationToken = default(CancellationToken))
         {
-            while (_httpListener.IsListening && !cancellationToken.IsCancellationRequested)
-            {
-                var context = await _httpListener.GetContextAsync();
+	        try
+	        {
+		        while (_httpListener.IsListening && !cancellationToken.IsCancellationRequested)
+		        {
+			        var context = await _httpListener.GetContextAsync();
 
-                Log.DebugFormat("Accepting {0} request for resource {1} from {2}...",
-                    context.Request.HttpMethod, context.Request.Url, context.Request.RemoteEndPoint);
+			        Log.DebugFormat("Accepting {0} request for resource {1} from {2}...",
+				        context.Request.HttpMethod, context.Request.Url, context.Request.RemoteEndPoint);
 
-                // Create a new async task but do not wait for it to complete.
+			        // Create a new async task but do not wait for it to complete.
 
-                // ReSharper disable once UnusedVariable
-                var acceptTask = Accept(context);
-            }
+			        // ReSharper disable once UnusedVariable
+			        var acceptTask = Accept(context);
+		        }
+	        }
+	        catch (TaskCanceledException)
+	        {
+	        }
         }
 
         /// <summary>

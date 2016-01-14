@@ -304,6 +304,13 @@ namespace Platibus.Http
                     Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", cre,
                         topicName, endpoint, retryOrRenewAfter);
                 }
+				catch (ResourceNotFoundException ire)
+				{
+					// Topic is not found.  This may be temporary.
+					retryOrRenewAfter = TimeSpan.FromSeconds(30);
+					Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", ire,
+						topicName, endpoint, retryOrRenewAfter);
+				}
                 catch (InvalidRequestException ire)
                 {
                     // Request is not valid.  Either the URL is malformed or the
@@ -385,9 +392,15 @@ namespace Platibus.Http
                 throw new MessageNotAcknowledgedException(string.Format("HTTP {0}: {1}", statusCode, statusDescription));
             }
 
+			if (statusCode == 404)
+			{
+				throw new ResourceNotFoundException(string.Format("HTTP {0}: {1}", statusCode, statusDescription));
+			}
+
             if (statusCode < 500)
             {
-                // HTTP 400-499 are invalid requests (bad request, authentication required, not authorized, etc.)
+                // Other HTTP 400-499 status codes identify invalid requests (bad request, authentication required, 
+				// not authorized, etc.)
                 throw new InvalidRequestException(string.Format("HTTP {0}: {1}", statusCode, statusDescription));
             }
 

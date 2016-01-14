@@ -80,11 +80,13 @@
     <Compile Include="Config\ClientCredentialType.cs" />
     <Compile Include="Config\Extensibility\ProviderHelper.cs" />
     <Compile Include="Config\GenericMessageHandlerAdapter.cs" />
+    <Compile Include="Config\IAsyncConfigurationHook.cs" />
     <Compile Include="DataContractMessageNamingService.cs" />
     <Compile Include="EndpointCollection.cs" />
     <Compile Include="Http\AuthenticationSchemeElement.cs" />
     <Compile Include="Http\AuthenticationSchemesElementCollection.cs" />
     <Compile Include="Http\BasicAuthorizationService.cs" />
+    <Compile Include="ResourceNotFoundException.cs" />
     <Compile Include="Security\IAuthorizationService.cs" />
     <Compile Include="Http\HttpServerConfigurationManager.cs" />
     <Compile Include="Http\IHttpServerConfiguration.cs" />

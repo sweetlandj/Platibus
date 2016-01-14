@@ -168,7 +168,7 @@ namespace Platibus.Config
 
             if (processConfigurationHooks)
             {
-                ProcessConfigurationHooks(configuration);
+                await ProcessConfigurationHooks(configuration);
             }
             return configuration;
         }
@@ -245,13 +245,13 @@ namespace Platibus.Config
             return Path.Combine(appDomainDir, path);
         }
 
-        /// <summary>
-        /// Helper method to locate, initialize, and invoke all types inheriting from
-        /// <see cref="IConfigurationHook"/> found in the application domain
-        /// </summary>
-        /// <param name="configuration">The configuration that will be passed to the
-        /// configuration hooks</param>
-        public static void ProcessConfigurationHooks(PlatibusConfiguration configuration)
+	    /// <summary>
+	    /// Helper method to locate, initialize, and invoke all types inheriting from
+	    /// <see cref="IConfigurationHook"/> found in the application domain
+	    /// </summary>
+	    /// <param name="configuration">The configuration that will be passed to the
+	    ///     configuration hooks</param>
+	    public static async Task ProcessConfigurationHooks(PlatibusConfiguration configuration)
         {
             if (configuration == null) return;
 
@@ -270,6 +270,22 @@ namespace Platibus.Config
                     Log.ErrorFormat("Unhandled exception in configuration hook {0}", ex, hookType.FullName);
                 }
             }
+
+			var asynHookTypes = ReflectionHelper.FindConcreteSubtypes<IAsyncConfigurationHook>();
+			foreach (var hookType in asynHookTypes.Distinct())
+			{
+				try
+				{
+					Log.InfoFormat("Processing configuration hook {0}...", hookType.FullName);
+					var hook = (IAsyncConfigurationHook)Activator.CreateInstance(hookType);
+					await hook.Configure(configuration);
+					Log.InfoFormat("Configuration hook {0} processed successfully.", hookType.FullName);
+				}
+				catch (Exception ex)
+				{
+					Log.ErrorFormat("Unhandled exception in configuration hook {0}", ex, hookType.FullName);
+				}
+			}
         }
     }
 }

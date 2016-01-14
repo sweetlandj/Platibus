@@ -20,11 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using NUnit.Framework;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using NUnit.Framework;
 
 namespace Platibus.IntegrationTests
 {
@@ -94,9 +94,11 @@ namespace Platibus.IntegrationTests
                         return await sentMessage.GetReply();
                     });
 
+				// ReSharper disable once UnusedVariable
                 var replies = await Task.WhenAll(repliesReceieved);
                 sw.Stop();
                 Console.WriteLine("{0} messages sent and replies received in {1}", messageCount, sw.Elapsed);
+
                 return sw.Elapsed;
             });
         }
