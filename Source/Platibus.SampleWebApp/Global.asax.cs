@@ -1,14 +1,14 @@
-﻿using System.Web;
+﻿using Platibus.SampleWebApp.Controllers;
+using System.Web;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
-using Platibus.SampleWebApp.Controllers;
 
 namespace Platibus.SampleWebApp
 {
     public class MvcApplication : HttpApplication
     {
-        protected void Application_Start()
+	    protected void Application_Start()
         {
             AreaRegistration.RegisterAllAreas();
             RouteConfig.RegisterRoutes(RouteTable.Routes);
@@ -17,8 +17,25 @@ namespace Platibus.SampleWebApp
             ControllerBuilder.Current.SetControllerFactory(new ControllerFactory());
         }
 
-        protected void Application_Shutdown()
+		// private PlatibusHttpModule _platibusHttpModule;
+
+	    public override void Init()
+	    {
+		    base.Init();
+
+			// Optionally, the HTTP module can also be registered in the HttpApplication.Init() method:
+
+			//_platibusHttpModule = new PlatibusHttpModule();
+			//_platibusHttpModule.Init(this);
+	    }
+
+	    protected void Application_Shutdown()
         {
+			// In which case it can be shut down explicitly in the Application_Shutdown() method:
+			//if (_platibusHttpModule != null)
+			//{
+			//	_platibusHttpModule.Dispose();
+			//}
         }
     }
 }

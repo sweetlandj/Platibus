@@ -93,6 +93,7 @@
     <Compile Include="PlatibusHttpHandler.cs" />
     <Compile Include="HttpRequestAdapter.cs" />
     <Compile Include="HttpResponseAdapter.cs" />
+    <Compile Include="PlatibusHttpModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
