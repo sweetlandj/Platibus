@@ -1,14 +1,14 @@
 ﻿using System;
-using System.Threading;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using Platibus.Http;
 
 namespace Platibus.IIS
 {
     /// <summary>
     /// Initializes an IIS-hosted bus instance
     /// </summary>
-    public class BusManager : IDisposable, IBusManager
+    public class BusManager : IBusManager, IDisposable
     {
         internal static readonly BusManager SingletonInstance = new BusManager();
 
@@ -21,75 +21,74 @@ namespace Platibus.IIS
             return SingletonInstance;
         }
 
-        private readonly Task _initialization;
-        private IIISConfiguration _configuration;
-        private Uri _baseUri;
-        private ISubscriptionTrackingService _subscriptionTrackingService;
-        private IMessageQueueingService _messageQueueingService;
-        private IMessageJournalingService _messageJournalingService;
-        private HttpTransportService _transportService;
-        private Bus _bus;
-        private IHttpResourceRouter _resourceRouter;
+        private readonly object _syncRoot = new object();
+        private readonly IDictionary<Uri, ManagedBus> _busInstances = new Dictionary<Uri, ManagedBus>(); 
         private bool _disposed;
 
         /// <summary>
-        /// Provides access to the IIS-hosted bus
+        /// Provides access to the IIS-hosted bus with the default configuration
         /// </summary>
         /// <returns>Returns a task whose result is the bus instance</returns>
         public async Task<IBus> GetBus()
         {
-            await _initialization;
-            return _bus;
+            var configuration = await IISConfigurationManager.LoadConfiguration();
+            return await GetBus(configuration);
         }
 
         /// <summary>
-        /// Returns a reference to the HTTP resource router
+        /// Provides access to the IIS-hosted bus using the configuration loaded
+        /// from the configuration section with the specified <paramref name="sectionName"/>
         /// </summary>
-        /// <returns>Returns a task whose result is the HTTP resource router</returns>
-        public async Task<IHttpResourceRouter> GetResourceRouter()
+        /// <param name="sectionName">The name of the configuration section</param>
+        /// <returns>Returns a task whose result is the bus instance</returns>
+        public async Task<IBus> GetBus(string sectionName)
         {
-            await _initialization;
-            return _resourceRouter;
-        }
-
-        private BusManager()
-        {
-            _initialization = Init();
-        }
-
-        private async Task Init(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            _configuration = await IISConfigurationManager.LoadConfiguration();
-            _baseUri = _configuration.BaseUri;
-            _subscriptionTrackingService = _configuration.SubscriptionTrackingService;
-            _messageQueueingService = _configuration.MessageQueueingService;
-            _messageJournalingService = _configuration.MessageJournalingService;
-            var endpoints = _configuration.Endpoints;
-            _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, _messageJournalingService, _subscriptionTrackingService);
-            _bus = new Bus(_configuration, _baseUri, _transportService, _messageQueueingService);
-            await _transportService.Init(cancellationToken);
-            await _bus.Init(cancellationToken);
-
-            var authorizationService = _configuration.AuthorizationService;
-            _resourceRouter = new ResourceTypeDictionaryRouter
-            {
-                {"message", new MessageController(_bus.HandleMessage, authorizationService)},
-                {"topic", new TopicController(_subscriptionTrackingService, _configuration.Topics, authorizationService)}
-            };
+            var configuration = await IISConfigurationManager.LoadConfiguration(sectionName);
+            return await GetBus(configuration);
         }
 
         /// <summary>
-        /// Finalizer that ensures resources are released
+        /// Provides access to the IIS-hosted bus with the specified 
+        /// <paramref name="configuration"/>.
+        /// </summary>
+        /// <param name="configuration">The bus</param>
+        /// <returns>Returns a task whose result is the bus instance</returns>
+        public async Task<IBus> GetBus(IIISConfiguration configuration)
+        {
+            if (configuration == null) throw new ArgumentNullException("configuration");
+            var managedBus = await GetManagedBus(configuration);
+            return await managedBus.GetBus();
+        }
+
+        internal async Task<ManagedBus> GetManagedBus(IIISConfiguration configuration)
+        {
+            if (configuration == null) throw new ArgumentNullException("configuration");
+
+            ManagedBus bus;
+            lock (_syncRoot)
+            {
+                if (_busInstances.TryGetValue(configuration.BaseUri, out bus))
+                {
+                    return bus;
+                }
+                bus = new ManagedBus(configuration);
+                _busInstances[configuration.BaseUri] = bus;
+            }
+            return await Task.FromResult(bus);
+        }
+
+        /// <summary>
+        /// Allows an object to try to free resources and perform other cleanup operations before it is reclaimed by garbage collection.
         /// </summary>
         ~BusManager()
         {
+            if (_disposed) return;
             Dispose(false);
         }
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-        /// <filterpriority>2</filterpriority>
         public void Dispose()
         {
             if (_disposed) return;
@@ -99,23 +98,25 @@ namespace Platibus.IIS
         }
 
         /// <summary>
-        /// Called by the <see cref="Dispose()"/> method or finalizer to ensure that
-        /// resources are released
+        /// Called by <see cref="Dispose()"/> or the finalizer to performs application-defined tasks associated with 
+        /// freeing, releasing, or resetting unmanaged resources. 
         /// </summary>
-        /// <param name="disposing">Indicates whether this method is called from the 
-        /// <see cref="Dispose()"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
-        /// <remarks>
-        /// This method will not be called more than once
-        /// </remarks>
+        /// <param name="disposing">Whether this method was called from <see cref="Dispose()"/> as part
+        /// of an explicit disposal</param>
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)
             {
-                _bus.TryDispose();
-                _transportService.TryDispose();
-                _messageQueueingService.TryDispose();
-                _messageJournalingService.TryDispose();
-                _subscriptionTrackingService.TryDispose();
+                IList<ManagedBus> busInstances;
+                lock (_syncRoot)
+                {
+                    busInstances = _busInstances.Values.ToList();
+                }
+
+                foreach (var busInstance in busInstances)
+                {
+                    busInstance.TryDispose();
+                }
             }
         }
     }

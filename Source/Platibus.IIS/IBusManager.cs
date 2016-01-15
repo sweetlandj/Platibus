@@ -8,9 +8,9 @@ namespace Platibus.IIS
     public interface IBusManager
     {
         /// <summary>
-        /// Provides access to the IIS-hosted bus
+        /// Returns a bus instance with the specified <paramref name="configuration"/>
         /// </summary>
         /// <returns>Returns a task whose result is the bus instance</returns>
-        Task<IBus> GetBus();
+        Task<IBus> GetBus(IIISConfiguration configuration);
     }
 }

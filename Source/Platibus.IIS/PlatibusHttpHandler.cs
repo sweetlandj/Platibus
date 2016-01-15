@@ -34,9 +34,14 @@ namespace Platibus.IIS
     public class PlatibusHttpHandler : HttpTaskAsyncHandler
     {
         private static readonly ILog Log = LogManager.GetLogger(IISLoggingCategories.IIS);
-
-        private readonly Task<IHttpResourceRouter> _resourceRouter;
         
+        private readonly Task<IHttpResourceRouter> _resourceRouter;
+
+        /// <summary>
+        /// The base URI for requests handled by this handler
+        /// </summary>
+        public Uri BaseUri { get; private set; }
+
         /// <summary>
         /// When overridden in a derived class, gets a value that indicates whether the task handler class instance can be reused for another asynchronous task.
         /// </summary>
@@ -48,19 +53,76 @@ namespace Platibus.IIS
             get { return true; }
         }
 
+        /// <summary>
+        /// Inititializes a new <see cref="PlatibusHttpHandler"/> with the default
+        /// configuration and configuration hooks
+        /// </summary>
         public PlatibusHttpHandler()
         {
-            _resourceRouter = BusManager.SingletonInstance.GetResourceRouter();
+            _resourceRouter = InitResourceRouter();
         }
 
-        public PlatibusHttpHandler(IHttpResourceRouter resourceRouter)
+        /// <summary>
+        /// Inititializes a new <see cref="PlatibusHttpHandler"/> with the configuration
+        /// loaded from the named <paramref name="configurationSectionName">
+        /// configuration section</paramref>
+        /// </summary>
+        /// <param name="configurationSectionName">The name of the configuration
+        /// section from which the bus configuration should be loaded</param>
+        public PlatibusHttpHandler(string configurationSectionName)
         {
-            _resourceRouter = Task.FromResult(resourceRouter);
+            if (string.IsNullOrWhiteSpace(configurationSectionName)) throw new ArgumentNullException("configurationSectionName");
+            _resourceRouter = InitResourceRouter(configurationSectionName);
         }
 
-        public PlatibusHttpHandler(Task<IHttpResourceRouter> resourceRouter)
+        /// <summary>
+        /// Inititializes a new <see cref="PlatibusHttpHandler"/> with the specified
+        /// <paramref name="bus"/> and <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="bus">The initialized bus instance</param>
+        /// <param name="configuration">The bus configuration</param>
+        public PlatibusHttpHandler(Bus bus, IIISConfiguration configuration)
         {
-            _resourceRouter = resourceRouter;
+            if (bus == null) throw new ArgumentNullException("bus");
+            if (configuration == null) throw new ArgumentNullException("configuration");
+            _resourceRouter = Task.FromResult(InitResourceRouter(bus, configuration));
+        }
+        
+        private async Task<IHttpResourceRouter> InitResourceRouter()
+        {
+            var configuration = await IISConfigurationManager.LoadConfiguration();
+            return await InitResourceRouter(configuration);
+        }
+
+        private async Task<IHttpResourceRouter> InitResourceRouter(string configSectionName)
+        {
+            var configuration = await IISConfigurationManager.LoadConfiguration(configSectionName);
+            return await InitResourceRouter(configuration);
+        }
+
+        private async Task<IHttpResourceRouter> InitResourceRouter(IIISConfiguration configuration)
+        {
+            if (configuration == null)
+            {
+                configuration = await IISConfigurationManager.LoadConfiguration();
+            }
+
+            BaseUri = configuration.BaseUri;
+
+            var managedBus = await BusManager.SingletonInstance.GetManagedBus(configuration);
+            var bus = await managedBus.GetBus();
+            return InitResourceRouter(bus, configuration);
+        }
+
+        private static IHttpResourceRouter InitResourceRouter(Bus bus, IIISConfiguration configuration)
+        {
+            var authorizationService = configuration.AuthorizationService;
+            var subscriptionTrackingService = configuration.SubscriptionTrackingService;
+            return new ResourceTypeDictionaryRouter
+            {
+                {"message", new MessageController(bus.HandleMessage, authorizationService)},
+                {"topic", new TopicController(subscriptionTrackingService, configuration.Topics, authorizationService)}
+            };
         }
 
         /// <summary>

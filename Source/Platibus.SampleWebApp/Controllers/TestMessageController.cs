@@ -7,13 +7,6 @@ namespace Platibus.SampleWebApp.Controllers
 {
     public class TestMessageController : Controller
     {
-        private readonly IBusManager _busManager;
-
-        public TestMessageController()
-        {
-            _busManager = BusManager.GetInstance();
-        }
-
         public ActionResult Index()
         {
             return View(new Models.TestMessage
@@ -39,7 +32,7 @@ namespace Platibus.SampleWebApp.Controllers
                     Text = testMessage.MessageText
                 };
 
-                var bus = await _busManager.GetBus();
+                var bus = HttpContext.GetBus();
                 var sentMessage = await bus.Send(message, sendOptions);
                 return View("Index", new Models.TestMessage
                 {

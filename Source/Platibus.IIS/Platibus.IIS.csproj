@@ -84,12 +84,15 @@
       <Link>Properties\Copyright.cs</Link>
     </Compile>
     <Compile Include="BusManager.cs" />
+    <Compile Include="HttpContextExtensions.cs" />
+    <Compile Include="HttpContextItemKeys.cs" />
     <Compile Include="IBusManager.cs" />
     <Compile Include="IISConfiguration.cs" />
     <Compile Include="IISConfigurationManager.cs" />
     <Compile Include="IISConfigurationSection.cs" />
     <Compile Include="IIISConfiguration.cs" />
     <Compile Include="IISLoggingCategories.cs" />
+    <Compile Include="ManagedBus.cs" />
     <Compile Include="PlatibusHttpHandler.cs" />
     <Compile Include="HttpRequestAdapter.cs" />
     <Compile Include="HttpResponseAdapter.cs" />
