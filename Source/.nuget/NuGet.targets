@@ -63,7 +63,7 @@
 
         <!-- Commands -->
         <RestoreCommand>$(NuGetCommand) install "$(PackagesConfig)" -source "$(PackageSources)"  $(NonInteractiveSwitch) $(RequireConsentSwitch) -solutionDir $(PaddedSolutionDir)</RestoreCommand>
-        <BuildCommand>$(NuGetCommand) pack "$(ProjectPath)" -Properties "Configuration=$(Configuration);Platform=$(Platform)" $(NonInteractiveSwitch) -OutputDirectory "$(PackageOutputDir)" -Verbosity detailed -IncludeReferencedProjects</BuildCommand>
+        <BuildCommand>$(NuGetCommand) pack "$(ProjectPath)" -Properties "Configuration=$(Configuration);Platform=$(Platform)" $(NonInteractiveSwitch) -OutputDirectory "$(PackageOutputDir)" -Verbosity detailed -IncludeReferencedProjects -Symbols</BuildCommand>
 
         <!-- We need to ensure packages are restored prior to assembly resolve -->
         <BuildDependsOn Condition="$(RestorePackages) == 'true'">

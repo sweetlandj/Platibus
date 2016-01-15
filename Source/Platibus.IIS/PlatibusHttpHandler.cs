@@ -21,8 +21,6 @@
 // THE SOFTWARE.
 
 using System;
-using System.Diagnostics;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using Common.Logging;
@@ -37,8 +35,8 @@ namespace Platibus.IIS
     {
         private static readonly ILog Log = LogManager.GetLogger(IISLoggingCategories.IIS);
 
-        private readonly Guid _instanceId;
-
+        private readonly Task<IHttpResourceRouter> _resourceRouter;
+        
         /// <summary>
         /// When overridden in a derived class, gets a value that indicates whether the task handler class instance can be reused for another asynchronous task.
         /// </summary>
@@ -50,12 +48,19 @@ namespace Platibus.IIS
             get { return true; }
         }
 
-        /// <summary>
-        /// Initializes a new <see cref="PlatibusHttpHandler"/>
-        /// </summary>
         public PlatibusHttpHandler()
         {
-            _instanceId = Guid.NewGuid();
+            _resourceRouter = BusManager.SingletonInstance.GetResourceRouter();
+        }
+
+        public PlatibusHttpHandler(IHttpResourceRouter resourceRouter)
+        {
+            _resourceRouter = Task.FromResult(resourceRouter);
+        }
+
+        public PlatibusHttpHandler(Task<IHttpResourceRouter> resourceRouter)
+        {
+            _resourceRouter = resourceRouter;
         }
 
         /// <summary>
@@ -72,22 +77,18 @@ namespace Platibus.IIS
 
         private async Task ProcessRequestAsync(HttpContextBase context)
         {
-            Log.DebugFormat("[Process {0}, Thread {1}, AppDomain {2}]",
-                Process.GetCurrentProcess().Id,
-                Thread.CurrentThread.ManagedThreadId,
-                AppDomain.CurrentDomain.Id);
-
-            Log.DebugFormat("Processing {0} request for resource {1} (HTTP handler instance: {2})...",
-                context.Request.HttpMethod, context.Request.Url, _instanceId);
+            Log.DebugFormat("Processing {0} request for resource {1}...",
+                context.Request.HttpMethod, context.Request.Url);
 
             var resourceRequest = new HttpRequestAdapter(context.Request, context.User);
             var resourceResponse = new HttpResponseAdapter(context.Response);
             try
             {
-                var resourceRouter = await BusManager.SingletonInstance.GetResourceRouter();
+                var resourceRouter = await _resourceRouter;
                 await resourceRouter.Route(resourceRequest, resourceResponse);
-                Log.DebugFormat("Processing {0} request for resource {1} (HTTP handler instance: {2})...",
-                    context.Request.HttpMethod, context.Request.Url, _instanceId);
+
+                Log.DebugFormat("{0} request for resource {1} processed successfully",
+                context.Request.HttpMethod, context.Request.Url);
             }
             catch (Exception ex)
             {
