@@ -33,5 +33,7 @@ namespace Platibus.IntegrationTests
 
         public bool SimulateAuthorizationFailure { get; set; }
         public bool SimulateAcknowledgementFailure { get; set; }
+        public bool PublishHandledPublication { get; set; }
+        public bool PublishUnhandledPublication { get; set; }
     }
 }

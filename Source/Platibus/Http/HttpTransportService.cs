@@ -163,7 +163,14 @@ namespace Platibus.Http
                 transportTasks.Add(TransportMessage(addressedMessage, null, cancellationToken));
             }
 
-            await Task.WhenAll(transportTasks);
+            try
+            {
+                await Task.WhenAll(transportTasks);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         private static HttpClient GetClient(Uri uri, IEndpointCredentials credentials)

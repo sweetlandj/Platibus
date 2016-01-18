@@ -63,7 +63,7 @@ namespace Platibus
         public async Task SendMessage(Message message, IEndpointCredentials credentials = null,
             CancellationToken cancellationToken = new CancellationToken())
         {
-            await Task.Run(() => _accept(message, Thread.CurrentPrincipal), cancellationToken);
+            await Task.Run(async () => await _accept(message, Thread.CurrentPrincipal), cancellationToken);
         }
 
         /// <summary>
@@ -77,9 +77,9 @@ namespace Platibus
         /// been successfully published to the topic.</returns>
         public async Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken)
         {
-            await Task.Run(() => _accept(message, Thread.CurrentPrincipal), cancellationToken);
+            await Task.Run(async () => await _accept(message, Thread.CurrentPrincipal), cancellationToken);
         }
-
+        
         /// <summary>
         /// Subscribes to messages published to the specified <paramref name="topicName"/>
         /// by the application at the provided <paramref name="endpoint"/>.

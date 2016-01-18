@@ -31,6 +31,24 @@ namespace Platibus.IntegrationTests
 {
     internal class With
     {
+        public static async Task LoopbackInstance(Func<IBus, Task> test)
+        {
+            await LoopbackInstance(async (bus) =>
+            {
+                await test(bus);
+                return true;
+            });
+        }
+
+        public static async Task<TResult> LoopbackInstance<TResult>(Func<IBus, Task<TResult>> test)
+        {
+            Cleanup();
+            using (var loobackHost = await LoopbackHost.Start("platibus.loopback"))
+            {
+                return await test(loobackHost.Bus);
+            }
+        }
+
         public static async Task HttpHostedBusInstances(Func<IBus, IBus, Task> test)
         {
             await HttpHostedBusInstances(async (bus0, bus1) =>

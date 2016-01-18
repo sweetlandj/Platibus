@@ -36,6 +36,28 @@ namespace Platibus.IntegrationTests
                 throw new UnauthorizedAccessException();
             }
 
+            if (message.PublishHandledPublication)
+            {
+                await messageContext.Bus.Publish(new TestPublication
+                {
+                    GuidData = message.GuidData,
+                    IntData = message.IntData,
+                    StringData = message.StringData,
+                    DateData = message.DateData
+                }, "Topic0", cancellationToken);
+            }
+
+            if (message.PublishUnhandledPublication)
+            {
+                await messageContext.Bus.Publish(new UnhandledTestPublication
+                {
+                    GuidData = message.GuidData,
+                    IntData = message.IntData,
+                    StringData = message.StringData,
+                    DateData = message.DateData
+                }, "Topic0", cancellationToken);
+            }
+
             await messageContext.SendReply(new TestReply
             {
                 GuidData = message.GuidData,
@@ -48,6 +70,7 @@ namespace Platibus.IntegrationTests
             {
                 return;
             }
+
             messageContext.Acknowledge();
         }
     }

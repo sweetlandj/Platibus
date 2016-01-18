@@ -63,6 +63,54 @@ namespace Platibus.Config
         }
 
         /// <summary>
+        /// Initializes and returns a <see cref="PlatibusConfiguration"/> instance based on
+        /// the <see cref="LoopbackConfigurationSection"/> with the specified 
+        /// <paramref name="sectionName"/>
+        /// </summary>
+        /// <param name="sectionName">(Optional) The name of the configuration section 
+        /// (default is "platibus.loopback")</param>
+        /// <param name="processConfigurationHooks">(Optional) Whether to initialize and
+        /// process implementations of <see cref="IConfigurationHook"/> found in the
+        /// application domain (default is true)</param>
+        /// <returns>Returns a task whose result will be an initialized 
+        /// <see cref="PlatibusConfiguration"/> object</returns>
+        /// <seealso cref="PlatibusConfigurationSection"/>
+        /// <seealso cref="IConfigurationHook"/>
+        public static async Task<LoopbackConfiguration> LoadLoopbackConfiguration(string sectionName = "platibus.loopback",
+            bool processConfigurationHooks = true)
+        {
+            var configSection = (LoopbackConfigurationSection)ConfigurationManager.GetSection(sectionName) ??
+                                new LoopbackConfigurationSection();
+
+            var configuration = new LoopbackConfiguration
+            {
+                ReplyTimeout = configSection.ReplyTimeout,
+                SerializationService = new DefaultSerializationService(),
+                MessageNamingService = new DefaultMessageNamingService(),
+                MessageQueueingService = await InitMessageQueueingService(configSection.Queueing)
+            };
+
+            IEnumerable<TopicElement> topics = configSection.Topics;
+            foreach (var topic in topics)
+            {
+                configuration.AddTopic(topic.Name);
+            }
+
+            // Journaling is optional
+            var journaling = configSection.Journaling;
+            if (journaling != null && journaling.IsEnabled && !string.IsNullOrWhiteSpace(journaling.Provider))
+            {
+                configuration.MessageJournalingService = await InitMessageJournalingService(journaling);
+            }
+            
+            if (processConfigurationHooks)
+            {
+                await ProcessConfigurationHooks(configuration);
+            }
+            return configuration;
+        }
+
+        /// <summary>
         /// Initializes and returns a <typeparamref name="TConfig"/> instance based on
         /// the <see cref="PlatibusConfigurationSection"/> with the specified 
         /// <paramref name="sectionName"/>

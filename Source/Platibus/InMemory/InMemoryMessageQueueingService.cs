@@ -52,10 +52,12 @@ namespace Platibus.InMemory
         /// name already exists</exception>
         public Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions), CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (!_queues.TryAdd(queueName, new InMemoryQueue(listener, options)))
+            var queue = new InMemoryQueue(listener, options);
+            if (!_queues.TryAdd(queueName, queue))
             {
                 throw new QueueAlreadyExistsException(queueName);
             }
+            queue.Init();
             return Task.FromResult(true);
         }
 

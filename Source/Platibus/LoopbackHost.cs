@@ -3,7 +3,6 @@ using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Config;
-using Platibus.InMemory;
 
 namespace Platibus
 {
@@ -27,7 +26,7 @@ namespace Platibus
         public static async Task<LoopbackHost> Start(string configSectionName = "platibus",
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            var configuration = await PlatibusConfigurationManager.LoadConfiguration<PlatibusConfiguration>(configSectionName);
+            var configuration = await PlatibusConfigurationManager.LoadLoopbackConfiguration(configSectionName);
             return await Start(configuration, cancellationToken);
         }
 
@@ -40,7 +39,7 @@ namespace Platibus
         /// <returns>Returns a task whose result will be an initialized loopback host</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="configuration"/>
         /// is <c>null</c></exception>
-        public static async Task<LoopbackHost> Start(IPlatibusConfiguration configuration,
+        public static async Task<LoopbackHost> Start(ILoopbackConfiguration configuration,
             CancellationToken cancellationToken = default(CancellationToken))
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
@@ -61,13 +60,13 @@ namespace Platibus
             get { return _bus; }
         }
 
-        private LoopbackHost(IPlatibusConfiguration configuration)
+        private LoopbackHost(ILoopbackConfiguration configuration)
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
             // Placeholder value; required by the bus
-            var baseUri = new Uri("http://localhost");
+            var baseUri = configuration.BaseUri;
             var transportService = new LoopbackTransportService(HandleMessage);
-            _bus = new Bus(configuration, baseUri, transportService, new InMemoryMessageQueueingService());
+            _bus = new Bus(configuration, baseUri, transportService, configuration.MessageQueueingService);
         }
 
         private async Task Init(CancellationToken cancellationToken = default(CancellationToken))

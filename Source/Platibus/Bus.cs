@@ -353,15 +353,16 @@ namespace Platibus
 
             var tasks = new List<Task>();
 
-            var relatedToMessageId = message.Headers.RelatedTo;
-            var isReply = relatedToMessageId != default(MessageId);
+            var isPublication = message.Headers.Topic != null;
+            var isReply = message.Headers.RelatedTo != default(MessageId);
             if (isReply)
             {
                 tasks.Add(NotifyReplyReceived(message));
             }
 
             var importance = message.Headers.Importance;
-            if (importance.RequiresQueueing)
+            var queueMessage = isPublication || isReply || importance.RequiresQueueing;
+            if (queueMessage)
             {
                 // Message expiration handled in MessageHandlingListener
                 tasks.AddRange(_handlingRules
@@ -372,29 +373,23 @@ namespace Platibus
             }
             else
             {
-                tasks.Add(HandleMessageImmediately(message, senderPrincipal, isReply));
+                tasks.Add(HandleMessageImmediately(message, senderPrincipal));
             }
 
             await Task.WhenAll(tasks);
         }
 
-        private async Task HandleMessageImmediately(Message message, SenderPrincipal senderPrincipal, bool isReply)
+        private async Task HandleMessageImmediately(Message message, IPrincipal senderPrincipal)
         {
             var messageContext = new BusMessageContext(this, message.Headers, senderPrincipal);
             var handlers = _handlingRules
                 .Where(r => r.Specification.IsSatisfiedBy(message))
                 .Select(rule => rule.MessageHandler)
                 .ToList();
-
-            if (!handlers.Any() && isReply)
-            {
-                // TODO: Figure out what to do here.
-                return;
-            }
-
+            
             await MessageHandler.HandleMessage(_messageNamingService, _serializationService,
                 handlers, message, messageContext, _cancellationTokenSource.Token);
-
+            
             if (!messageContext.MessageAcknowledged)
             {
                 throw new MessageNotAcknowledgedException();

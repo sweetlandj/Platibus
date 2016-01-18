@@ -81,6 +81,9 @@
     <Compile Include="Config\Extensibility\ProviderHelper.cs" />
     <Compile Include="Config\GenericMessageHandlerAdapter.cs" />
     <Compile Include="Config\IAsyncConfigurationHook.cs" />
+    <Compile Include="Config\ILoopbackConfiguration.cs" />
+    <Compile Include="Config\LoopbackConfiguration.cs" />
+    <Compile Include="Config\LoopbackConfigurationSection.cs" />
     <Compile Include="DataContractMessageNamingService.cs" />
     <Compile Include="EndpointCollection.cs" />
     <Compile Include="Http\AuthenticationSchemeElement.cs" />

@@ -22,7 +22,6 @@
 
 using System;
 using System.Collections.Generic;
-using Platibus.Security;
 using Platibus.Serialization;
 
 namespace Platibus.Config
@@ -131,7 +130,7 @@ namespace Platibus.Config
         /// </remarks>
         /// <exception cref="ArgumentNullException">Thrown if either argument
         /// is <c>null</c></exception>
-        public void AddEndpoint(EndpointName name, IEndpoint endpoint)
+        public virtual void AddEndpoint(EndpointName name, IEndpoint endpoint)
         {
             if (name == null) throw new ArgumentNullException("name");
             if (endpoint == null) throw new ArgumentNullException("endpoint");
@@ -145,7 +144,7 @@ namespace Platibus.Config
         /// <remarks>
         /// Topics must be explicitly added in order to publish messages to them
         /// </remarks>
-        public void AddTopic(TopicName topic)
+        public virtual void AddTopic(TopicName topic)
         {
             if (topic == null) throw new ArgumentNullException("topic");
             if (_topics.Contains(topic)) throw new TopicAlreadyExistsException(topic);
@@ -156,7 +155,7 @@ namespace Platibus.Config
         /// Adds a rule governing to which endpoints messages will be sent
         /// </summary>
         /// <param name="sendRule">The send rule</param>
-        public void AddSendRule(ISendRule sendRule)
+        public virtual void AddSendRule(ISendRule sendRule)
         {
             if (sendRule == null) throw new ArgumentNullException("sendRule");
             _sendRules.Add(sendRule);
@@ -167,7 +166,7 @@ namespace Platibus.Config
         /// messages will be routed
         /// </summary>
         /// <param name="handlingRule">The handling rule</param>
-        public void AddHandlingRule(IHandlingRule handlingRule)
+        public virtual void AddHandlingRule(IHandlingRule handlingRule)
         {
             if (handlingRule == null) throw new ArgumentNullException("handlingRule");
             _handlingRules.Add(handlingRule);
@@ -177,7 +176,7 @@ namespace Platibus.Config
         /// Adds a subscription to a local or remote topic
         /// </summary>
         /// <param name="subscription">The subscription</param>
-        public void AddSubscription(ISubscription subscription)
+        public virtual void AddSubscription(ISubscription subscription)
         {
             if (subscription == null) throw new ArgumentNullException("subscription");
             _subscriptions.Add(subscription);
