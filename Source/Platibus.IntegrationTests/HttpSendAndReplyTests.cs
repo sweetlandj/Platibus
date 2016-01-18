@@ -171,6 +171,9 @@ namespace Platibus.IntegrationTests
 
                 var reply = replies.First();
                 Assert.That(reply, Is.InstanceOf<TestReply>());
+
+				var testReply = (TestReply)reply;
+				Assert.That(testReply.ContentType, Is.EqualTo("application/xml")); // Specified in app.config
             });
         }
 

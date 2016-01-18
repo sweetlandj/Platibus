@@ -48,6 +48,7 @@ namespace Platibus
         private readonly IMessageNamingService _messageNamingService;
         private readonly IMessageJournalingService _messageJournalingService;
         private readonly IMessageQueueingService _messageQueueingService;
+	    private readonly string _defaultContentType;
         
         private readonly MemoryCacheReplyHub _replyHub = new MemoryCacheReplyHub(TimeSpan.FromMinutes(5));
         private readonly IList<ISendRule> _sendRules;
@@ -76,6 +77,9 @@ namespace Platibus
             _baseUri = baseUri;
             _transportService = transportService;
             _messageQueueingService = messageQueueingService;
+	        _defaultContentType = string.IsNullOrWhiteSpace(configuration.DefaultContentType)
+		        ? "application/json"
+		        : configuration.DefaultContentType;
 
             // TODO: Throw configuration exception if message queueing service, message naming
             // service, or serialization service are null
@@ -288,7 +292,7 @@ namespace Platibus
             var contentType = options.ContentType;
             if (string.IsNullOrWhiteSpace(contentType))
             {
-                contentType = "application/json";
+                contentType = _defaultContentType;
             }
             headers.ContentType = contentType;
 

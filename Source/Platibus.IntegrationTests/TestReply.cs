@@ -30,5 +30,6 @@ namespace Platibus.IntegrationTests
         public int IntData { get; set; }
         public string StringData { get; set; }
         public DateTime DateData { get; set; }
+		public string ContentType { get; set; }
     }
 }

@@ -12,6 +12,7 @@ namespace Platibus.Config
         private const string ReplyTimeoutPropertyName = "replyTimeout";
         private const string TopicsPropertyName = "topics";
         private const string QueueingPropertyName = "queueing";
+		private const string DefaultContentTypePropertyName = "defaultContentType";
 
         /// <summary>
         /// Initializes a new <see cref="PlatibusConfigurationSection"/> with defaults
@@ -63,5 +64,15 @@ namespace Platibus.Config
             get { return (QueueingElement)base[QueueingPropertyName]; }
             set { base[QueueingPropertyName] = value; }
         }
+
+		/// <summary>
+		/// The default content type to use for messages sent from this instance
+		/// </summary>
+		[ConfigurationProperty(DefaultContentTypePropertyName, IsRequired = false, DefaultValue = null)]
+		public string DefaultContentType
+		{
+			get { return (string)base[DefaultContentTypePropertyName]; }
+			set { base[DefaultContentTypePropertyName] = value; }
+		}
     }
 }

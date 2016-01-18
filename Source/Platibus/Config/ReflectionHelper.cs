@@ -55,16 +55,20 @@ namespace Platibus.Config
             var subtypes = new List<Type>();
             foreach (var assemblyFile in assemblyFiles)
             {
-                try
-                {
-                    var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyFile.FullName);
-                    Log.DebugFormat("Scanning assembly {0} for concrete subtypes of {1}...", assembly.GetName().FullName,
-                        typeof (TBase).FullName);
-                    subtypes.AddRange(AppDomain.CurrentDomain.Load(assembly.GetName())
-                        .GetTypes()
-                        .Where(typeof (TBase).IsAssignableFrom)
-                        .Where(t => !t.IsInterface && !t.IsAbstract));
-                }
+	            try
+	            {
+		            var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyFile.FullName);
+		            Log.DebugFormat("Scanning assembly {0} for concrete subtypes of {1}...", assembly.GetName().FullName,
+			            typeof (TBase).FullName);
+		            subtypes.AddRange(AppDomain.CurrentDomain.Load(assembly.GetName())
+			            .GetTypes()
+			            .Where(typeof (TBase).IsAssignableFrom)
+			            .Where(t => !t.IsInterface && !t.IsAbstract));
+	            }
+	            catch (BadImageFormatException)
+	            {
+					// Ignore non-managed assemblies and executables
+	            }
                 catch (Exception ex)
                 {
                     Log.WarnFormat("Error scanning assembly file {0}", ex, assemblyFile);

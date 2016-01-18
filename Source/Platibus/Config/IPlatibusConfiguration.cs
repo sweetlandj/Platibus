@@ -80,5 +80,10 @@ namespace Platibus.Config
         /// Subscriptions to topics hosted in local or remote bus instances
         /// </summary>
         IEnumerable<ISubscription> Subscriptions { get; }
+
+		/// <summary>
+		/// The default content type for messages sent by this instance
+		/// </summary>
+		string DefaultContentType { get; }
     }
 }

@@ -36,6 +36,7 @@ namespace Platibus.Config
         private const string TopicsPropertyName = "topics";
         private const string SendRulesPropertyName = "sendRules";
         private const string SubscriptionsPropertyName = "subscriptions";
+		private const string DefaultContentTypePropertyName = "defaultContentType";
 
         /// <summary>
         /// Initializes a new <see cref="PlatibusConfigurationSection"/> with defaults
@@ -115,5 +116,15 @@ namespace Platibus.Config
             get { return (SubscriptionElementCollection) base[SubscriptionsPropertyName]; }
             set { base[SubscriptionsPropertyName] = value; }
         }
+
+		/// <summary>
+		/// The default content type to use for messages sent from this instance
+		/// </summary>
+		[ConfigurationProperty(DefaultContentTypePropertyName, IsRequired = false, DefaultValue = null)]
+		public string DefaultContentType
+		{
+			get { return (string)base[DefaultContentTypePropertyName]; }
+			set { base[DefaultContentTypePropertyName] = value; }
+		}
     }
 }

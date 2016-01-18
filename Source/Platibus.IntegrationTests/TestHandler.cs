@@ -63,7 +63,8 @@ namespace Platibus.IntegrationTests
                 GuidData = message.GuidData,
                 IntData = message.IntData,
                 StringData = message.StringData,
-                DateData = message.DateData
+                DateData = message.DateData,
+				ContentType = messageContext.Headers.ContentType
             }, cancellationToken: cancellationToken);
 
             if (message.SimulateAcknowledgementFailure)

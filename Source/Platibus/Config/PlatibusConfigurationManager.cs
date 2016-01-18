@@ -87,7 +87,8 @@ namespace Platibus.Config
                 ReplyTimeout = configSection.ReplyTimeout,
                 SerializationService = new DefaultSerializationService(),
                 MessageNamingService = new DefaultMessageNamingService(),
-                MessageQueueingService = await InitMessageQueueingService(configSection.Queueing)
+				MessageQueueingService = await InitMessageQueueingService(configSection.Queueing),
+				DefaultContentType = configSection.DefaultContentType
             };
 
             IEnumerable<TopicElement> topics = configSection.Topics;
@@ -160,7 +161,8 @@ namespace Platibus.Config
             {
                 ReplyTimeout = configSection.ReplyTimeout,
                 SerializationService = new DefaultSerializationService(),
-                MessageNamingService = new DefaultMessageNamingService()
+                MessageNamingService = new DefaultMessageNamingService(),
+				DefaultContentType = configSection.DefaultContentType
             };
 
             IEnumerable<EndpointElement> endpoints = configSection.Endpoints;

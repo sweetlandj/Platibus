@@ -107,7 +107,9 @@ namespace Platibus.Config
             get { return _subscriptions; }
         }
 
-        /// <summary>
+	    public string DefaultContentType { get; set; }
+
+	    /// <summary>
         /// Initializes a new <see cref="PlatibusConfiguration"/> instance with
         /// the default message naming and serialization services.
         /// </summary>
@@ -117,6 +119,7 @@ namespace Platibus.Config
         {
             MessageNamingService = new DefaultMessageNamingService();
             SerializationService = new DefaultSerializationService();
+		    DefaultContentType = "application/json";
         }
 
         /// <summary>
