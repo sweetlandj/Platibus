@@ -163,7 +163,7 @@ namespace Platibus.Filesystem
             {
                 if (!_leaveOpen)
                 {
-                    _reader.Dispose();
+                    _reader.TryDispose();
                 }
             }
         }

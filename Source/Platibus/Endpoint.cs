@@ -46,7 +46,7 @@ namespace Platibus
         public Endpoint(Uri address, IEndpointCredentials credentials = null)
         {
             if (address == null) throw new ArgumentNullException("address");
-            _address = address;
+            _address = address.WithTrailingSlash();
             _credentials = credentials;
         }
 

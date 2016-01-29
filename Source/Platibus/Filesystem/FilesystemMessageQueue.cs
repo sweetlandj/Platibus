@@ -233,8 +233,8 @@ namespace Platibus.Filesystem
             _processingTask.TryWait(TimeSpan.FromSeconds(30));
             if (disposing)
             {
-                _concurrentMessageProcessingSlot.Dispose();
-                _cancellationTokenSource.Dispose();
+                _concurrentMessageProcessingSlot.TryDispose();
+                _cancellationTokenSource.TryDispose();
             }
         }
     }

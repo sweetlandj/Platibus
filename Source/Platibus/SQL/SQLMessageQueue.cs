@@ -569,8 +569,8 @@ namespace Platibus.SQL
             _cancellationTokenSource.Cancel();
             if (disposing)
             {
-                _concurrentMessageProcessingSlot.Dispose();
-                _cancellationTokenSource.Dispose();
+				_concurrentMessageProcessingSlot.TryDispose();
+				_cancellationTokenSource.TryDispose();
             }
         }
     }

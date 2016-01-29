@@ -232,7 +232,7 @@ namespace Platibus.Filesystem
         {
             if (disposing)
             {
-                _fileAccess.Dispose();
+                _fileAccess.TryDispose();
             }
         }
     }

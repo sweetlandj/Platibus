@@ -184,7 +184,7 @@ namespace Platibus.RabbitMQ
             {
                 if (!_leaveOpen)
                 {
-                    _writer.Dispose();
+                    _writer.TryDispose();
                 }
             }
         }

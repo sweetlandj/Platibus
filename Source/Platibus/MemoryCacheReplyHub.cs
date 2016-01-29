@@ -162,7 +162,7 @@ namespace Platibus
         {
             if (disposing)
             {
-                _cache.Dispose();
+				_cache.TryDispose();
             }
         }
     }

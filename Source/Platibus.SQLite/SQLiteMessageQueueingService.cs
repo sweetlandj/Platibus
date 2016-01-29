@@ -164,7 +164,7 @@ namespace Platibus.SQLite
             {
                 foreach (var queue in _queues.Values)
                 {
-                    queue.Dispose();
+                    queue.TryDispose();
                 }
             }
         }

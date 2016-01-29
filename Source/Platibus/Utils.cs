@@ -11,6 +11,20 @@ namespace Platibus
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Core);
 
+		/// <summary>
+		/// Ensures that the path of the specified <paramref name="uri"/> contains a trailing slash
+		/// </summary>
+		/// <param name="uri">The URI</param>
+		/// <returns>Returns the specified URI with a trailing slash</returns>
+	    public static Uri WithTrailingSlash(this Uri uri)
+	    {
+		    if (uri.AbsolutePath.EndsWith("/")) return uri;
+		    return new UriBuilder(uri)
+		    {
+			    Path = uri.AbsolutePath + "/"
+		    }.Uri;
+	    }
+
         /// <summary>
         /// Attempts to safely cast <paramref name="obj"/> to <see cref="IDisposable"/>
         /// and dispose it, catching and quietly logging exceptions.

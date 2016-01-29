@@ -56,8 +56,8 @@ namespace Platibus.UnitTests
             }
             finally
             {
-                rmqQueueingService.Dispose();
-                cts.Dispose();
+				rmqQueueingService.TryDispose();
+				cts.TryDispose();
                 DeleteQueue(queueName);
             }
         }
@@ -109,8 +109,8 @@ namespace Platibus.UnitTests
             }
             finally
             {
-                rmqQueueingService.Dispose();
-                cts.Dispose();
+				rmqQueueingService.TryDispose();
+				cts.TryDispose();
                 DeleteQueue(queueName);
             }
         }
@@ -132,7 +132,7 @@ namespace Platibus.UnitTests
                 x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
                     It.IsAny<CancellationToken>()))
                 .Callback<Message, IQueuedMessageContext, CancellationToken>(
-                    (msg, ctx, ct) => { listenerCalledEvent.Set(); })
+                    (msg, ctx, ct) => listenerCalledEvent.Set())
                 .Returns(Task.FromResult(true));
 
             var cts = new CancellationTokenSource();
@@ -165,8 +165,8 @@ namespace Platibus.UnitTests
             }
             finally
             {
-                rmqQueueingService.Dispose();
-                cts.Dispose();
+				rmqQueueingService.TryDispose();
+				cts.TryDispose();
                 DeleteQueue(queueName);
             }
         }
@@ -182,7 +182,7 @@ namespace Platibus.UnitTests
                 x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
                     It.IsAny<CancellationToken>()))
                 .Callback<Message, IQueuedMessageContext, CancellationToken>(
-                    (msg, ctx, ct) => { listenerCalledEvent.Set(); })
+                    (msg, ctx, ct) => listenerCalledEvent.Set())
                 .Returns(Task.FromResult(true));
 
             var cts = new CancellationTokenSource();
@@ -216,8 +216,8 @@ namespace Platibus.UnitTests
             }
             finally
             {
-                rmqQueueingService.Dispose();
-                cts.Dispose();
+				rmqQueueingService.TryDispose();
+				cts.TryDispose();
                 DeleteQueue(queueName);
             }
         }
@@ -315,8 +315,8 @@ namespace Platibus.UnitTests
             }
             finally
             {
-                rmqQueueingService.Dispose();
-                cts.Dispose();
+				rmqQueueingService.TryDispose();
+				cts.TryDispose();
                 DeleteQueue(queueName);
             }
         }
@@ -387,8 +387,8 @@ namespace Platibus.UnitTests
             }
             finally
             {
-                rmqQueueingService.Dispose();
-                cts.Dispose();
+				rmqQueueingService.TryDispose();
+				cts.TryDispose();
                 DeleteQueue(queueName);
             }
         }

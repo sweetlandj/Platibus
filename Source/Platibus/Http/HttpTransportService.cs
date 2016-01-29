@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -67,7 +68,7 @@ namespace Platibus.Http
             if (messageQueueingService == null) throw new ArgumentNullException("messageQueueingService");
             if (subscriptionTrackingService == null) throw new ArgumentNullException("subscriptionTrackingService");
 
-            _baseUri = baseUri;
+            _baseUri = baseUri.WithTrailingSlash();
             _endpoints = endpoints == null
                 ? ReadOnlyEndpointCollection.Empty
                 : new ReadOnlyEndpointCollection(endpoints);
@@ -194,7 +195,7 @@ namespace Platibus.Http
             {
                 var httpContent = new StringContent(message.Content);
                 WriteHttpContentHeaders(message, httpContent);
-                var endpointBaseUri = message.Headers.Destination;
+                var endpointBaseUri = message.Headers.Destination.WithTrailingSlash();
 
                 var httpClient = GetClient(endpointBaseUri, credentials);
 
@@ -331,7 +332,6 @@ namespace Platibus.Http
                 }
 
                 await Task.Delay(retryOrRenewAfter, cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
             }
         }
 
@@ -343,7 +343,8 @@ namespace Platibus.Http
             
             try
             {
-                var httpClient = GetClient(endpoint.Address, endpoint.Credentials);
+				var endpointBaseUri = endpoint.Address.WithTrailingSlash();
+				var httpClient = GetClient(endpointBaseUri, endpoint.Credentials);
 
                 var urlSafeTopicName = HttpUtility.UrlEncode(topic);
                 var relativeUri = string.Format("topic/{0}/subscriber?uri={1}", urlSafeTopicName, _baseUri);

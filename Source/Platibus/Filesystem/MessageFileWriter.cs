@@ -129,7 +129,7 @@ namespace Platibus.Filesystem
             {
                 if (!_leaveOpen)
                 {
-                    _writer.Dispose();
+                    _writer.TryDispose();
                 }
             }
         }

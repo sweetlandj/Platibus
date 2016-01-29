@@ -464,8 +464,8 @@ namespace Platibus
             Task.WhenAll(_subscriptionTasks).TryWait(TimeSpan.FromSeconds(30));
             if (disposing)
             {
-                _cancellationTokenSource.Dispose();
-                _replyHub.Dispose();
+                _cancellationTokenSource.TryDispose();
+                _replyHub.TryDispose();
             }
         }
     }

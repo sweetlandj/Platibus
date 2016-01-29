@@ -124,7 +124,7 @@ namespace Platibus.IntegrationTests
 
                 var replyReceived = await replyReceivedEvent.WaitOneAsync(TimeSpan.FromSeconds(30));
                 var repliesCompleted = await repliesCompletedEvent.WaitOneAsync(TimeSpan.FromSeconds(30));
-                subscription.Dispose();
+				subscription.TryDispose();
 
                 Assert.That(replyReceived, Is.True);
                 Assert.That(repliesCompleted, Is.True);
@@ -163,7 +163,7 @@ namespace Platibus.IntegrationTests
 
                 var replyReceived = await replyReceivedEvent.WaitOneAsync(TimeSpan.FromSeconds(30));
                 var repliesCompleted = await repliesCompletedEvent.WaitOneAsync(TimeSpan.FromSeconds(30));
-                subscription.Dispose();
+				subscription.TryDispose();
 
                 Assert.That(replyReceived, Is.True);
                 Assert.That(repliesCompleted, Is.True);

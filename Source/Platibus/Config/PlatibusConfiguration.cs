@@ -107,6 +107,9 @@ namespace Platibus.Config
             get { return _subscriptions; }
         }
 
+	    /// <summary>
+	    /// Gets or sets the default content type for message content serialization
+	    /// </summary>
 	    public string DefaultContentType { get; set; }
 
 	    /// <summary>

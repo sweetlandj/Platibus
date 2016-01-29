@@ -111,16 +111,10 @@ namespace Platibus.SQLite
         protected override void Dispose(bool disposing)
         {
             if (disposing)
-            {
-                try
-                {
-                    _cancellationTokenSource.Cancel();
-                    _cancellationTokenSource.Dispose();
-                    _operationQueue.Complete();
-                }
-                catch (Exception)
-                {
-                }
+			{
+				_cancellationTokenSource.Cancel();
+				_cancellationTokenSource.TryDispose();
+				_operationQueue.Complete();
             }
             base.Dispose(disposing);
         }

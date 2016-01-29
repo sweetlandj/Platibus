@@ -156,8 +156,8 @@ namespace Platibus.InMemory
             _cancellationTokenSource.Cancel();
             if (disposing)
             {
-                _concurrentMessageProcessingSlot.Dispose();
-                _cancellationTokenSource.Dispose();
+                _concurrentMessageProcessingSlot.TryDispose();
+                _cancellationTokenSource.TryDispose();
             }
         }
 
