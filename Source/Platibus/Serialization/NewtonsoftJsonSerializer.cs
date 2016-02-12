@@ -51,7 +51,6 @@ namespace Platibus.Serialization
             {
                 TypeNameHandling = TypeNameHandling.Auto,
                 DateFormatHandling = DateFormatHandling.IsoDateFormat,
-                DefaultValueHandling = DefaultValueHandling.Ignore,
                 Formatting = Formatting.None,
                 MaxDepth = 10,
                 NullValueHandling = NullValueHandling.Ignore
