@@ -61,6 +61,9 @@
     <Compile Include="..\Copyright.cs">
       <Link>Properties\Copyright.cs</Link>
     </Compile>
+    <Compile Include="..\Version.cs">
+      <Link>Properties\Version.cs</Link>
+    </Compile>
     <Compile Include="ConnectionManager.cs" />
     <Compile Include="IConnectionManager.cs" />
     <Compile Include="IRabbitMQHostConfiguration.cs" />

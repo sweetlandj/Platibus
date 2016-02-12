@@ -20,9 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Common.Logging;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -30,7 +30,6 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using Common.Logging;
 
 namespace Platibus.Http
 {
@@ -260,7 +259,7 @@ namespace Platibus.Http
                 {
                     Log.DebugFormat("Sending subscription request for topic {0} to {1}...", topicName, endpoint);
 
-                    await SendSubscriptionRequest(endpoint, topicName, TimeSpan.FromHours(1), cancellationToken);
+                    await SendSubscriptionRequest(endpoint, topicName, ttl, cancellationToken);
 
                     if (ttl <= TimeSpan.Zero)
                     {

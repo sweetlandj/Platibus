@@ -1,13 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus", "Platibus\Platibus.csproj", "{73863B52-5751-4F75-8436-1CD3E6AC0D50}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".Solution Items", ".Solution Items", "{E57068F2-C14F-44AE-AE47-1728B5BCEBD1}"
 	ProjectSection(SolutionItems) = preProject
 		Copyright.cs = Copyright.cs
+		Version.cs = Version.cs
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus.IIS", "Platibus.IIS\Platibus.IIS.csproj", "{BF2C4B39-5E10-4115-BEFF-8340982CDA72}"

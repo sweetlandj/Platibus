@@ -83,6 +83,9 @@
     <Compile Include="..\Copyright.cs">
       <Link>Properties\Copyright.cs</Link>
     </Compile>
+    <Compile Include="..\Version.cs">
+      <Link>Properties\Version.cs</Link>
+    </Compile>
     <Compile Include="BusManager.cs" />
     <Compile Include="HttpContextExtensions.cs" />
     <Compile Include="HttpContextItemKeys.cs" />

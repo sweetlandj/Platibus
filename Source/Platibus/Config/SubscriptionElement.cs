@@ -62,7 +62,7 @@ namespace Platibus.Config
         /// "dead man's switch" that will cause the subscription to be terminated
         /// if not renewed within that span of time.
         /// </remarks>
-        [ConfigurationProperty(TTLPropertyName, DefaultValue = "24:00:00")]
+        [ConfigurationProperty(TTLPropertyName)]
         public TimeSpan TTL
         {
             get { return (TimeSpan) base[TTLPropertyName]; }

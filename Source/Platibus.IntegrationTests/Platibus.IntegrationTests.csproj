@@ -86,6 +86,7 @@
     <Compile Include="LoopbackSendAndReplyTests.cs" />
     <Compile Include="RabbitMQPubSubTests.cs" />
     <Compile Include="RabbitMQSendAndReplyTests.cs" />
+    <Compile Include="HttpSubscriptionRenewalTests.cs" />
     <Compile Include="TestAuthorizationService.cs" />
     <Compile Include="UnhandledTestPublication.cs" />
     <Compile Include="With.cs" />

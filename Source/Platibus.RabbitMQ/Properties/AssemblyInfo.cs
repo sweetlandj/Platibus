@@ -29,7 +29,6 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("Platibus.RabbitMQ")]
 [assembly: AssemblyDescription("Platibus.RabbitMQ")]
-[assembly: AssemblyVersion("2.1.5.0")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 
