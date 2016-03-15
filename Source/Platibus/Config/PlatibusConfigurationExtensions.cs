@@ -21,8 +21,12 @@
 // THE SOFTWARE.
 
 using System;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Common.Logging;
 
 namespace Platibus.Config
 {
@@ -32,6 +36,8 @@ namespace Platibus.Config
     /// </summary>
     public static class PlatibusConfigurationExtensions
     {
+        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
+
         /// <summary>
         /// Adds a handling rule based on message name pattern matching
         /// </summary>
@@ -208,6 +214,145 @@ namespace Platibus.Config
             var messageHandler = DelegateMessageHandler.For(handleContent);
             var handlingRule = new HandlingRule(specification, messageHandler, queueName);
             configuration.AddHandlingRule(handlingRule);
+        }
+
+        /// <summary>
+        /// Uses reflection to add handling rules for every implemented <see cref="IMessageHandler{TContent}"/>
+        /// interface on the specified <paramref name="handler"/> instance.
+        /// </summary>
+        /// <remarks>
+        /// <para>A handling rule will be added for implemented <see cref="IMessageHandler{TContent}"/> interface 
+        /// of <typeparamref name="THandler"/> according to the following convention:</para>
+        /// <list type="bullet">
+        /// <item>The name pattern will be an exact match of the <see cref="MessageName"/> returned by the
+        /// <see cref="IMessageNamingService"/> in the specified <paramref name="configuration"/></item>
+        /// <item>The handling function will rinvoke the appropriate <see cref="IMessageHandler{TContent}.HandleMessage"/>
+        /// method (via reflection) on the specified <paramref name="handler"/> instance</item>
+        /// <item>The designated queue name will be a hash derived from the full names of the <typeparamref name="THandler"/>
+        /// type and the type of message that is handled</item>
+        /// </list>
+        /// </remarks>
+        /// <typeparam name="THandler">The type of message handler</typeparam>
+        /// <param name="configuration">The Platibus configuration to which the handling rules will be added</param>
+        /// <param name="handler">The singleton handler instance</param>
+        /// <param name="queueNameFactory">(Optional) A factory method that will return an appropriate queue
+        /// name for each combination of handler type and message type</param>
+        public static void AddHandlingRules<THandler>(this PlatibusConfiguration configuration, THandler handler, QueueNameFactory queueNameFactory = null)
+        {
+            configuration.AddHandlingRulesForType(typeof(THandler), () => handler, queueNameFactory);
+        }
+
+        /// <summary>
+        /// Uses reflection to add handling rules for every implemented <see cref="IMessageHandler{TContent}"/>
+        /// interface.
+        /// </summary>
+        /// <remarks>
+        /// <para>A handling rule will be added for implemented <see cref="IMessageHandler{TContent}"/> interface 
+        /// of <typeparamref name="THandler"/> according to the following convention:</para>
+        /// <list type="bullet">
+        /// <item>The name pattern will be an exact match of the <see cref="MessageName"/> returned by the
+        /// <see cref="IMessageNamingService"/> in the specified <paramref name="configuration"/></item>
+        /// <item>The handling function will retrieve an instance of the handler object using the supplied
+        /// <paramref name="handlerFactory"/> and invoke the appropriate <see cref="IMessageHandler{TContent}.HandleMessage"/>
+        /// method (via reflection)</item>
+        /// <item>The designated queue name will be a hash derived from the full names of the <typeparamref name="THandler"/>
+        /// type and the type of message that is handled</item>
+        /// </list>
+        /// </remarks>
+        /// <typeparam name="THandler">The type of message handler</typeparam>
+        /// <param name="configuration">The Platibus configuration to which the handling rules will be added</param>
+        /// <param name="handlerFactory">(Optional) A factory method for getting an instance of the handler (may 
+        /// return a singleton or scoped handler instance).  If no factory method is specified, then the
+        /// default constructor will be used.</param>
+        /// <param name="queueNameFactory">(Optional) A factory method that will return an appropriate queue
+        /// name for each combination of handler type and message type</param>
+        public static void AddHandlingRules<THandler>(this PlatibusConfiguration configuration,
+            Func<THandler> handlerFactory = null, QueueNameFactory queueNameFactory = null)
+        {
+            Func<object> factory = null;
+            if (handlerFactory != null)
+            {
+                factory = () => handlerFactory();
+            }
+            configuration.AddHandlingRulesForType(typeof(THandler), factory, queueNameFactory);
+        }
+
+        /// <summary>
+        /// Uses reflection to add handling rules for every implemented <see cref="IMessageHandler{TContent}"/>
+        /// interface.
+        /// </summary>
+        /// <remarks>
+        /// <para>A handling rule will be added for implemented <see cref="IMessageHandler{TContent}"/> interface 
+        /// of <paramref name="handlerType"/> according to the following convention:</para>
+        /// <list type="bullet">
+        /// <item>The name pattern will be an exact match of the <see cref="MessageName"/> returned by the
+        /// <see cref="IMessageNamingService"/> in the specified <paramref name="configuration"/></item>
+        /// <item>The handling function will retrieve an instance of the handler object using the supplied
+        /// <paramref name="handlerFactory"/> and invoke the appropriate <see cref="IMessageHandler{TContent}.HandleMessage"/>
+        /// method (via reflection)</item>
+        /// <item>The designated queue name will be a hash derived from the full names of the <paramref name="handlerType"/> 
+        /// and the type of message that is handled</item>
+        /// </list>
+        /// </remarks>
+        /// <param name="configuration">The Platibus configuration to which the handling rules will be added</param>
+        /// <param name="handlerType">The type of handler returned by the factory method</param>
+        /// <param name="handlerFactory">(Optional) A factory method for getting an instance of the handler (may 
+        /// return a singleton or scoped handler instance).  If no factory method is specified, then the
+        /// default constructor will be used.</param>
+        /// <param name="queueNameFactory">(Optional) A factory method that will return an appropriate queue
+        /// name for each combination of handler type and message type</param>
+        public static void AddHandlingRulesForType(this PlatibusConfiguration configuration, Type handlerType,
+            Func<object> handlerFactory = null, QueueNameFactory queueNameFactory = null)
+        {
+            var autoBindInterfaces = handlerType
+                .GetInterfaces()
+                .Where(i => i.IsGenericType && typeof(IMessageHandler<>).IsAssignableFrom(i.GetGenericTypeDefinition()));
+
+            if (handlerFactory == null)
+            {
+                handlerFactory = () => Activator.CreateInstance(handlerType);
+            }
+
+            if (queueNameFactory == null)
+            {
+                queueNameFactory = DeriveQueueName;
+            }
+
+            foreach (var autoBindInterface in autoBindInterfaces)
+            {
+                var messageType = autoBindInterface.GetGenericArguments().First();
+                var messageName = configuration.MessageNamingService.GetNameForType(messageType);
+                var specification = new MessageNamePatternSpecification("^" + messageName + "$");
+                var queueName = queueNameFactory(handlerType, messageType);
+
+                var method = autoBindInterface.GetMethod("HandleMessage",
+                    new[] { messageType, typeof(IMessageContext), typeof(CancellationToken) });
+
+                if (method != null)
+                {
+                    configuration.AddHandlingRule(specification, (object msg, IMessageContext ctx, CancellationToken ct) =>
+                    {
+                        try
+                        {
+                            var handler = handlerFactory();
+                            return (Task)method.Invoke(handler, new[] { msg, ctx, ct });
+                        }
+                        catch (Exception e)
+                        {
+                            Log.ErrorFormat("Error activiting instance of message handler type {0}", e);
+                            throw;
+                        }
+                    }, queueName);
+                }
+            }
+        }
+
+        private static QueueName DeriveQueueName(Type handlerType, Type messageType)
+        {
+            var rawStr = handlerType.FullName + "_" + messageType.FullName;
+            var rawBytes = Encoding.UTF8.GetBytes(rawStr);
+            var typeHash = MD5.Create().ComputeHash(rawBytes);
+            return string.Concat(typeHash.Select(b => ((ushort)b).ToString("x2")));
         }
     }
 }

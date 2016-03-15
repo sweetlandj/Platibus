@@ -8,7 +8,7 @@ namespace Platibus.Config
     /// Static factory for creating new instances of 
     /// <see cref="GenericMessageHandlerAdapter{TContent}"/>.
     /// </summary>
-    static class GenericMessageHandlerAdapter
+    public static class GenericMessageHandlerAdapter
     {
         /// <summary>
         /// Creates a new <see cref="GenericMessageHandlerAdapter{TContent}"/> instance
@@ -32,7 +32,7 @@ namespace Platibus.Config
     /// </summary>
     /// <typeparam name="TContent">The type of message content handled
     /// by the wrapped message handler.</typeparam>
-    class GenericMessageHandlerAdapter<TContent> : IMessageHandler
+    public class GenericMessageHandlerAdapter<TContent> : IMessageHandler
     {
         private readonly IMessageHandler<TContent> _genericMessageHandler;
 
@@ -49,6 +49,15 @@ namespace Platibus.Config
             _genericMessageHandler = genericMessageHandler;
         }
 
+        /// <summary>
+        /// Handles (processes) an incoming message.
+        /// </summary>
+        /// <param name="content">The deserialied content (body) of the message</param>
+        /// <param name="messageContext">The context in which the message was received
+        /// including message metadata</param>
+        /// <param name="cancellationToken">A cancellation token used by the host to
+        /// indicate that message handling should stop as soon as feasible.</param>
+        /// <returns>Returns a task that completes when the message has been handled</returns>
         public Task HandleMessage(object content, IMessageContext messageContext, CancellationToken cancellationToken)
         {
             return _genericMessageHandler.HandleMessage((TContent)content, messageContext, cancellationToken);
