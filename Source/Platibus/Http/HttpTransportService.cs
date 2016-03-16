@@ -154,13 +154,20 @@ namespace Platibus.Http
             // ReSharper disable once LoopCanBeConvertedToQuery
             foreach (var subscriber in subscribers)
             {
+                IEndpointCredentials subscriberCredentials = null;
+                IEndpoint subscriberEndpoint;
+                if (_endpoints.TryGetEndpointByAddress(subscriber, out subscriberEndpoint))
+                {
+                    subscriberCredentials = subscriberEndpoint.Credentials;
+                }
+
                 var perEndpointHeaders = new MessageHeaders(message.Headers)
                 {
                     Destination = subscriber
                 };
 
                 var addressedMessage = new Message(perEndpointHeaders, message.Content);
-                transportTasks.Add(TransportMessage(addressedMessage, null, cancellationToken));
+                transportTasks.Add(TransportMessage(addressedMessage, subscriberCredentials, cancellationToken));
             }
 
             await Task.WhenAll(transportTasks);

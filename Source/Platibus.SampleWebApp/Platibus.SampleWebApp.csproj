@@ -161,6 +161,7 @@
     <Compile Include="Controllers\ControllerFactory.cs" />
     <Compile Include="Controllers\ReceivedMessageRepository.cs" />
     <Compile Include="Controllers\ReceivedMessagesController.cs" />
+    <Compile Include="Controllers\TestPublication.cs" />
     <Compile Include="Models\ReceivedMessage.cs" />
     <Compile Include="Models\ReceivedMessages.cs" />
     <Compile Include="Controllers\TestMessageController.cs" />

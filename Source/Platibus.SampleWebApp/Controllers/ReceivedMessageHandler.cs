@@ -52,6 +52,11 @@ namespace Platibus.SampleWebApp.Controllers
             };
 
             await _repository.Add(receivedMessage);
+
+            await
+                context.Bus.Publish(new TestPublication {Text = testMessage == null ? "" : testMessage.Text}, "Topic0",
+                    cancellationToken);
+
             context.Acknowledge();
 
             Log.DebugFormat("{0} ID {1} handled successfully",
