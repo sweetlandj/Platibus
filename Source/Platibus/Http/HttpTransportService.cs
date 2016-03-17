@@ -130,6 +130,7 @@ namespace Platibus.Http
 
             if (message.Headers.Importance == MessageImportance.Critical)
             {
+                Log.DebugFormat("Enqueueing critical message ID {0} for queued outbound delivery...", message.Headers.MessageId);
                 await _messageQueueingService.EnqueueMessage(_outboundQueueName, message, null, cancellationToken);
                 return;
             }
@@ -167,6 +168,14 @@ namespace Platibus.Http
                 };
 
                 var addressedMessage = new Message(perEndpointHeaders, message.Content);
+                if (addressedMessage.Headers.Importance == MessageImportance.Critical)
+                {
+                    Log.DebugFormat("Enqueueing critical message ID {0} for queued outbound delivery...", message.Headers.MessageId);
+                    await _messageQueueingService.EnqueueMessage(_outboundQueueName, message, null, cancellationToken);
+                    return;
+                }
+
+                Log.DebugFormat("Forwarding message ID {0} published to topic {0} to subscriber {2}...", message.Headers.MessageId, topicName, subscriber);
                 transportTasks.Add(TransportMessage(addressedMessage, subscriberCredentials, cancellationToken));
             }
 
@@ -204,11 +213,17 @@ namespace Platibus.Http
                 var endpointBaseUri = message.Headers.Destination.WithTrailingSlash();
 
                 var httpClient = GetClient(endpointBaseUri, credentials);
-
                 var messageId = message.Headers.MessageId;
                 var urlEncondedMessageId = HttpUtility.UrlEncode(messageId);
                 var relativeUri = string.Format("message/{0}", urlEncondedMessageId);
+
+                var postUri = new Uri(endpointBaseUri, relativeUri);
+                Log.DebugFormat("POSTing content of message ID {0} to URI {1}...", message.Headers.MessageId, postUri);
                 var httpResponseMessage = await httpClient.PostAsync(relativeUri, httpContent, cancellationToken);
+                Log.DebugFormat("Received HTTP response code {0} {1} for POST request {2}...", 
+                    (int)httpResponseMessage.StatusCode,
+                    httpResponseMessage.StatusCode.ToString("G"), 
+                    postUri);
 
                 HandleHttpErrorResponse(httpResponseMessage);
 

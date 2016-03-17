@@ -9,6 +9,12 @@ namespace Platibus.IntegrationTests
 	{
 		private static readonly Random RNG = new Random();
 
+        [SetUp]
+        public void SetUp()
+        {
+            TestPublicationHandler.Reset();
+        }
+
 		[Test]
 		public async Task Given_10Second_TTL_When_Publishing_Message_After_15Seconds_The_Publication_Should_Be_Received()
 		{

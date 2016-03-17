@@ -27,11 +27,20 @@ namespace Platibus.IntegrationTests
 {
     public class TestPublicationHandler : IMessageHandler
     {
-        private static readonly AutoResetEvent MessageReceivedEvent = new AutoResetEvent(false);
+        private static readonly object SyncRoot = new object();
+        private volatile static CountdownEvent _messageReceivedEvent = new CountdownEvent(1);
+
+        public static CountdownEvent MessageReceivedEvent { get { return _messageReceivedEvent; } }
 
         public static WaitHandle WaitHandle
         {
-            get { return MessageReceivedEvent; }
+            get
+            {
+                lock (SyncRoot)
+                {
+                    return _messageReceivedEvent.WaitHandle;
+                }
+            }
         }
 
         public string Name
@@ -41,9 +50,21 @@ namespace Platibus.IntegrationTests
 
         public Task HandleMessage(object content, IMessageContext messageContext, CancellationToken cancellationToken)
         {
-            MessageReceivedEvent.Set();
             messageContext.Acknowledge();
+            lock (SyncRoot)
+            {
+                _messageReceivedEvent.Signal();
+            }
             return Task.FromResult(true);
+        }
+
+        public static void Reset()
+        {
+            lock (SyncRoot)
+            {
+                if (_messageReceivedEvent != null) _messageReceivedEvent.Dispose();
+                _messageReceivedEvent = new CountdownEvent(1);
+            }
         }
     }
 }

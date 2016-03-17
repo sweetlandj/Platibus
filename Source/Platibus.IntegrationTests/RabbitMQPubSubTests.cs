@@ -8,6 +8,12 @@ namespace Platibus.IntegrationTests
     {
         private static readonly Random RNG = new Random();
 
+        [SetUp]
+        public void SetUp()
+        {
+            TestPublicationHandler.Reset();
+        }
+
         [Explicit]
         [Test]
         public async Task Given_Subscriber_When_Message_Published_Then_Subscriber_Should_Receive_It()

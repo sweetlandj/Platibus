@@ -11,6 +11,12 @@ namespace Platibus.IntegrationTests
     {
         private static readonly Random RNG = new Random();
 
+        [SetUp]
+        public void SetUp()
+        {
+            TestPublicationHandler.Reset();
+        }
+
         [Test]
         public async Task Given_Noncritical_Message_Not_Authorized_When_Sending_Then_UnauthorizedAccessException()
         {
