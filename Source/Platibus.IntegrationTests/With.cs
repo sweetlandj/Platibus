@@ -135,6 +135,11 @@ namespace Platibus.IntegrationTests
             {
                 TryTo(() => Directory.Delete("platibus1", true));
             }
+
+            if (Directory.Exists("platibus2"))
+            {
+                TryTo(() => Directory.Delete("platibus2", true));
+            }
         }
 
         private static void TryTo(Action action)

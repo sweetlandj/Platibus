@@ -102,6 +102,7 @@
     <Compile Include="ClaimsPrincipalEqualityComparer.cs" />
     <Compile Include="DataContractMessageNamingServiceTests.cs" />
     <Compile Include="DefaultMessageNamingServiceTests.cs" />
+    <Compile Include="EndpointAddressEqualityComparerTests.cs" />
     <Compile Include="PlatibusConfigurationExtensionTests.cs" />
     <Compile Include="RabbitMQMessageQueueingServiceTests.cs" />
     <Compile Include="SQLiteMessageQueueingServiceTests.cs" />

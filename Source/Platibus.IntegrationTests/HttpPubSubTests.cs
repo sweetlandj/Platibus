@@ -20,10 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using System.Threading.Tasks;
 using NUnit.Framework;
 using Platibus.Http;
+using System;
+using System.Threading.Tasks;
 
 namespace Platibus.IntegrationTests
 {
@@ -75,6 +75,10 @@ namespace Platibus.IntegrationTests
                         StringData = "Hello, world!",
                         DateData = DateTime.UtcNow
                     };
+
+
+                    // Wait for subscription request for platibus.http2 to be processed
+                    await Task.Delay(TimeSpan.FromSeconds(1));
 
                     await platibus0.Publish(publication, "Topic0");
 

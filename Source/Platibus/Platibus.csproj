@@ -89,6 +89,7 @@
     <Compile Include="Config\LoopbackConfigurationSection.cs" />
     <Compile Include="Config\QueueNameFactory.cs" />
     <Compile Include="DataContractMessageNamingService.cs" />
+    <Compile Include="EndpointAddressEqualityComparer.cs" />
     <Compile Include="EndpointCollection.cs" />
     <Compile Include="Http\AuthenticationSchemeElement.cs" />
     <Compile Include="Http\AuthenticationSchemesElementCollection.cs" />

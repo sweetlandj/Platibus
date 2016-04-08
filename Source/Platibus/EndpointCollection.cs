@@ -60,7 +60,8 @@ namespace Platibus
         /// otherwise</returns>
         public bool TryGetEndpointByAddress(Uri address, out IEndpoint endpoint)
         {
-            endpoint = _endpoints.Values.FirstOrDefault(e => Equals(address, e.Address));
+            var comparer = new EndpointAddressEqualityComparer();
+            endpoint = _endpoints.Values.FirstOrDefault(e => comparer.Equals(e.Address, address));
             return endpoint != null;
         }
 
