@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Linq;
 using Common.Logging;
 using System;
 using System.Collections.Generic;
@@ -152,7 +153,6 @@ namespace Platibus.Http
             var subscribers = await _subscriptionTrackingService.GetSubscribers(topicName, cancellationToken);
             var transportTasks = new List<Task>();
 
-            // ReSharper disable once LoopCanBeConvertedToQuery
             foreach (var subscriber in subscribers)
             {
                 IEndpointCredentials subscriberCredentials = null;
@@ -164,6 +164,7 @@ namespace Platibus.Http
 
                 var perEndpointHeaders = new MessageHeaders(message.Headers)
                 {
+                    MessageId = MessageId.Generate(),
                     Destination = subscriber
                 };
 
@@ -171,8 +172,8 @@ namespace Platibus.Http
                 if (addressedMessage.Headers.Importance == MessageImportance.Critical)
                 {
                     Log.DebugFormat("Enqueueing critical message ID {0} for queued outbound delivery...", message.Headers.MessageId);
-                    await _messageQueueingService.EnqueueMessage(_outboundQueueName, message, null, cancellationToken);
-                    return;
+                    await _messageQueueingService.EnqueueMessage(_outboundQueueName, addressedMessage, null, cancellationToken);
+                    continue;
                 }
 
                 Log.DebugFormat("Forwarding message ID {0} published to topic {0} to subscriber {2}...", message.Headers.MessageId, topicName, subscriber);

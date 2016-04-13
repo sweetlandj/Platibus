@@ -131,9 +131,10 @@ namespace Platibus.Filesystem
             _subscriptions.TryGetValue(topic, out subscriptions);
             var activeSubscribers = (subscriptions ?? Enumerable.Empty<ExpiringSubscription>())
                 .Where(s => s.ExpirationDate > DateTime.UtcNow)
-                .Select(s => s.Subscriber);
+                .Select(s => s.Subscriber)
+                .ToList();
 
-            return Task.FromResult(activeSubscribers);
+            return Task.FromResult(activeSubscribers.AsEnumerable());
         }
 
         /// <summary>

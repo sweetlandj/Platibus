@@ -265,14 +265,20 @@ namespace Platibus
             {
                 Topic = topic,
                 Published = DateTime.UtcNow,
-                // All publications are set to critical importance to ensure
-                // that they are queued on the sending side rather than
-                // waiting for all subscribers to receive the messages
-                // successfully
+                
                 Importance = MessageImportance.Critical
             };
 
-            var message = BuildMessage(content, prototypicalHeaders);
+            // All publications are set to critical importance to ensure
+            // that they are queued on the sending side rather than
+            // waiting for all subscribers to receive the messages
+            // successfully
+            var sendOptions = new SendOptions
+            {
+                Importance = MessageImportance.Critical
+            };
+
+            var message = BuildMessage(content, prototypicalHeaders, sendOptions);
             if (_messageJournalingService != null)
             {
                 await _messageJournalingService.MessagePublished(message, cancellationToken);

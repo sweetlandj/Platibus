@@ -22,4 +22,4 @@
 
 using System.Reflection;
 
-[assembly: AssemblyVersion("2.1.11.0")]
+[assembly: AssemblyVersion("2.1.12.0")]

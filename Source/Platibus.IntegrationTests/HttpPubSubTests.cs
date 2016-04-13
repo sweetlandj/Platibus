@@ -76,7 +76,6 @@ namespace Platibus.IntegrationTests
                         DateData = DateTime.UtcNow
                     };
 
-
                     // Wait for subscription request for platibus.http2 to be processed
                     await Task.Delay(TimeSpan.FromSeconds(1));
 

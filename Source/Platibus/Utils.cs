@@ -17,7 +17,8 @@ namespace Platibus
 		/// <param name="uri">The URI</param>
 		/// <returns>Returns the specified URI with a trailing slash</returns>
 	    public static Uri WithTrailingSlash(this Uri uri)
-	    {
+		{
+		    if (uri == null) return null;
 		    if (uri.AbsolutePath.EndsWith("/")) return uri;
 		    return new UriBuilder(uri)
 		    {
