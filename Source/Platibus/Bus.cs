@@ -264,7 +264,12 @@ namespace Platibus
             var prototypicalHeaders = new MessageHeaders
             {
                 Topic = topic,
-                Published = DateTime.UtcNow
+                Published = DateTime.UtcNow,
+                // All publications are set to critical importance to ensure
+                // that they are queued on the sending side rather than
+                // waiting for all subscribers to receive the messages
+                // successfully
+                Importance = MessageImportance.Critical
             };
 
             var message = BuildMessage(content, prototypicalHeaders);
