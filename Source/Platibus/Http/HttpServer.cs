@@ -123,7 +123,7 @@ namespace Platibus.Http
                 CancellationToken = _cancellationTokenSource.Token
             };
 
-            if (configuration.ConcurrencyLimit >= 0)
+            if (configuration.ConcurrencyLimit > 0)
             {
                 acceptBlockOptions.MaxDegreeOfParallelism = configuration.ConcurrencyLimit;
             }
