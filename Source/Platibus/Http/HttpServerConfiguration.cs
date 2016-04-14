@@ -49,6 +49,11 @@ namespace Platibus.Http
         public IAuthorizationService AuthorizationService { get; set; }
 
         /// <summary>
+        /// The maximum amount of HTTP requests to process at the same time.
+        /// </summary>
+        public int ConcurrencyLimit { get; set; }
+
+        /// <summary>
         /// Initializes a new <see cref="HttpServerConfiguration"/> with defaults
         /// </summary>
         public HttpServerConfiguration()

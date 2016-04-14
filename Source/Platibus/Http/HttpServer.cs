@@ -24,6 +24,7 @@ using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using Common.Logging;
 
 namespace Platibus.Http
@@ -79,6 +80,7 @@ namespace Platibus.Http
         private readonly IHttpResourceRouter _resourceRouter;
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly HttpListener _httpListener;
+        private readonly ActionBlock<HttpListenerContext> _acceptBlock; 
 
         private Task _listenTask;
 
@@ -115,6 +117,18 @@ namespace Platibus.Http
                 {"topic", new TopicController(_subscriptionTrackingService, configuration.Topics, authorizationService)}
             };
             _httpListener = InitHttpListener(_baseUri, configuration.AuthenticationSchemes);
+
+            var acceptBlockOptions = new ExecutionDataflowBlockOptions
+            {
+                CancellationToken = _cancellationTokenSource.Token
+            };
+
+            if (configuration.ConcurrencyLimit >= 0)
+            {
+                acceptBlockOptions.MaxDegreeOfParallelism = configuration.ConcurrencyLimit;
+            }
+
+            _acceptBlock = new ActionBlock<HttpListenerContext>(ctx => Accept(ctx), acceptBlockOptions);
         }
 
         private static HttpListener InitHttpListener(Uri baseUri, AuthenticationSchemes authenticationSchemes)
@@ -151,24 +165,27 @@ namespace Platibus.Http
         // ReSharper disable once UnusedMethodReturnValue.Local
         private async Task Listen(CancellationToken cancellationToken = default(CancellationToken))
         {
-	        try
-	        {
-		        while (_httpListener.IsListening && !cancellationToken.IsCancellationRequested)
-		        {
-			        var context = await _httpListener.GetContextAsync();
+            try
+            {
+                while (_httpListener.IsListening && !cancellationToken.IsCancellationRequested)
+                {
+                    var context = await _httpListener.GetContextAsync();
 
-			        Log.DebugFormat("Accepting {0} request for resource {1} from {2}...",
-				        context.Request.HttpMethod, context.Request.Url, context.Request.RemoteEndPoint);
+                    Log.DebugFormat("Accepting {0} request for resource {1} from {2}...",
+                        context.Request.HttpMethod, context.Request.Url, context.Request.RemoteEndPoint);
 
-			        // Create a new async task but do not wait for it to complete.
-
-			        // ReSharper disable once UnusedVariable
-			        var acceptTask = Accept(context);
-		        }
-	        }
-	        catch (TaskCanceledException)
-	        {
-	        }
+                    // Create a new async task but do not wait for it to complete.
+                    await _acceptBlock.SendAsync(context, cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (HttpListenerException)
+            {
+                // Thrown with GetContextAsync is interrupted due to thie
+                // listener stopping
+            }
         }
 
         /// <summary>
@@ -238,8 +255,9 @@ namespace Platibus.Http
 
             Log.Info("Stopping HTTP server...");
             _httpListener.Stop();
-
             _cancellationTokenSource.Cancel();
+            _listenTask.TryWait(TimeSpan.FromSeconds(30));
+            Log.InfoFormat("HTTP server stopped");
 
             _bus.TryDispose();
             _transportService.TryDispose();
@@ -256,10 +274,6 @@ namespace Platibus.Http
                 Log.Warn("Error closing HTTP listener; aborting...", ex);
                 _httpListener.Abort();
             }
-
-            _listenTask.TryWait(TimeSpan.FromSeconds(30));
-
-            Log.InfoFormat("HTTP server stopped");
 
             _cancellationTokenSource.TryDispose();
         }

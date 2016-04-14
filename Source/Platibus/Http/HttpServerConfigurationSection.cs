@@ -13,6 +13,7 @@ namespace Platibus.Http
     public class HttpServerConfigurationSection : PlatibusConfigurationSection
     {
         private const string BaseUriPropertyName = "baseUri";
+        private const string ConcurrencyLimitPropertyName = "concurrencyLimit";
         private const string AuthenticationSchemesPropertyName = "authenticationSchemes";
         private const string SubscriptionTrackingPropertyName = "subscriptionTracking";
         private const string QueueingPropertyName = "queueing";
@@ -26,6 +27,16 @@ namespace Platibus.Http
         {
             get { return (Uri) base[BaseUriPropertyName]; }
             set { base[BaseUriPropertyName] = value; }
+        }
+
+        /// <summary>
+        /// The maximum number of HTTP requests to process at the same time.
+        /// </summary>
+        [ConfigurationProperty(ConcurrencyLimitPropertyName)]
+        public int ConcurrencyLimit
+        {
+            get { return (int)base[ConcurrencyLimitPropertyName]; }
+            set { base[ConcurrencyLimitPropertyName] = value; }
         }
 
         /// <summary>

@@ -38,14 +38,12 @@ namespace Platibus.Filesystem
         private int _initialized;
         private readonly bool _autoAcknowledge;
         private readonly CancellationTokenSource _cancellationTokenSource;
-        private readonly SemaphoreSlim _concurrentMessageProcessingSlot;
         private readonly DirectoryInfo _directory;
         private readonly DirectoryInfo _deadLetterDirectory;
         private readonly IQueueListener _listener;
         private readonly int _maxAttempts;
-        private readonly BufferBlock<MessageFile> _queuedMessages;
+        private readonly ActionBlock<MessageFile> _queuedMessages;
         private readonly TimeSpan _retryDelay;
-        private Task _processingTask;
 
         public FilesystemMessageQueue(DirectoryInfo directory, IQueueListener listener,
             QueueOptions options = default(QueueOptions))
@@ -64,13 +62,15 @@ namespace Platibus.Filesystem
             var concurrencyLimit = options.ConcurrencyLimit <= 0
                 ? QueueOptions.DefaultConcurrencyLimit
                 : options.ConcurrencyLimit;
-            _concurrentMessageProcessingSlot = new SemaphoreSlim(concurrencyLimit);
 
             _cancellationTokenSource = new CancellationTokenSource();
-            _queuedMessages = new BufferBlock<MessageFile>(new DataflowBlockOptions
-            {
-                CancellationToken = _cancellationTokenSource.Token
-            });
+            _queuedMessages = new ActionBlock<MessageFile>(
+                msg => ProcessQueuedMessage(msg, _cancellationTokenSource.Token),
+                new ExecutionDataflowBlockOptions
+                {
+                    CancellationToken = _cancellationTokenSource.Token,
+                    MaxDegreeOfParallelism = concurrencyLimit
+                });
         }
 
         public async Task Enqueue(Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
@@ -107,7 +107,6 @@ namespace Platibus.Filesystem
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
-                _processingTask = ProcessQueuedMessages(_cancellationTokenSource.Token);
             }
         }
 
@@ -119,22 +118,6 @@ namespace Platibus.Filesystem
                 Log.DebugFormat("Enqueueing existing message from file {0}...", file);
                 var queuedMessage = new MessageFile(file);
                 await _queuedMessages.SendAsync(queuedMessage, cancellationToken);
-            }
-        }
-
-        // ReSharper disable once UnusedMethodReturnValue.Local
-        private async Task ProcessQueuedMessages(CancellationToken cancellationToken)
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                var nextQueuedMessage = await _queuedMessages.ReceiveAsync(cancellationToken);
-
-                // We don't want to wait on this task; we want to allow concurrent processing
-                // of messages.  The semaphore will be released by the ProcessQueuedMessage
-                // method.
-
-                // ReSharper disable once UnusedVariable
-                var messageProcessingTask = ProcessQueuedMessage(nextQueuedMessage, cancellationToken);
             }
         }
 
@@ -156,9 +139,6 @@ namespace Platibus.Filesystem
                 var context = new FilesystemQueuedMessageContext(queuedMessage);
                 cancellationToken.ThrowIfCancellationRequested();
 
-                await _concurrentMessageProcessingSlot.WaitAsync(cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
-
                 try
                 {
                     var message = await queuedMessage.ReadMessage(cancellationToken);
@@ -177,11 +157,7 @@ namespace Platibus.Filesystem
                 {
                     Log.WarnFormat("Unhandled exception handling queued message file {0}", ex, queuedMessage.File);
                 }
-                finally
-                {
-                    _concurrentMessageProcessingSlot.Release();
-                }
-
+                
                 if (context.Acknowledged)
                 {
                     Log.DebugFormat("Message acknowledged.  Deleting message file {0}...", queuedMessage.File);
@@ -230,10 +206,8 @@ namespace Platibus.Filesystem
         protected virtual void Dispose(bool disposing)
         {
             _cancellationTokenSource.Cancel();
-            _processingTask.TryWait(TimeSpan.FromSeconds(30));
             if (disposing)
             {
-                _concurrentMessageProcessingSlot.TryDispose();
                 _cancellationTokenSource.TryDispose();
             }
         }

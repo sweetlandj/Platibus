@@ -57,7 +57,6 @@ namespace Platibus.InMemory
             {
                 throw new QueueAlreadyExistsException(queueName);
             }
-            queue.Init();
             return Task.FromResult(true);
         }
 

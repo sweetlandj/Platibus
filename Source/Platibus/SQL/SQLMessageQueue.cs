@@ -28,10 +28,9 @@ namespace Platibus.SQL
         private readonly IQueueListener _listener;
 
         private readonly CancellationTokenSource _cancellationTokenSource;
-        private readonly SemaphoreSlim _concurrentMessageProcessingSlot;
         private readonly bool _autoAcknowledge;
         private readonly int _maxAttempts;
-        private readonly BufferBlock<SQLQueuedMessage> _queuedMessages;
+        private readonly ActionBlock<SQLQueuedMessage> _queuedMessages;
         private readonly TimeSpan _retryDelay;
 
         private bool _disposed;
@@ -69,13 +68,15 @@ namespace Platibus.SQL
             var concurrencyLimit = options.ConcurrencyLimit <= 0
                 ? QueueOptions.DefaultConcurrencyLimit
                 : options.ConcurrencyLimit;
-            _concurrentMessageProcessingSlot = new SemaphoreSlim(concurrencyLimit);
 
             _cancellationTokenSource = new CancellationTokenSource();
-            _queuedMessages = new BufferBlock<SQLQueuedMessage>(new DataflowBlockOptions
-            {
-                CancellationToken = _cancellationTokenSource.Token
-            });
+            _queuedMessages =
+                new ActionBlock<SQLQueuedMessage>(msg => ProcessQueuedMessage(msg, _cancellationTokenSource.Token),
+                    new ExecutionDataflowBlockOptions
+                    {
+                        CancellationToken = _cancellationTokenSource.Token,
+                        MaxDegreeOfParallelism = concurrencyLimit
+                    });
         }
 
         /// <summary>
@@ -87,9 +88,6 @@ namespace Platibus.SQL
             if (Interlocked.Exchange(ref _initialized, 1) == 0)
             {
                 await EnqueueExistingMessages();
-
-                // ReSharper disable once UnusedVariable
-                var processingTask = ProcessQueuedMessages(_cancellationTokenSource.Token);
             }
         }
 
@@ -116,29 +114,6 @@ namespace Platibus.SQL
         }
 
         /// <summary>
-        /// Initiates a long-running background task that processes messages as they are
-        /// enqueued
-        /// </summary>
-        /// <param name="cancellationToken">A cancellation token that the caller can use
-        /// to cancel the message processing loop</param>
-        /// <returns>Returns a task that completes when the message processing loop has
-        /// terminated</returns>
-        protected async Task ProcessQueuedMessages(CancellationToken cancellationToken)
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                var nextQueuedMessage = await _queuedMessages.ReceiveAsync(cancellationToken);
-
-                // We don't want to wait on this task; we want to allow concurrent processing
-                // of messages.  The semaphore will be released by the ProcessQueuedMessage
-                // method.
-
-                // ReSharper disable once UnusedVariable
-                var messageProcessingTask = ProcessQueuedMessage(nextQueuedMessage, cancellationToken);
-            }
-        }
-
-        /// <summary>
         /// Called by the message processing loop to process an individual message
         /// </summary>
         /// <param name="queuedMessage">The queued message to process</param>
@@ -160,10 +135,6 @@ namespace Platibus.SQL
 
                 var context = new SQLQueuedMessageContext(queuedMessage);
                 cancellationToken.ThrowIfCancellationRequested();
-
-                await _concurrentMessageProcessingSlot.WaitAsync(cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
-
                 try
                 {
                     var message = queuedMessage.Message;
@@ -177,11 +148,7 @@ namespace Platibus.SQL
                 {
                     Log.WarnFormat("Unhandled exception handling queued message {0}", ex, messageId);
                 }
-                finally
-                {
-                    _concurrentMessageProcessingSlot.Release();
-                }
-
+                
                 if (context.Acknowledged)
                 {
                     Log.DebugFormat("Message acknowledged.  Marking message {0} as acknowledged...", messageId);
@@ -569,7 +536,6 @@ namespace Platibus.SQL
             _cancellationTokenSource.Cancel();
             if (disposing)
             {
-				_concurrentMessageProcessingSlot.TryDispose();
 				_cancellationTokenSource.TryDispose();
             }
         }

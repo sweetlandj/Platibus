@@ -33,13 +33,11 @@ namespace Platibus.InMemory
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Filesystem);
         private bool _disposed;
-        private int _initialized;
         private readonly bool _autoAcknowledge;
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
-        private readonly SemaphoreSlim _concurrentMessageProcessingSlot;
         private readonly IQueueListener _listener;
         private readonly int _maxAttempts;
-        private readonly BufferBlock<QueuedMessage> _queuedMessages = new BufferBlock<QueuedMessage>();
+        private readonly ActionBlock<QueuedMessage> _queuedMessages;
         private readonly TimeSpan _retryDelay;
 
         public InMemoryQueue(IQueueListener listener, QueueOptions options = default(QueueOptions))
@@ -54,7 +52,14 @@ namespace Platibus.InMemory
             var concurrencyLimit = options.ConcurrencyLimit <= 0
                 ? QueueOptions.DefaultConcurrencyLimit
                 : options.ConcurrencyLimit;
-            _concurrentMessageProcessingSlot = new SemaphoreSlim(concurrencyLimit);
+
+            _queuedMessages = new ActionBlock<QueuedMessage>(
+                msg => ProcessQueuedMessage(msg, _cancellationTokenSource.Token),
+                new ExecutionDataflowBlockOptions
+                {
+                    CancellationToken = _cancellationTokenSource.Token,
+                    MaxDegreeOfParallelism = concurrencyLimit
+                });
         }
 
         public Task Enqueue(Message message, IPrincipal senderPrincipal)
@@ -63,31 +68,6 @@ namespace Platibus.InMemory
             var queuedMessage = new QueuedMessage(message, senderPrincipal);
             return _queuedMessages.SendAsync(queuedMessage);
             // TODO: handle accepted == false
-        }
-
-        public void Init()
-        {
-            if (Interlocked.Exchange(ref _initialized, 1) == 0)
-            {
-                // ReSharper disable once UnusedVariable
-                var processingTask = ProcessQueuedMessages(_cancellationTokenSource.Token);
-            }
-        }
-
-        // ReSharper disable once UnusedMethodReturnValue.Local
-        private async Task ProcessQueuedMessages(CancellationToken cancellationToken)
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                var nextQueuedMessage = await _queuedMessages.ReceiveAsync(cancellationToken);
-
-                // We don't want to wait on this task; we want to allow concurrent processing
-                // of messages.  The semaphore will be released by the ProcessQueuedMessage
-                // method.
-
-                // ReSharper disable once UnusedVariable
-                var messageProcessingTask = ProcessQueuedMessage(nextQueuedMessage, cancellationToken);
-            }
         }
 
         // ReSharper disable once UnusedMethodReturnValue.Local
@@ -101,8 +81,6 @@ namespace Platibus.InMemory
                 var context = new InMemoryQueuedMessageContext(message, queuedMessage.SenderPrincipal);
                 cancellationToken.ThrowIfCancellationRequested();
 
-                await _concurrentMessageProcessingSlot.WaitAsync(cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
                     await _listener.MessageReceived(message, context, cancellationToken);
@@ -116,11 +94,7 @@ namespace Platibus.InMemory
                     Log.WarnFormat("Unhandled exception handling queued message {0}", ex,
                         queuedMessage.Message.Headers.MessageId);
                 }
-                finally
-                {
-                    _concurrentMessageProcessingSlot.Release();
-                }
-
+                
                 if (context.Acknowledged)
                 {
                     // TODO: Implement journaling
@@ -156,7 +130,6 @@ namespace Platibus.InMemory
             _cancellationTokenSource.Cancel();
             if (disposing)
             {
-                _concurrentMessageProcessingSlot.TryDispose();
                 _cancellationTokenSource.TryDispose();
             }
         }

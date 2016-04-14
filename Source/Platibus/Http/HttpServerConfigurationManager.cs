@@ -31,6 +31,7 @@ namespace Platibus.Http
             var configuration =
                 await PlatibusConfigurationManager.LoadConfiguration<HttpServerConfiguration>(sectionName);
             configuration.BaseUri = configSection.BaseUri;
+            configuration.ConcurrencyLimit = configSection.ConcurrencyLimit;
             configuration.AuthenticationSchemes = configSection.AuthenticationSchemes.GetFlags();
 
             var subscriptionTracking = configSection.SubscriptionTracking ?? new SubscriptionTrackingElement();

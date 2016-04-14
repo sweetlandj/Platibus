@@ -76,6 +76,14 @@ namespace Platibus.IntegrationTests
             Assert.That(elapsed, Is.LessThan(TimeSpan.FromSeconds(20)));
         }
 
+        [Test]
+        [Explicit]
+        public async Task When_Sending_10000_Test_Messages_2000_Replies_Should_Be_Handled_Within_120s()
+        {
+            var elapsed = await RunTest(10000);
+            Assert.That(elapsed, Is.LessThan(TimeSpan.FromSeconds(120)));
+        }
+
         private static async Task<TimeSpan> RunTest(int messageCount, bool durable = false)
         {
             return await With.HttpHostedBusInstances(async (platibus0, platibus1) =>

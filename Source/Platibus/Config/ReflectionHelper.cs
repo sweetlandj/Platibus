@@ -58,7 +58,7 @@ namespace Platibus.Config
 	            try
 	            {
 		            var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyFile.FullName);
-		            Log.DebugFormat("Scanning assembly {0} for concrete subtypes of {1}...", assembly.GetName().FullName,
+		            Log.TraceFormat("Scanning assembly {0} for concrete subtypes of {1}...", assembly.GetName().FullName,
 			            typeof (TBase).FullName);
 		            subtypes.AddRange(AppDomain.CurrentDomain.Load(assembly.GetName())
 			            .GetTypes()
@@ -71,7 +71,7 @@ namespace Platibus.Config
 	            }
                 catch (Exception ex)
                 {
-                    Log.WarnFormat("Error scanning assembly file {0}", ex, assemblyFile);
+                    Log.DebugFormat("Error scanning assembly file {0}", ex, assemblyFile);
                 }
             }
             return subtypes;

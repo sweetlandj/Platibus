@@ -35,5 +35,10 @@ namespace Platibus.Http
         /// messages or subscribe to topics
         /// </summary>
         IAuthorizationService AuthorizationService { get; }
+
+        /// <summary>
+        /// The maximum amount of HTTP requests to process at the same time.
+        /// </summary>
+        int ConcurrencyLimit { get; set; }
     }
 }
