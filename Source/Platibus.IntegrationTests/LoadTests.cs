@@ -78,7 +78,7 @@ namespace Platibus.IntegrationTests
 
         [Test]
         [Explicit]
-        public async Task When_Sending_10000_Test_Messages_2000_Replies_Should_Be_Handled_Within_120s()
+        public async Task When_Sending_10000_Test_Messages_10000_Replies_Should_Be_Handled_Within_120s()
         {
             var elapsed = await RunTest(10000);
             Assert.That(elapsed, Is.LessThan(TimeSpan.FromSeconds(120)));
