@@ -157,3 +157,4 @@ $RECYCLE.BIN/
 *.DotSettings
 Source/Platibus.SampleWebApp/logs/
 Source/Platibus.SampleWebApp/platibus/
+Source/.vs/
