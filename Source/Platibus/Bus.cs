@@ -172,7 +172,18 @@ namespace Platibus
                     prototypicalMessage.Headers.MessageId, endpointName, endpoint.Address);
 
                 var addressedMessage = new Message(perEndpointHeaders, prototypicalMessage.Content);
-                transportTasks.Add(_transportService.SendMessage(addressedMessage, credentials, cancellationToken));
+                if (addressedMessage.Headers.Destination == _baseUri)
+                {
+                    // We're sending to ourselves, so skip the transport
+                    Log.DebugFormat("Local delivery detected; handling message ID {0}...",
+                        prototypicalMessage.Headers.MessageId);
+
+                    transportTasks.Add(HandleMessage(addressedMessage, Thread.CurrentPrincipal));
+                }
+                else
+                {
+                    transportTasks.Add(_transportService.SendMessage(addressedMessage, credentials, cancellationToken));
+                }
             }
             await Task.WhenAll(transportTasks);
             return sentMessage;
