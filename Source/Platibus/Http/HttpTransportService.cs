@@ -20,7 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Linq;
 using Common.Logging;
 using System;
 using System.Collections.Generic;
@@ -207,13 +206,14 @@ namespace Platibus.Http
         private async Task TransportMessage(Message message, IEndpointCredentials credentials,
             CancellationToken cancellationToken = default(CancellationToken))
         {
+            HttpClient httpClient = null;
             try
             {
                 var httpContent = new StringContent(message.Content);
                 WriteHttpContentHeaders(message, httpContent);
                 var endpointBaseUri = message.Headers.Destination.WithTrailingSlash();
 
-                var httpClient = GetClient(endpointBaseUri, credentials);
+                httpClient = GetClient(endpointBaseUri, credentials);
                 var messageId = message.Headers.MessageId;
                 var urlEncondedMessageId = HttpUtility.UrlEncode(messageId);
                 var relativeUri = string.Format("message/{0}", urlEncondedMessageId);
@@ -221,9 +221,9 @@ namespace Platibus.Http
                 var postUri = new Uri(endpointBaseUri, relativeUri);
                 Log.DebugFormat("POSTing content of message ID {0} to URI {1}...", message.Headers.MessageId, postUri);
                 var httpResponseMessage = await httpClient.PostAsync(relativeUri, httpContent, cancellationToken);
-                Log.DebugFormat("Received HTTP response code {0} {1} for POST request {2}...", 
-                    (int)httpResponseMessage.StatusCode,
-                    httpResponseMessage.StatusCode.ToString("G"), 
+                Log.DebugFormat("Received HTTP response code {0} {1} for POST request {2}...",
+                    (int) httpResponseMessage.StatusCode,
+                    httpResponseMessage.StatusCode.ToString("G"),
                     postUri);
 
                 HandleHttpErrorResponse(httpResponseMessage);
@@ -257,6 +257,10 @@ namespace Platibus.Http
                 HandleCommunicationException(ex, message.Headers.Destination);
 
                 throw new TransportException(errorMessage, ex);
+            }
+            finally
+            {
+                httpClient.TryDispose();
             }
         }
 
