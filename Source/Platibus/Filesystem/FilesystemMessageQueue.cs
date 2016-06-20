@@ -56,8 +56,14 @@ namespace Platibus.Filesystem
 
             _listener = listener;
             _autoAcknowledge = options.AutoAcknowledge;
-            _maxAttempts = options.MaxAttempts <= 0 ? 10 : options.MaxAttempts;
-            _retryDelay = options.RetryDelay < TimeSpan.Zero ? TimeSpan.Zero : options.RetryDelay;
+
+            _maxAttempts = options.MaxAttempts <= 0
+                ? QueueOptions.DefaultMaxAttempts
+                : options.MaxAttempts;
+
+            _retryDelay = options.RetryDelay <= TimeSpan.Zero
+                ? TimeSpan.FromMilliseconds(QueueOptions.DefaultRetryDelay)
+                : options.RetryDelay;
 
             var concurrencyLimit = options.ConcurrencyLimit <= 0
                 ? QueueOptions.DefaultConcurrencyLimit

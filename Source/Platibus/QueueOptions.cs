@@ -30,10 +30,20 @@ namespace Platibus
     public struct QueueOptions
     {
         /// <summary>
+        /// The default maximum number of attempts
+        /// </summary>
+        public const int DefaultMaxAttempts = 10;
+
+        /// <summary>
         /// The default concurrency limit, i.e. the maximum number of concurrent worker
         /// processes that read from the same queue
         /// </summary>
         public const int DefaultConcurrencyLimit = 4;
+
+        /// <summary>
+        /// The default retry delay expressed in milliseconds
+        /// </summary>
+        public const int DefaultRetryDelay = 1000;
 
         /// <summary>
         ///     The maximum number of messages that will be processed concurrently.

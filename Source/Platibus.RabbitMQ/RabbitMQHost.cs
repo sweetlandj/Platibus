@@ -72,7 +72,7 @@ namespace Platibus.RabbitMQ
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
 
-            _baseUri = configuration.BaseUri;
+            _baseUri = configuration.BaseUri.WithoutTrailingSlash();
             _connectionManager = new ConnectionManager();
             _encoding = configuration.Encoding ?? Encoding.UTF8;
             

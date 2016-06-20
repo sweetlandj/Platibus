@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
+using Platibus.Filesystem;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -21,7 +22,7 @@ namespace Platibus.RabbitMQ
         private readonly QueueName _queueName;
         private readonly string _queueExchange;
         private readonly string _deadLetterExchange;
-
+        private readonly bool _autoAcknowledge;
         private readonly QueueName _retryQueueName;
         private readonly string _retryExchange;
 
@@ -65,18 +66,28 @@ namespace Platibus.RabbitMQ
             _connection = connection;
             _encoding = encoding ?? Encoding.UTF8;
             _ttl = options.TTL;
-            _maxAttempts = Math.Max(options.MaxAttempts, 1);
-            _retryDelay = options.RetryDelay < TimeSpan.Zero ? TimeSpan.Zero : options.RetryDelay;
-            _cancellationTokenSource = new CancellationTokenSource();
 
-            var autoAcknowledge = options.AutoAcknowledge;
-            var concurrencyLimit = Math.Max(options.ConcurrencyLimit, 1);
+            _autoAcknowledge = options.AutoAcknowledge;
+
+            _maxAttempts = options.MaxAttempts <= 0
+                ? QueueOptions.DefaultMaxAttempts
+                : options.MaxAttempts;
+
+            _retryDelay = options.RetryDelay <= TimeSpan.Zero
+                ? TimeSpan.FromMilliseconds(QueueOptions.DefaultRetryDelay)
+                : options.RetryDelay;
+
+            var concurrencyLimit = options.ConcurrencyLimit <= 0
+                ? QueueOptions.DefaultConcurrencyLimit
+                : options.ConcurrencyLimit;
+
+            _cancellationTokenSource = new CancellationTokenSource();
+            
             _consumers = new DurableConsumer[concurrencyLimit];
             for (var i = 0; i < _consumers.Length; i++)
             {
                 var consumerTag = _queueName + "_" + i;
-                _consumers[i] = new DurableConsumer(_connection, queueName, HandleDelivery, consumerTag,
-                    autoAcknowledge);
+                _consumers[i] = new DurableConsumer(_connection, queueName, HandleDelivery, consumerTag, _autoAcknowledge);
             }
         }
 
@@ -155,10 +166,8 @@ namespace Platibus.RabbitMQ
             try
             {
                 // Put on the thread pool to avoid deadlock
-                var acknowleged = Task.Run(() => DispatchToListener(delivery, cancellationToken),
-                    cancellationToken).Result;
-
-                if (acknowleged)
+                var acknowleged = Task.Run(async () => await DispatchToListener(delivery, cancellationToken), cancellationToken).Result;
+                if (acknowleged || _autoAcknowledge)
                 {
                     Log.DebugFormat(
                         "Acknowledging message {0} from RabbitMQ queue \"{1}\" on channel {2}...",
@@ -210,17 +219,29 @@ namespace Platibus.RabbitMQ
 
         private async Task<bool> DispatchToListener(BasicDeliverEventArgs delivery, CancellationToken cancellationToken)
         {
-            var messageBody = _encoding.GetString(delivery.Body);
-            using (var reader = new StringReader(messageBody))
-            using (var messageReader = new MessageReader(reader))
+            try
             {
-                var principal = await messageReader.ReadPrincipal();
-                var message = await messageReader.ReadMessage();
+                var messageBody = _encoding.GetString(delivery.Body);
+                using (var reader = new StringReader(messageBody))
+                using (var messageReader = new MessageReader(reader))
+                {
+                    var principal = await messageReader.ReadPrincipal();
+                    var message = await messageReader.ReadMessage();
 
-                var context = new RabbitMQQueuedMessageContext(message.Headers, principal);
-                await _listener.MessageReceived(message, context, cancellationToken);
-                return context.Acknowledged;
+                    var context = new RabbitMQQueuedMessageContext(message.Headers, principal);
+                    await _listener.MessageReceived(message, context, cancellationToken);
+                    return context.Acknowledged;
+                }
             }
+            catch (MessageFileFormatException ex)
+            {
+                Log.ErrorFormat("Unable to read invalid or corrupt message", ex);
+            }
+            catch (Exception ex)
+            {
+                Log.WarnFormat("Unhandled exception handling queued message", ex);
+            }
+            return false;
         }
 
         /// <summary>

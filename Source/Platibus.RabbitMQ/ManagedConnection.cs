@@ -26,12 +26,18 @@ namespace Platibus.RabbitMQ
         {
             if (uri == null) throw new ArgumentNullException("uri");
 
+            // Trailing slashes causes errors when connecting to RabbitMQ
+            uri = uri.WithoutTrailingSlash();
+
             var managedConnectionIdBuilder = new UriBuilder(uri)
             {
-                // Sanitize credentials
+                // Sanitize credentials in managed connection ID.  This value
+                // is output in log messages for diagnostics, so we don't want
+                // or need the credentials displayed.
                 UserName = "",
                 Password = ""
             };
+
             _managedConnectionId = managedConnectionIdBuilder.Uri.ToString();
             _connectionFactory = new ConnectionFactory {Uri = uri.ToString()};
 

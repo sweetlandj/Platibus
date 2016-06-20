@@ -27,6 +27,21 @@ namespace Platibus
 	    }
 
         /// <summary>
+		/// Ensures that the path of the specified <paramref name="uri"/> contains a trailing slash
+		/// </summary>
+		/// <param name="uri">The URI</param>
+		/// <returns>Returns the specified URI with a trailing slash</returns>
+	    public static Uri WithoutTrailingSlash(this Uri uri)
+        {
+            if (uri == null) return null;
+            if (!uri.AbsolutePath.EndsWith("/")) return uri;
+            return new UriBuilder(uri)
+            {
+                Path = uri.AbsolutePath.TrimEnd('/')
+            }.Uri;
+        }
+
+        /// <summary>
         /// Attempts to safely cast <paramref name="obj"/> to <see cref="IDisposable"/>
         /// and dispose it, catching and quietly logging exceptions.
         /// </summary>

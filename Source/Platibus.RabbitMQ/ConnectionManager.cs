@@ -24,6 +24,7 @@ namespace Platibus.RabbitMQ
         {
             CheckDisposed();
             if (uri == null) throw new ArgumentNullException("uri");
+            uri = uri.WithoutTrailingSlash();
             return _managedConnections.GetOrAdd(uri, CreateManagedConnection);
         }
 

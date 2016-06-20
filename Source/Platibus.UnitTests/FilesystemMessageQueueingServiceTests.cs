@@ -161,8 +161,10 @@ namespace Platibus.UnitTests
                 await fsQueueingService
                     .CreateQueue(queueName, mockListener.Object, new QueueOptions
                     {
-                        MaxAttempts = 2, // Prevent message from being sent to the DLQ,
-                        RetryDelay = TimeSpan.FromSeconds(30)
+                        // Prevent message from being sent to the DLQ
+                        MaxAttempts = 100, 
+                        // Short retry delay to message handler is called more than once
+                        RetryDelay = TimeSpan.FromMilliseconds(250) 
                     }, ct);
 
                 await fsQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal, ct);
@@ -177,7 +179,7 @@ namespace Platibus.UnitTests
             var messageEqualityComparer = new MessageEqualityComparer();
             mockListener.Verify(x =>
                 x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
-                    It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
+                    It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.AtLeast(2));
 
             var queuedMessages = queueDir.EnumerateFiles()
                 .Select(f => new MessageFile(f))
