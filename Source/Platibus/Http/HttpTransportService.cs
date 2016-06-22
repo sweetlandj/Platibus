@@ -366,11 +366,12 @@ namespace Platibus.Http
         {
             if (endpoint == null) throw new ArgumentNullException("endpoint");
             if (topic == null) throw new ArgumentNullException("topic");
-            
+
+            HttpClient httpClient = null;
             try
             {
-				var endpointBaseUri = endpoint.Address.WithTrailingSlash();
-				var httpClient = GetClient(endpointBaseUri, endpoint.Credentials);
+                var endpointBaseUri = endpoint.Address.WithTrailingSlash();
+                httpClient = GetClient(endpointBaseUri, endpoint.Credentials);
 
                 var urlSafeTopicName = HttpUtility.UrlEncode(topic);
                 var relativeUri = string.Format("topic/{0}/subscriber?uri={1}", urlSafeTopicName, _baseUri);
@@ -379,7 +380,8 @@ namespace Platibus.Http
                     relativeUri += "&ttl=" + ttl.TotalSeconds;
                 }
 
-                var httpResponseMessage = await httpClient.PostAsync(relativeUri, new StringContent(""), cancellationToken);
+                var httpResponseMessage =
+                    await httpClient.PostAsync(relativeUri, new StringContent(""), cancellationToken);
                 HandleHttpErrorResponse(httpResponseMessage);
             }
             catch (TransportException)
@@ -399,6 +401,10 @@ namespace Platibus.Http
                 HandleCommunicationException(ex, endpoint.Address);
 
                 throw new TransportException(errorMessage, ex);
+            }
+            finally
+            {
+                httpClient.TryDispose();
             }
         }
 

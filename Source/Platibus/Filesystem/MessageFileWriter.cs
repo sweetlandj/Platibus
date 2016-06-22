@@ -123,6 +123,7 @@ namespace Platibus.Filesystem
             GC.SuppressFinalize(this);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_writer")]
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)

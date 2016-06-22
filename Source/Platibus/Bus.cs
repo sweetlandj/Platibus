@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Security.Principal;
 using System.Threading;
@@ -480,6 +481,8 @@ namespace Platibus
         /// of the <paramref name="disposing"/> parameter; managed resources
         /// should only be disposed if <paramref name="disposing"/> is <c>true</c>
         /// </remarks>
+        [SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_replyHub")]
+        [SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
         protected virtual void Dispose(bool disposing)
         {
             _cancellationTokenSource.Cancel();

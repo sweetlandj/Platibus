@@ -108,6 +108,7 @@ namespace Platibus.SQLite
             return op.Task;
         }
 
+        [SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
         protected override void Dispose(bool disposing)
         {
             if (disposing)

@@ -268,6 +268,7 @@ namespace Platibus.Filesystem
         /// <remarks>
         /// This method will not be called more than once
         /// </remarks>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_fileAccess")]
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)
