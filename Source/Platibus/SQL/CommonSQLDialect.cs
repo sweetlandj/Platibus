@@ -11,6 +11,9 @@
     /// </remarks>
     public abstract class CommonSQLDialect : ISQLDialect
     {
+        private string _startDateParameterName;
+        private string _endDateParameterName;
+
         /// <summary>
         /// The dialect-specific command used to create the objects (tables, indexes,
         /// stored procedures, views, etc.) needed to store queued messages in the 
@@ -88,6 +91,35 @@ FROM [PB_QueuedMessages]
 WHERE [QueueName]=@QueueName 
 AND [Acknowledged] IS NULL
 AND [Abandoned] IS NULL"; }
+        }
+
+        /// <summary>
+        /// The dialect-specific command used to select the list of queued messages
+        /// in a particular queue
+        /// </summary>
+        public virtual string SelectAbandonedMessagesCommand
+        {
+            get { return @"
+SELECT 
+    [MessageId], 
+    [QueueName], 
+    [MessageName], 
+    [Origination], 
+    [Destination], 
+    [ReplyTo], 
+    [Expires], 
+    [ContentType], 
+    [SenderPrincipal], 
+    [Headers], 
+    [MessageContent], 
+    [Attempts], 
+    [Acknowledged], 
+    [Abandoned]
+FROM [PB_QueuedMessages]
+WHERE [QueueName]=@QueueName 
+AND [Acknowledged] IS NULL
+AND [Abandoned] >= @StartDate
+AND [Abandoned] < @EndDate"; }
         }
 
         /// <summary>
@@ -305,5 +337,15 @@ AND [Subscriber]=@Subscriber"; }
         {
             get { return "@CurrentDate"; }
         }
+
+        /// <summary>
+        /// The name of the parameter used to specify the start date in queries based on date ranges
+        /// </summary>
+        public string StartDateParameterName { get { return "@StartDate"; } }
+
+        /// <summary>
+        /// The name of the parameter used to specify the end date in queries based on date ranges
+        /// </summary>
+        public string EndDateParameterName { get { return "@EndDate"; } }
     }
 }

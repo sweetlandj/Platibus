@@ -250,6 +250,80 @@ namespace Platibus.UnitTests
         }
 
         [Test]
+        public async Task Given_Listener_Throws_MaxAttempts_Exceeded_Then_Message_Should_Be_Dead()
+        {
+            var message = new Message(new MessageHeaders
+            {
+                {HeaderName.ContentType, "text/plain"},
+                {HeaderName.MessageId, Guid.NewGuid().ToString()}
+            }, "Hello, world!");
+
+            var listenerCalledEvent = new ManualResetEvent(false);
+            var tempDir = GetTempDirectory();
+            var queueName = new QueueName(Guid.NewGuid().ToString());
+            var queuePath = Path.Combine(tempDir.FullName, queueName);
+            var queueDir = new DirectoryInfo(queuePath);
+            if (!queueDir.Exists)
+            {
+                queueDir.Create();
+            }
+
+            var mockListener = new Mock<IQueueListener>();
+            mockListener.Setup(
+                x =>
+                    x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
+                        It.IsAny<CancellationToken>()))
+                .Callback<Message, IQueuedMessageContext, CancellationToken>((msg, ctx, ct) =>
+                {
+                    listenerCalledEvent.Set();
+                    throw new Exception();
+                });
+
+            using (var fsQueueingService = new FilesystemMessageQueueingService(tempDir))
+            using (var cts = new CancellationTokenSource())
+            {
+                var ct = cts.Token;
+                fsQueueingService.Init();
+
+                await fsQueueingService.CreateQueue(queueName, mockListener.Object, new QueueOptions
+                {
+                    AutoAcknowledge = true,
+                    MaxAttempts = 3,
+                    RetryDelay = TimeSpan.FromMilliseconds(250)
+                }, ct);
+
+                await fsQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal, ct);
+                await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(1));
+
+                // The listener is called before the file is deleted, so there is a possible
+                // race condition here.  Wait for a second to allow the delete to take place
+                // before enumerating the files to see that they were actually deleted.
+                await Task.Delay(TimeSpan.FromSeconds(1), ct);
+            }
+
+            var messageEqualityComparer = new MessageEqualityComparer();
+            mockListener.Verify(x =>
+                x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                    It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+
+            var queuedMessages = queueDir.EnumerateFiles()
+                .Select(f => new MessageFile(f))
+                .ToList();
+
+            Assert.That(queuedMessages, Is.Empty);
+
+            var deadLetterPath = Path.Combine(queuePath, "dead");
+            var deadLetterDir = new DirectoryInfo(deadLetterPath);
+            Assert.That(deadLetterDir.Exists, Is.True);
+
+            var deadMessages = deadLetterDir.EnumerateFiles()
+                .Select(f => new MessageFile(f))
+                .ToList();
+
+            Assert.That(deadMessages, Is.Not.Empty);
+        }
+
+        [Test]
         public async Task Given_Auto_Acknowledge_Queue_When_Listener_Throws_Then_Message_Should_Not_Be_Deleted()
         {
             var message = new Message(new MessageHeaders
@@ -289,8 +363,10 @@ namespace Platibus.UnitTests
                     .CreateQueue(queueName, mockListener.Object, new QueueOptions
                     {
                         AutoAcknowledge = true,
-                        MaxAttempts = 2, // So the message doesn't get moved to the DLQ
-                        RetryDelay = TimeSpan.FromSeconds(30)
+                        // Prevent message from being sent to the DLQ
+                        MaxAttempts = 100,
+                        // Short retry delay to message handler is called more than once
+                        RetryDelay = TimeSpan.FromMilliseconds(250)
                     }, ct);
 
                 await fsQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal, ct);
@@ -309,7 +385,7 @@ namespace Platibus.UnitTests
             var messageEqualityComparer = new MessageEqualityComparer();
             mockListener.Verify(x =>
                 x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
-                    It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
+                    It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.AtLeast(2));
 
             var queuedMessages = queueDir.EnumerateFiles()
                 .Select(f => new MessageFile(f))

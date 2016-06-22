@@ -43,6 +43,12 @@
         string SelectQueuedMessagesCommand { get; }
 
         /// <summary>
+        /// The dialect-specific command used to select the list of abandoned messages
+        /// in a particular queue
+        /// </summary>
+        string SelectAbandonedMessagesCommand { get; }
+
+        /// <summary>
         /// The dialect-specific command used to update the state of a queued message
         /// </summary>
         string UpdateQueuedMessageCommand { get; }
@@ -168,5 +174,17 @@
         /// on the server when selecting active subscriptions
         /// </summary>
         string CurrentDateParameterName { get; }
+
+        /// <summary>
+        /// The name of the parameter used to specify the start date in queries based on date ranges
+        /// </summary>
+        string StartDateParameterName { get; }
+
+        /// <summary>
+        /// The name of the parameter used to specify the end date in queries based on date ranges
+        /// </summary>
+        string EndDateParameterName { get; }
     }
+
+
 }

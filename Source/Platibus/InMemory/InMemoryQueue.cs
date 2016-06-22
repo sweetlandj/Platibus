@@ -106,6 +106,7 @@ namespace Platibus.InMemory
                     // TODO: Implement journaling
                     break;
                 }
+
                 if (attemptsRemaining > 0)
                 {
                     await Task.Delay(_retryDelay, cancellationToken);

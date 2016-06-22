@@ -232,6 +232,70 @@ namespace Platibus.UnitTests
         }
 
         [Test]
+        public async Task Given_Listener_Throws_MaxAttempts_Exceeded_Then_Message_Should_Be_Dead()
+        {
+            var message = new Message(new MessageHeaders
+            {
+                {HeaderName.ContentType, "text/plain"},
+                {HeaderName.MessageId, Guid.NewGuid().ToString()}
+            }, "Hello, world!");
+
+            var listenerCalledEvent = new ManualResetEvent(false);
+            var queueName = new QueueName(Guid.NewGuid().ToString());
+            var deadQueueName = new QueueName(Guid.NewGuid().ToString());
+
+            var mockListener = new Mock<IQueueListener>();
+            mockListener.Setup(x =>
+                x.MessageReceived(It.IsAny<Message>(), It.IsAny<IQueuedMessageContext>(),
+                    It.IsAny<CancellationToken>()))
+                .Callback<Message, IQueuedMessageContext, CancellationToken>(
+                    (msg, ctx, ct) =>
+                    {
+                        listenerCalledEvent.Set();
+                        throw new Exception("Test exception");
+                    })
+                .Returns(Task.FromResult(true));
+
+            var cts = new CancellationTokenSource();
+            var rmqQueueingService = new RabbitMQMessageQueueingService(RabbitMQUri);
+            try
+            {
+                var ct = cts.Token;
+                await rmqQueueingService
+                    .CreateQueue(queueName, mockListener.Object, new QueueOptions
+                    {
+                        MaxAttempts = 3,
+                        RetryDelay = TimeSpan.FromMilliseconds(100)
+                    }, ct);
+
+                CreateQueue(deadQueueName, queueName.GetDeadLetterExchangeName());
+
+                await rmqQueueingService.EnqueueMessage(queueName, message, Thread.CurrentPrincipal, ct);
+                await listenerCalledEvent.WaitOneAsync(TimeSpan.FromSeconds(3));
+
+                // The listener is called before the message is published to the retry queue, 
+                // so there is a possible race condition here.  Wait for a second to allow the 
+                // publish to take place before checking the retry queue depth.
+                await Task.Delay(TimeSpan.FromSeconds(1), ct);
+
+                var messageEqualityComparer = new MessageEqualityComparer();
+                mockListener.Verify(x =>
+                    x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                        It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+
+                Assert.That(GetQueueDepth(queueName), Is.EqualTo(0));
+                Assert.That(GetQueueDepth(deadQueueName), Is.EqualTo(1));
+            }
+            finally
+            {
+                rmqQueueingService.TryDispose();
+                cts.TryDispose();
+                DeleteQueue(queueName);
+                DeleteQueue(deadQueueName);
+            }
+        }
+
+        [Test]
         public async Task Given_Auto_Acknowledge_Queue_When_Not_Acknowledged_Then_Message_Should_Be_Deleted()
         {
             var listenerCalledEvent = new ManualResetEvent(false);
@@ -333,6 +397,18 @@ namespace Platibus.UnitTests
                 channel.ExchangeDeleteNoWait(queueExchange, false);
                 channel.ExchangeDeleteNoWait(retryExchange, false);
                 channel.ExchangeDeleteNoWait(deadLetterExchange, false);
+            }
+        }
+
+        private static void CreateQueue(QueueName queueName, string exchangeName)
+        {
+            var connectionFactory = new ConnectionFactory { Uri = RabbitMQUri.ToString() };
+            using (var connection = connectionFactory.CreateConnection())
+            using (var channel = connection.CreateModel())
+            {
+                var queue = RabbitMQHelper.ReplaceInvalidQueueNameCharacters(queueName);
+                channel.QueueDeclare(queue, true, false, false, null);
+                channel.QueueBind(queue, exchangeName, "", null);
             }
         }
 

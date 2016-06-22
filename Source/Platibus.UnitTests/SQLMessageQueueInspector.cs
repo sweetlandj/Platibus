@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,6 +24,11 @@ namespace Platibus.UnitTests
         public Task<IEnumerable<SQLQueuedMessage>> EnumerateMessages()
         {
             return SelectQueuedMessages();
+        }
+
+        public Task<IEnumerable<SQLQueuedMessage>> EnumerateAbandonedMessages(DateTime startDate, DateTime endDate)
+        {
+            return SelectAbandonedMessages(startDate, endDate);
         }
 
         private class NoopQueueListener : IQueueListener

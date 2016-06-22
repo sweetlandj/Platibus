@@ -286,6 +286,55 @@ namespace Platibus.SQL
         }
 
         /// <summary>
+        /// Selects all abandoned messages from the SQL database
+        /// </summary>
+        /// <returns>Returns a task that completes when all records have been selected and whose
+        /// result is the enumerable sequence of the selected records</returns>
+        [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
+        protected virtual Task<IEnumerable<SQLQueuedMessage>> SelectAbandonedMessages(DateTime startDate, DateTime endDate)
+        {
+            var queuedMessages = new List<SQLQueuedMessage>();
+            var connection = _connectionProvider.GetConnection();
+            try
+            {
+                using (var scope = new TransactionScope(TransactionScopeOption.Required))
+                {
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandType = CommandType.Text;
+                        command.CommandText = _dialect.SelectAbandonedMessagesCommand;
+                        command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
+                        command.SetParameter(_dialect.StartDateParameterName, startDate);
+                        command.SetParameter(_dialect.EndDateParameterName, endDate);
+
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                var messageContent = reader.GetString("MessageContent");
+                                var headers = DeserializeHeaders(reader.GetString("Headers"));
+                                var senderPrincipal = DeserializePrincipal(reader.GetString("SenderPrincipal"));
+                                var message = new Message(headers, messageContent);
+                                var attempts = reader.GetInt("Attempts").GetValueOrDefault(0);
+                                var queuedMessage = new SQLQueuedMessage(message, senderPrincipal, attempts);
+                                queuedMessages.Add(queuedMessage);
+                            }
+                        }
+                    }
+                    scope.Complete();
+                }
+            }
+            finally
+            {
+                _connectionProvider.ReleaseConnection(connection);
+            }
+
+            // SQL calls are not async to avoid the need for TransactionAsyncFlowOption
+            // and dependency on .NET 4.5.1 and later
+            return Task.FromResult(queuedMessages.AsEnumerable());
+        }
+
+        /// <summary>
         /// Updates an existing queued message in the SQL database
         /// </summary>
         /// <param name="queuedMessage">The queued message to update</param>
