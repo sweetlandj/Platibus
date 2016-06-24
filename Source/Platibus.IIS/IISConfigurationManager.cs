@@ -39,6 +39,7 @@ namespace Platibus.IIS
 
             var configuration = await PlatibusConfigurationManager.LoadConfiguration<IISConfiguration>(sectionName, processConfigurationHooks);
             configuration.BaseUri = configSection.BaseUri;
+            configuration.BypassTransportLocalDestination = configSection.BypassTransportLocalDestination;
 
             var subscriptionTracking = configSection.SubscriptionTracking ?? new SubscriptionTrackingElement();
             configuration.SubscriptionTrackingService = await InitSubscriptionTrackingService(subscriptionTracking);

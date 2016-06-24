@@ -29,5 +29,11 @@ namespace Platibus.IIS
         /// messages or subscribe to topics
         /// </summary>
         IAuthorizationService AuthorizationService { get; }
+
+        /// <summary>
+        /// Whether the transport service can be bypassed when delivering messages
+        /// whose destination and origination is the same.
+        /// </summary>
+        bool BypassTransportLocalDestination { get; }
     }
 }

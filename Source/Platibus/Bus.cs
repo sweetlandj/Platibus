@@ -137,6 +137,12 @@ namespace Platibus
             }
         }
 
+        private async Task TransportMessage(Message message, IEndpointCredentials credentials,
+            CancellationToken cancellationToken)
+        {
+            await _transportService.SendMessage(message, credentials, cancellationToken);
+        }
+
         /// <summary>
         ///     Sends a <paramref name="content" /> to default configured endpoints.
         /// </summary>
@@ -173,18 +179,7 @@ namespace Platibus
                     prototypicalMessage.Headers.MessageId, endpointName, endpoint.Address);
 
                 var addressedMessage = new Message(perEndpointHeaders, prototypicalMessage.Content);
-                if (addressedMessage.Headers.Destination == _baseUri)
-                {
-                    // We're sending to ourselves, so skip the transport
-                    Log.DebugFormat("Local delivery detected; handling message ID {0}...",
-                        prototypicalMessage.Headers.MessageId);
-
-                    transportTasks.Add(HandleMessage(addressedMessage, Thread.CurrentPrincipal));
-                }
-                else
-                {
-                    transportTasks.Add(_transportService.SendMessage(addressedMessage, credentials, cancellationToken));
-                }
+                transportTasks.Add(TransportMessage(addressedMessage, credentials, cancellationToken));
             }
             await Task.WhenAll(transportTasks);
             return sentMessage;
@@ -220,7 +215,7 @@ namespace Platibus
             // Create the sent message before transporting it in order to ensure that the
             // reply stream is cached before any replies arrive.
             var sentMessage = _replyHub.CreateSentMessage(message);
-            await _transportService.SendMessage(message, credentials, cancellationToken);
+            await TransportMessage(message, credentials, cancellationToken);
             return sentMessage;
         }
 
@@ -256,7 +251,7 @@ namespace Platibus
             // Create the sent message before transporting it in order to ensure that the
             // reply stream is cached before any replies arrive.
             var sentMessage = _replyHub.CreateSentMessage(message);
-            await _transportService.SendMessage(message, credentials, cancellationToken);
+            await TransportMessage(message, credentials, cancellationToken);
             return sentMessage;
         }
 
@@ -355,7 +350,7 @@ namespace Platibus
                 RelatedTo = messageContext.Headers.MessageId
             };
             var replyMessage = BuildMessage(replyContent, headers, options);
-            await _transportService.SendMessage(replyMessage, credentials, cancellationToken);
+            await TransportMessage(replyMessage, credentials, cancellationToken);
         }
 
         /// <summary>

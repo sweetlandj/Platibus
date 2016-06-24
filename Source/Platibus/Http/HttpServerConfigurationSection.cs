@@ -17,6 +17,7 @@ namespace Platibus.Http
         private const string AuthenticationSchemesPropertyName = "authenticationSchemes";
         private const string SubscriptionTrackingPropertyName = "subscriptionTracking";
         private const string QueueingPropertyName = "queueing";
+        private const string BypassTransportLocalDestinationPropertyName = "bypassTransportLocalDestination";
 
         /// <summary>
         /// The base URI for the HTTP server (i.e. the address to which the HTTP
@@ -67,6 +68,17 @@ namespace Platibus.Http
         {
             get { return (QueueingElement) base[QueueingPropertyName]; }
             set { base[QueueingPropertyName] = value; }
+        }
+
+        /// <summary>
+        /// Whether the transport service can be bypassed when delivering messages
+        /// whose destination and origination is the same.
+        /// </summary>
+        [ConfigurationProperty(BypassTransportLocalDestinationPropertyName, IsRequired = false, DefaultValue = false)]
+        public bool BypassTransportLocalDestination
+        {
+            get { return (bool)base[BypassTransportLocalDestinationPropertyName]; }
+            set { base[BypassTransportLocalDestinationPropertyName] = value; }
         }
     }
 }

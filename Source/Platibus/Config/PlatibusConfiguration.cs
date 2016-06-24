@@ -112,7 +112,7 @@ namespace Platibus.Config
 	    /// </summary>
 	    public string DefaultContentType { get; set; }
 
-	    /// <summary>
+        /// <summary>
         /// Initializes a new <see cref="PlatibusConfiguration"/> instance with
         /// the default message naming and serialization services.
         /// </summary>

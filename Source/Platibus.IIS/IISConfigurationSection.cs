@@ -9,6 +9,7 @@ namespace Platibus.IIS
         private const string BaseUriPropertyName = "baseUri";
         private const string SubscriptionTrackingPropertyName = "subscriptionTracking";
         private const string QueueingPropertyName = "queueing";
+        private const string BypassTransportLocalDestinationPropertyName = "bypassTransportLocalDestination";
 
         [ConfigurationProperty(BaseUriPropertyName)]
         public Uri BaseUri
@@ -29,6 +30,17 @@ namespace Platibus.IIS
         {
             get { return (QueueingElement) base[QueueingPropertyName]; }
             set { base[QueueingPropertyName] = value; }
+        }
+
+        /// <summary>
+        /// Whether the transport service can be bypassed when delivering messages
+        /// whose destination and origination is the same.
+        /// </summary>
+        [ConfigurationProperty(BypassTransportLocalDestinationPropertyName, IsRequired = false, DefaultValue = false)]
+        public bool BypassTransportLocalDestination
+        {
+            get { return (bool)base[BypassTransportLocalDestinationPropertyName]; }
+            set { base[BypassTransportLocalDestinationPropertyName] = value; }
         }
     }
 }

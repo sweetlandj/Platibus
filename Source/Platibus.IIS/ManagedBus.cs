@@ -50,11 +50,23 @@ namespace Platibus.IIS
             _subscriptionTrackingService = _configuration.SubscriptionTrackingService;
             _messageQueueingService = _configuration.MessageQueueingService;
             _messageJournalingService = _configuration.MessageJournalingService;
+
             var endpoints = _configuration.Endpoints;
-            _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, _messageJournalingService, _subscriptionTrackingService);
+            _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, 
+                _messageJournalingService, _subscriptionTrackingService,
+                _configuration.BypassTransportLocalDestination, HandleMessage);
+
             _bus = new Bus(_configuration, _baseUri, _transportService, _messageQueueingService);
+
             await _transportService.Init(cancellationToken);
             await _bus.Init(cancellationToken);
+        }
+
+        private async Task HandleMessage(Message message, CancellationToken cancellationToken)
+        {
+            await _initialization;
+            var principal = Thread.CurrentPrincipal;
+            await _bus.HandleMessage(message, principal);
         }
 
         /// <summary>

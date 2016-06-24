@@ -46,6 +46,8 @@ namespace Platibus.Http
         private readonly IMessageQueueingService _messageQueueingService;
         private readonly IMessageJournalingService _messageJournalingService;
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
+        private readonly bool _bypassTransportLocalDestination;
+        private readonly Func<Message, CancellationToken, Task> _handleMessage;
         private readonly QueueName _outboundQueueName;
 
         /// <summary>
@@ -58,14 +60,24 @@ namespace Platibus.Http
         /// sent</param>
         /// <param name="subscriptionTrackingService">The service used to track subscriptions to
         /// local topics</param>
+        /// <param name="bypassTransportLocalDestination">Whether to bypass HTTP transport and
+        /// instead pass messages to the supplied <paramref name="handleMessage"/> delegate for
+        /// messages whose destinations are equal to the <paramref name="baseUri"/></param>
+        /// <param name="handleMessage">A delegate used to handle messages locally rather than
+        /// incurring the costs of sending them over HTTP if 
+        /// <paramref name="bypassTransportLocalDestination"/> is <c>true</c></param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="baseUri"/>, 
         /// <paramref name="messageQueueingService"/>, or <paramref name="subscriptionTrackingService"/>
         /// are <c>null</c></exception>
-        public HttpTransportService(Uri baseUri, IEndpointCollection endpoints, IMessageQueueingService messageQueueingService, IMessageJournalingService messageJournalingService, ISubscriptionTrackingService subscriptionTrackingService)
+        public HttpTransportService(Uri baseUri, IEndpointCollection endpoints, IMessageQueueingService messageQueueingService, IMessageJournalingService messageJournalingService, ISubscriptionTrackingService subscriptionTrackingService, bool bypassTransportLocalDestination = false, Func<Message, CancellationToken, Task> handleMessage = null)
         {
             if (baseUri == null) throw new ArgumentNullException("baseUri");
             if (messageQueueingService == null) throw new ArgumentNullException("messageQueueingService");
             if (subscriptionTrackingService == null) throw new ArgumentNullException("subscriptionTrackingService");
+            if (bypassTransportLocalDestination && handleMessage == null)
+            {
+                throw new ArgumentNullException("handleMessage", "A message handler is required if bypassTransportLocalDestination is true");
+            }
 
             _baseUri = baseUri.WithTrailingSlash();
             _endpoints = endpoints == null
@@ -75,6 +87,8 @@ namespace Platibus.Http
             _messageQueueingService = messageQueueingService;
             _messageJournalingService = messageJournalingService;
             _subscriptionTrackingService = subscriptionTrackingService;
+            _bypassTransportLocalDestination = bypassTransportLocalDestination;
+            _handleMessage = handleMessage;
             _outboundQueueName = "Outbound";
         }
 
@@ -154,6 +168,7 @@ namespace Platibus.Http
 
             foreach (var subscriber in subscribers)
             {
+                
                 IEndpointCredentials subscriberCredentials = null;
                 IEndpoint subscriberEndpoint;
                 if (_endpoints.TryGetEndpointByAddress(subscriber, out subscriberEndpoint))
@@ -209,14 +224,21 @@ namespace Platibus.Http
             HttpClient httpClient = null;
             try
             {
+                var endpointBaseUri = message.Headers.Destination.WithTrailingSlash();
+                if (_bypassTransportLocalDestination && endpointBaseUri == _baseUri)
+                {
+                    Log.DebugFormat("Handling local delivery of message ID {0} to destination {1}...", message.Headers.MessageId, message.Headers.Destination);
+                    await _handleMessage(message, cancellationToken);
+                    return;
+                }
+
                 var httpContent = new StringContent(message.Content);
                 WriteHttpContentHeaders(message, httpContent);
-                var endpointBaseUri = message.Headers.Destination.WithTrailingSlash();
-
+                
                 httpClient = GetClient(endpointBaseUri, credentials);
                 var messageId = message.Headers.MessageId;
-                var urlEncondedMessageId = HttpUtility.UrlEncode(messageId);
-                var relativeUri = string.Format("message/{0}", urlEncondedMessageId);
+                var urlEncodedMessageId = HttpUtility.UrlEncode(messageId);
+                var relativeUri = string.Format("message/{0}", urlEncodedMessageId);
 
                 var postUri = new Uri(endpointBaseUri, relativeUri);
                 Log.DebugFormat("POSTing content of message ID {0} to URI {1}...", message.Headers.MessageId, postUri);

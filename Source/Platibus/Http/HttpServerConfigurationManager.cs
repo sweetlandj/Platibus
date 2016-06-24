@@ -33,6 +33,7 @@ namespace Platibus.Http
             configuration.BaseUri = configSection.BaseUri;
             configuration.ConcurrencyLimit = configSection.ConcurrencyLimit;
             configuration.AuthenticationSchemes = configSection.AuthenticationSchemes.GetFlags();
+            configuration.BypassTransportLocalDestination = configSection.BypassTransportLocalDestination;
 
             var subscriptionTracking = configSection.SubscriptionTracking ?? new SubscriptionTrackingElement();
             configuration.SubscriptionTrackingService = await InitSubscriptionTrackingService(subscriptionTracking);

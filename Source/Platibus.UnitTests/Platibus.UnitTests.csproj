@@ -99,6 +99,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BusSendTests.cs" />
     <Compile Include="ClaimsPrincipalEqualityComparer.cs" />
     <Compile Include="DataContractMessageNamingServiceTests.cs" />
     <Compile Include="DefaultMessageNamingServiceTests.cs" />

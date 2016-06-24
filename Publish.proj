@@ -1,0 +1,91 @@
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+	<!-- ================================================================================================================
+    Customization.  This section contains properties that can be used to customize the script to work with most projects.
+    ================================================================================================================= -->
+
+	<!-- Task import customizations.  These paths may need to be tweaked depending on where the MSBuld Extension Pack and
+    Community Tasks are stored relative to the project directory. -->
+	<PropertyGroup>
+		<RepoDir>$(MSBuildProjectDirectory)\</RepoDir>
+		<SolutionDir>$(RepoDir)Source\</SolutionDir>
+		<NuGetExe>$(SolutionDir).nuget\NuGet.exe</NuGetExe>
+	</PropertyGroup>
+
+	<!-- Packaging and publication customizations.  These paths can be tweaked to control where packages are built and
+    published. -->
+	<PropertyGroup Condition="'$(Configuration)' == ''">
+		<Configuration>Release</Configuration>
+	</PropertyGroup>
+	<PropertyGroup>
+		<DistDir>$(RepoDir)Dist\$(Configuration)\</DistDir>
+		<TempDir>$(RepoDir)Temp\</TempDir>
+	</PropertyGroup>
+
+	<!-- ================================================================================================================
+    Targets.  Customizations should not be required below this point.
+    ================================================================================================================= -->
+
+	<Target Name="Info">
+		<Message Text="Configuration: $(Configuration)" Importance="high"/>
+		<Message Text="DryRun:        Yes" Importance="high" Condition="'$(DryRun)' != ''"/>
+		<Message Text="DryRun:        No" Importance="high" Condition="'$(DryRun)' == ''"/>
+		<Message Text="DistDir:       $(DistDir)" Importance="high"/>
+		<Message Text="TempDir:       $(TempDir)" Importance="high"/>
+	</Target>
+
+	<Target Name="RestorePackages">
+		<Exec Command="&quot;$(NuGetExe)&quot; restore &quot;$(SolutionDir)Platibus.sln&quot;" />
+	</Target>
+	
+	<Target Name="Build" DependsOnTargets="BuildAll"/>
+
+	<Target Name="BuildAll" DependsOnTargets="BuildSolution; BuildPackages"/>
+
+	<Target Name="Publish" DependsOnTargets="Build; PublishAll"/>
+
+	<Target Name="PublishAll" DependsOnTargets="PublishPackages"/>
+
+	<Target Name="Clean">
+		<ItemGroup>
+			<PackageBinaries Include="$(SolutionDir)**\bin\$(Configuration)\*.nupkg"/>
+		</ItemGroup>
+		<Delete Files="@(PackageBinaries)"/>
+		<RemoveDir Directories="$(TempDir)" Condition="Exists('$(TempDir)')" />
+		<RemoveDir Directories="$(DistDir)" Condition="Exists('$(DistDir)')" />
+	</Target>
+
+	<Target Name="Prepare">
+		<MakeDir Directories="$(DistDir)" />
+		<MakeDir Directories="$(TempDir)" />
+	</Target>
+
+	<Target Name="BuildSolution" DependsOnTargets="RestorePackages">
+		<ItemGroup>
+			<SolutionFile Include="$(SolutionDir)Platibus.sln"/>
+		</ItemGroup>
+		<Message Text="MSBuild @(SolutionFile) /P:Configuration=$(Configuration);RunTests=$(RunTests);RunIntegrationTests=$(RunIntegrationTests)" Condition="'$(DryRun)' != ''" />
+		<MSBuild Projects="@(SolutionFile)" Properties="Configuration=$(Configuration);RunTests=$(RunTests);RunIntegrationTests=$(RunIntegrationTests)" Condition="'$(DryRun)' == ''"/>
+	</Target>
+
+	<!-- ================================================================================================================
+    Distribution Targets
+    ================================================================================================================= -->
+
+	<Target Name="BuildPackages">
+		<ItemGroup>
+			<Package Include="$(SolutionDir)Platibus\bin\$(Configuration)\*.nupkg"/>
+			<Package Include="$(SolutionDir)Platibus.IIS\bin\$(Configuration)\*.nupkg"/>
+			<Package Include="$(SolutionDir)Platibus.SQLite\bin\$(Configuration)\*.nupkg"/>
+			<Package Include="$(SolutionDir)Platibus.RabbitMQ\bin\$(Configuration)\*.nupkg"/>
+    </ItemGroup>
+		<Copy SourceFiles="@(Package)" DestinationFolder="$(DistDir)" SkipUnchangedFiles="true"/>
+	</Target>
+
+	<Target Name="PublishPackages">
+		<ItemGroup>
+			<StagedPackage Include="$(DistDir)*.nupkg"/>
+		</ItemGroup>
+		<Message Text="&quot;$(NuGetExe)&quot; push %(StagedPackage.Filename)%(StagedPackage.Extension) -ApiKey $(ApiKey)" Condition="'$(DryRun)' != ''" />
+		<!--<Exec Command="&quot;$(NuGetExe)&quot; push %(StagedPackage.Filename)%(StagedPackage.Extension) -ApiKey $(ApiKey)" Condition="'$(DryRun)' == ''" />-->
+	</Target>
+</Project>

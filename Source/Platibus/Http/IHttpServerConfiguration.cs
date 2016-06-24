@@ -40,5 +40,11 @@ namespace Platibus.Http
         /// The maximum amount of HTTP requests to process at the same time.
         /// </summary>
         int ConcurrencyLimit { get; set; }
+
+        /// <summary>
+        /// Whether the transport service can be bypassed when delivering messages
+        /// whose destination and origination is the same.
+        /// </summary>
+        bool BypassTransportLocalDestination { get; }
     }
 }

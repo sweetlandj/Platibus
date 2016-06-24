@@ -54,6 +54,12 @@ namespace Platibus.Http
         public int ConcurrencyLimit { get; set; }
 
         /// <summary>
+        /// Whether the transport service can be bypassed when delivering messages
+        /// whose destination and origination is the same.
+        /// </summary>
+        public bool BypassTransportLocalDestination { get; set; }
+
+        /// <summary>
         /// Initializes a new <see cref="HttpServerConfiguration"/> with defaults
         /// </summary>
         public HttpServerConfiguration()

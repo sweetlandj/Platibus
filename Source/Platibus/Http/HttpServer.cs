@@ -106,8 +106,12 @@ namespace Platibus.Http
             _subscriptionTrackingService = configuration.SubscriptionTrackingService;
             _messageQueueingService = configuration.MessageQueueingService;
             _messageJournalingService = configuration.MessageJournalingService;
+
             var endpoints = configuration.Endpoints;
-            _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, _messageJournalingService, _subscriptionTrackingService);
+            _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, 
+                _messageJournalingService, _subscriptionTrackingService,
+                configuration.BypassTransportLocalDestination, HandleMessage);
+
             _bus = new Bus(configuration, _baseUri, _transportService, _messageQueueingService);
 
             var authorizationService = configuration.AuthorizationService;
@@ -131,6 +135,17 @@ namespace Platibus.Http
             _acceptBlock = new ActionBlock<HttpListenerContext>(ctx => Accept(ctx), acceptBlockOptions);
         }
 
+        private async Task HandleMessage(Message message, CancellationToken cancellationToken)
+        {
+            if (_bus == null)
+            {
+                Log.WarnFormat("Unable to handle local delivery of message ID {0}: bus not initialized", message.Headers.MessageId);
+                return;
+            }
+            var principal = Thread.CurrentPrincipal;
+            await _bus.HandleMessage(message, principal);
+        }
+        
         private static HttpListener InitHttpListener(Uri baseUri, AuthenticationSchemes authenticationSchemes)
         {
             var httpListener = new HttpListener
