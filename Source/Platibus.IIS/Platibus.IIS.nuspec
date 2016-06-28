@@ -11,8 +11,8 @@
     <iconUrl>https://raw.githubusercontent.com/sweetlandj/Platibus/master/Icon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>IIS hosting support for the Platibus decentralized asynchronous messaging framework</description>
-    <releaseNotes>Added support for RabbitMQ queueing and transport. Added support for SQLite queueing and subscription tracking.</releaseNotes>
-    <copyright>Copyright 2015</copyright>
+	<releaseNotes>Added option to short-circuit HTTP transport for messages addressed to local destinations</releaseNotes>
+    <copyright>Copyright 2016</copyright>
     <tags>bus message service rest async iis</tags>
   </metadata>
 </package>
