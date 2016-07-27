@@ -156,7 +156,7 @@ namespace Platibus.IntegrationTests
                 var subscription = sentMessage
                     .ObserveReplies()
                     .Subscribe(r =>
-                    {
+                    {   
                         replies.Enqueue(r);
                         replyReceivedEvent.Set();
                     }, () => repliesCompletedEvent.Set());

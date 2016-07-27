@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Principal;
+using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Security;
 
@@ -98,8 +99,9 @@ namespace Platibus.Http
             var messageHeaders = new MessageHeaders(flattenedHeaders);
             var content = await request.ReadContentAsString();
             var message = new Message(messageHeaders, content);
-
-            await _accept(message, request.Principal);
+            var senderPrincipal = SenderPrincipal.From(request.Principal);
+            Thread.CurrentPrincipal = senderPrincipal;
+            await _accept(message, senderPrincipal);
             response.StatusCode = 202;
         }
     }

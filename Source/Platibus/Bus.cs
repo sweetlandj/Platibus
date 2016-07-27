@@ -367,12 +367,7 @@ namespace Platibus
             }
 
             // Make sure that the principal is serializable before enqueuing
-            var senderPrincipal = principal as SenderPrincipal;
-            if (senderPrincipal == null && principal != null)
-            {
-                senderPrincipal = new SenderPrincipal(principal);
-            }
-
+            var senderPrincipal = SenderPrincipal.From(principal);
             var tasks = new List<Task>();
 
             var isPublication = message.Headers.Topic != null;

@@ -150,7 +150,7 @@ namespace Platibus.IIS
                 await resourceRouter.Route(resourceRequest, resourceResponse);
 
                 Log.DebugFormat("{0} request for resource {1} processed successfully",
-                context.Request.HttpMethod, context.Request.Url);
+                    context.Request.HttpMethod, context.Request.Url);
             }
             catch (Exception ex)
             {

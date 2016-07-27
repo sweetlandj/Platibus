@@ -26,6 +26,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Common.Logging;
+using Platibus.Security;
 
 namespace Platibus.Http
 {
@@ -132,7 +133,7 @@ namespace Platibus.Http
                 acceptBlockOptions.MaxDegreeOfParallelism = configuration.ConcurrencyLimit;
             }
 
-            _acceptBlock = new ActionBlock<HttpListenerContext>(ctx => Accept(ctx), acceptBlockOptions);
+            _acceptBlock = new ActionBlock<HttpListenerContext>(async ctx => await Accept(ctx), acceptBlockOptions);
         }
 
         private async Task HandleMessage(Message message, CancellationToken cancellationToken)
@@ -142,8 +143,8 @@ namespace Platibus.Http
                 Log.WarnFormat("Unable to handle local delivery of message ID {0}: bus not initialized", message.Headers.MessageId);
                 return;
             }
-            var principal = Thread.CurrentPrincipal;
-            await _bus.HandleMessage(message, principal);
+            var senderPrincipal = SenderPrincipal.From(Thread.CurrentPrincipal);
+            await _bus.HandleMessage(message, senderPrincipal);
         }
         
         private static HttpListener InitHttpListener(Uri baseUri, AuthenticationSchemes authenticationSchemes)

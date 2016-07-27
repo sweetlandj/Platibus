@@ -30,6 +30,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using Platibus.Security;
 
 namespace Platibus.Http
 {
@@ -121,6 +122,7 @@ namespace Platibus.Http
                 credentials = endpoint.Credentials;
             }
             cancellationToken.ThrowIfCancellationRequested();
+            Thread.CurrentPrincipal = context.SenderPrincipal;
             await TransportMessage(message, credentials, cancellationToken);
             await context.Acknowledge();
         }
@@ -145,7 +147,8 @@ namespace Platibus.Http
             if (message.Headers.Importance == MessageImportance.Critical)
             {
                 Log.DebugFormat("Enqueueing critical message ID {0} for queued outbound delivery...", message.Headers.MessageId);
-                await _messageQueueingService.EnqueueMessage(_outboundQueueName, message, null, cancellationToken);
+                var senderPrincipal = SenderPrincipal.From(Thread.CurrentPrincipal);
+                await _messageQueueingService.EnqueueMessage(_outboundQueueName, message, senderPrincipal, cancellationToken);
                 return;
             }
 
@@ -218,8 +221,7 @@ namespace Platibus.Http
             return httpClient;
         }
 
-        private async Task TransportMessage(Message message, IEndpointCredentials credentials,
-            CancellationToken cancellationToken = default(CancellationToken))
+        private async Task TransportMessage(Message message, IEndpointCredentials credentials, CancellationToken cancellationToken = default(CancellationToken))
         {
             HttpClient httpClient = null;
             try

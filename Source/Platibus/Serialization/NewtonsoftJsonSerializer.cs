@@ -53,7 +53,8 @@ namespace Platibus.Serialization
                 DateFormatHandling = DateFormatHandling.IsoDateFormat,
                 Formatting = Formatting.None,
                 MaxDepth = 10,
-                NullValueHandling = NullValueHandling.Ignore
+                NullValueHandling = NullValueHandling.Ignore,
+                MissingMemberHandling = MissingMemberHandling.Ignore
             };
         }
 

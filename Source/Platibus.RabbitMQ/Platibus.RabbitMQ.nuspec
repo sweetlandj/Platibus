@@ -11,7 +11,7 @@
     <iconUrl>https://raw.githubusercontent.com/sweetlandj/Platibus/master/Icon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>RabbitMQ extensions for the Platibus decentralized asynchronous messaging framework</description>
-	<releaseNotes>Added option to short-circuit HTTP transport for messages addressed to local destinations</releaseNotes>
+	<releaseNotes>Bug fixes for using Windows authentication over HTTP transport with local transport bypass enabled</releaseNotes>
     <copyright>Copyright 2016</copyright>
     <tags>bus message queue service rest async rabbit rabbitmq</tags>
   </metadata>

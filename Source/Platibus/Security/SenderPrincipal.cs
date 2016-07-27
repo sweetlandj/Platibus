@@ -65,7 +65,7 @@ namespace Platibus.Security
             if (principal == null) throw new ArgumentNullException("principal");
             if (principal.Identity != null)
             {
-                _identity = new SenderIdentity(principal.Identity);
+                _identity = SenderIdentity.From(principal.Identity);
             }
 
             var claimsPrincipal = principal as ClaimsPrincipal;
@@ -140,6 +140,34 @@ namespace Platibus.Security
             }
 
             return _roles.Contains(new SenderRole(role));
+        }
+
+        /// <summary>
+        /// Returns a <see cref="SenderPrincipal"/> derived from the specified <paramref name="principal"/>
+        /// </summary>
+        /// <remarks>
+        /// If the supplied <paramref name="principal"/> is a <see cref="SenderPrincipal"/> then it will
+        /// be returned unmodified.
+        /// </remarks>
+        /// <param name="principal">The principal from which the <see cref="SenderPrincipal"/> should be
+        /// derived</param>
+        /// <returns>Returns a <see cref="SenderPrincipal"/> derived from the supplied <paramref name="principal"/>
+        /// </returns>
+        public static SenderPrincipal From(IPrincipal principal)
+        {
+            var senderPrincipal = principal as SenderPrincipal;
+            if (senderPrincipal == null && principal != null)
+            {
+                senderPrincipal = new SenderPrincipal(principal);
+            }
+            return senderPrincipal;
+        }
+
+        /// <summary>Returns a string that represents the current object.</summary>
+        /// <returns>A string that represents the current object.</returns>
+        public override string ToString()
+        {
+            return _identity.Name;
         }
     }
 }

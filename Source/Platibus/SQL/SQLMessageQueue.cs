@@ -76,13 +76,13 @@ namespace Platibus.SQL
                 : options.ConcurrencyLimit;
 
             _cancellationTokenSource = new CancellationTokenSource();
-            _queuedMessages =
-                new ActionBlock<SQLQueuedMessage>(msg => ProcessQueuedMessage(msg, _cancellationTokenSource.Token),
-                    new ExecutionDataflowBlockOptions
-                    {
-                        CancellationToken = _cancellationTokenSource.Token,
-                        MaxDegreeOfParallelism = concurrencyLimit
-                    });
+            _queuedMessages = new ActionBlock<SQLQueuedMessage>(async msg =>
+                await ProcessQueuedMessage(msg, _cancellationTokenSource.Token),
+                new ExecutionDataflowBlockOptions
+                {
+                    CancellationToken = _cancellationTokenSource.Token,
+                    MaxDegreeOfParallelism = concurrencyLimit
+                });
         }
 
         /// <summary>
@@ -140,6 +140,7 @@ namespace Platibus.SQL
                     _maxAttempts);
 
                 var context = new SQLQueuedMessageContext(queuedMessage);
+                Thread.CurrentPrincipal = context.SenderPrincipal;
                 cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
@@ -154,7 +155,7 @@ namespace Platibus.SQL
                 {
                     Log.WarnFormat("Unhandled exception handling queued message {0}", ex, messageId);
                 }
-                
+
                 if (context.Acknowledged)
                 {
                     Log.DebugFormat("Message acknowledged.  Marking message {0} as acknowledged...", messageId);
@@ -163,7 +164,7 @@ namespace Platibus.SQL
                     Log.DebugFormat("Message {0} acknowledged successfully", messageId);
                     return;
                 }
-                
+
                 if (attemptCount >= _maxAttempts)
                 {
                     Log.WarnFormat("Maximum attempts to proces message {0} exceeded", messageId);
@@ -207,9 +208,9 @@ namespace Platibus.SQL
 
                         var headers = message.Headers;
 
-                        command.SetParameter(_dialect.MessageIdParameterName, (Guid) headers.MessageId);
-                        command.SetParameter(_dialect.QueueNameParameterName, (string) _queueName);
-                        command.SetParameter(_dialect.MessageNameParameterName, (string) headers.MessageName);
+                        command.SetParameter(_dialect.MessageIdParameterName, (Guid)headers.MessageId);
+                        command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
+                        command.SetParameter(_dialect.MessageNameParameterName, (string)headers.MessageName);
                         command.SetParameter(_dialect.OriginationParameterName,
                             headers.Origination == null ? null : headers.Origination.ToString());
                         command.SetParameter(_dialect.DestinationParameterName,
@@ -256,7 +257,7 @@ namespace Platibus.SQL
                     {
                         command.CommandType = CommandType.Text;
                         command.CommandText = _dialect.SelectQueuedMessagesCommand;
-                        command.SetParameter(_dialect.QueueNameParameterName, (string) _queueName);
+                        command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
 
                         using (var reader = command.ExecuteReader())
                         {
@@ -356,8 +357,8 @@ namespace Platibus.SQL
                         command.CommandType = CommandType.Text;
                         command.CommandText = _dialect.UpdateQueuedMessageCommand;
                         command.SetParameter(_dialect.MessageIdParameterName,
-                            (Guid) queuedMessage.Message.Headers.MessageId);
-                        command.SetParameter(_dialect.QueueNameParameterName, (string) _queueName);
+                            (Guid)queuedMessage.Message.Headers.MessageId);
+                        command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
                         command.SetParameter(_dialect.AcknowledgedParameterName, acknowledged);
                         command.SetParameter(_dialect.AbandonedParameterName, abandoned);
                         command.SetParameter(_dialect.AttemptsParameterName, attempts);
@@ -397,7 +398,7 @@ namespace Platibus.SQL
         {
             if (principal == null) return null;
 
-            var senderPrincipal = new SenderPrincipal(principal);
+            var senderPrincipal = SenderPrincipal.From(principal);
             using (var memoryStream = new MemoryStream())
             {
                 var formatter = new BinaryFormatter();
@@ -461,7 +462,7 @@ namespace Platibus.SQL
             using (var memoryStream = new MemoryStream(bytes))
             {
                 var formatter = new BinaryFormatter();
-                return (IPrincipal) formatter.Deserialize(memoryStream);
+                return (IPrincipal)formatter.Deserialize(memoryStream);
             }
         }
 
@@ -478,7 +479,7 @@ namespace Platibus.SQL
             var headers = new MessageHeaders();
             if (string.IsNullOrWhiteSpace(headerString)) return headers;
 
-            var currentHeaderName = (HeaderName) null;
+            var currentHeaderName = (HeaderName)null;
             var currentHeaderValue = new StringWriter();
             var finishedReadingHeaders = false;
             var lineNumber = 0;
@@ -592,7 +593,7 @@ namespace Platibus.SQL
             _cancellationTokenSource.Cancel();
             if (disposing)
             {
-				_cancellationTokenSource.TryDispose();
+                _cancellationTokenSource.TryDispose();
             }
         }
     }

@@ -70,8 +70,8 @@ namespace Platibus.Filesystem
                 : options.ConcurrencyLimit;
 
             _cancellationTokenSource = new CancellationTokenSource();
-            _queuedMessages = new ActionBlock<MessageFile>(
-                msg => ProcessQueuedMessage(msg, _cancellationTokenSource.Token),
+            _queuedMessages = new ActionBlock<MessageFile>(async msg =>
+                await ProcessQueuedMessage(msg, _cancellationTokenSource.Token),
                 new ExecutionDataflowBlockOptions
                 {
                     CancellationToken = _cancellationTokenSource.Token,
@@ -143,6 +143,7 @@ namespace Platibus.Filesystem
                     _maxAttempts);
 
                 var context = new FilesystemQueuedMessageContext(queuedMessage);
+                Thread.CurrentPrincipal = context.SenderPrincipal;
                 cancellationToken.ThrowIfCancellationRequested();
 
                 try

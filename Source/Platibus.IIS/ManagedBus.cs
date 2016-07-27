@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Http;
+using Platibus.Security;
 
 namespace Platibus.IIS
 {
@@ -65,8 +66,8 @@ namespace Platibus.IIS
         private async Task HandleMessage(Message message, CancellationToken cancellationToken)
         {
             await _initialization;
-            var principal = Thread.CurrentPrincipal;
-            await _bus.HandleMessage(message, principal);
+            var senderPrincipal = SenderPrincipal.From(Thread.CurrentPrincipal);
+            await _bus.HandleMessage(message, senderPrincipal);
         }
 
         /// <summary>

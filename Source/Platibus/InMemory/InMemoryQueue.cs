@@ -59,8 +59,8 @@ namespace Platibus.InMemory
                 ? QueueOptions.DefaultConcurrencyLimit
                 : options.ConcurrencyLimit;
 
-            _queuedMessages = new ActionBlock<QueuedMessage>(
-                msg => ProcessQueuedMessage(msg, _cancellationTokenSource.Token),
+            _queuedMessages = new ActionBlock<QueuedMessage>(async msg =>
+                await ProcessQueuedMessage(msg, _cancellationTokenSource.Token),
                 new ExecutionDataflowBlockOptions
                 {
                     CancellationToken = _cancellationTokenSource.Token,
@@ -85,6 +85,7 @@ namespace Platibus.InMemory
                 attemptsRemaining--;
                 var message = queuedMessage.Message;
                 var context = new InMemoryQueuedMessageContext(message, queuedMessage.SenderPrincipal);
+                Thread.CurrentPrincipal = context.SenderPrincipal;
                 cancellationToken.ThrowIfCancellationRequested();
 
                 try

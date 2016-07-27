@@ -124,5 +124,26 @@ namespace Platibus.Security
         {
             return _name;
         }
+
+        /// <summary>
+        /// Returns a <see cref="SenderIdentity"/> derived from the specified <paramref name="identity"/>
+        /// </summary>
+        /// <remarks>
+        /// If the supplied <paramref name="identity"/> is a <see cref="SenderIdentity"/> then it will
+        /// be returned unmodified.
+        /// </remarks>
+        /// <param name="identity">The identity from which the <see cref="SenderIdentity"/> should be
+        /// derived</param>
+        /// <returns>Returns a <see cref="SenderIdentity"/> derived from the supplied <paramref name="identity"/>
+        /// </returns>
+        public static SenderIdentity From(IIdentity identity)
+        {
+            var senderIdentity = identity as SenderIdentity;
+            if (senderIdentity == null && identity != null)
+            {
+                senderIdentity = new SenderIdentity(identity);
+            }
+            return senderIdentity;
+        }
     }
 }
