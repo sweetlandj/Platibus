@@ -94,6 +94,7 @@
     <Compile Include="Http\AuthenticationSchemeElement.cs" />
     <Compile Include="Http\AuthenticationSchemesElementCollection.cs" />
     <Compile Include="Http\BasicAuthorizationService.cs" />
+    <Compile Include="Http\HttpClientPool.cs" />
     <Compile Include="ResourceNotFoundException.cs" />
     <Compile Include="Security\IAuthorizationService.cs" />
     <Compile Include="Http\HttpServerConfigurationManager.cs" />

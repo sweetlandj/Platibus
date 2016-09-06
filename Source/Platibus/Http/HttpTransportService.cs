@@ -51,6 +51,8 @@ namespace Platibus.Http
         private readonly Func<Message, CancellationToken, Task> _handleMessage;
         private readonly QueueName _outboundQueueName;
 
+        private readonly HttpClientPool _clientPool;
+
         /// <summary>
         /// Initializes a new <see cref="HttpTransportService"/>
         /// </summary>
@@ -91,6 +93,8 @@ namespace Platibus.Http
             _bypassTransportLocalDestination = bypassTransportLocalDestination;
             _handleMessage = handleMessage;
             _outboundQueueName = "Outbound";
+
+            _clientPool = new HttpClientPool();
         }
 
         /// <summary>
@@ -199,28 +203,7 @@ namespace Platibus.Http
 
             await Task.WhenAll(transportTasks);
         }
-
-        private static HttpClient GetClient(Uri uri, IEndpointCredentials credentials)
-        {
-            var clientHandler = new HttpClientHandler
-            {
-                AllowAutoRedirect = true,
-                UseProxy = false
-            };
-
-            if (credentials != null)
-            {
-                credentials.Accept(new HttpEndpointCredentialsVisitor(clientHandler));
-            }
-
-            var httpClient = new HttpClient(clientHandler)
-            {
-                BaseAddress = uri
-            };
-
-            return httpClient;
-        }
-
+        
         private async Task TransportMessage(Message message, IEndpointCredentials credentials, CancellationToken cancellationToken = default(CancellationToken))
         {
             HttpClient httpClient = null;
@@ -237,7 +220,7 @@ namespace Platibus.Http
                 var httpContent = new StringContent(message.Content);
                 WriteHttpContentHeaders(message, httpContent);
                 
-                httpClient = GetClient(endpointBaseUri, credentials);
+                httpClient = await _clientPool.GetClient(endpointBaseUri, credentials, cancellationToken);
                 var messageId = message.Headers.MessageId;
                 var urlEncodedMessageId = HttpUtility.UrlEncode(messageId);
                 var relativeUri = string.Format("message/{0}", urlEncodedMessageId);
@@ -395,7 +378,7 @@ namespace Platibus.Http
             try
             {
                 var endpointBaseUri = endpoint.Address.WithTrailingSlash();
-                httpClient = GetClient(endpointBaseUri, endpoint.Credentials);
+                httpClient = await _clientPool.GetClient(endpointBaseUri, endpoint.Credentials, cancellationToken);
 
                 var urlSafeTopicName = HttpUtility.UrlEncode(topic);
                 var relativeUri = string.Format("topic/{0}/subscriber?uri={1}", urlSafeTopicName, _baseUri);
