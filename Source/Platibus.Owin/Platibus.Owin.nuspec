@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>Jesse Sweetland</authors>
+    <owners>Jesse Sweetland</owners>
+    <licenseUrl>https://raw.githubusercontent.com/sweetlandj/Platibus/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/sweetlandj/Platibus/</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/sweetlandj/Platibus/master/Icon.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>OWIN hosting support for the Platibus decentralized asynchronous messaging framework</description>
+	<releaseNotes>Bug fixes for using Windows authentication over HTTP transport with local transport bypass enabled</releaseNotes>
+    <copyright>Copyright 2016</copyright>
+    <tags>bus message service rest async owin</tags>
+  </metadata>
+</package>
