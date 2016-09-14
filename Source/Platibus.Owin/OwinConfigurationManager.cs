@@ -30,10 +30,14 @@ namespace Platibus.Owin
         /// <see cref="PlatibusConfiguration"/> object</returns>
         /// <seealso cref="PlatibusConfigurationSection"/>
         /// <seealso cref="IConfigurationHook"/>
-        public static async Task<OwinConfiguration> LoadConfiguration(string sectionName = "platibus.owin",
+        public static async Task<OwinConfiguration> LoadConfiguration(string sectionName = null,
             bool processConfigurationHooks = true)
         {
-            if (string.IsNullOrWhiteSpace(sectionName)) throw new ArgumentNullException("sectionName");
+            if (string.IsNullOrWhiteSpace(sectionName))
+            {
+                sectionName = "platibus.owin";
+            }
+
             var configSection = (OwinConfigurationSection) ConfigurationManager.GetSection(sectionName) ??
                                 new OwinConfigurationSection();
 

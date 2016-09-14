@@ -8,7 +8,7 @@ namespace Platibus.RabbitMQ
     /// <summary>
     /// Maintains a single connection to each endpoint, reconnecting if necessary
     /// </summary>
-    class ConnectionManager : IDisposable, IConnectionManager
+    internal class ConnectionManager : IDisposable, IConnectionManager
     {
         private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
         private readonly ConcurrentDictionary<Uri, ManagedConnection> _managedConnections = new ConcurrentDictionary<Uri, ManagedConnection>();

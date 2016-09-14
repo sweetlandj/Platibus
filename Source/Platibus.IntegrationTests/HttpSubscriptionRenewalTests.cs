@@ -5,7 +5,7 @@ using NUnit.Framework;
 
 namespace Platibus.IntegrationTests
 {
-	class HttpSubscriptionRenewalTests
+    internal class HttpSubscriptionRenewalTests
 	{
 		private static readonly Random RNG = new Random();
 

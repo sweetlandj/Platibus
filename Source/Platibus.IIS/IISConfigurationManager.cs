@@ -30,10 +30,13 @@ namespace Platibus.IIS
         /// <see cref="PlatibusConfiguration"/> object</returns>
         /// <seealso cref="PlatibusConfigurationSection"/>
         /// <seealso cref="IConfigurationHook"/>
-        public static async Task<IISConfiguration> LoadConfiguration(string sectionName = "platibus.iis",
+        public static async Task<IISConfiguration> LoadConfiguration(string sectionName = null,
             bool processConfigurationHooks = true)
         {
-            if (string.IsNullOrWhiteSpace(sectionName)) throw new ArgumentNullException("sectionName");
+            if (string.IsNullOrWhiteSpace(sectionName))
+            {
+                sectionName = "platibus.iis";
+            }
             var configSection = (IISConfigurationSection) ConfigurationManager.GetSection(sectionName) ??
                                 new IISConfigurationSection();
 

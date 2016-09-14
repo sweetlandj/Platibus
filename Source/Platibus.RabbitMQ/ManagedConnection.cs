@@ -11,7 +11,7 @@ namespace Platibus.RabbitMQ
     /// Maintains an open connection to a RabbitMQ server and attempts to reconnect
     /// whenever there is a failure.
     /// </summary>
-    class ManagedConnection : IConnection
+    internal class ManagedConnection : IConnection
     {
         private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
 

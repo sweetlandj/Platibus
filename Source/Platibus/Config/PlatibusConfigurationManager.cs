@@ -56,9 +56,13 @@ namespace Platibus.Config
         /// <see cref="PlatibusConfiguration"/> object</returns>
         /// <seealso cref="PlatibusConfigurationSection"/>
         /// <seealso cref="IConfigurationHook"/>
-        public static Task<PlatibusConfiguration> LoadConfiguration(string sectionName = "platibus",
+        public static Task<PlatibusConfiguration> LoadConfiguration(string sectionName = null,
             bool processConfigurationHooks = true)
         {
+            if (string.IsNullOrWhiteSpace(sectionName))
+            {
+                sectionName = "platibus";
+            }
             return LoadConfiguration<PlatibusConfiguration>(sectionName, processConfigurationHooks);
         }
 
@@ -76,9 +80,14 @@ namespace Platibus.Config
         /// <see cref="PlatibusConfiguration"/> object</returns>
         /// <seealso cref="PlatibusConfigurationSection"/>
         /// <seealso cref="IConfigurationHook"/>
-        public static async Task<LoopbackConfiguration> LoadLoopbackConfiguration(string sectionName = "platibus.loopback",
+        public static async Task<LoopbackConfiguration> LoadLoopbackConfiguration(string sectionName = null,
             bool processConfigurationHooks = true)
         {
+            if (string.IsNullOrWhiteSpace(sectionName))
+            {
+                sectionName = "platibus.loopback";
+            }
+
             var configSection = (LoopbackConfigurationSection)ConfigurationManager.GetSection(sectionName) ??
                                 new LoopbackConfigurationSection();
 

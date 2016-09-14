@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
@@ -45,6 +46,10 @@ namespace Platibus.Owin
         {
             var configuration = await _configuration;
             var baseUri = configuration.BaseUri;
+
+            var bus = await _bus;
+            context.SetBus(bus);
+
             if (IsPlatibusUri(context.Request.Uri, baseUri))
             {
                 await HandlePlatibusRequest(context);
@@ -57,14 +62,18 @@ namespace Platibus.Owin
 
         private async Task HandlePlatibusRequest(IOwinContext context)
         {
+            Log.DebugFormat("Processing {0} request for resource {1}...",
+                context.Request.Method, context.Request.Uri);
+            
             var resourceRequest = new OwinRequestAdapter(context.Request);
             var resourceResponse = new OwinResponseAdapter(context.Response);
             try
             {
-                var bus = await _bus;
-                context.SetBus(bus);
                 var router = await _resourceRouter;
                 await router.Route(resourceRequest, resourceResponse);
+
+                Log.DebugFormat("{0} request for resource {1} processed successfully",
+                    context.Request.Method, context.Request.Uri);
             }
             catch (Exception ex)
             {

@@ -5,7 +5,7 @@ using Platibus.Http;
 
 namespace Platibus.IntegrationTests
 {
-    class TestAuthorizationService : BasicAuthorizationService
+    internal class TestAuthorizationService : BasicAuthorizationService
     {
         private readonly string _username;
         private readonly string _password;

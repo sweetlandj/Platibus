@@ -22,9 +22,12 @@ namespace Platibus.Http
         /// <param name="sectionName">(Optional) The name of the configuration section</param>
         /// <returns>Returns a task that will complete when the HTTP server configuration has been 
         /// loaded and initialized and whose result will be the initialized configuration</returns>
-        public static async Task<HttpServerConfiguration> LoadConfiguration(string sectionName = "platibus.httpserver")
+        public static async Task<HttpServerConfiguration> LoadConfiguration(string sectionName = null)
         {
-            if (string.IsNullOrWhiteSpace(sectionName)) throw new ArgumentNullException("sectionName");
+            if (string.IsNullOrWhiteSpace(sectionName))
+            {
+                sectionName = "platibus.httpserver";
+            }
             var configSection = (HttpServerConfigurationSection) ConfigurationManager.GetSection(sectionName) ??
                                 new HttpServerConfigurationSection();
 

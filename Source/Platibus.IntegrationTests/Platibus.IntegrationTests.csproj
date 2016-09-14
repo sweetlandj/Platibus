@@ -120,7 +120,9 @@
   <ItemGroup>
     <Compile Include="LoopbackPubSubTests.cs" />
     <Compile Include="LoopbackSendAndReplyTests.cs" />
+    <Compile Include="OwinPubSubTests.cs" />
     <Compile Include="OwinSendAndReplyTests.cs" />
+    <Compile Include="OwinSubscriptionRenewalTests.cs" />
     <Compile Include="RabbitMQPubSubTests.cs" />
     <Compile Include="RabbitMQSendAndReplyTests.cs" />
     <Compile Include="HttpSubscriptionRenewalTests.cs" />

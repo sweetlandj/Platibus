@@ -4,7 +4,7 @@ using NUnit.Framework;
 
 namespace Platibus.UnitTests
 {
-    class DataContractMessageNamingServiceTests
+    internal class DataContractMessageNamingServiceTests
     {
         [DataContract]
         public class ContractA

@@ -8,7 +8,7 @@ using Platibus.Config;
 
 namespace Platibus.UnitTests
 {
-    class BusSendTests
+    internal class BusSendTests
     {
         
         [Test]

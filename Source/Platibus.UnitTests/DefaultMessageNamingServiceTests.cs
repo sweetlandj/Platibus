@@ -2,7 +2,7 @@ using NUnit.Framework;
 
 namespace Platibus.UnitTests
 {
-    class DefaultMessageNamingServiceTests
+    internal class DefaultMessageNamingServiceTests
     {
         public class ContractA
         {
