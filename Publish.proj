@@ -63,6 +63,7 @@
 		<ItemGroup>
 			<SourcePackage Include="$(SolutionDir)Platibus\bin\$(Configuration)\*.nupkg"/>
 			<SourcePackage Include="$(SolutionDir)Platibus.IIS\bin\$(Configuration)\*.nupkg"/>
+			<SourcePackage Include="$(SolutionDir)Platibus.Owin\bin\$(Configuration)\*.nupkg"/>
 			<SourcePackage Include="$(SolutionDir)Platibus.SQLite\bin\$(Configuration)\*.nupkg"/>
 			<SourcePackage Include="$(SolutionDir)Platibus.RabbitMQ\bin\$(Configuration)\*.nupkg"/>
 		</ItemGroup>
