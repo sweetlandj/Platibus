@@ -23,7 +23,9 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Owin.Hosting;
 using Platibus.Http;
+using Platibus.Owin;
 using Platibus.RabbitMQ;
 using Platibus.Security;
 
@@ -70,6 +72,39 @@ namespace Platibus.IntegrationTests
 
                 return await test(server0.Bus, server1.Bus);
             }
+        }
+
+        public static async Task OwinSelfHostedBusInstances(Func<IBus, IBus, Task> test)
+        {
+            await OwinSelfHostedBusInstances(async (bus0, bus1) =>
+            {
+                await test(bus0, bus1);
+                return true;
+            });
+        }
+
+        public static async Task<TResult> OwinSelfHostedBusInstances<TResult>(Func<IBus, IBus, Task<TResult>> test)
+        {
+            Cleanup();
+
+            var middleware0 = new PlatibusMiddleware("platibus.owin0");
+            var middleware1 = new PlatibusMiddleware("platibus.owin1");
+           
+            using (await StartOwinWebApp(middleware0))
+            using (await StartOwinWebApp(middleware1))
+            {
+                // Give HTTP servers time to initialize
+                await Task.Delay(TimeSpan.FromSeconds(1));
+               
+                return await test(await middleware0.Bus, await middleware1.Bus);
+            }
+        }
+
+        private static async Task<IDisposable> StartOwinWebApp(PlatibusMiddleware middleware)
+        {
+            var configuration = await middleware.Configuration;
+            var baseUri = configuration.BaseUri;
+            return WebApp.Start(baseUri.ToString(), app => app.UsePlatibusMiddleware(middleware));
         }
 
         public static async Task HttpHostedBusInstancesBasicAuth(IAuthorizationService authService, Func<IBus, IBus, Task> test)
@@ -148,7 +183,8 @@ namespace Platibus.IntegrationTests
             {
                 action();
             }
-            catch (Exception)
+            // ReSharper disable once EmptyGeneralCatchClause
+            catch
             {
             }
         }

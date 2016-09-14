@@ -58,6 +58,11 @@ namespace Platibus
         public const string IIS = "Platibus.IIS";
 
         /// <summary>
+        /// Category for log events related to OWIN hosting
+        /// </summary>
+        public const string Owin = "Platibus.Owin";
+
+        /// <summary>
         /// Category for log events related to SQL-based services
         /// </summary>
         public const string SQL = "Platibus.SQL";

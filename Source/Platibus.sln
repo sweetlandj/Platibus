@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus", "Platibus\Platibus.csproj", "{73863B52-5751-4F75-8436-1CD3E6AC0D50}"
 EndProject
@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus.RabbitMQ", "Platib
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1. Main", "1. Main", "{04F31F54-4A18-4129-8CF2-78B975ABC8FA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus.Owin", "Platibus.Owin\Platibus.Owin.csproj", "{4070B7DA-DFEF-4FA7-BB44-72C084CA9E80}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +73,10 @@ Global
 		{CE776EC9-C665-44BF-8EDD-45678D269112}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE776EC9-C665-44BF-8EDD-45678D269112}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CE776EC9-C665-44BF-8EDD-45678D269112}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4070B7DA-DFEF-4FA7-BB44-72C084CA9E80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4070B7DA-DFEF-4FA7-BB44-72C084CA9E80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4070B7DA-DFEF-4FA7-BB44-72C084CA9E80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4070B7DA-DFEF-4FA7-BB44-72C084CA9E80}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -83,5 +89,6 @@ Global
 		{87D62B09-0F75-4AED-B6AE-C89DDEEBD1CC} = {51BBF662-851D-477B-9885-E668F832B2E7}
 		{A23BE958-6524-4C9C-8957-1C3DEBB0780C} = {04F31F54-4A18-4129-8CF2-78B975ABC8FA}
 		{CE776EC9-C665-44BF-8EDD-45678D269112} = {04F31F54-4A18-4129-8CF2-78B975ABC8FA}
+		{4070B7DA-DFEF-4FA7-BB44-72C084CA9E80} = {04F31F54-4A18-4129-8CF2-78B975ABC8FA}
 	EndGlobalSection
 EndGlobal
