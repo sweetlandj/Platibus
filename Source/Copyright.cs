@@ -25,6 +25,6 @@ using System.Reflection;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Platibus")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jesse Sweetland")]
+[assembly: AssemblyCopyright("Copyright © 2016 Jesse Sweetland")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
