@@ -58,8 +58,42 @@ BEGIN
             PRIMARY KEY NONCLUSTERED ([MessageId], [QueueName])
     )
 
-    CREATE CLUSTERED INDEX [PB_QueuedMessages_IX_QueueName] 
+    CREATE INDEX [PB_QueuedMessages_IX_QueueName] 
         ON [PB_QueuedMessages]([QueueName])
+END"; }
+        }
+
+        /// <inheritdoc />
+        public override string CreateMessageJournalingServiceObjectsCommand
+        {
+            get { return @"
+IF OBJECT_ID('[PB_MessageJournal]') IS NULL
+BEGIN
+    CREATE TABLE [PB_MessageJournal]
+    (
+        [Id] INT IDENTITY(1,1),
+        [MessageId] UNIQUEIDENTIFIER NOT NULL,
+        [Category] VARCHAR(20) NOT NULL,
+        [MessageName] VARCHAR(500) NULL,
+        [Origination] VARCHAR(500) NULL,
+        [Destination] VARCHAR(500) NULL,                            
+        [ReplyTo] VARCHAR(500) NULL,
+        [Expires] DATETIME NULL,
+        [ContentType] VARCHAR(100) NULL,
+        [Headers] VARCHAR(MAX),
+        [MessageContent] TEXT,
+        [Acknowledged] DATETIME NULL,
+        [Abandoned] DATETIME NULL,
+        [Attempts] INT NOT NULL DEFAULT 0,
+
+        CONSTRAINT [PB_MessageJournal_PK] PRIMARY KEY CLUSTERED ([Id])
+    )
+
+    CREATE INDEX [PB_MessageJournal_IX_MessageId] 
+        ON [PB_MessageJournal]([MessageId])
+
+    CREATE INDEX [PB_MessageJournal_IX_Category] 
+        ON [PB_MessageJournal]([Category])
 END"; }
         }
 

@@ -71,6 +71,7 @@
     <Compile Include="SQLiteDialect.cs" />
     <Compile Include="SQLiteDialectProvider.cs" />
     <Compile Include="SQLiteLoggingCategories.cs" />
+    <Compile Include="SQLiteMessageJournalingService.cs" />
     <Compile Include="SQLiteMessageQueue.cs" />
     <Compile Include="SQLiteMessageQueueingService.cs" />
     <Compile Include="SQLiteOperation.cs" />

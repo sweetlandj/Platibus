@@ -112,6 +112,8 @@
     <Compile Include="MessageHandler.cs" />
     <Compile Include="MessageNotAcknowledgedException.cs" />
     <Compile Include="ReadOnlyEndpointCollection.cs" />
+    <Compile Include="SQL\SQLJournaledMessage.cs" />
+    <Compile Include="SQL\SQLMessageJournalingService.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="ObservableExtensions.cs" />
     <Compile Include="Security\BasicAuthCredentials.cs" />

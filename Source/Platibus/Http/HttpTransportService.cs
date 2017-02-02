@@ -175,7 +175,6 @@ namespace Platibus.Http
 
             foreach (var subscriber in subscribers)
             {
-                
                 IEndpointCredentials subscriberCredentials = null;
                 IEndpoint subscriberEndpoint;
                 if (_endpoints.TryGetEndpointByAddress(subscriber, out subscriberEndpoint))
@@ -209,6 +208,11 @@ namespace Platibus.Http
             HttpClient httpClient = null;
             try
             {
+                if (_messageJournalingService != null)
+                {
+                    await _messageJournalingService.MessageSent(message, cancellationToken);
+                }
+
                 var endpointBaseUri = message.Headers.Destination.WithTrailingSlash();
                 if (_bypassTransportLocalDestination && endpointBaseUri == _baseUri)
                 {
@@ -234,11 +238,6 @@ namespace Platibus.Http
                     postUri);
 
                 HandleHttpErrorResponse(httpResponseMessage);
-
-                if (_messageJournalingService != null)
-                {
-                    await _messageJournalingService.MessageSent(message, cancellationToken);
-                }
             }
             catch (TransportException)
             {

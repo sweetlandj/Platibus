@@ -33,15 +33,19 @@ namespace Platibus.SQL
     /// </remarks>
     public abstract class CommonSQLDialect : ISQLDialect
     {
-        private string _startDateParameterName;
-        private string _endDateParameterName;
-
         /// <summary>
         /// The dialect-specific command used to create the objects (tables, indexes,
         /// stored procedures, views, etc.) needed to store queued messages in the 
         /// SQL database
         /// </summary>
         public abstract string CreateMessageQueueingServiceObjectsCommand { get; }
+
+        /// <summary>
+        /// The dialect-specific command used to create the objects (tables, indexes,
+        /// stored procedures, views, etc.) needed to store journaled messages in the 
+        /// SQL database
+        /// </summary>
+        public abstract string CreateMessageJournalingServiceObjectsCommand { get; }
 
         /// <summary>
         /// The dialect-specific command used to create the objects (tables, indexes,
@@ -88,6 +92,36 @@ WHERE NOT EXISTS (
         }
 
         /// <summary>
+        /// The dialect-specific command used to insert a queued message
+        /// </summary>
+        public virtual string InsertJournaledMessageCommand
+        {
+            get { return @"
+INSERT INTO [PB_MessageJournal] (
+    [MessageId], 
+    [Category],
+    [MessageName], 
+    [Origination], 
+    [Destination], 
+    [ReplyTo], 
+    [Expires], 
+    [ContentType], 
+    [Headers], 
+    [MessageContent])
+VALUES ( 
+    @MessageId, 
+    @Category,
+    @MessageName, 
+    @Origination, 
+    @Destination, 
+    @ReplyTo, 
+    @Expires, 
+    @ContentType, 
+    @Headers, 
+    @MessageContent)"; }
+        }
+
+        /// <summary>
         /// The dialect-specific command used to select the list of queued messages
         /// in a particular queue
         /// </summary>
@@ -113,6 +147,27 @@ FROM [PB_QueuedMessages]
 WHERE [QueueName]=@QueueName 
 AND [Acknowledged] IS NULL
 AND [Abandoned] IS NULL"; }
+        }
+
+        /// <summary>
+        /// The dialect-specific command used to select the list of journaled messages
+        /// in a particular queue
+        /// </summary>
+        public virtual string SelectJournaledMessagesCommand
+        {
+            get { return @"
+SELECT 
+    [MessageId], 
+    [Category], 
+    [MessageName], 
+    [Origination], 
+    [Destination], 
+    [ReplyTo], 
+    [Expires], 
+    [ContentType], 
+    [Headers], 
+    [MessageContent]
+FROM [PB_MessageJournal]"; }
         }
 
         /// <summary>
@@ -369,5 +424,10 @@ AND [Subscriber]=@Subscriber"; }
         /// The name of the parameter used to specify the end date in queries based on date ranges
         /// </summary>
         public string EndDateParameterName { get { return "@EndDate"; } }
+
+        /// <summary>
+        /// The name of the parameter used to specify a category
+        /// </summary>
+        public string CategoryParameterName { get { return "@Category"; } }
     }
 }

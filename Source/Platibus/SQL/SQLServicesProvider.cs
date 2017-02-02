@@ -31,13 +31,9 @@ namespace Platibus.SQL
     /// A provider for SQL-based message queueing and subscription tracking services
     /// </summary>
     [Provider("SQL")]
-    public class SQLServicesProvider : IMessageQueueingServiceProvider, ISubscriptionTrackingServiceProvider
+    public class SQLServicesProvider : IMessageQueueingServiceProvider, IMessageJournalingServiceProvider, ISubscriptionTrackingServiceProvider
     {
-        /// <summary>
-        /// Returns an SQL-based message queueing service
-        /// </summary>
-        /// <param name="configuration">The queueing configuration element</param>
-        /// <returns>Returns an SQL-based message queueing service</returns>
+        /// <inheritdoc />
         public Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
             var connectionName = configuration.GetString("connectionName");
@@ -57,11 +53,27 @@ namespace Platibus.SQL
             return Task.FromResult<IMessageQueueingService>(sqlMessageQueueingService);
         }
 
-        /// <summary>
-        /// Returns an SQL-based subscription tracking service
-        /// </summary>
-        /// <param name="configuration">The subscription tracking configuration element</param>
-        /// <returns>Returns an SQL-based subscription tracking service</returns>
+        /// <inheritdoc />
+        public Task<IMessageJournalingService> CreateMessageJournalingService(JournalingElement configuration)
+        {
+            var connectionName = configuration.GetString("connectionName");
+            if (string.IsNullOrWhiteSpace(connectionName))
+            {
+                throw new ConfigurationErrorsException(
+                    "Attribute 'connectionName' is required for SQL message journaling service");
+            }
+
+            var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
+            if (connectionStringSettings == null)
+            {
+                throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
+            }
+            var sqlMessageJournalingService = new SQLMessageJournalingService(connectionStringSettings);
+            sqlMessageJournalingService.Init();
+            return Task.FromResult<IMessageJournalingService>(sqlMessageJournalingService);
+        }
+        
+        /// <inheritdoc />
         public async Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
             SubscriptionTrackingElement configuration)
         {

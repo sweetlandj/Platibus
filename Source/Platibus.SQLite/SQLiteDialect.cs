@@ -64,6 +64,39 @@ CREATE INDEX IF NOT EXISTS [PB_QueuedMessages_IX_QueueName]
 
         /// <summary>
         /// The SQLite commands used to create the objects (tables, indexes,
+        /// stored procedures, views, etc.) needed to store queued messages in the 
+        /// SQL database
+        /// </summary>
+        public override string CreateMessageJournalingServiceObjectsCommand
+        {
+            get { return @"
+CREATE TABLE IF NOT EXISTS [PB_MessageJournal]
+(
+    [Id] INTEGER PRIMARY KEY AUTOINCREMENT,
+    [MessageId] TEXT NOT NULL,
+    [Category] TEXT NOT NULL,
+    [MessageName] TEXT NULL,
+    [Origination] TEXT NULL,
+    [Destination] TEXT NULL,
+    [ReplyTo] TEXT NULL,
+    [Expires] TEXT NULL,
+    [ContentType] TEXT NULL,
+    [Headers] TEXT,
+    [MessageContent] TEXT,
+    [Attempts] INT NOT NULL DEFAULT 0,
+    [Acknowledged] TEXT NULL,
+    [Abandoned] TEXT NULL
+);
+
+CREATE INDEX IF NOT EXISTS [PB_MessageJournal_IX_MessageId] 
+    ON [PB_MessageJournal]([MessageId]);
+
+CREATE INDEX IF NOT EXISTS [PB_MessageJournal_IX_Category] 
+    ON [PB_MessageJournal]([Category]);"; }
+        }
+
+        /// <summary>
+        /// The SQLite commands used to create the objects (tables, indexes,
         /// stored procedures, views, etc.) needed to store subscription tracking data 
         /// in the SQL database
         /// </summary>

@@ -206,6 +206,29 @@ namespace Platibus.SQL
         /// The name of the parameter used to specify the end date in queries based on date ranges
         /// </summary>
         string EndDateParameterName { get; }
+
+        /// <summary>
+        /// The dialect-specific command used to create the objects (tables, indexes,
+        /// stored procedures, views, etc.) needed to store journaled messages in the 
+        /// SQL database
+        /// </summary>
+        string CreateMessageJournalingServiceObjectsCommand { get; }
+
+        /// <summary>
+        /// The dialect-specific command used to insert a queued message
+        /// </summary>
+        string InsertJournaledMessageCommand { get; }
+
+        /// <summary>
+        /// The name of the parameter used to specify a category
+        /// </summary>
+        string CategoryParameterName { get; }
+
+        /// <summary>
+        /// The dialect-specific command used to select the list of journaled messages
+        /// in a particular queue
+        /// </summary>
+        string SelectJournaledMessagesCommand { get; }
     }
 
 

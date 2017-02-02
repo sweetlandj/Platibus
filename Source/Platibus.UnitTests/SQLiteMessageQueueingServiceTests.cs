@@ -401,8 +401,9 @@ namespace Platibus.UnitTests
             var allmessages = existingMessages.Union(newMessages);
             foreach (var message in allmessages)
             {
+                var myMessage = message;
                 mockListener.Verify(x =>
-                    x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, message)),
+                    x.MessageReceived(It.Is<Message>(m => messageEqualityComparer.Equals(m, myMessage)),
                         It.IsAny<IQueuedMessageContext>(), It.IsAny<CancellationToken>()), Times.Once());
             }
         }

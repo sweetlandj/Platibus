@@ -54,16 +54,9 @@ namespace Platibus.SQLite
     /// A provider for SQLite-based message queueing and subscription tracking services
     /// </summary>
     [Provider("SQLite")]
-    public class SQLiteServicesProvider : IMessageQueueingServiceProvider, ISubscriptionTrackingServiceProvider
+    public class SQLiteServicesProvider : IMessageQueueingServiceProvider, IMessageJournalingServiceProvider, ISubscriptionTrackingServiceProvider
     {
-        /// <summary>
-        /// Creates an initializes a <see cref="IMessageQueueingService"/>
-        /// based on the provideds <paramref name="configuration"/>
-        /// </summary>
-        /// <param name="configuration">The journaling configuration
-        /// element</param>
-        /// <returns>Returns a task whose result is an initialized
-        /// <see cref="IMessageQueueingService"/></returns>
+        /// <inheritdoc />
         public Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
             var path = configuration.GetString("path");
@@ -73,14 +66,17 @@ namespace Platibus.SQLite
             return Task.FromResult<IMessageQueueingService>(sqliteMessageQueueingService);
         }
 
-        /// <summary>
-        /// Creates an initializes a <see cref="ISubscriptionTrackingService"/>
-        /// based on the provideds <paramref name="configuration"/>.
-        /// </summary>
-        /// <param name="configuration">The journaling configuration
-        /// element.</param>
-        /// <returns>Returns a task whose result is an initialized
-        /// <see cref="ISubscriptionTrackingService"/>.</returns>
+        /// <inheritdoc />
+        public Task<IMessageJournalingService> CreateMessageJournalingService(JournalingElement configuration)
+        {
+            var path = configuration.GetString("path");
+            var sqliteBaseDir = new DirectoryInfo(GetRootedPath(path));
+            var sqliteMessageQueueingService = new SQLiteMessageJournalingService(sqliteBaseDir);
+            sqliteMessageQueueingService.Init();
+            return Task.FromResult<IMessageJournalingService>(sqliteMessageQueueingService);
+        }
+
+        /// <inheritdoc />
         public async Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
             SubscriptionTrackingElement configuration)
         {
@@ -99,12 +95,9 @@ namespace Platibus.SQLite
                 return defaultRootedPath;
             }
 
-            if (Path.IsPathRooted(path))
-            {
-                return path;
-            }
-
-            return Path.Combine(defaultRootedPath, path);
+            return Path.IsPathRooted(path) 
+                ? path 
+                : Path.Combine(defaultRootedPath, path);
         }
     }
 }
