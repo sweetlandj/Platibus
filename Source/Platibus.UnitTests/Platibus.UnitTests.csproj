@@ -123,9 +123,11 @@
     <Compile Include="Filesystem\FilesystemCollectionFixture.cs" />
     <Compile Include="Filesystem\FilesystemMessageJournalInspector.cs" />
     <Compile Include="Filesystem\FilesystemMessageJournalingServiceTests.cs" />
+    <Compile Include="Mocks\FilteredMessageJournalingServiceTests.cs" />
     <Compile Include="LocalDB\LocalDBCollectionFixture.cs" />
     <Compile Include="LocalDB\LocalDBMessageJournalingServiceTests.cs" />
     <Compile Include="MessageJournalingServiceTests.cs" />
+    <Compile Include="Mocks\MockCollectionFixture.cs" />
     <Compile Include="PlatibusConfigurationExtensionTests.cs" />
     <Compile Include="RabbitMQMessageQueueingServiceTests.cs" />
     <Compile Include="SQLite\SQLiteMessageJournalInspector.cs" />

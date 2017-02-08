@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS [PB_MessageJournal]
 (
     [Id] INTEGER PRIMARY KEY AUTOINCREMENT,
     [MessageId] TEXT NOT NULL,
+    [Timestamp] INTEGER,
     [Category] TEXT NOT NULL,
     [MessageName] TEXT NULL,
     [Origination] TEXT NULL,
@@ -90,6 +91,9 @@ CREATE TABLE IF NOT EXISTS [PB_MessageJournal]
 
 CREATE INDEX IF NOT EXISTS [PB_MessageJournal_IX_MessageId] 
     ON [PB_MessageJournal]([MessageId]);
+
+CREATE INDEX IF NOT EXISTS [PB_MessageJournal_IX_Timestamp] 
+    ON [PB_MessageJournal]([Timestamp]);
 
 CREATE INDEX IF NOT EXISTS [PB_MessageJournal_IX_Category] 
     ON [PB_MessageJournal]([Category]);"; }

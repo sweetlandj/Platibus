@@ -81,10 +81,10 @@ namespace Platibus.SQLite
         }
 
         /// <inheritdoc />
-        protected override Task<SQLJournaledMessage> InsertJournaledMessage(Message message, string category)
+        protected override Task<SQLJournaledMessage> InsertJournaledMessage(Message message, string category, DateTimeOffset timestamp = default(DateTimeOffset))
         {
             CheckDisposed();
-            var op = new SQLiteOperation<SQLJournaledMessage>(() => base.InsertJournaledMessage(message, category));
+            var op = new SQLiteOperation<SQLJournaledMessage>(() => base.InsertJournaledMessage(message, category, timestamp));
             _operationQueue.Post(op);
             return op.Task;
         }

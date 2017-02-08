@@ -101,19 +101,34 @@ namespace Platibus.SQL
         /// <inheritdoc />
         public Task MessageReceived(Message message, CancellationToken cancellationToken = new CancellationToken())
         {
-            return InsertJournaledMessage(message, "Received");
+            var received = message.Headers.Received;
+            if (received == default(DateTime))
+            {
+                received = DateTime.UtcNow;
+            }
+            return InsertJournaledMessage(message, "Received", received);
         }
 
         /// <inheritdoc />
         public Task MessageSent(Message message, CancellationToken cancellationToken = new CancellationToken())
         {
-            return InsertJournaledMessage(message, "Sent");
+            var sent = message.Headers.Sent;
+            if (sent == default(DateTime))
+            {
+                sent = DateTime.UtcNow;
+            }
+            return InsertJournaledMessage(message, "Sent", sent);
         }
 
         /// <inheritdoc />
         public Task MessagePublished(Message message, CancellationToken cancellationToken = new CancellationToken())
         {
-            return InsertJournaledMessage(message, "Published");
+            var published = message.Headers.Published;
+            if (published == default(DateTime))
+            {
+                published = DateTime.UtcNow;
+            }
+            return InsertJournaledMessage(message, "Published", published);
         }
 
         /// <summary>
@@ -160,19 +175,26 @@ namespace Platibus.SQL
             // and dependency on .NET 4.5.1 and later
             return Task.FromResult(queuedMessages.AsEnumerable());
         }
-        
+
         /// <summary>
         /// Inserts a journaled message into the SQL database
         /// </summary>
         /// <param name="message">The message to enqueue</param>
         /// <param name="category">The journaled message category, e.g. "Sent", "Received", or "Published"</param>
+        /// <param name="timestamp">(Optional) The date/time that the message was sent, received, or published 
+        /// according to message headers</param>
         /// <returns>Returns a task that completes when the message has been inserted into the SQL
         /// database and whose result is a copy of the inserted record</returns>
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual Task<SQLJournaledMessage> InsertJournaledMessage(Message message, string category)
+        protected virtual Task<SQLJournaledMessage> InsertJournaledMessage(Message message, string category, DateTimeOffset timestamp = default(DateTimeOffset))
         {
             if (message == null) throw new ArgumentNullException("message");
             if (string.IsNullOrWhiteSpace(category)) throw new ArgumentNullException("category");
+
+            if (timestamp == default(DateTimeOffset))
+            {
+                timestamp = DateTimeOffset.UtcNow;
+            }
 
             SQLJournaledMessage journaledMessage;
             var connection = _connectionProvider.GetConnection();
@@ -188,6 +210,7 @@ namespace Platibus.SQL
                         var headers = message.Headers;
 
                         command.SetParameter(_dialect.MessageIdParameterName, (Guid)headers.MessageId);
+                        command.SetParameter(_dialect.TimestampParameterName, timestamp);
                         command.SetParameter(_dialect.CategoryParameterName, category);
                         command.SetParameter(_dialect.MessageNameParameterName, (string)headers.MessageName);
                         command.SetParameter(_dialect.OriginationParameterName,
@@ -216,7 +239,7 @@ namespace Platibus.SQL
             // and dependency on .NET 4.5.1 and later
             return Task.FromResult(journaledMessage);
         }
-        
+
         /// <summary>
         /// A helper method to serialize message headers so that they can be inserted into a
         /// single column in the SQL database

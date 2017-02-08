@@ -268,7 +268,7 @@ namespace Platibus.Config
         /// <returns>Returns a task whose result is an initialized message journaling service</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="config"/> is
         /// <c>null</c></exception>
-        public static Task<IMessageJournalingService> InitMessageJournalingService(JournalingElement config)
+        public static async Task<IMessageJournalingService> InitMessageJournalingService(JournalingElement config)
         {
             if (config == null) throw new ArgumentNullException("config");
 
@@ -282,7 +282,14 @@ namespace Platibus.Config
             var provider = ProviderHelper.GetProvider<IMessageJournalingServiceProvider>(providerName);
 
             Log.Debug("Initializing message journaling service...");
-            return provider.CreateMessageJournalingService(config);
+            var messageJournalingService = await provider.CreateMessageJournalingService(config);
+            var filteredMessageJournalingService = new FilteredMessageJournalingService(
+                messageJournalingService,
+                config.JournalSentMessages,
+                config.JournalReceivedMessages,
+                config.JournalPublishedMessages);
+
+            return filteredMessageJournalingService;
         }
 
         /// <summary>

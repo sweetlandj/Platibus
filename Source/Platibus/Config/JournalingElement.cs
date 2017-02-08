@@ -32,6 +32,9 @@ namespace Platibus.Config
     {
         private const string EnabledPropertyName = "enabled";
         private const string ProviderPropertyName = "provider";
+        private const string SentPropertyName = "sent";
+        private const string ReceivedPropertyName = "received";
+        private const string PublishedPropertyName = "published";
 
         /// <summary>
         /// Indicates whether message journaling is enabled
@@ -53,6 +56,36 @@ namespace Platibus.Config
         {
             get { return (string) base[ProviderPropertyName]; }
             set { base[ProviderPropertyName] = value; }
+        }
+
+        /// <summary>
+        /// Whether to journal sent messages
+        /// </summary>
+        [ConfigurationProperty(SentPropertyName, DefaultValue = true)]
+        public bool JournalSentMessages
+        {
+            get { return (bool)base[SentPropertyName]; }
+            set { base[SentPropertyName] = value; }
+        }
+
+        /// <summary>
+        /// Whether to journal received messages
+        /// </summary>
+        [ConfigurationProperty(ReceivedPropertyName, DefaultValue = true)]
+        public bool JournalReceivedMessages
+        {
+            get { return (bool)base[ReceivedPropertyName]; }
+            set { base[ReceivedPropertyName] = value; }
+        }
+
+        /// <summary>
+        /// Whether to journal published messages
+        /// </summary>
+        [ConfigurationProperty(PublishedPropertyName, DefaultValue = true)]
+        public bool JournalPublishedMessages
+        {
+            get { return (bool)base[PublishedPropertyName]; }
+            set { base[PublishedPropertyName] = value; }
         }
     }
 }

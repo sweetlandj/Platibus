@@ -229,6 +229,11 @@ namespace Platibus.SQL
         /// in a particular queue
         /// </summary>
         string SelectJournaledMessagesCommand { get; }
+
+        /// <summary>
+        /// The name of the parameter used to specify a timestamp
+        /// </summary>
+        string TimestampParameterName { get; }
     }
 
 

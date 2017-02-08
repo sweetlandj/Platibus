@@ -73,6 +73,7 @@ BEGIN
     (
         [Id] INT IDENTITY(1,1),
         [MessageId] UNIQUEIDENTIFIER NOT NULL,
+        [Timestamp] DATETIMEOFFSET NOT NULL,
         [Category] VARCHAR(20) NOT NULL,
         [MessageName] VARCHAR(500) NULL,
         [Origination] VARCHAR(500) NULL,
@@ -82,9 +83,6 @@ BEGIN
         [ContentType] VARCHAR(100) NULL,
         [Headers] VARCHAR(MAX),
         [MessageContent] TEXT,
-        [Acknowledged] DATETIME NULL,
-        [Abandoned] DATETIME NULL,
-        [Attempts] INT NOT NULL DEFAULT 0,
 
         CONSTRAINT [PB_MessageJournal_PK] PRIMARY KEY CLUSTERED ([Id])
     )
@@ -92,9 +90,25 @@ BEGIN
     CREATE INDEX [PB_MessageJournal_IX_MessageId] 
         ON [PB_MessageJournal]([MessageId])
 
+    CREATE INDEX [PB_MessageJournal_IX_Timestamp] 
+        ON [PB_MessageJournal]([Timestamp])
+
     CREATE INDEX [PB_MessageJournal_IX_Category] 
         ON [PB_MessageJournal]([Category])
-END"; }
+END
+
+IF NOT EXISTS (SELECT * FROM [sys].[columns] 
+           WHERE [object_id] = OBJECT_ID(N'[PB_MessageJournal]') 
+           AND [name] = 'Timestamp')
+BEGIN
+    ALTER TABLE [PB_MessageJournal]
+    ADD [Timestamp] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET()
+    
+    CREATE INDEX [PB_MessageJournal_IX_Timestamp] 
+        ON [PB_MessageJournal]([Timestamp])
+END
+
+"; }
         }
 
         /// <summary>

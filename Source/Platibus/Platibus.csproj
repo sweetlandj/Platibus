@@ -90,6 +90,7 @@
     <Compile Include="DataContractMessageNamingService.cs" />
     <Compile Include="EndpointAddressEqualityComparer.cs" />
     <Compile Include="EndpointCollection.cs" />
+    <Compile Include="FilteredMessageJournalingService.cs" />
     <Compile Include="Http\AuthenticationSchemeElement.cs" />
     <Compile Include="Http\AuthenticationSchemesElementCollection.cs" />
     <Compile Include="Http\BasicAuthorizationService.cs" />

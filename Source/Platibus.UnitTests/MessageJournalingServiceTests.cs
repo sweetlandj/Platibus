@@ -52,7 +52,7 @@ namespace Platibus.UnitTests
             return Message = new Message(messageHeaders, "Hello, world!");
         }
 
-        protected Task WhenJournalingSentMessage()
+        protected virtual Task WhenJournalingSentMessage()
         {
             return MessageJournalingService.MessageSent(Message);
         }
@@ -74,7 +74,7 @@ namespace Platibus.UnitTests
             return Message = new Message(messageHeaders, "Hello, world!");
         }
 
-        protected Task WhenJournalingReceivedMessage()
+        protected virtual Task WhenJournalingReceivedMessage()
         {
             return MessageJournalingService.MessageReceived(Message);
         }
@@ -95,7 +95,7 @@ namespace Platibus.UnitTests
             return Message = new Message(messageHeaders, "Hello, world!");
         }
 
-        protected Task WhenJournalingPublishedMessage()
+        protected virtual Task WhenJournalingPublishedMessage()
         {
             return MessageJournalingService.MessagePublished(Message);
         }
