@@ -66,5 +66,10 @@ namespace Platibus
         /// Category for log events related to SQL-based services
         /// </summary>
         public const string SQL = "Platibus.SQL";
+
+        /// <summary>
+        /// Category for log events related to UDP and multicast services
+        /// </summary>
+        public const string UDP = "Platibus.UDP";
     }
 }

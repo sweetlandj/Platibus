@@ -35,9 +35,10 @@ namespace Platibus.Config
     public class SubscriptionTrackingElement : ExtensibleConfigurationElement
     {
         private const string ProviderPropertyName = "provider";
+        private const string MulticastPropertyName = "multicast";
 
         /// <summary>
-        /// The name of the subscriptin tracking service provider
+        /// The name of the subscription tracking service provider
         /// </summary>
         /// <seealso cref="ISubscriptionTrackingService"/>
         /// <seealso cref="ProviderAttribute"/>
@@ -46,6 +47,17 @@ namespace Platibus.Config
         {
             get { return (string) base[ProviderPropertyName]; }
             set { base[ProviderPropertyName] = value; }
+        }
+
+        /// <summary>
+        /// Configures optional support for broadcasting and consuming subscription changes
+        /// via multicast group
+        /// </summary>
+        [ConfigurationProperty(MulticastPropertyName)]
+        public MulticastElement Multicast
+        {
+            get { return (MulticastElement) base[MulticastPropertyName]; }
+            set { base[MulticastPropertyName] = value; }
         }
     }
 }

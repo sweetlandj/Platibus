@@ -86,6 +86,7 @@
     <Compile Include="Config\ILoopbackConfiguration.cs" />
     <Compile Include="Config\LoopbackConfiguration.cs" />
     <Compile Include="Config\LoopbackConfigurationSection.cs" />
+    <Compile Include="Config\MulticastElement.cs" />
     <Compile Include="Config\QueueNameFactory.cs" />
     <Compile Include="DataContractMessageNamingService.cs" />
     <Compile Include="EndpointAddressEqualityComparer.cs" />
@@ -95,6 +96,9 @@
     <Compile Include="Http\AuthenticationSchemesElementCollection.cs" />
     <Compile Include="Http\BasicAuthorizationService.cs" />
     <Compile Include="Http\HttpClientPool.cs" />
+    <Compile Include="Multicast\ByteUtils.cs" />
+    <Compile Include="Multicast\MulticastSubscriptionTrackingService.cs" />
+    <Compile Include="Multicast\SubscriptionTrackingDatagram.cs" />
     <Compile Include="ResourceNotFoundException.cs" />
     <Compile Include="Security\IAuthorizationService.cs" />
     <Compile Include="Http\HttpServerConfigurationManager.cs" />

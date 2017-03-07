@@ -128,6 +128,7 @@
     <Compile Include="LocalDB\LocalDBMessageJournalingServiceTests.cs" />
     <Compile Include="MessageJournalingServiceTests.cs" />
     <Compile Include="Mocks\MockCollectionFixture.cs" />
+    <Compile Include="Multicast\MulticastSubscriptionTrackingServiceTests.cs" />
     <Compile Include="PlatibusConfigurationExtensionTests.cs" />
     <Compile Include="RabbitMQMessageQueueingServiceTests.cs" />
     <Compile Include="SQLite\SQLiteMessageJournalInspector.cs" />
@@ -150,6 +151,11 @@
     <Compile Include="SQLMessageQueueInspector.cs" />
     <Compile Include="SQLiteSubscriptionTrackingServiceTests.cs" />
     <Compile Include="SQLSubscriptionTrackingServiceTests.cs" />
+    <Compile Include="Stubs\SubscriptionAddedEventArgs.cs" />
+    <Compile Include="Stubs\SubscriptionAddedEventHandler.cs" />
+    <Compile Include="Stubs\SubscriptionRemovedEventArgs.cs" />
+    <Compile Include="Stubs\SubscriptionRemovedEventHandler.cs" />
+    <Compile Include="Stubs\SubscriptionTrackingServiceStub.cs" />
     <Compile Include="UnitTestLoggingCategories.cs" />
     <Compile Include="TopicControllerTests.cs" />
   </ItemGroup>
