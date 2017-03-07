@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,7 +22,7 @@ namespace Platibus.Multicast
         private readonly IPAddress _groupAddress;
         private readonly int _port;
         private readonly UdpClient _broadcastClient;
-        private readonly UdpClient _listeningClient;
+        private readonly UdpClient _listenerClient;
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly Task _listeningTask;
         private readonly ActionBlock<UdpReceiveResult> _receiveResultQueue;
@@ -56,10 +54,9 @@ namespace Platibus.Multicast
             _groupAddress = groupAddress;
             _port = port;
 
-            var localIpAddress = GetLocalIPAddress(_groupAddress.AddressFamily);
-            Log.InfoFormat("Starting multicast subscription tracking service on group address {0}...", _groupAddress);
+            Log.InfoFormat("Starting multicast subscription tracking service for multicast group {0}:{1}...", _groupAddress, _port);
 
-            Log.InfoFormat("Binding multicast broadcast socket to local address {0}...", localIpAddress);
+            Log.InfoFormat("Binding multicast broadcast socket...");
             _broadcastClient = new UdpClient
             {
                 ExclusiveAddressUse = false
@@ -67,18 +64,22 @@ namespace Platibus.Multicast
             _broadcastClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             _broadcastClient.JoinMulticastGroup(groupAddress, IPAddress.Any);
             _broadcastClient.Ttl = 2;
-            _broadcastClient.Client.Bind(new IPEndPoint(localIpAddress, 0));
-            Log.InfoFormat("Multicast broadcast socket bound to {0}, port {1}", localIpAddress, localIpAddress, ((IPEndPoint)_broadcastClient.Client.LocalEndPoint).Port);
+            _broadcastClient.Client.Bind(new IPEndPoint(IPAddress.Any, 0));
 
-            Log.InfoFormat("Binding multicast listening socket to local address {0}...", localIpAddress);
-            _listeningClient = new UdpClient
+            var broadcastBinding = (IPEndPoint) _broadcastClient.Client.LocalEndPoint;
+            Log.InfoFormat("Multicast broadcast socket bound to {0}:{1}", broadcastBinding.Address, broadcastBinding.Port);
+
+            Log.Info("Binding multicast listener socket...");
+            _listenerClient = new UdpClient
             {
                 ExclusiveAddressUse = false
             };
-            _listeningClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            _listeningClient.JoinMulticastGroup(groupAddress, IPAddress.Any);
-            _listeningClient.Client.Bind(new IPEndPoint(localIpAddress, _port));
-            Log.InfoFormat("Multicast listening socket bound to {0}, port {1}", localIpAddress, ((IPEndPoint)_listeningClient.Client.LocalEndPoint).Port);
+            _listenerClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            _listenerClient.JoinMulticastGroup(groupAddress, IPAddress.Any);
+            _listenerClient.Client.Bind(new IPEndPoint(IPAddress.Any, _port));
+
+            var listenerBinding = (IPEndPoint)_broadcastClient.Client.LocalEndPoint;
+            Log.InfoFormat("Multicast listener socket bound to {0}:{1}", listenerBinding.Address, listenerBinding.Port);
 
             _cancellationTokenSource = new CancellationTokenSource();
             _listeningTask = Task.Run(async () => await Listen(_cancellationTokenSource.Token));
@@ -89,16 +90,7 @@ namespace Platibus.Multicast
                     MaxDegreeOfParallelism = 2
                 });
         }
-
-        private static IPAddress GetLocalIPAddress(AddressFamily addressFamily)
-        {
-            return NetworkInterface.GetAllNetworkInterfaces()
-                .SelectMany(i => i.GetIPProperties().UnicastAddresses)
-                .Where(a => a.Address.AddressFamily == addressFamily && a.IsDnsEligible)
-                .Select(a => a.Address)
-                .FirstOrDefault();
-        }
-
+        
         private async Task Listen(CancellationToken cancellationToken)
         {
             var cancelation = new TaskCompletionSource<bool>();
@@ -109,7 +101,7 @@ namespace Platibus.Multicast
                 Log.DebugFormat("Multicast listener started");
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    var received = _listeningClient.ReceiveAsync();
+                    var received = _listenerClient.ReceiveAsync();
                     await Task.WhenAny(received, canceled);
                     if (cancellationToken.IsCancellationRequested)
                     {
@@ -216,10 +208,10 @@ namespace Platibus.Multicast
                 _broadcastClient.Close();
             }
 
-            if (_listeningClient != null)
+            if (_listenerClient != null)
             {
-                _listeningClient.DropMulticastGroup(_groupAddress);
-                _listeningClient.Close();
+                _listenerClient.DropMulticastGroup(_groupAddress);
+                _listenerClient.Close();
             }
         }
     }
