@@ -25,6 +25,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
+using Platibus.Multicast;
 
 // The MIT License (MIT)
 // 
@@ -84,7 +85,17 @@ namespace Platibus.SQLite
             var sqliteBaseDir = new DirectoryInfo(GetRootedPath(path));
             var sqliteSubscriptionTrackingService = new SQLiteSubscriptionTrackingService(sqliteBaseDir);
             await sqliteSubscriptionTrackingService.Init();
-            return sqliteSubscriptionTrackingService;
+
+            var multicast = configuration.Multicast;
+            if (multicast == null || !multicast.Enabled)
+            {
+                return sqliteSubscriptionTrackingService;
+            }
+
+            var multicastTrackingService = new MulticastSubscriptionTrackingService(
+                sqliteSubscriptionTrackingService, multicast.Address, multicast.Port);
+
+            return multicastTrackingService;
         }
 
         private static string GetRootedPath(string path)

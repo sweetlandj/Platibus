@@ -1,4 +1,5 @@
-﻿using System.Configuration;
+﻿using System.ComponentModel;
+using System.Configuration;
 using System.Net;
 
 namespace Platibus.Config
@@ -18,7 +19,7 @@ namespace Platibus.Config
         /// <summary>
         /// Whether to broadcast subscription changes to members of a multicast group
         /// </summary>
-        [ConfigurationProperty(EnabledPropertyName, DefaultValue = true)]
+        [ConfigurationProperty(EnabledPropertyName, DefaultValue = false)]
         public bool Enabled
         {
             get { return (bool)base[EnabledPropertyName]; }
@@ -29,6 +30,7 @@ namespace Platibus.Config
         /// The IP address of the multicast group to join
         /// </summary>
         [ConfigurationProperty(AddressPropertyName, DefaultValue = DefaultAddress)]
+        [TypeConverter(typeof(IPAddressConverter))]
         public IPAddress Address
         {
             get { return (IPAddress)base[AddressPropertyName]; }

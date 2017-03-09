@@ -25,6 +25,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
+using Platibus.Multicast;
 
 // The MIT License (MIT)
 // 
@@ -107,7 +108,17 @@ namespace Platibus.Filesystem
             var fsTrackingBaseDir = new DirectoryInfo(GetRootedPath(path));
             var fsTrackingService = new FilesystemSubscriptionTrackingService(fsTrackingBaseDir);
             fsTrackingService.Init();
-            return Task.FromResult<ISubscriptionTrackingService>(fsTrackingService);
+
+            var multicast = configuration.Multicast;
+            if (multicast == null || !multicast.Enabled)
+            {
+                return Task.FromResult<ISubscriptionTrackingService>(fsTrackingService);
+            }
+             
+            var multicastTrackingService = new MulticastSubscriptionTrackingService(
+                fsTrackingService, multicast.Address, multicast.Port);
+
+            return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
         }
 
         private static string GetRootedPath(string path)

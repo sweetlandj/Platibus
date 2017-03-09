@@ -84,6 +84,7 @@
     <Compile Include="Config\GenericMessageHandlerAdapter.cs" />
     <Compile Include="Config\IAsyncConfigurationHook.cs" />
     <Compile Include="Config\ILoopbackConfiguration.cs" />
+    <Compile Include="Config\IPAddressConverter.cs" />
     <Compile Include="Config\LoopbackConfiguration.cs" />
     <Compile Include="Config\LoopbackConfigurationSection.cs" />
     <Compile Include="Config\MulticastElement.cs" />

@@ -24,6 +24,7 @@ using System.Configuration;
 using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
+using Platibus.Multicast;
 
 namespace Platibus.SQL
 {
@@ -91,7 +92,17 @@ namespace Platibus.SQL
             }
             var sqlSubscriptionTrackingService = new SQLSubscriptionTrackingService(connectionStringSettings);
             await sqlSubscriptionTrackingService.Init();
-            return sqlSubscriptionTrackingService;
+
+            var multicast = configuration.Multicast;
+            if (multicast == null || !multicast.Enabled)
+            {
+                return sqlSubscriptionTrackingService;
+            }
+
+            var multicastTrackingService = new MulticastSubscriptionTrackingService(
+                sqlSubscriptionTrackingService, multicast.Address, multicast.Port);
+
+            return multicastTrackingService;
         }
     }
 }

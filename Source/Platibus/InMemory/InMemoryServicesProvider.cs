@@ -23,6 +23,7 @@
 using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
+using Platibus.Multicast;
 
 namespace Platibus.InMemory
 {
@@ -50,7 +51,17 @@ namespace Platibus.InMemory
         public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
             SubscriptionTrackingElement configuration)
         {
-            return Task.FromResult<ISubscriptionTrackingService>(new InMemorySubscriptionTrackingService());
+            var inMemoryTrackingService = new InMemorySubscriptionTrackingService();
+            var multicast = configuration.Multicast;
+            if (multicast == null || !multicast.Enabled)
+            {
+                return Task.FromResult<ISubscriptionTrackingService>(inMemoryTrackingService);
+            }
+
+            var multicastTrackingService = new MulticastSubscriptionTrackingService(
+                inMemoryTrackingService, multicast.Address, multicast.Port);
+
+            return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
         }
     }
 }
