@@ -12,6 +12,7 @@ namespace Platibus.Multicast
         private const byte TypeId = 243;
         
         private const byte NullTerminator = 0;
+        private const int NodeIdLenth = NodeId.Length;
         private const int TypeIdLength = sizeof(byte);
         private const int ActionTypeLength = sizeof(byte);
         private const int TTLLength = sizeof(int);
@@ -19,26 +20,30 @@ namespace Platibus.Multicast
 
         private const int MinTopicLength = 1;
         private const int MinUriLength = 7;
-        private const int MinLength = TypeIdLength + ActionTypeLength + TTLLength
-                                      + MinTopicLength + NullTerminatorLength
+
+        private const int MinLength = NodeIdLenth + TypeIdLength + ActionTypeLength
+                                      + TTLLength + MinTopicLength + NullTerminatorLength
                                       + MinUriLength + NullTerminatorLength;
 
         private static readonly Encoding Encoding = Encoding.UTF8;
 
+        private readonly NodeId _nodeId;
         private readonly ActionType _action;
         private readonly TopicName _topic;
         private readonly Uri _subscriberUri;
         private readonly TimeSpan _ttl;
 
+        public NodeId NodeId { get { return _nodeId; } }
         public ActionType Action { get { return _action; } }
         public TopicName Topic { get { return _topic; } }
         public Uri SubscriberUri { get { return _subscriberUri; } }
         public TimeSpan TTL { get { return _ttl; } }
 
-        public SubscriptionTrackingDatagram(ActionType action, TopicName topic, Uri subscriberUri, TimeSpan ttl = default(TimeSpan))
+        public SubscriptionTrackingDatagram(NodeId nodeId, ActionType action, TopicName topic, Uri subscriberUri, TimeSpan ttl = default(TimeSpan))
         {
             if (topic == null) throw new ArgumentNullException("topic");
             if (subscriberUri == null) throw new ArgumentNullException("subscriberUri");
+            _nodeId = nodeId;
             _action = action;
             _topic = topic;
             _subscriberUri = subscriberUri;
@@ -49,9 +54,16 @@ namespace Platibus.Multicast
         {
             if (buffer == null) throw new ArgumentNullException("buffer");
             if (buffer.Length < MinLength) throw new ArgumentOutOfRangeException("buffer", "Buffer must be at least " + MinLength + " bytes");
-            if (buffer[0] != TypeId) throw new ArgumentOutOfRangeException("buffer", buffer[0], "Incorrect type ID");
 
-            var off = TypeIdLength;
+            var off = 0;
+            var nodeId = new NodeId(buffer, off);
+            off += NodeIdLenth;
+
+            // Type ID already verified
+            var typeId = buffer[off];
+            if (typeId != TypeId) throw new ArgumentOutOfRangeException("buffer", typeId, "Incorrect type ID");
+            off += TypeIdLength;
+
             var action = (ActionType) buffer[off];
             off += ActionTypeLength;
 
@@ -69,7 +81,7 @@ namespace Platibus.Multicast
             var subscriberUriLength = subscriberUriEnd - off;
             var subscriberUri = new Uri(Encoding.GetString(buffer, off, subscriberUriLength));
 
-            return new SubscriptionTrackingDatagram(action, topic, subscriberUri, ttl);
+            return new SubscriptionTrackingDatagram(nodeId, action, topic, subscriberUri, ttl);
         }
 
         public byte[] Encode()
@@ -79,13 +91,16 @@ namespace Platibus.Multicast
             
             var topicLen = topicBytes.Length;
             var subscriberUriLen = subscriberUriBytes.Length;
-            var datagramLen = TypeIdLength + ActionTypeLength + TTLLength
-                              + topicLen + NullTerminatorLength
+            var datagramLen = NodeIdLenth + TypeIdLength + ActionTypeLength
+                              + TTLLength + topicLen + NullTerminatorLength
                               + subscriberUriLen + NullTerminatorLength;
 
             var buffer = new byte[datagramLen];
 
-            var off = 0;    
+            var off = 0;
+            Array.Copy(_nodeId, 0, buffer, off, NodeId.Length);
+            off += NodeIdLenth;
+
             buffer[off] = TypeId;
             off += TypeIdLength;
 

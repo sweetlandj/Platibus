@@ -98,6 +98,7 @@
     <Compile Include="Http\HttpClientPool.cs" />
     <Compile Include="Multicast\ByteUtils.cs" />
     <Compile Include="Multicast\MulticastSubscriptionTrackingService.cs" />
+    <Compile Include="Multicast\NodeId.cs" />
     <Compile Include="Multicast\SubscriptionTrackingDatagram.cs" />
     <Compile Include="ResourceNotFoundException.cs" />
     <Compile Include="Security\IAuthorizationService.cs" />
