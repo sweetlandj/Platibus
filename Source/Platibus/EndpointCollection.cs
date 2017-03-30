@@ -87,6 +87,12 @@ namespace Platibus
             return endpoint != null;
         }
 
+        /// <inheritdoc />
+        public bool Contains(EndpointName endpointName)
+        {
+            return _endpoints.ContainsKey(endpointName);
+        }
+
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();

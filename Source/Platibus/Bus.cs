@@ -75,15 +75,16 @@ namespace Platibus
             if (transportService == null) throw new ArgumentNullException("transportService");
             if (messageQueueingService == null) throw new ArgumentNullException("messageQueueingService");
 
+            // Validate the provided configuration and throw exceptions for missing or invalid
+            // configurations
+            configuration.Validate();
+
             _baseUri = baseUri;
             _transportService = transportService;
             _messageQueueingService = messageQueueingService;
 	        _defaultContentType = string.IsNullOrWhiteSpace(configuration.DefaultContentType)
 		        ? "application/json"
 		        : configuration.DefaultContentType;
-
-            // TODO: Throw configuration exception if message queueing service, message naming
-            // service, or serialization service are null
 
             _messageJournalingService = configuration.MessageJournalingService;
             _messageNamingService = configuration.MessageNamingService;
@@ -157,7 +158,8 @@ namespace Platibus
             if (content == null) throw new ArgumentNullException("content");
 
             var prototypicalMessage = BuildMessage(content, options: options);
-            var endpoints = GetEndpointsForMessage(prototypicalMessage);
+            var endpoints = GetEndpointsForSend(prototypicalMessage);
+
             var transportTasks = new List<Task>();
 
             // Create the sent message before transporting it in order to ensure that the
@@ -319,15 +321,30 @@ namespace Platibus
             return new Message(headers, serializedContent);
         }
 
-        private IEnumerable<KeyValuePair<EndpointName, IEndpoint>> GetEndpointsForMessage(Message message)
+        private IEnumerable<KeyValuePair<EndpointName, IEndpoint>> GetEndpointsForSend(Message message)
         {
-            return _sendRules
+            var matchingSendRules = _sendRules
                 .Where(rule => rule.Specification.IsSatisfiedBy(message))
+                .ToList();
+
+            if (!matchingSendRules.Any())
+            {
+                throw new NoMatchingSendRulesException();
+            }
+
+            var endpointNames = matchingSendRules
                 .SelectMany(rule => rule.Endpoints)
-                .Join(_endpoints,
-                    endpointName => endpointName,
-                    endpointEntry => endpointEntry.Key,
-                    (_, endpointEntry) => endpointEntry);
+                .ToList();
+
+            var messageEndpoints = new Dictionary<EndpointName, IEndpoint>();
+            foreach (var endpointName in endpointNames)
+            {
+                // Throws EndpointNotFoundException if no endpoint with the specified
+                // name exists
+                messageEndpoints[endpointName] = _endpoints[endpointName];
+            }
+            
+            return messageEndpoints;
         }
 
         internal async Task SendReply(BusMessageContext messageContext, object replyContent,

@@ -90,6 +90,12 @@ namespace Platibus
             return endpoint != null;
         }
 
+        /// <inheritdoc />
+        public bool Contains(EndpointName endpointName)
+        {
+            return _endpoints.ContainsKey(endpointName);
+        }
+
         /// <summary>
         /// Returns an enumerator that iterates through a collection.
         /// </summary>

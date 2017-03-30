@@ -20,36 +20,52 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using System.ComponentModel;
 using System.Configuration;
-using System.Globalization;
-using System.Net;
+using NUnit.Framework;
+using Platibus.Config;
 
-namespace Platibus.Config
+namespace Platibus.UnitTests.Config
 {
-    internal class IPAddressConverter : ConfigurationConverterBase
+    public class ConfigurationValidationTests
     {
-        public override bool CanConvertTo(ITypeDescriptorContext ctx, Type type)
+        protected PlatibusConfiguration Configuration;
+
+        [Test]
+        public void DefaultConfigurationIsValid()
         {
-            return type == typeof(string);
+            GivenDefaultConfiguration();
+            Assert.DoesNotThrow(WhenValidating);
         }
 
-        public override bool CanConvertFrom(ITypeDescriptorContext ctx, Type type)
+        [Test]
+        public void MessageNamingServiceIsRequired()
         {
-            return type == typeof(string);
+            GivenValidConfiguration();
+            Configuration.MessageNamingService = null;
+            Assert.Throws<ConfigurationErrorsException>(WhenValidating);
         }
 
-        public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
+        [Test]
+        public void SerializationServiceIsRequired()
         {
-            var strVal = value as string;
-            return string.IsNullOrWhiteSpace(strVal) ? null : IPAddress.Parse(strVal);
+            GivenValidConfiguration();
+            Configuration.SerializationService = null;
+            Assert.Throws<ConfigurationErrorsException>(WhenValidating);
         }
 
-        public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
+        private void GivenDefaultConfiguration()
         {
-            if (value == null) return null;
-            return value.ToString();
+            Configuration = new PlatibusConfiguration();
+        }
+
+        private void GivenValidConfiguration()
+        {
+            Configuration = new PlatibusConfiguration();
+        }
+        
+        private void WhenValidating()
+        {
+            Configuration.Validate();
         }
     }
 }

@@ -117,6 +117,9 @@
   <ItemGroup>
     <Compile Include="BusSendTests.cs" />
     <Compile Include="ClaimsPrincipalEqualityComparer.cs" />
+    <Compile Include="Config\ConfigurationValidationTests.cs" />
+    <Compile Include="Config\SendRuleValidationTests.cs" />
+    <Compile Include="Config\SubscriptionRuleValidationTests.cs" />
     <Compile Include="DataContractMessageNamingServiceTests.cs" />
     <Compile Include="DefaultMessageNamingServiceTests.cs" />
     <Compile Include="EndpointAddressEqualityComparerTests.cs" />

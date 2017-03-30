@@ -49,5 +49,14 @@ namespace Platibus
         /// <returns>Returns <c>true</c> if the endpoint is found; <c>false</c>
         /// otherwise</returns>
         bool TryGetEndpointByAddress(Uri address, out IEndpoint endpoint);
+
+        /// <summary>
+        /// Indicates whether this collection contains an endpoint with the specified 
+        /// <paramref name="endpointName"/>
+        /// </summary>
+        /// <param name="endpointName">The name of the endpoint</param>
+        /// <returns>Returns <c>true</c> if the collection contains an endpoint with the
+        /// specified <paramref name="endpointName"/>; <c>false</c> otherwise</returns>
+        bool Contains(EndpointName endpointName);
     }
 }
