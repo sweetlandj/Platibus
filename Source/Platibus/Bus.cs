@@ -119,8 +119,13 @@ namespace Platibus
                 var rules = ruleGroup.Value;
                 var handlers = rules.Select(r => r.MessageHandler);
 
+                var queueOptions = rules
+                    .OrderBy(r => QueueOptionPrecedence(r.QueueOptions))
+                    .Select(r => r.QueueOptions)
+                    .FirstOrDefault();
+
                 var queueListener = new MessageHandlingListener(this, _messageNamingService, _serializationService, handlers);
-                await _messageQueueingService.CreateQueue(queueName, queueListener, cancellationToken: cancellationToken);
+                await _messageQueueingService.CreateQueue(queueName, queueListener, queueOptions, cancellationToken);
             }
 
             foreach (var subscription in _subscriptions)
@@ -136,6 +141,12 @@ namespace Platibus
 
                 _subscriptionTasks.Add(subscriptionTask);
             }
+        }
+
+        private static int QueueOptionPrecedence(QueueOptions queueOptions)
+        {
+            // Prefer overrides to default options
+            return default(QueueOptions).Equals(queueOptions) ? 1 : 0;
         }
 
         private async Task TransportMessage(Message message, IEndpointCredentials credentials,

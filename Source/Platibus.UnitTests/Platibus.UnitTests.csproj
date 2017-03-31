@@ -115,6 +115,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BusInitTests.cs" />
     <Compile Include="BusSendTests.cs" />
     <Compile Include="ClaimsPrincipalEqualityComparer.cs" />
     <Compile Include="Config\ConfigurationValidationTests.cs" />

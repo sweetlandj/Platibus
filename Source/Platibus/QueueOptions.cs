@@ -27,7 +27,7 @@ namespace Platibus
     /// <summary>
     /// Options for setting behavior on queues
     /// </summary>
-    public struct QueueOptions
+    public struct QueueOptions : IEquatable<QueueOptions>
     {
         /// <summary>
         /// The default maximum number of attempts
@@ -38,7 +38,6 @@ namespace Platibus
         /// The default concurrency limit, i.e. the maximum number of concurrent worker
         /// processes that read from the same queue
         /// </summary>
-        public const int DefaultConcurrencyLimit = 4;
 
         /// <summary>
         /// The default retry delay expressed in milliseconds
@@ -81,5 +80,64 @@ namespace Platibus
         /// The maximum amount of time the queue should live.
         /// </summary>
         public TimeSpan TTL { get; set; }
+
+        /// <inheritdoc />
+        public bool Equals(QueueOptions other)
+        {
+            return ConcurrencyLimit == other.ConcurrencyLimit 
+                && AutoAcknowledge == other.AutoAcknowledge 
+                && MaxAttempts == other.MaxAttempts 
+                && RetryDelay.Equals(other.RetryDelay) 
+                && TTL.Equals(other.TTL);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            return obj is QueueOptions && Equals((QueueOptions) obj);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = ConcurrencyLimit;
+                hashCode = (hashCode * 397) ^ AutoAcknowledge.GetHashCode();
+                hashCode = (hashCode * 397) ^ MaxAttempts;
+                hashCode = (hashCode * 397) ^ RetryDelay.GetHashCode();
+                hashCode = (hashCode * 397) ^ TTL.GetHashCode();
+                return hashCode;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether two sets of queue options are equivalent based on their respective
+        /// values
+        /// </summary>
+        /// <param name="left">The left operand</param>
+        /// <param name="right">The right operand</param>
+        /// <returns>Returns <c>true</c> if the <paramref name="left"/> queue options are
+        /// equivalent to the <paramref name="right"/> queue options; <c>false</c> otherwise.
+        /// </returns>
+        public static bool operator ==(QueueOptions left, QueueOptions right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Determines whether two sets of queue options are not equivalent based on their 
+        /// respective values
+        /// </summary>
+        /// <param name="left">The left operand</param>
+        /// <param name="right">The right operand</param>
+        /// <returns>Returns <c>true</c> if the <paramref name="left"/> queue options are
+        /// not equivalent to the <paramref name="right"/> queue options; <c>false</c> otherwise.
+        /// </returns>
+        public static bool operator !=(QueueOptions left, QueueOptions right)
+        {
+            return !left.Equals(right);
+        }
     }
 }

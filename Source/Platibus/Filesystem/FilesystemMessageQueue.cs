@@ -168,7 +168,6 @@ namespace Platibus.Filesystem
                 if (context.Acknowledged)
                 {
                     Log.DebugFormat("Message acknowledged.  Deleting message file {0}...", queuedMessage.File);
-                    // TODO: Implement journaling
                     await queuedMessage.Delete(cancellationToken);
                     Log.DebugFormat("Message file {0} deleted successfully", queuedMessage.File);
                     return;

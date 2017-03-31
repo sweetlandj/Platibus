@@ -35,32 +35,30 @@ namespace Platibus.Config
         private readonly IMessageHandler _messageHandler;
         private readonly QueueName _queueName;
         private readonly IMessageSpecification _specification;
+        private readonly QueueOptions _queueOptions;
 
-        /// <summary>
-        /// The message specification that selects messages to which the
-        /// handling rule applies
-        /// </summary>
+        /// <inheritdoc />
         public IMessageSpecification Specification
         {
             get { return _specification; }
         }
 
-        /// <summary>
-        /// The message handler to which messages matching the 
-        /// <see cref="Specification"/> will be routed
-        /// </summary>
+        /// <inheritdoc />
         public IMessageHandler MessageHandler
         {
             get { return _messageHandler; }
         }
 
-        /// <summary>
-        /// The name of the queue in which matching messages will be placed
-        /// while they await handling
-        /// </summary>
+        /// <inheritdoc />
         public QueueName QueueName
         {
             get { return _queueName; }
+        }
+
+        /// <inheritdoc />
+        public QueueOptions QueueOptions
+        {
+            get { return _queueOptions; }
         }
 
         /// <summary>
@@ -74,20 +72,22 @@ namespace Platibus.Config
         /// specification will be routed</param>
         /// <param name="queueName">(Optional) The name of the queue in which matching
         /// messages will be placed while they await handling</param>
+        /// <param name="queueOptions">(Optional) Options for how queued messages for the handler 
+        /// should be processed</param>
         /// <remarks>
         /// If the <paramref name="queueName"/> is ommitted, a default queue name will
         /// be generated based on the MD5 hash of the full type name of the supplied
         /// <paramref name="messageHandler"/>
         /// </remarks>
         /// <seealso cref="GenerateQueueName"/>
-        public HandlingRule(IMessageSpecification specification, IMessageHandler messageHandler,
-            QueueName queueName = null)
+        public HandlingRule(IMessageSpecification specification, IMessageHandler messageHandler, QueueName queueName = null, QueueOptions queueOptions = default(QueueOptions))
         {
             if (specification == null) throw new ArgumentNullException("specification");
             if (messageHandler == null) throw new ArgumentNullException("messageHandler");
             _specification = specification;
             _messageHandler = messageHandler;
             _queueName = queueName ?? GenerateQueueName(messageHandler);
+            _queueOptions = queueOptions;
         }
 
         /// <summary>

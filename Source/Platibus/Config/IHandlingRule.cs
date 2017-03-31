@@ -45,5 +45,10 @@ namespace Platibus.Config
         /// while they await handling
         /// </summary>
         QueueName QueueName { get; }
+
+        /// <summary>
+        /// Queueing options for the handler queue
+        /// </summary>
+        QueueOptions QueueOptions { get; }
     }
 }
