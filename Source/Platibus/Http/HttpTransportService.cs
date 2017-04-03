@@ -38,7 +38,7 @@ namespace Platibus.Http
     /// An <see cref="ITransportService"/> that uses the HTTP protocol to transmit messages
     /// between Platibus instances
     /// </summary>
-    public class HttpTransportService : ITransportService, IQueueListener
+    public class HttpTransportService : ITransportService, IQueueListener, IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Http);
 
@@ -52,6 +52,8 @@ namespace Platibus.Http
         private readonly QueueName _outboundQueueName;
 
         private readonly HttpClientPool _clientPool;
+
+        private bool _disposed;
 
         /// <summary>
         /// Initializes a new <see cref="HttpTransportService"/>
@@ -497,6 +499,30 @@ namespace Platibus.Http
 
                 content.Headers.Add(header.Key, header.Value);
             }
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting 
+        /// unmanaged resources.
+        /// </summary>
+        /// <param name="disposing">Indicates whether this method was called from the
+        /// <see cref="Dispose()"/> method.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_clientPool")]
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _clientPool.TryDispose();
+            }
+        }
+        
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
         }
     }
 }

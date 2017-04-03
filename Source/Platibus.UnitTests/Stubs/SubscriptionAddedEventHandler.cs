@@ -1,4 +1,4 @@
 ﻿namespace Platibus.UnitTests.Stubs
 {
-    public delegate void SubscriptionAddedEventHandler(object source, SubscriptionAddedEventArgs args);
+    public delegate void SubscriptionAddedEventHandler(object sender, SubscriptionAddedEventArgs e);
 }

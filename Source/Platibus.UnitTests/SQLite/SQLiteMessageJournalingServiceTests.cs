@@ -6,6 +6,7 @@ using Platibus.SQLite;
 
 namespace Platibus.UnitTests.SQLite
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable")]
     public class SQLiteMessageJournalingServiceTests : MessageJournalingServiceTests
     {
         private readonly SQLiteMessageJournalInspector _inspector;

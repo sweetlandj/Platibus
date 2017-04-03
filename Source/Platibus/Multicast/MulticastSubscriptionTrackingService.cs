@@ -28,6 +28,8 @@ namespace Platibus.Multicast
         private readonly ActionBlock<UdpReceiveResult> _receiveResultQueue;
         private readonly NodeId _nodeId;
 
+        private bool _disposed;
+
         /// <summary>
         /// Initializes a new <see cref="MulticastSubscriptionTrackingService"/> decorating the
         /// specified <paramref name="inner"/> <see cref="ISubscriptionTrackingService"/> 
@@ -173,6 +175,7 @@ namespace Platibus.Multicast
         public async Task AddSubscription(TopicName topic, Uri subscriber, TimeSpan ttl = new TimeSpan(),
             CancellationToken cancellationToken = new CancellationToken())
         {
+            CheckDisposed();
             await _inner.AddSubscription(topic, subscriber, ttl, cancellationToken);
             var datagram = new SubscriptionTrackingDatagram(_nodeId,
                 SubscriptionTrackingDatagram.ActionType.Add, topic, subscriber, ttl);
@@ -182,6 +185,7 @@ namespace Platibus.Multicast
         /// <inheritdoc />
         public async Task RemoveSubscription(TopicName topic, Uri subscriber, CancellationToken cancellationToken = new CancellationToken())
         {
+            CheckDisposed();
             await _inner.RemoveSubscription(topic, subscriber, cancellationToken);
             var datagram = new SubscriptionTrackingDatagram(_nodeId,
                 SubscriptionTrackingDatagram.ActionType.Remove, topic, subscriber);
@@ -191,11 +195,35 @@ namespace Platibus.Multicast
         /// <inheritdoc />
         public Task<IEnumerable<Uri>> GetSubscribers(TopicName topic, CancellationToken cancellationToken = new CancellationToken())
         {
+            CheckDisposed();
             return _inner.GetSubscribers(topic, cancellationToken);
         }
 
+        /// <summary>
+        /// Throws an exception if this object has already been disposed
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed</exception>
+        protected void CheckDisposed()
+        {
+            if (_disposed) throw new ObjectDisposedException(GetType().FullName);
+        }
+        
         /// <inheritdoc />
         public void Dispose()
+        {
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting 
+        /// unmanaged resources.
+        /// </summary>
+        /// <param name="disposing">Indicates whether this method was called from the 
+        /// <see cref="Dispose()"/> method</param>
+        protected virtual void Dispose(bool disposing)
         {
             if (_cancellationTokenSource != null)
             {

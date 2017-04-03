@@ -29,13 +29,17 @@ using System.Threading.Tasks;
 
 namespace Platibus.Http
 {
-    internal class HttpClientPool
+    internal class HttpClientPool : IDisposable
     {
         private readonly SemaphoreSlim _poolSync = new SemaphoreSlim(1);
         private readonly IDictionary<PoolKey, HttpClientHandler> _pool = new Dictionary<PoolKey, HttpClientHandler>();
 
+        private bool _disposed;
+
         public async Task<HttpClient> GetClient(Uri uri, IEndpointCredentials credentials, CancellationToken cancellationToken)
         {
+            CheckDisposed();
+
             var key = new PoolKey(uri, credentials);
             HttpClientHandler clientHandler;
             if (_pool.TryGetValue(key, out clientHandler))
@@ -74,7 +78,7 @@ namespace Platibus.Http
             return CreateClient(clientHandler, uri);
         }
 
-        private HttpClient CreateClient(HttpClientHandler clientHandler, Uri baseAddress)
+        private static HttpClient CreateClient(HttpMessageHandler clientHandler, Uri baseAddress)
         {
             return new HttpClient(clientHandler, false)
             {
@@ -82,6 +86,32 @@ namespace Platibus.Http
             };
         }
 
+        /// <summary>
+        /// Throws an exception if this object has already been disposed
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed</exception>
+        protected void CheckDisposed()
+        {
+            if (_disposed) throw new ObjectDisposedException(GetType().FullName);
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_poolSync")]
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _poolSync.TryDispose();
+            }
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+        
         private class PoolKey : IEquatable<PoolKey>
         {
             private readonly Uri _uri;
