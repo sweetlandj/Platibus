@@ -92,7 +92,7 @@ namespace Platibus.RabbitMQ
                 {
                     ManagedConnection connection;
                     _managedConnections.TryRemove(uri, out connection);
-                    DestroyManagedConnection(connection);
+                    CloseManagedConnection(connection);
                 }
             }
         }
@@ -107,16 +107,26 @@ namespace Platibus.RabbitMQ
             return new ManagedConnection(uri);
         }
 
-        private static void DestroyManagedConnection(ManagedConnection connection)
+        private static void CloseManagedConnection(ManagedConnection connection)
         {
             if (connection == null) return;
+            try
+            {
+                connection.Close();
+                return;
+            }
+            catch (Exception ex)
+            {
+                Log.Info("Error closing RabbitMQ connection.  Attempting to destroy...", ex);
+            }
+
             try
             {
                 connection.Destroy(true);
             }
             catch (Exception ex)
             {
-                Log.Info("Error closing RabbitMQ connection", ex);
+                Log.Info("Error destroying RabbitMQ connection", ex);
             }
         }
 

@@ -36,6 +36,7 @@ namespace Platibus.RabbitMQ
 
         private readonly string _queueName;
         private readonly string _consumerTag;
+        private readonly ushort _concurrencyLimit;
         private readonly Action<IModel, BasicDeliverEventArgs, CancellationToken> _consume;
         private readonly bool _autoAcknowledge;
         private readonly CancellationTokenSource _cancellationTokenSource;
@@ -46,7 +47,10 @@ namespace Platibus.RabbitMQ
         
         private bool _disposed;
 
-        public DurableConsumer(IConnection connection, string queueName, Action<IModel, BasicDeliverEventArgs, CancellationToken> consume, string consumerTag = null, bool autoAcknowledge = false)
+        public DurableConsumer(IConnection connection, string queueName, 
+            Action<IModel, BasicDeliverEventArgs, CancellationToken> consume, 
+            string consumerTag = null, int concurrencyLimit = 0,
+            bool autoAcknowledge = false)
         {
             if (string.IsNullOrWhiteSpace(queueName)) throw new ArgumentNullException("queueName");
             if (connection == null) throw new ArgumentNullException("connection");
@@ -55,6 +59,10 @@ namespace Platibus.RabbitMQ
             _queueName = queueName;
             _consume = consume;
             _consumerTag = consumerTag;
+            _concurrencyLimit = concurrencyLimit > 0 
+                ? (ushort)concurrencyLimit
+                : (ushort)QueueOptions.DefaultConcurrencyLimit;
+
             _autoAcknowledge = autoAcknowledge;
             _cancellationTokenSource = new CancellationTokenSource();
         }
@@ -83,9 +91,7 @@ namespace Platibus.RabbitMQ
 
         private void Consume(CancellationToken cancellationToken)
         {
-            const int dequeueTimeout = 1000;
-
-            QueueingBasicConsumer consumer = null;
+            EventingBasicConsumer consumer = null;
             while (!cancellationToken.IsCancellationRequested)
             {   
                 try
@@ -96,28 +102,35 @@ namespace Platibus.RabbitMQ
                         consumer = null;
                     }
 
+                    var interruption = new TaskCompletionSource<bool>();
+                    cancellationToken.Register(() => interruption.TrySetResult(true));
+                    _channel.CallbackException += (sender, args) => interruption.TrySetResult(true);
+                    _channel.ModelShutdown += (sender, args) => interruption.TrySetResult(true);
+
                     if (consumer == null)
                     {
                         Log.DebugFormat("Initializing consumer '{0}' on channel number '{1}'...", _consumerTag, _channel.ChannelNumber);
-                        consumer = new QueueingBasicConsumer(_channel);
+                        consumer = new EventingBasicConsumer(_channel);
+                        consumer.Received += (sender, args) =>
+                        {
+                            Log.DebugFormat("Consumer '{0}' received delivery '{1}'", _consumerTag, args.DeliveryTag);
+                            try
+                            {
+                                _consume(_channel, args, cancellationToken);
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error("Unhandled exception in callback", ex);
+                                _channel.BasicNack(args.DeliveryTag, true, false);
+                            }
+                        };
+
                         _channel.BasicConsume(_queueName, _autoAcknowledge, _consumerTag, consumer);
                     }
 
-                    BasicDeliverEventArgs delivery;
-                    var deliveryReceived = consumer.Queue.Dequeue(dequeueTimeout, out delivery);
-                    if (deliveryReceived)
-                    {
-                        Log.DebugFormat("Consumer '{0}' received delivery '{1}'", _consumerTag, delivery.DeliveryTag);
-                        try
-                        {
-                            _consume(_channel, delivery, cancellationToken);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error("Unhandled exception in callback", ex);
-                            _channel.BasicNack(delivery.DeliveryTag, true, false);
-                        }
-                    }
+                    interruption.Task.Wait(cancellationToken);
+                    TryCancelConsumer();
+                    TryCloseChannel();
                 }
                 catch (Exception ex)
                 {
@@ -137,11 +150,7 @@ namespace Platibus.RabbitMQ
                     Log.DebugFormat("Attempting to create RabbitMQ channel for consumer '{0}'...", _consumerTag);
                     channel = _connection.CreateModel();
                     Log.DebugFormat("RabbitMQ channel number \"{0}\" created successfully", channel.ChannelNumber);
-                    channel.BasicQos(0, 1, false);
-                    channel.ModelShutdown += (sender, args) =>
-                    {
-                        _channel = null;
-                    };
+                    channel.BasicQos(0, _concurrencyLimit, false);
                 }
                 catch (Exception ex)
                 {
@@ -152,6 +161,38 @@ namespace Platibus.RabbitMQ
             } 
             return channel;
         }
+
+        private void TryCancelConsumer()
+        {
+            if (_channel == null) return;
+            if (!_channel.IsOpen) return;
+            
+            try
+            {
+                _channel.BasicCancel(_consumerTag);
+            }
+            catch (Exception ex)
+            {
+                Log.WarnFormat("Error canceling RabbitMQ consumer {0}", ex, _consumerTag);
+            }
+        }
+
+        private void TryCloseChannel()
+        {
+            if (_channel == null) return;
+            if (_channel.IsClosed) return;
+
+            try
+            {
+                _channel.Close();
+            }
+            catch (Exception ex)
+            {
+                Log.WarnFormat("Error closing RabbitMQ channel #0}", ex, _channel.ChannelNumber);
+            }
+            _channel = null;
+        }
+
 
         ~DurableConsumer()
         {

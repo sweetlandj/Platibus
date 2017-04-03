@@ -55,7 +55,7 @@ namespace Platibus.RabbitMQ
         private readonly int _maxAttempts;
         private readonly TimeSpan _retryDelay;
         private readonly CancellationTokenSource _cancellationTokenSource;
-        private readonly DurableConsumer[] _consumers;
+        private readonly DurableConsumer _consumer;
         
         private readonly IConnection _connection;
         private bool _disposed;
@@ -104,13 +104,10 @@ namespace Platibus.RabbitMQ
                 : options.ConcurrencyLimit;
 
             _cancellationTokenSource = new CancellationTokenSource();
-            
-            _consumers = new DurableConsumer[concurrencyLimit];
-            for (var i = 0; i < _consumers.Length; i++)
-            {
-                var consumerTag = _queueName + "_" + i;
-                _consumers[i] = new DurableConsumer(_connection, queueName, HandleDelivery, consumerTag, _autoAcknowledge);
-            }
+
+            var consumerTag = _queueName;
+            _consumer = new DurableConsumer(_connection, queueName, HandleDelivery, consumerTag, 
+                concurrencyLimit, _autoAcknowledge);
         }
 
         /// <summary>
@@ -147,10 +144,7 @@ namespace Platibus.RabbitMQ
                 channel.QueueBind(_retryQueueName, _retryExchange, "", null);
             }
 
-            foreach (var consumer in _consumers)
-            {
-                consumer.Init();
-            }
+            _consumer.Init();
         }
 
         /// <summary>
@@ -313,10 +307,7 @@ namespace Platibus.RabbitMQ
             _cancellationTokenSource.Cancel();
             if (disposing)
             {
-                foreach (var consumer in _consumers)
-                {
-                    consumer.TryDispose();
-                }
+                _consumer.TryDispose();
                 _cancellationTokenSource.TryDispose();
             }
         }
