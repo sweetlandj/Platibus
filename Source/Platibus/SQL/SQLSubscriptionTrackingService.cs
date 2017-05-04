@@ -107,7 +107,7 @@ namespace Platibus.SQL
         /// Initializes the subscription tracking service by creating the necessary objects in the
         /// SQL database
         /// </summary>
-        public async Task Init()
+        public void Init()
         {
             var connection = _connectionProvider.GetConnection();
             try
@@ -124,7 +124,7 @@ namespace Platibus.SQL
                 _connectionProvider.ReleaseConnection(connection);
             }
 
-            var subscriptionsByTopicName = (await SelectSubscriptions())
+            var subscriptionsByTopicName = SelectSubscriptions()
                 .GroupBy(subscription => subscription.TopicName);
 
             foreach (var grouping in subscriptionsByTopicName)
@@ -266,7 +266,7 @@ namespace Platibus.SQL
         /// <returns>Returns a task that will complete when the subscription records have been
         /// selected and whose result will be the records that were selected</returns>
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual Task<IEnumerable<SQLSubscription>> SelectSubscriptions()
+        protected virtual IEnumerable<SQLSubscription> SelectSubscriptions()
         {
             var subscriptions = new List<SQLSubscription>();
             var connection = _connectionProvider.GetConnection();
@@ -299,7 +299,7 @@ namespace Platibus.SQL
             {
                 _connectionProvider.ReleaseConnection(connection);
             }
-            return Task.FromResult<IEnumerable<SQLSubscription>>(subscriptions);
+            return subscriptions;
         }
 
         /// <summary>

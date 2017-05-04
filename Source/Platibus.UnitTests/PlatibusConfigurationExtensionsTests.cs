@@ -45,19 +45,18 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void When_AddHandlingRules_Generic_No_Factory_Then_Expected_Rules_Added()
+        public void HandlingRulesAddedForMessageHandlerInterfaceImplementationsOfGenericTypeParameter()
         {
             var configuration = new PlatibusConfiguration
             {
                 MessageNamingService = new TestMessageNamingService()
             };
             configuration.AddHandlingRules<H>();
-
             AssertRulesAdded(configuration);
         }
 
         [Test]
-        public void When_AddHandlingRules_Generic_No_Factory_QueueNameFactory_Then_Expected_Rules_Added()
+        public void QueueNameFactoryIsUsedToGenerateAssignQueueNamesForHandlers()
         {
             var configuration = new PlatibusConfiguration
             {
@@ -83,7 +82,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void When_AddHandlingRules_Generic_Factory_Then_Expected_Rules_Added()
+        public void HandlingRulesAddedForMessageHandlerInterfaceImplementationsOfDelegateReturnType()
         {
             var configuration = new PlatibusConfiguration
             {
@@ -95,7 +94,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void When_AddHandlingRules_Generic_Singleton_Factory_Then_Expected_Rules_Added()
+        public void HandlingRulesAddedForMessageHandlerInterfaceImplementationsOfDelegateReturnType2()
         {
             var configuration = new PlatibusConfiguration
             {
@@ -109,7 +108,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void When_AddHandlingRules_Singleton_Instance_Then_Expected_Rules_Added()
+        public void HandlingRulesAddedForMessageHandlerInterfaceImplementationsOfInstanceType()
         {
             var configuration = new PlatibusConfiguration
             {
@@ -123,7 +122,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void When_AddHandlingRulesForType_No_Factory_Then_Expected_Rules_Added()
+        public void HandlingRulesAddedForMessageHandlerInterfaceImplementationsOfType()
         {
             var configuration = new PlatibusConfiguration
             {
@@ -135,7 +134,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void When_AddHandlingRulesForType_Factory_Then_Expected_Rules_Added()
+        public void HandlingRulesAddedForMessageHandlerInterfaceImplementationsOfTypeWithFactory()
         {
             var configuration = new PlatibusConfiguration
             {
@@ -147,7 +146,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void When_AddHandlingRulesForType_Singleton_Factory_Then_Expected_Rules_Added()
+        public void HandlingRulesAddedForMessageHandlerInterfaceImplementationsOfTypeWithFactory2()
         {
             var configuration = new PlatibusConfiguration
             {

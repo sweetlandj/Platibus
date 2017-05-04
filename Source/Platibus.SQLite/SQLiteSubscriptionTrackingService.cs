@@ -21,7 +21,6 @@
 // THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
@@ -118,20 +117,7 @@ namespace Platibus.SQLite
             _operationQueue.Post(op);
             return op.Task;
         }
-
-        /// <summary>
-        /// Selects all of the non-expired subscription records from the SQL database
-        /// </summary>
-        /// <returns>Returns a task that will complete when the subscription records have been
-        /// selected and whose result will be the records that were selected</returns>
-        protected override Task<IEnumerable<SQLSubscription>> SelectSubscriptions()
-        {
-            CheckDisposed();
-            var op = new SQLiteOperation<IEnumerable<SQLSubscription>>(() => base.SelectSubscriptions());
-            _operationQueue.Post(op);
-            return op.Task;
-        }
-
+        
         /// <summary>
         /// Deletes a subscription record from the SQL database
         /// </summary>

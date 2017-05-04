@@ -145,7 +145,7 @@ namespace Platibus.Filesystem
         /// <remarks>
         /// Creates directories if they do not exist and loads current subscriptions from disk
         /// </remarks>
-        public Task Init()
+        public void Init()
         {
             _baseDirectory.Refresh();
             if (!_baseDirectory.Exists)
@@ -158,23 +158,26 @@ namespace Platibus.Filesystem
             var topicNames = subscriptionFiles
                 .Select(file => new TopicName(file.Name.Replace(".psub", "")));
 
-            return Task.WhenAll(topicNames.Select(LoadSubscriptionsFromDisk));
+            foreach (var topicName in topicNames)
+            {
+                LoadSubscriptionsFromDisk(topicName);
+            }
         }
 
-        private async Task LoadSubscriptionsFromDisk(TopicName topicName)
+        private void LoadSubscriptionsFromDisk(TopicName topicName)
         {
             var subscriptions = new List<ExpiringSubscription>();
             var subscriptionFile = GetSubscriptionFile(topicName);
             if (!subscriptionFile.Exists) return;
 
             string fileContents;
-            await _fileAccess.WaitAsync();
+            _fileAccess.Wait();
             try
             {
                 using (var fileStream = subscriptionFile.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 using (var fileReader = new StreamReader(fileStream))
                 {
-                    fileContents = await fileReader.ReadToEndAsync();        
+                    fileContents = fileReader.ReadToEnd();        
                 }
             }
             finally
@@ -296,7 +299,7 @@ namespace Platibus.Filesystem
 
             public ExpiringSubscription(Uri subscriber, DateTime expirationDate)
             {
-                _subscriber = subscriber;
+                _subscriber = subscriber.WithTrailingSlash();
                 _expirationDate = expirationDate;
             }
 

@@ -257,6 +257,12 @@ namespace Platibus
 
             var message = BuildMessage(content, headers, options);
 
+            IEndpoint knownEndpoint;
+            if (credentials == null && _endpoints.TryGetEndpointByAddress(endpointAddress, out knownEndpoint))
+            {
+                credentials = knownEndpoint.Credentials;
+            }
+
             Log.DebugFormat("Sending message ID {0} to \"{2}\"...",
                 message.Headers.MessageId, endpointAddress);
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using Platibus.Filesystem;
 
@@ -21,13 +22,15 @@ namespace Platibus.UnitTests.Filesystem
         {
             if (Instance != null)
             {
-                Instance._messageQueueingService.Dispose();
+                Instance._messageQueueingService.TryDispose();
+                Instance._subscriptionTrackingService.TryDispose();
             }
         }
 
         private readonly DirectoryInfo _baseDirectory;
         private readonly FilesystemMessageJournalingService _messageJournalingService;
         private readonly FilesystemMessageQueueingService _messageQueueingService;
+        private readonly FilesystemSubscriptionTrackingService _subscriptionTrackingService;
 
         public DirectoryInfo BaseDirectory
         {
@@ -44,6 +47,11 @@ namespace Platibus.UnitTests.Filesystem
             get { return _messageQueueingService; }
         }
 
+        public FilesystemSubscriptionTrackingService SubscriptionTrackingService
+        {
+            get { return _subscriptionTrackingService; }
+        }
+
         public FilesystemCollectionFixture()
         {
             _baseDirectory = GetTempDirectory();
@@ -53,6 +61,9 @@ namespace Platibus.UnitTests.Filesystem
 
             _messageQueueingService = new FilesystemMessageQueueingService(_baseDirectory);
             _messageQueueingService.Init();
+
+            _subscriptionTrackingService = new FilesystemSubscriptionTrackingService(_baseDirectory);
+            _subscriptionTrackingService.Init();
         }
 
         protected DirectoryInfo GetTempDirectory()

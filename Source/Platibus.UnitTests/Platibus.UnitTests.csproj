@@ -140,9 +140,12 @@
     <Compile Include="Filesystem\FilesystemMessageJournalInspector.cs" />
     <Compile Include="Filesystem\FilesystemMessageJournalingServiceTests.cs" />
     <Compile Include="Filesystem\FileSystemMessageQueueingServiceTests.cs" />
+    <Compile Include="Filesystem\FilesystemSubscriptionTrackingServiceTests.cs" />
     <Compile Include="Filesystem\LegacyMessageFileWriter.cs" />
     <Compile Include="Filesystem\MessageFileTests.cs" />
+    <Compile Include="InMemory\InMemorySubscriptionTrackingServiceTests.cs" />
     <Compile Include="LocalDB\LocalDBMessageQueueingServiceTests.cs" />
+    <Compile Include="LocalDB\LocalDBSubscriptionTrackingServiceTests.cs" />
     <Compile Include="MessageQueueingServiceTests.cs" />
     <Compile Include="Mocks\FilteredMessageJournalingServiceTests.cs" />
     <Compile Include="LocalDB\LocalDBCollectionFixture.cs" />
@@ -159,7 +162,6 @@
     <Compile Include="SQLite\SQLiteCollectionFixture.cs" />
     <Compile Include="SQLite\SQLiteMessageJournalingServiceTests.cs" />
     <Compile Include="LocalDB\SQLMessageJournalInspector.cs" />
-    <Compile Include="FilesystemSubscriptionTrackingServiceTests.cs" />
     <Compile Include="Http\HttpTransportServiceTests.cs" />
     <Compile Include="Http\MessageControllerTests.cs" />
     <Compile Include="PlatibusConfigurationManagerTests.cs" />
@@ -169,13 +171,13 @@
     <Compile Include="MessageContextExtensionsTests.cs" />
     <Compile Include="SQLite\SQLiteMessageQueueInspector.cs" />
     <Compile Include="LocalDB\SQLMessageQueueInspector.cs" />
-    <Compile Include="SQLiteSubscriptionTrackingServiceTests.cs" />
-    <Compile Include="SQLSubscriptionTrackingServiceTests.cs" />
+    <Compile Include="SQLite\SQLiteSubscriptionTrackingServiceTests.cs" />
     <Compile Include="Stubs\SubscriptionAddedEventArgs.cs" />
     <Compile Include="Stubs\SubscriptionAddedEventHandler.cs" />
     <Compile Include="Stubs\SubscriptionRemovedEventArgs.cs" />
     <Compile Include="Stubs\SubscriptionRemovedEventHandler.cs" />
     <Compile Include="Stubs\SubscriptionTrackingServiceStub.cs" />
+    <Compile Include="SubscriptionTrackingServiceTests.cs" />
     <Compile Include="UnitTestLoggingCategories.cs" />
     <Compile Include="Http\TopicControllerTests.cs" />
   </ItemGroup>

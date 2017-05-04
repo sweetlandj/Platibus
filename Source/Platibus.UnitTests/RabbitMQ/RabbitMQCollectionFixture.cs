@@ -20,7 +20,7 @@ namespace Platibus.UnitTests.RabbitMQ
         {
             if (Instance != null)
             {
-                Instance._messageQueueingService.Dispose();
+                Instance._messageQueueingService.TryDispose();
             }
         }
 

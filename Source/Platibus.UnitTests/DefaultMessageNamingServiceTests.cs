@@ -15,7 +15,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void Can_Resolve_MessageType_For_Unknown_Type()
+        public void MessageTypeCanBeResolvedForUnregisteredTypes()
         {
             var messageNamingService = new DefaultMessageNamingService();
             var messageType = messageNamingService.GetTypeForName("Platibus.UnitTests.DefaultMessageNamingServiceTests+ContractA");
@@ -24,7 +24,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void Can_Resolve_MessageName_For_Unknown_Type()
+        public void MessageNameCanBeResolvedForUnregisteredTypes()
         {
             var messageNamingService = new DefaultMessageNamingService();
             var messageName = messageNamingService.GetNameForType(typeof(ContractA));

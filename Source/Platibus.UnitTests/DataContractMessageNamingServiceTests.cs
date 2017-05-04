@@ -19,7 +19,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void Can_Resolve_MessageType_For_Known_DataContract_With_Defaults()
+        public void MessageTypeCanBeResolvedForRegisteredTypes()
         {
             var messageNamingService = new DataContractMessageNamingService();
             messageNamingService.Add(typeof(ContractA));
@@ -29,7 +29,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void Can_Resolve_MessageName_For_Known_DataContract_With_Defaults()
+        public void MessageNameCanBeResolvedForRegisteredTypes()
         {
             var messageNamingService = new DataContractMessageNamingService();
             messageNamingService.Add(typeof(ContractA));
@@ -39,7 +39,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void Can_Resolve_MessageType_For_Known_DataContract_With_Explicit_Name()
+        public void MessageTypeCanBeResolvedForRegisteredTypesWithExplicitNames()
         {
             var messageNamingService = new DataContractMessageNamingService();
             messageNamingService.Add(typeof(ContractB));
@@ -49,7 +49,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void Can_Resolve_MessageName_For_Known_DataContract_With_Explicit_Name()
+        public void MessageNameCanBeResolvedForRegisteredTypesWithExplicitNames()
         {
             var messageNamingService = new DataContractMessageNamingService();
             messageNamingService.Add(typeof(ContractB));
@@ -59,7 +59,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void Can_Resolve_MessageType_For_Unknown_DataContract_With_Defaults()
+        public void MessageTypeCanBeResolvedForUnregisteredTypes()
         {
             var messageNamingService = new DataContractMessageNamingService();
             var messageType = messageNamingService.GetTypeForName("http://schemas.datacontract.org/2004/07/Platibus.UnitTests:DataContractMessageNamingServiceTests.ContractA");
@@ -68,7 +68,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void Can_Resolve_MessageName_For_Unknown_DataContract_With_Defaults()
+        public void MessageNameCanBeResolvedForUnregisteredTypes()
         {
             var messageNamingService = new DataContractMessageNamingService();
             var messageName = messageNamingService.GetNameForType(typeof(ContractA));
@@ -77,7 +77,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void Can_Resolve_MessageType_For_Unknown_DataContract_With_Explicit_Name()
+        public void MessageTypeCanBeResolvedForUnregisteredTypesWithExplicitNames()
         {
             var messageNamingService = new DataContractMessageNamingService();
             var messageType = messageNamingService.GetTypeForName("http://platibus/unittests:Contract-B");
@@ -86,7 +86,7 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public void Can_Resolve_MessageName_For_Unknown_DataContract_With_Explicit_Name()
+        public void MessageNameCanBeResolvedForUnregisteredTypesWithExplicitNames()
         {
             var messageNamingService = new DataContractMessageNamingService();
             var messageName = messageNamingService.GetNameForType(typeof(ContractB));

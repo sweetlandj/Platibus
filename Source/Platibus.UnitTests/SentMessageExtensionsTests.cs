@@ -7,7 +7,7 @@ namespace Platibus.UnitTests
     internal class SentMessageExtensionsTests
     {
         [Test]
-        public async Task Given_SentMessage_When_Reply_Received_Awaited_Task_Should_Return_Reply()
+        public async Task FirstReplyIsReturned()
         {
             var memoryCacheReplyHub = new MemoryCacheReplyHub(TimeSpan.FromSeconds(3));
             var messageId = MessageId.Generate();

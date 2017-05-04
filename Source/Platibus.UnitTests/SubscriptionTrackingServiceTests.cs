@@ -1,0 +1,135 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using NUnit.Framework;
+
+namespace Platibus.UnitTests
+{
+    public abstract class SubscriptionTrackingServiceTests<TSubscriptionTrackingService>
+        where TSubscriptionTrackingService : ISubscriptionTrackingService
+    {
+        protected readonly TSubscriptionTrackingService SubscriptionTrackingService;
+
+        protected SubscriptionTrackingServiceTests(TSubscriptionTrackingService subscriptionTrackingService)
+        {
+            SubscriptionTrackingService = subscriptionTrackingService;
+        }
+
+        [Test]
+        public async Task AddingSubscriptionAddsSubscriberToTopic()
+        {
+            var topic = GenerateUniqueTopicName();
+            var subscriberUri = new Uri("http://localhost/platibus/");
+            await WhenSubscriptionIsAdded(topic, subscriberUri);
+            await AssertSubscriberAddedToTopic(topic, subscriberUri);
+        }
+
+        [Test]
+        public async Task RemovingSubscriptionRemovesSubscriberFromTopic()
+        {
+            var topic = GenerateUniqueTopicName();
+            var subscriberUri = new Uri("http://localhost/platibus/");
+            await GivenASubscription(topic, subscriberUri);
+            await WhenTheSubscriptionIsRemoved(topic, subscriberUri);
+            await AssertSubscriberRemovedFromTopic(topic, subscriberUri);
+        }
+
+        [Test]
+        public async Task SubscriptionExpirationRemovesSubscriberFromTopic()
+        {
+            var topic = GenerateUniqueTopicName();
+            var subscriberUri = new Uri("http://localhost/platibus/");
+            var ttl = TimeSpan.FromSeconds(1);
+            await GivenASubscription(topic, subscriberUri, ttl);
+            var untilExpired = ttl.Add(TimeSpan.FromMilliseconds(100));
+            await Task.Delay(untilExpired);
+            await AssertSubscriberRemovedFromTopic(topic, subscriberUri);
+        }
+
+        [Test]
+        public async Task HandlesManyConcurrentOperationsWithoutError()
+        {
+            var subscriptions = GivenManySubscriptions().ToList();
+            await WhenAddingSubscriptionsConcurrently(subscriptions);
+            await AssertSubscribersAddedToTopics(subscriptions);
+        }
+
+        protected TopicName GenerateUniqueTopicName()
+        {
+            return Guid.NewGuid().ToString("N");
+        }
+
+        protected Task GivenASubscription(TopicName topic, Uri subscriber, TimeSpan ttl = default(TimeSpan))
+        {
+            return SubscriptionTrackingService.AddSubscription(topic, subscriber, ttl);
+        }
+
+        protected IEnumerable<Subscription> GivenManySubscriptions(int topicCount = 10, int subscribersPerTopic = 100)
+        {
+            var topicNames = Enumerable.Range(0, topicCount)
+                .Select(i => new TopicName("Topic-" + i));
+
+            return topicNames
+                .SelectMany(t => Enumerable.Range(0, subscribersPerTopic)
+                    .Select(j => new Uri("http://localhost/subscriber-" + j + "/"))
+                    .Select(s => new Subscription(t, s)));
+        }
+
+        protected Task WhenSubscriptionIsAdded(TopicName topic, Uri subscriber, TimeSpan ttl = default(TimeSpan))
+        {
+            return SubscriptionTrackingService.AddSubscription(topic, subscriber, ttl);
+        }
+
+        protected Task WhenTheSubscriptionIsRemoved(TopicName topic, Uri subscriber)
+        {
+            return SubscriptionTrackingService.RemoveSubscription(topic, subscriber);
+        }
+
+        protected Task WhenAddingSubscriptionsConcurrently(IEnumerable<Subscription> subscriptions)
+        {
+            var tasks = subscriptions
+                .Select(s => SubscriptionTrackingService.AddSubscription(s.Topic, s.SubscriberUri));
+
+            return Task.WhenAll(tasks);
+        }
+
+        protected async Task AssertSubscribersAddedToTopics(IEnumerable<Subscription> subscriptions)
+        {
+            var subscriptionsByTopic = subscriptions.GroupBy(s => s.Topic);
+            foreach (var grouping in subscriptionsByTopic)
+            {
+                var expectedSubscribers = grouping.Select(g => g.SubscriberUri).ToList();
+                var actualSubscribers = await SubscriptionTrackingService.GetSubscribers(grouping.Key);
+                Assert.That(actualSubscribers, Is.EquivalentTo(expectedSubscribers));
+            }
+        }
+
+        protected async Task AssertSubscriberAddedToTopic(TopicName topic, Uri subscriberUri)
+        {
+            var subscribers = await SubscriptionTrackingService.GetSubscribers(topic);
+            Assert.That(subscribers, Has.Member(subscriberUri));
+        }
+
+        protected async Task AssertSubscriberRemovedFromTopic(TopicName topic, Uri subscriberUri)
+        {
+            var subscribers = await SubscriptionTrackingService.GetSubscribers(topic);
+            Assert.That(subscribers, Has.No.Member(subscriberUri));
+        }
+
+        protected class Subscription
+        {
+            private readonly TopicName _topic;
+            private readonly Uri _subscriberUri;
+
+            public TopicName Topic { get { return _topic; } }
+            public Uri SubscriberUri { get { return _subscriberUri; } }
+
+            public Subscription(TopicName topic, Uri subscriberUri)
+            {
+                _topic = topic;
+                _subscriberUri = subscriberUri;
+            }
+        }
+    }
+}

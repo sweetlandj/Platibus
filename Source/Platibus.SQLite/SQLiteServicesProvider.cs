@@ -78,24 +78,24 @@ namespace Platibus.SQLite
         }
 
         /// <inheritdoc />
-        public async Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
+        public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
             SubscriptionTrackingElement configuration)
         {
             var path = configuration.GetString("path");
             var sqliteBaseDir = new DirectoryInfo(GetRootedPath(path));
             var sqliteSubscriptionTrackingService = new SQLiteSubscriptionTrackingService(sqliteBaseDir);
-            await sqliteSubscriptionTrackingService.Init();
+            sqliteSubscriptionTrackingService.Init();
 
             var multicast = configuration.Multicast;
             if (multicast == null || !multicast.Enabled)
             {
-                return sqliteSubscriptionTrackingService;
+                return Task.FromResult<ISubscriptionTrackingService>(sqliteSubscriptionTrackingService);
             }
 
             var multicastTrackingService = new MulticastSubscriptionTrackingService(
                 sqliteSubscriptionTrackingService, multicast.Address, multicast.Port);
 
-            return multicastTrackingService;
+            return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
         }
 
         private static string GetRootedPath(string path)

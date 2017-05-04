@@ -75,7 +75,7 @@ namespace Platibus.SQL
         }
         
         /// <inheritdoc />
-        public async Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
+        public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
             SubscriptionTrackingElement configuration)
         {
             var connectionName = configuration.GetString("connectionName");
@@ -91,18 +91,18 @@ namespace Platibus.SQL
                 throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
             }
             var sqlSubscriptionTrackingService = new SQLSubscriptionTrackingService(connectionStringSettings);
-            await sqlSubscriptionTrackingService.Init();
+            sqlSubscriptionTrackingService.Init();
 
             var multicast = configuration.Multicast;
             if (multicast == null || !multicast.Enabled)
             {
-                return sqlSubscriptionTrackingService;
+                return Task.FromResult<ISubscriptionTrackingService>(sqlSubscriptionTrackingService);
             }
 
             var multicastTrackingService = new MulticastSubscriptionTrackingService(
                 sqlSubscriptionTrackingService, multicast.Address, multicast.Port);
 
-            return multicastTrackingService;
+            return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
         }
     }
 }

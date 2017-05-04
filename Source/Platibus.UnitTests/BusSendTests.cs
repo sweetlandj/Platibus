@@ -1,254 +1,169 @@
 ﻿using System;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using Platibus.Config;
+using Platibus.Security;
 
 namespace Platibus.UnitTests
 {
     internal class BusSendTests
     {
+        protected readonly EndpointName DefaultEndpointName = "local";
+        protected readonly Uri DefaultEndpointUri = new Uri("http://localhost/default/");
+        protected readonly IEndpointCredentials DefaultEndpointCredentials = new BasicAuthCredentials("default", "defaultpw");
+
+        protected readonly EndpointName OtherEndpointName = "other";
+        protected readonly Uri OtherEndpointUri = new Uri("http://localhost/other/");
+        protected readonly IEndpointCredentials OtherEndpointCredentials = new BasicAuthCredentials("other", "otherpw");
+
+        [Test]
+        public async Task SendRulesDetermineMessageDestination()
+        {
+            var mockTransportService =  GivenMockTransportService();
+            const string messageContent = "Hello, world!";
+            using (var bus = await GivenConfiguredBus(mockTransportService.Object))
+            {
+                await bus.Send(messageContent);
+            }
+
+            // Only one call to ITransportService.SendMessage
+            mockTransportService.Verify(
+                ts => ts.SendMessage(
+                    It.IsAny<Message>(),
+                    It.IsAny<IEndpointCredentials>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Once());
+
+            // Specifically, only one call to ITransportService.SendMessage for this message
+            // addressed to the expected destination
+            mockTransportService.Verify(
+                ts => ts.SendMessage(
+                    It.Is<Message>(m => m.Content == messageContent && m.Headers.Destination == DefaultEndpointUri),
+                    DefaultEndpointCredentials, 
+                    It.IsAny<CancellationToken>()),
+                Times.Once());
+        }
         
         [Test]
-        public async Task SendRules_Critical_Importance_TransportService_Called()
+        public async Task MessageCanBeAddressedToSpecificEndpointByName()
         {
-            var baseUri = new Uri("http://localhost:52180/platibus/");
-            var endpointName = new EndpointName("local");
-            var transportService = new Mock<ITransportService>();
+            var mockTransportService = GivenMockTransportService();
+            const string messageContent = "Hello, world!";
+            using (var bus = await GivenConfiguredBus(mockTransportService.Object))
+            {
+                await bus.Send(messageContent, OtherEndpointName);
+            }
+
+            // Only one call to ITransportService.SendMessage
+            mockTransportService.Verify(
+                ts => ts.SendMessage(
+                    It.IsAny<Message>(),
+                    It.IsAny<IEndpointCredentials>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Once());
+
+            // Specifically, only one call to ITransportService.SendMessage for this message
+            // addressed to the expected destination
+            mockTransportService.Verify(
+                ts => ts.SendMessage(
+                    It.Is<Message>(m => m.Content == messageContent && m.Headers.Destination == OtherEndpointUri),
+                    OtherEndpointCredentials,
+                    It.IsAny<CancellationToken>()),
+                Times.Once());
+        }
+
+        [Test]
+        public async Task MessageCanBeAddressedToSpecificEndpointUri()
+        {
+            var mockTransportService = GivenMockTransportService();
+            const string messageContent = "Hello, world!";
+            using (var bus = await GivenConfiguredBus(mockTransportService.Object))
+            {
+                await bus.Send(messageContent, OtherEndpointUri);
+            }
+
+            // Only one call to ITransportService.SendMessage
+            mockTransportService.Verify(
+                ts => ts.SendMessage(
+                    It.IsAny<Message>(),
+                    It.IsAny<IEndpointCredentials>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Once());
+
+            // Specifically, only one call to ITransportService.SendMessage for this message
+            // addressed to the expected destination
+            mockTransportService.Verify(
+                ts => ts.SendMessage(
+                    It.Is<Message>(m => m.Content == messageContent && m.Headers.Destination == OtherEndpointUri),
+                    OtherEndpointCredentials,
+                    It.IsAny<CancellationToken>()),
+                Times.Once());
+        }
+
+        [Test]
+        public async Task MessageCanBeAddressedToSpecificEndpointUriWithOverridingCredentials()
+        {
+            var overridingCredentials = new BasicAuthCredentials("override", "overridepw");
+            var mockTransportService = GivenMockTransportService();
+            const string messageContent = "Hello, world!";
+            using (var bus = await GivenConfiguredBus(mockTransportService.Object))
+            {
+                await bus.Send(messageContent, OtherEndpointUri, overridingCredentials);
+            }
+
+            // Only one call to ITransportService.SendMessage
+            mockTransportService.Verify(
+                ts => ts.SendMessage(
+                    It.IsAny<Message>(),
+                    It.IsAny<IEndpointCredentials>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Once());
+
+            // Specifically, only one call to ITransportService.SendMessage for this message
+            // addressed to the expected destination with the specified override credentials
+            mockTransportService.Verify(
+                ts => ts.SendMessage(
+                    It.Is<Message>(m => m.Content == messageContent && m.Headers.Destination == OtherEndpointUri),
+                    overridingCredentials,
+                    It.IsAny<CancellationToken>()),
+                Times.Once());
+        }
+
+        protected Mock<ITransportService> GivenMockTransportService()
+        {
+            var mockTransportService = new Mock<ITransportService>();
+            mockTransportService.Setup(t => t.SendMessage(
+                    It.IsAny<Message>(),
+                    It.IsAny<IEndpointCredentials>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(0));
+
+            return mockTransportService;
+        }
+
+        protected async Task<Bus> GivenConfiguredBus(ITransportService transportService)
+        {
+            var allMessages = new MessageNamePatternSpecification(".*");
+            var noMatchSpecification = new Mock<IMessageSpecification>().Object;
             var messageQueueingService = new Mock<IMessageQueueingService>();
-            var handler = new Mock<IMessageHandler>();
+
             var config = new PlatibusConfiguration
             {
                 DefaultContentType = "text/plain"
             };
 
-            var allMessages = new MessageNamePatternSpecification(".*");
-            var handlerQueueName = new QueueName("handler");
+            config.AddEndpoint(DefaultEndpointName, new Endpoint(DefaultEndpointUri, DefaultEndpointCredentials));
+            config.AddSendRule(new SendRule(allMessages, DefaultEndpointName));
 
-            config.AddEndpoint(endpointName, new Endpoint(baseUri));
-            config.AddSendRule(new SendRule(allMessages, endpointName));
-            config.AddHandlingRule(new HandlingRule(allMessages, handler.Object, handlerQueueName));
-
-            transportService.Setup(
-                t => t.SendMessage(It.IsAny<Message>(), It.IsAny<IEndpointCredentials>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(true));
-
-            var bus = new Bus(config, baseUri, transportService.Object, messageQueueingService.Object);
-            await bus.Init();
-
-            const string messageContent = "Hello, world!";
-            await bus.Send(messageContent, new SendOptions { Importance = MessageImportance.Critical });
-
-            transportService.Verify(
-                t => t.SendMessage(It.IsAny<Message>(), It.IsAny<IEndpointCredentials>(), It.IsAny<CancellationToken>()),
-                Times.Once());
+            config.AddEndpoint(OtherEndpointName, new Endpoint(OtherEndpointUri, OtherEndpointCredentials));
+            config.AddSendRule(new SendRule(noMatchSpecification, OtherEndpointName));
             
-            messageQueueingService.Verify(
-                mqs =>
-                    mqs.EnqueueMessage(handlerQueueName, It.IsAny<Message>(),
-                        It.IsAny<IPrincipal>(), It.IsAny<CancellationToken>()), Times.Never());
-        }
-
-        [Test]
-        public async Task SendRules_Normal_Importance_TransportService_Called()
-        {
-            var baseUri = new Uri("http://localhost:52180/platibus/");
-            var endpointName = new EndpointName("local");
-            var transportService = new Mock<ITransportService>();
-            var messageQueueingService = new Mock<IMessageQueueingService>();
-            var handler = new Mock<IMessageHandler>();
-            var config = new PlatibusConfiguration
-            {
-                DefaultContentType = "text/plain"
-            };
-
-            var allMessages = new MessageNamePatternSpecification(".*");
-            var handlerQueueName = new QueueName("handler");
-
-            config.AddEndpoint(endpointName, new Endpoint(baseUri));
-            config.AddSendRule(new SendRule(allMessages, endpointName));
-            config.AddHandlingRule(new HandlingRule(allMessages, handler.Object, handlerQueueName));
-
-            transportService.Setup(
-                t => t.SendMessage(It.IsAny<Message>(), It.IsAny<IEndpointCredentials>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(true));
-
-            var bus = new Bus(config, baseUri, transportService.Object, messageQueueingService.Object);
+            var baseUri = new Uri("http://localhost/platibus");
+            var bus = new Bus(config, baseUri, transportService, messageQueueingService.Object);
             await bus.Init();
-
-            const string messageContent = "Hello, world!";
-            await bus.Send(messageContent, new SendOptions { Importance = MessageImportance.Normal });
-
-            transportService.Verify(
-                ts => ts.SendMessage(It.Is<Message>(m => m.Content == messageContent), It.IsAny<IEndpointCredentials>(), It.IsAny<CancellationToken>()),
-                Times.Once());
-
-            messageQueueingService.Verify(
-                mqs =>
-                    mqs.EnqueueMessage(It.IsAny<QueueName>(), It.IsAny<Message>(),
-                        It.IsAny<IPrincipal>(), It.IsAny<CancellationToken>()), Times.Never());
-        }
-
-        [Test]
-        public async Task Send_EndpointName_Critical_Importance_TransportService_Called()
-        {
-            var baseUri = new Uri("http://localhost:52180/platibus/");
-            var endpointName = new EndpointName("local");
-            var transportService = new Mock<ITransportService>();
-            var messageQueueingService = new Mock<IMessageQueueingService>();
-            var handler = new Mock<IMessageHandler>();
-            var config = new PlatibusConfiguration
-            {
-                DefaultContentType = "text/plain"
-            };
-
-            var allMessages = new MessageNamePatternSpecification(".*");
-            var handlerQueueName = new QueueName("handler");
-
-            config.AddEndpoint(endpointName, new Endpoint(baseUri));
-            config.AddSendRule(new SendRule(allMessages, endpointName));
-            config.AddHandlingRule(new HandlingRule(allMessages, handler.Object, handlerQueueName));
-
-            transportService.Setup(
-                 t => t.SendMessage(It.IsAny<Message>(), It.IsAny<IEndpointCredentials>(), It.IsAny<CancellationToken>()))
-                 .Returns(Task.FromResult(true));
-
-            var bus = new Bus(config, baseUri, transportService.Object, messageQueueingService.Object);
-            await bus.Init();
-
-            const string messageContent = "Hello, world!";
-            await bus.Send(messageContent, endpointName, new SendOptions { Importance = MessageImportance.Critical });
-
-            transportService.Verify(
-                ts => ts.SendMessage(It.Is<Message>(m => m.Content == messageContent), It.IsAny<IEndpointCredentials>(), It.IsAny<CancellationToken>()),
-                Times.Once());
-
-            messageQueueingService.Verify(
-                mqs =>
-                    mqs.EnqueueMessage(It.IsAny<QueueName>(), It.IsAny<Message>(),
-                        It.IsAny<IPrincipal>(), It.IsAny<CancellationToken>()), Times.Never());
-        }
-
-        [Test]
-        public async Task Send_EndpointName_Normal_Importance_TransportService_Called()
-        {
-            var baseUri = new Uri("http://localhost:52180/platibus/");
-            var endpointName = new EndpointName("local");
-            var transportService = new Mock<ITransportService>();
-            var messageQueueingService = new Mock<IMessageQueueingService>();
-            var handler = new Mock<IMessageHandler>();
-            var config = new PlatibusConfiguration
-            {
-                DefaultContentType = "text/plain"
-            };
-
-            var allMessages = new MessageNamePatternSpecification(".*");
-            var handlerQueueName = new QueueName("handler");
-
-            config.AddEndpoint(endpointName, new Endpoint(baseUri));
-            config.AddSendRule(new SendRule(allMessages, endpointName));
-            config.AddHandlingRule(new HandlingRule(allMessages, handler.Object, handlerQueueName));
-
-            transportService.Setup(
-                t => t.SendMessage(It.IsAny<Message>(), It.IsAny<IEndpointCredentials>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(true));
-
-            var bus = new Bus(config, baseUri, transportService.Object, messageQueueingService.Object);
-            await bus.Init();
-
-            const string messageContent = "Hello, world!";
-            await bus.Send(messageContent, endpointName, new SendOptions { Importance = MessageImportance.Normal });
-
-            transportService.Verify(
-                ts => ts.SendMessage(It.Is<Message>(m => m.Content == messageContent), It.IsAny<IEndpointCredentials>(), It.IsAny<CancellationToken>()),
-                Times.Once());
-
-            messageQueueingService.Verify(
-                mqs =>
-                    mqs.EnqueueMessage(It.IsAny<QueueName>(), It.IsAny<Message>(),
-                        It.IsAny<IPrincipal>(), It.IsAny<CancellationToken>()), Times.Never());
-        }
-
-        [Test]
-        public async Task Send_EndpointAddress_Critical_Importance_TransportService_Called()
-        {
-            var baseUri = new Uri("http://localhost:52180/platibus/");
-            var endpointName = new EndpointName("local");
-            var transportService = new Mock<ITransportService>();
-            var messageQueueingService = new Mock<IMessageQueueingService>();
-            var handler = new Mock<IMessageHandler>();
-            var config = new PlatibusConfiguration
-            {
-                DefaultContentType = "text/plain"
-            };
-
-            var allMessages = new MessageNamePatternSpecification(".*");
-            var handlerQueueName = new QueueName("handler");
-
-            config.AddEndpoint(endpointName, new Endpoint(baseUri));
-            config.AddSendRule(new SendRule(allMessages, endpointName));
-            config.AddHandlingRule(new HandlingRule(allMessages, handler.Object, handlerQueueName));
-
-            transportService.Setup(
-                t => t.SendMessage(It.IsAny<Message>(), It.IsAny<IEndpointCredentials>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(true));
-
-            var bus = new Bus(config, baseUri, transportService.Object, messageQueueingService.Object);
-            await bus.Init();
-
-            const string messageContent = "Hello, world!";
-            await bus.Send(messageContent, baseUri, options: new SendOptions { Importance = MessageImportance.Critical });
-
-            transportService.Verify(
-                ts => ts.SendMessage(It.Is<Message>(m => m.Content == messageContent), It.IsAny<IEndpointCredentials>(), It.IsAny<CancellationToken>()),
-                Times.Once());
-
-            messageQueueingService.Verify(
-                mqs =>
-                    mqs.EnqueueMessage(It.IsAny<QueueName>(), It.IsAny<Message>(),
-                        It.IsAny<IPrincipal>(), It.IsAny<CancellationToken>()), Times.Never());
-        }
-
-        [Test]
-        public async Task Send_EndpointAddress_Normal_Importance_TransportService_Called()
-        {
-            var baseUri = new Uri("http://localhost:52180/platibus/");
-            var endpointName = new EndpointName("local");
-            var transportService = new Mock<ITransportService>();
-            var messageQueueingService = new Mock<IMessageQueueingService>();
-            var handler = new Mock<IMessageHandler>();
-            var config = new PlatibusConfiguration
-            {
-                DefaultContentType = "text/plain"
-            };
-
-            var allMessages = new MessageNamePatternSpecification(".*");
-            var handlerQueueName = new QueueName("handler");
-
-            config.AddEndpoint(endpointName, new Endpoint(baseUri));
-            config.AddSendRule(new SendRule(allMessages, endpointName));
-            config.AddHandlingRule(new HandlingRule(allMessages, handler.Object, handlerQueueName));
-
-            transportService.Setup(
-                t => t.SendMessage(It.IsAny<Message>(), It.IsAny<IEndpointCredentials>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(true));
-
-            var bus = new Bus(config, baseUri, transportService.Object, messageQueueingService.Object);
-            await bus.Init();
-
-            const string messageContent = "Hello, world!";
-            await bus.Send(messageContent, baseUri, options: new SendOptions { Importance = MessageImportance.Normal });
-
-            transportService.Verify(
-                ts => ts.SendMessage(It.Is<Message>(m => m.Content == messageContent), It.IsAny<IEndpointCredentials>(), It.IsAny<CancellationToken>()),
-                Times.Once());
-
-            messageQueueingService.Verify(
-                mqs =>
-                    mqs.EnqueueMessage(It.IsAny<QueueName>(), It.IsAny<Message>(),
-                        It.IsAny<IPrincipal>(), It.IsAny<CancellationToken>()), Times.Never());
+            return bus;
         }
     }
 }

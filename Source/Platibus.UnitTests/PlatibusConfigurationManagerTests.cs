@@ -16,18 +16,17 @@ namespace Platibus.UnitTests
         }
 
         [Test]
-        public async Task Given_Configuration_Hook_When_Loading_Configuration_Then_Message_Route_Added()
+        public async Task HandlingRulesAreAdded()
         {
             var configuration = await PlatibusConfigurationManager.LoadConfiguration();
 
-            var messageRoutes = configuration.HandlingRules.ToList();
-            Assert.That(messageRoutes.Count, Is.EqualTo(1));
-            Assert.That(messageRoutes[0].Specification, Is.InstanceOf<MessageNamePatternSpecification>());
+            var handlingRules = configuration.HandlingRules.ToList();
+            Assert.That(handlingRules.Count, Is.EqualTo(1));
+            Assert.That(handlingRules[0].Specification, Is.InstanceOf<MessageNamePatternSpecification>());
 
-            var namePatternSpec = (MessageNamePatternSpecification) messageRoutes[0].Specification;
+            var namePatternSpec = (MessageNamePatternSpecification) handlingRules[0].Specification;
             Assert.That(namePatternSpec.NameRegex.ToString(), Is.EqualTo(".*(?i)example.*"));
-
-            Assert.That(messageRoutes[0].MessageHandler, Is.InstanceOf<MessageHandlerStub>());
+            Assert.That(handlingRules[0].MessageHandler, Is.InstanceOf<MessageHandlerStub>());
         }
     }
 }
