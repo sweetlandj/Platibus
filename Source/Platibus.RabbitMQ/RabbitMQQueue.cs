@@ -29,6 +29,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
 using Platibus.Filesystem;
+using Platibus.Security;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -241,8 +242,14 @@ namespace Platibus.RabbitMQ
                 using (var reader = new StringReader(messageBody))
                 using (var messageReader = new MessageReader(reader))
                 {
-                    var principal = await messageReader.ReadPrincipal();
                     var message = await messageReader.ReadMessage();
+
+                    IPrincipal principal = null;
+                    var securityToken = message.Headers.SecurityToken;
+                    if (!string.IsNullOrWhiteSpace(securityToken))
+                    {
+                        principal = MessageSecurityToken.Validate(securityToken);
+                    }
 
                     var context = new RabbitMQQueuedMessageContext(message.Headers, principal);
                     Thread.CurrentPrincipal = context.Principal;

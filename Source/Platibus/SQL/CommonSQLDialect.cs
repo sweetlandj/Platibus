@@ -55,7 +55,6 @@ INSERT INTO [PB_QueuedMessages] (
     [ReplyTo], 
     [Expires], 
     [ContentType], 
-    [SenderPrincipal], 
     [Headers], 
     [MessageContent])
 SELECT 
@@ -67,7 +66,6 @@ SELECT
     @ReplyTo, 
     @Expires, 
     @ContentType, 
-    @SenderPrincipal, 
     @Headers, 
     @MessageContent
 WHERE NOT EXISTS (

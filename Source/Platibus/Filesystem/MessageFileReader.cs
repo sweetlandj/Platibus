@@ -86,7 +86,6 @@ namespace Platibus.Filesystem
             };
             return new ClaimsPrincipal(new ClaimsIdentity(claims, senderPrincipal.Identity.AuthenticationType));
         }
-
 #pragma warning restore 618
 
         public async Task<Message> ReadMessage()

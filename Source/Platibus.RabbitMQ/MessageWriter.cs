@@ -76,30 +76,7 @@ namespace Platibus.RabbitMQ
             _writer = new StreamWriter(stream, encoding ?? Encoding.UTF8);
             _leaveOpen = leaveOpen;
         }
-
-        /// <summary>
-        /// Writes the sender principal to the underlying stream
-        /// </summary>
-        /// <param name="principal">The sender principal</param>
-        /// <returns>Returns a task that completes when the principal has been written
-        /// to the underlying stream</returns>
-        public async Task WritePrincipal(IPrincipal principal)
-        {
-            if (principal != null)
-            {
-                using (var memoryStream = new MemoryStream())
-                {
-                    var formatter = new BinaryFormatter();
-                    formatter.Serialize(memoryStream, principal);
-                    var base64String = Convert.ToBase64String(memoryStream.GetBuffer());
-                    await _writer.WriteLineAsync(base64String);
-                }
-            }
-            // Blank line to separate subsequent content from Base-64
-            // encoded principal data
-            await _writer.WriteLineAsync();
-        }
-
+        
         /// <summary>
         /// Writes a message to the underlying stream
         /// </summary>
@@ -109,6 +86,12 @@ namespace Platibus.RabbitMQ
         public async Task WriteMessage(Message message)
         {
             if (message == null) throw new ArgumentNullException("message");
+
+            // Write a blank line to preserve backward compatibility with older messages that
+            // have a binary formatted SenderPrincipal.  The MessageFileReader will continue to
+            // support older messages for the forseeable future to ensure that older messages can
+            // still be processed following an update.
+            await _writer.WriteLineAsync();
 
             var headers = message.Headers;
             if (headers != null)

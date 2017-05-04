@@ -201,18 +201,21 @@ namespace Platibus.RabbitMQ
                 encoding = Encoding.UTF8;
             }
 
+            // Add or update the SecurityToken header in the message and write the message 
+            // with the updated headers
+            var messageWithSecurityToken = message.WithSecurityToken(principal);
+
             using (var stringWriter = new StringWriter())
             using (var messageWriter = new MessageWriter(stringWriter))
             {
-                await messageWriter.WritePrincipal(principal);
-                await messageWriter.WriteMessage(message);
+                await messageWriter.WriteMessage(messageWithSecurityToken);
                 var messageBody = stringWriter.ToString();
                 var properties = channel.CreateBasicProperties();
                 properties.Persistent = true;
                 properties.ContentEncoding = Encoding.UTF8.HeaderName;
-                properties.ContentType = message.Headers.ContentType;
-                properties.MessageId = message.Headers.MessageId.ToString();
-                properties.CorrelationId = message.Headers.RelatedTo.ToString();
+                properties.ContentType = messageWithSecurityToken.Headers.ContentType;
+                properties.MessageId = messageWithSecurityToken.Headers.MessageId.ToString();
+                properties.CorrelationId = messageWithSecurityToken.Headers.RelatedTo.ToString();
                 var headers = properties.Headers;
                 if (headers == null)
                 {
@@ -228,7 +231,7 @@ namespace Platibus.RabbitMQ
                 channel.BasicPublish(ex, q, properties, body);
             }
         }
-
+        
         /// <summary>
         /// Reads the numbr of delivery attempts from the basic properties of a message
         /// </summary>

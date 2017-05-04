@@ -194,7 +194,7 @@ namespace Platibus.IntegrationTests
                 Exception exception = null;
                 try
                 {
-                    var sentMessage = await platibus0.Send(message);
+                    await platibus0.Send(message);
                 }
                 catch (Exception e)
                 {

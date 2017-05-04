@@ -26,6 +26,7 @@ using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
@@ -209,15 +210,16 @@ namespace Platibus.SQL
         /// Inserts a message into the SQL database
         /// </summary>
         /// <param name="message">The message to enqueue</param>
-        /// <param name="senderPrincipal">The principal that sent the message or from whom the
+        /// <param name="principal">The principal that sent the message or from whom the
         /// message was received</param>
         /// <returns>Returns a task that completes when the message has been inserted into the SQL
         /// database and whose result is a copy of the inserted record</returns>
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual Task<SQLQueuedMessage> InsertQueuedMessage(Message message, IPrincipal senderPrincipal)
+        protected virtual Task<SQLQueuedMessage> InsertQueuedMessage(Message message, IPrincipal principal)
         {
             SQLQueuedMessage queuedMessage;
             var connection = _connectionProvider.GetConnection();
+            var messageWithSecurityToken = message.WithSecurityToken(principal);
             try
             {
                 using (var scope = new TransactionScope(TransactionScopeOption.Required))
@@ -227,7 +229,7 @@ namespace Platibus.SQL
                         command.CommandType = CommandType.Text;
                         command.CommandText = _dialect.InsertQueuedMessageCommand;
 
-                        var headers = message.Headers;
+                        var headers = messageWithSecurityToken.Headers;
 
                         command.SetParameter(_dialect.MessageIdParameterName, (Guid)headers.MessageId);
                         command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
@@ -240,15 +242,14 @@ namespace Platibus.SQL
                             headers.ReplyTo == null ? null : headers.ReplyTo.ToString());
                         command.SetParameter(_dialect.ExpiresParameterName, headers.Expires);
                         command.SetParameter(_dialect.ContentTypeParameterName, headers.ContentType);
-                        command.SetParameter(_dialect.SenderPrincipalParameterName, SerializePrincipal(senderPrincipal));
                         command.SetParameter(_dialect.HeadersParameterName, SerializeHeaders(headers));
-                        command.SetParameter(_dialect.MessageContentParameterName, message.Content);
+                        command.SetParameter(_dialect.MessageContentParameterName, messageWithSecurityToken.Content);
 
                         command.ExecuteNonQuery();
                     }
                     scope.Complete();
                 }
-                queuedMessage = new SQLQueuedMessage(message, senderPrincipal);
+                queuedMessage = new SQLQueuedMessage(messageWithSecurityToken, principal);
             }
             finally
             {
@@ -259,7 +260,7 @@ namespace Platibus.SQL
             // and dependency on .NET 4.5.1 and later
             return Task.FromResult(queuedMessage);
         }
-
+        
         /// <summary>
         /// Selects all queued messages from the SQL database
         /// </summary>
@@ -286,10 +287,10 @@ namespace Platibus.SQL
                             {
                                 var messageContent = reader.GetString("MessageContent");
                                 var headers = DeserializeHeaders(reader.GetString("Headers"));
-                                var senderPrincipal = DeserializePrincipal(reader.GetString("SenderPrincipal"));
                                 var message = new Message(headers, messageContent);
+                                var principal = ResolvePrincipal(headers, reader);
                                 var attempts = reader.GetInt("Attempts").GetValueOrDefault(0);
-                                var queuedMessage = new SQLQueuedMessage(message, senderPrincipal, attempts);
+                                var queuedMessage = new SQLQueuedMessage(message, principal, attempts);
                                 queuedMessages.Add(queuedMessage);
                             }
                         }
@@ -335,10 +336,10 @@ namespace Platibus.SQL
                             {
                                 var messageContent = reader.GetString("MessageContent");
                                 var headers = DeserializeHeaders(reader.GetString("Headers"));
-                                var senderPrincipal = DeserializePrincipal(reader.GetString("SenderPrincipal"));
                                 var message = new Message(headers, messageContent);
+                                var principal = ResolvePrincipal(headers, reader);
                                 var attempts = reader.GetInt("Attempts").GetValueOrDefault(0);
-                                var queuedMessage = new SQLQueuedMessage(message, senderPrincipal, attempts);
+                                var queuedMessage = new SQLQueuedMessage(message, principal, attempts);
                                 queuedMessages.Add(queuedMessage);
                             }
                         }
@@ -408,21 +409,7 @@ namespace Platibus.SQL
                 await _queuedMessages.SendAsync(queuedMessage);
             }
         }
-
-        /// <summary>
-        /// Helper method to serialize a principal so that it can be inserted into a single
-        /// column in the SQL database
-        /// </summary>
-        /// <param name="principal">The principal to serialize</param>
-        /// <returns>The serialized principal</returns>
-        protected virtual string SerializePrincipal(IPrincipal principal)
-        {
-            if (principal == null) return null;
-
-            var messageSecurityToken = MessageSecurityToken.Create(principal);
-            return messageSecurityToken.ToString();
-        }
-
+        
         /// <summary>
         /// A helper method to serialize message headers so that they can be inserted into a
         /// single column in the SQL database
@@ -461,19 +448,44 @@ namespace Platibus.SQL
             }
         }
 
+#pragma warning disable 618
+        protected IPrincipal ResolvePrincipal(IMessageHeaders headers, IDataRecord record)
+        {
+            if (!string.IsNullOrWhiteSpace(headers.SecurityToken))
+            {
+                return MessageSecurityToken.Validate(headers.SecurityToken);
+            }
+
+            try
+            {
+                var columnIndex = record.GetOrdinal("SenderPrincipal");
+                return record.IsDBNull(columnIndex) 
+                    ? null 
+                    : DeserializePrincipal(record.GetString(columnIndex));
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return null;
+            }
+        }
+#pragma warning restore 618
+
         /// <summary>
         /// Helper method to deserialize the sender principal from a record in the SQL database
         /// </summary>
         /// <param name="str">The serialized principal string</param>
         /// <returns>Returns the deserialized principal</returns>
-        /// <remarks>
-        /// This method performs the inverse of <see cref="SerializePrincipal"/>
-        /// </remarks>
+        [Obsolete("For backward compatibility only")]
         protected virtual IPrincipal DeserializePrincipal(string str)
         {
-            return string.IsNullOrWhiteSpace(str) 
-                ? null 
-                : MessageSecurityToken.Validate(str);
+            if (string.IsNullOrWhiteSpace(str)) return null;
+
+            var bytes = Convert.FromBase64String(str);
+            using (var memoryStream = new MemoryStream(bytes))
+            {
+                var formatter = new BinaryFormatter();
+                return (IPrincipal)formatter.Deserialize(memoryStream);
+            }
         }
 
         /// <summary>

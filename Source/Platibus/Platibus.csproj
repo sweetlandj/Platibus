@@ -135,6 +135,7 @@
     <Compile Include="MessageNotAcknowledgedException.cs" />
     <Compile Include="ReadOnlyEndpointCollection.cs" />
     <Compile Include="Security\MessageSecurityToken.cs" />
+    <Compile Include="Security\MessageSecurityTokenExtensions.cs" />
     <Compile Include="Security\SenderIdentity.cs" />
     <Compile Include="Security\SenderPrincipal.cs" />
     <Compile Include="Security\SenderRole.cs" />

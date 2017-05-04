@@ -104,7 +104,7 @@ namespace Platibus.Filesystem
             {
                 // Add or update the SecurityToken header in the message and write the message 
                 // with the updated headers
-                var messageWithSecurityToken = WithSecurityToken(message, principal);
+                var messageWithSecurityToken = message.WithSecurityToken(principal);
                 await messageFileWriter.WriteMessage(messageWithSecurityToken);
                 messageFileContent = stringWriter.ToString();
             }
@@ -120,18 +120,6 @@ namespace Platibus.Filesystem
             Log.DebugFormat("Message file {0} created successfully", file, message.Headers.MessageId);
 
             return new MessageFile(file);
-        }
-
-        private static Message WithSecurityToken(Message message, IPrincipal principal)
-        {
-            var securityToken = principal == null ? null : MessageSecurityToken.Create(principal);
-            if (message.Headers.SecurityToken == securityToken) return message;
-
-            var updatedHeaders = new MessageHeaders(message.Headers)
-            {
-                SecurityToken = securityToken
-            };
-            return new Message(updatedHeaders, message.Content);
         }
 
         public async Task<IPrincipal> ReadPrincipal(

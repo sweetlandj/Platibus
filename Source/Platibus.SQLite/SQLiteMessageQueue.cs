@@ -82,10 +82,10 @@ namespace Platibus.SQLite
             return connectionProvider;
         }
 
-        protected override Task<SQLQueuedMessage> InsertQueuedMessage(Message message, IPrincipal senderPrincipal)
+        protected override Task<SQLQueuedMessage> InsertQueuedMessage(Message message, IPrincipal principal)
         {
             CheckDisposed();
-            var op = new SQLiteOperation<SQLQueuedMessage>(() => base.InsertQueuedMessage(message, senderPrincipal));
+            var op = new SQLiteOperation<SQLQueuedMessage>(() => base.InsertQueuedMessage(message, principal));
             _operationQueue.Post(op);
             return op.Task;
         }
