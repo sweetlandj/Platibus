@@ -12,7 +12,7 @@ namespace Platibus.UnitTests.Http
     internal class HttpTransportServiceTests
     {
         [Test]
-        public async Task Given_Valid_Request_And_Remote_Server_Listening_When_Sending_Then_Remote_Accepts()
+        public async Task MessageCanBePostedToRemote()
         {
             var messageReceivedEvent = new ManualResetEvent(false);
             string content = null;
@@ -64,7 +64,7 @@ namespace Platibus.UnitTests.Http
         }
 
         [Test]
-        public async Task Given_Remote_Host_Not_Listening_When_Sending_Then_Transport_Service_Throws_TransportException()
+        public async Task TransportExceptionThrownIfConnectionRefused()
         {
             var endpoint = new UriBuilder
             {
@@ -101,7 +101,7 @@ namespace Platibus.UnitTests.Http
         }
 
         [Test]
-        public async Task Given_Invalid_Hostname_When_Sending_Then_Transport_Service_Throws_TransportException()
+        public async Task TransportExceptionThrownIfNameResolutionFails()
         {
             var endpoint = new UriBuilder
             {

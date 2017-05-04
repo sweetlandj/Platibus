@@ -16,7 +16,7 @@ namespace Platibus.UnitTests.Http
     internal class TopicControllerTests
     {
         [Test]
-        public async Task Given_No_Topic_When_Getting_Then_Topic_List_Returned()
+        public async Task GetRequestToTopicResourceReturnsListOfTopics()
         {
             var mockSubscriptionTrackingService = new Mock<ISubscriptionTrackingService>();
             var topics = new TopicName[] {"topic-1", "topic-2", "topic-3"};
@@ -52,7 +52,7 @@ namespace Platibus.UnitTests.Http
         }
 
         [Test]
-        public async Task Given_No_Topic_When_Posting_Then_400_Returned()
+        public async Task BadRequestWhenPostingToUnknownTopic()
         {
             var mockSubscriptionTrackingService = new Mock<ISubscriptionTrackingService>();
             var topics = new TopicName[] {"topic-1", "topic-2", "topic-3"};
@@ -80,7 +80,7 @@ namespace Platibus.UnitTests.Http
         }
 
         [Test]
-        public async Task Given_Topic_And_Subscriber_When_Posting_Then_Subscription_Added()
+        public async Task ValidPostRequestToTopicSubscriberResourceCreatesSubscription()
         {
             var mockSubscriptionTrackingService = new Mock<ISubscriptionTrackingService>();
             mockSubscriptionTrackingService.Setup(sts =>
@@ -120,7 +120,7 @@ namespace Platibus.UnitTests.Http
         }
 
         [Test]
-        public async Task Given_Topic_And_Subscriber_When_Deleting_Then_Subscription_Removed()
+        public async Task ValidDeleteRequestToTopicSubscriberResourceRemovesSubscription()
         {
             var mockSubscriptionTrackingService = new Mock<ISubscriptionTrackingService>();
             mockSubscriptionTrackingService.Setup(sts =>

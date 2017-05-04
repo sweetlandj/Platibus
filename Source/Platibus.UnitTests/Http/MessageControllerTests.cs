@@ -15,7 +15,7 @@ namespace Platibus.UnitTests.Http
     internal class MessageControllerTests
     {
         [Test]
-        public async Task Given_Content_When_Posting_Then_Transport_Service_Accepts_Message()
+        public async Task ValidPostRequestToMessageResourceAccepted()
         {
             var messageId = MessageId.Generate();
 
