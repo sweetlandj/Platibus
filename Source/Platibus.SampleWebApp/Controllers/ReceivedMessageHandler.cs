@@ -32,13 +32,13 @@ namespace Platibus.SampleWebApp.Controllers
                 headers.MessageName,
                 headers.MessageId,
                 headers.Origination,
-                context.SenderPrincipal.GetName(),
+                context.Principal.GetName(),
                 headers.Sent,
                 headers.Received);
 
             var receivedMessage = new ReceivedMessage
             {
-                SenderPrincipal = context.SenderPrincipal == null ? null : context.SenderPrincipal.Identity.Name,
+                SenderPrincipal = context.Principal == null ? null : context.Principal.Identity.Name,
                 MessageId = headers.MessageId,
                 MessageName = headers.MessageName,
                 Origination = headers.Origination == null ? "" : headers.Origination.ToString(),

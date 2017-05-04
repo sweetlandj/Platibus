@@ -245,7 +245,7 @@ namespace Platibus.RabbitMQ
                     var message = await messageReader.ReadMessage();
 
                     var context = new RabbitMQQueuedMessageContext(message.Headers, principal);
-                    Thread.CurrentPrincipal = context.SenderPrincipal;
+                    Thread.CurrentPrincipal = context.Principal;
                     await _listener.MessageReceived(message, context, cancellationToken);
                     return context.Acknowledged;
                 }

@@ -15,7 +15,7 @@ namespace Platibus.UnitTests.LocalDB
         }
 
         public LocalDBMessageJournalingServiceTests(LocalDBCollectionFixture fixture)
-            : this(InitMessageJournalingService(fixture))
+            : this(fixture.MessageJournalingService)
         {
         }
 
@@ -24,14 +24,7 @@ namespace Platibus.UnitTests.LocalDB
         {
             _inspector = new SQLMessageJournalInspector(messageJournalingService);
         }
-
-        private static SQLMessageJournalingService InitMessageJournalingService(LocalDBCollectionFixture fixture)
-        {
-            var messageJournalingService = new SQLMessageJournalingService(fixture.ConnectionProvider, fixture.Dialect);
-            messageJournalingService.Init();
-            return messageJournalingService;
-        }
-
+        
         protected override async Task AssertSentMessageIsWrittenToJournal()
         {
             var journaledMessages = await _inspector.EnumerateMessages();

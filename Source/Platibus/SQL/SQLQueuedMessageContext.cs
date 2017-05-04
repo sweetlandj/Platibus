@@ -41,7 +41,7 @@ namespace Platibus.SQL
             get { return _queuedMessage.Message.Headers; }
         }
 
-        public IPrincipal SenderPrincipal
+        public IPrincipal Principal
         {
             get { return _queuedMessage.SenderPrincipal; }
         }

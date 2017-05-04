@@ -35,7 +35,7 @@ namespace Platibus.RabbitMQ
             get { return _headers; }
         }
 
-        public IPrincipal SenderPrincipal
+        public IPrincipal Principal
         {
             get { return _senderPrincipal; }
         }

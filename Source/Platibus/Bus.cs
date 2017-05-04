@@ -29,7 +29,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
 using Platibus.Config;
-using Platibus.Security;
 using Platibus.Serialization;
 
 namespace Platibus
@@ -394,10 +393,7 @@ namespace Platibus
                 await _messageJournalingService.MessageReceived(message);
             }
 
-            // Make sure that the principal is serializable before enqueuing
-            var senderPrincipal = SenderPrincipal.From(principal);
             var tasks = new List<Task>();
-
             var isPublication = message.Headers.Topic != null;
             var isReply = message.Headers.RelatedTo != default(MessageId);
             if (isReply)
@@ -414,11 +410,11 @@ namespace Platibus
                     .Where(r => r.Specification.IsSatisfiedBy(message))
                     .Select(rule => rule.QueueName)
                     .Distinct()
-                    .Select(q => _messageQueueingService.EnqueueMessage(q, message, senderPrincipal)));
+                    .Select(q => _messageQueueingService.EnqueueMessage(q, message, principal)));
             }
             else
             {
-                tasks.Add(HandleMessageImmediately(message, senderPrincipal));
+                tasks.Add(HandleMessageImmediately(message, principal));
             }
 
             await Task.WhenAll(tasks);

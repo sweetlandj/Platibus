@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using NUnit.Framework;
+using Platibus.Filesystem;
 
 namespace Platibus.UnitTests.Filesystem
 {
@@ -15,13 +16,43 @@ namespace Platibus.UnitTests.Filesystem
             Instance = new FilesystemCollectionFixture();
         }
 
-        private readonly DirectoryInfo _baseDirectory;
+        [TearDown]
+        public void TearDown()
+        {
+            if (Instance != null)
+            {
+                Instance._messageQueueingService.Dispose();
+            }
+        }
 
-        public DirectoryInfo BaseDirectory { get { return _baseDirectory; } }
+        private readonly DirectoryInfo _baseDirectory;
+        private readonly FilesystemMessageJournalingService _messageJournalingService;
+        private readonly FilesystemMessageQueueingService _messageQueueingService;
+
+        public DirectoryInfo BaseDirectory
+        {
+            get { return _baseDirectory; }
+        }
+
+        public FilesystemMessageJournalingService MessageJournalingService
+        {
+            get { return _messageJournalingService; }
+        }
+
+        public FilesystemMessageQueueingService MessageQueueingService
+        {
+            get { return _messageQueueingService; }
+        }
 
         public FilesystemCollectionFixture()
         {
             _baseDirectory = GetTempDirectory();
+
+            _messageJournalingService = new FilesystemMessageJournalingService(_baseDirectory);
+            _messageJournalingService.Init();
+
+            _messageQueueingService = new FilesystemMessageQueueingService(_baseDirectory);
+            _messageQueueingService.Init();
         }
 
         protected DirectoryInfo GetTempDirectory()

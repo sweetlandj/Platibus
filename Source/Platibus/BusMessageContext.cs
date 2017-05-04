@@ -54,7 +54,7 @@ namespace Platibus
             get { return _bus; }
         }
 
-        public IPrincipal SenderPrincipal
+        public IPrincipal Principal
         {
             get { return _senderPrincipal; }
         }

@@ -56,7 +56,7 @@ namespace Platibus
         public async Task MessageReceived(Message message, IQueuedMessageContext context,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            var messageContext = new BusMessageContext(_bus, context.Headers, context.SenderPrincipal);
+            var messageContext = new BusMessageContext(_bus, context.Headers, context.Principal);
             await MessageHandler.HandleMessage(_messageNamingService, _serializationService, _messageHandlers,
                 message, messageContext, cancellationToken);
 

@@ -21,13 +21,11 @@
 // THE SOFTWARE.
 
 using System;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
 using Microsoft.Owin;
 using Platibus.Http;
-using Platibus.Security;
 
 namespace Platibus.Owin
 {
@@ -150,8 +148,7 @@ namespace Platibus.Owin
         private async Task HandleMessage(Message message, CancellationToken cancellationToken)
         {
             var bus = await _bus;
-            var senderPrincipal = SenderPrincipal.From(Thread.CurrentPrincipal);
-            await bus.HandleMessage(message, senderPrincipal);
+            await bus.HandleMessage(message, Thread.CurrentPrincipal);
         }
 
         private static bool IsPlatibusUri(Uri uri, Uri baseUri)

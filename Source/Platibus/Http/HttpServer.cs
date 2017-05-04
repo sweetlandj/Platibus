@@ -26,7 +26,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Common.Logging;
-using Platibus.Security;
 
 namespace Platibus.Http
 {
@@ -143,8 +142,7 @@ namespace Platibus.Http
                 Log.WarnFormat("Unable to handle local delivery of message ID {0}: bus not initialized", message.Headers.MessageId);
                 return;
             }
-            var senderPrincipal = SenderPrincipal.From(Thread.CurrentPrincipal);
-            await _bus.HandleMessage(message, senderPrincipal);
+            await _bus.HandleMessage(message, Thread.CurrentPrincipal);
         }
         
         private static HttpListener InitHttpListener(Uri baseUri, AuthenticationSchemes authenticationSchemes)

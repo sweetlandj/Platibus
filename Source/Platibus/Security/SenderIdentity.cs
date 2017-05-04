@@ -35,7 +35,8 @@ namespace Platibus.Security
     /// contexts
     /// </remarks>
     [Serializable]
-    public class SenderIdentity : IIdentity, ISerializable
+    [Obsolete("Use MessageSecurityToken")]
+    public class SenderIdentity : IIdentity, ISerializable, IEquatable<SenderIdentity>
     {
         private readonly string _name;
         private readonly string _authenticationType;
@@ -144,6 +145,33 @@ namespace Platibus.Security
                 senderIdentity = new SenderIdentity(identity);
             }
             return senderIdentity;
+        }
+
+        /// <inheritdoc />
+        public bool Equals(SenderIdentity other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return string.Equals(_name, other._name) && _isAuthenticated == other._isAuthenticated;
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            return obj.GetType() == GetType() && Equals((SenderIdentity) obj);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = _name != null ? _name.GetHashCode() : 0;
+                hashCode = (hashCode * 397) ^ _isAuthenticated.GetHashCode();
+                return hashCode;
+            }
         }
     }
 }

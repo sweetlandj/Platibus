@@ -99,9 +99,8 @@ namespace Platibus.Http
             var messageHeaders = new MessageHeaders(flattenedHeaders);
             var content = await request.ReadContentAsString();
             var message = new Message(messageHeaders, content);
-            var senderPrincipal = SenderPrincipal.From(request.Principal);
-            Thread.CurrentPrincipal = senderPrincipal;
-            await _accept(message, senderPrincipal);
+            Thread.CurrentPrincipal = request.Principal;
+            await _accept(message, request.Principal);
             response.StatusCode = 202;
         }
     }

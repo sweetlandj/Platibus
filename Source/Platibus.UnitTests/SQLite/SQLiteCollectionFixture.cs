@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using NUnit.Framework;
+using Platibus.SQLite;
 
 namespace Platibus.UnitTests.SQLite
 {
@@ -15,13 +16,43 @@ namespace Platibus.UnitTests.SQLite
             Instance = new SQLiteCollectionFixture();
         }
 
-        private readonly DirectoryInfo _baseDirectory;
+        [TearDown]
+        public void TearDown()
+        {
+            if (Instance != null)
+            {
+                Instance._messageQueueingService.Dispose();
+            }
+        }
 
-        public DirectoryInfo BaseDirectory { get { return _baseDirectory; } }
+        private readonly DirectoryInfo _baseDirectory;
+        private readonly SQLiteMessageJournalingService _messageJournalingService;
+        private readonly SQLiteMessageQueueingService _messageQueueingService;
+
+        public DirectoryInfo BaseDirectory
+        {
+            get { return _baseDirectory; }
+        }
+
+        public SQLiteMessageJournalingService MessageJournalingService
+        {
+            get { return _messageJournalingService; }
+        }
+
+        public SQLiteMessageQueueingService MessageQueueingService
+        {
+            get { return _messageQueueingService; }
+        }
 
         public SQLiteCollectionFixture()
         {
             _baseDirectory = GetTempDirectory();
+
+            _messageJournalingService = new SQLiteMessageJournalingService(_baseDirectory);
+            _messageJournalingService.Init();
+
+            _messageQueueingService = new SQLiteMessageQueueingService(_baseDirectory);
+            _messageQueueingService.Init();
         }
 
         protected DirectoryInfo GetTempDirectory()

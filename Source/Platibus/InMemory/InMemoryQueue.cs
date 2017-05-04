@@ -85,7 +85,7 @@ namespace Platibus.InMemory
                 attemptsRemaining--;
                 var message = queuedMessage.Message;
                 var context = new InMemoryQueuedMessageContext(message, queuedMessage.SenderPrincipal);
-                Thread.CurrentPrincipal = context.SenderPrincipal;
+                Thread.CurrentPrincipal = context.Principal;
                 cancellationToken.ThrowIfCancellationRequested();
 
                 try

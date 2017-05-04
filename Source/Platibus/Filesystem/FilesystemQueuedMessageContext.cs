@@ -41,9 +41,9 @@ namespace Platibus.Filesystem
             get { return _queuedMessage.ReadMessage().Result.Headers; }
         }
 
-        public IPrincipal SenderPrincipal
+        public IPrincipal Principal
         {
-            get { return _queuedMessage.ReadSenderPrincipal().Result; }
+            get { return _queuedMessage.ReadPrincipal().Result; }
         }
 
         public Task Acknowledge()

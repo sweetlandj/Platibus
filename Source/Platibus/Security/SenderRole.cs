@@ -31,6 +31,7 @@ namespace Platibus.Security
     /// A serializable representation of a sender principal role
     /// </summary>
     [Serializable]
+    [Obsolete("Use MessageSecurityToken")]
     public class SenderRole : IEquatable<SenderRole>, ISerializable
     {
         private readonly string _name;

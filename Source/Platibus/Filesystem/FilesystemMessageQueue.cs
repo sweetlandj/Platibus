@@ -143,7 +143,7 @@ namespace Platibus.Filesystem
                     _maxAttempts);
 
                 var context = new FilesystemQueuedMessageContext(queuedMessage);
-                Thread.CurrentPrincipal = context.SenderPrincipal;
+                Thread.CurrentPrincipal = context.Principal;
                 cancellationToken.ThrowIfCancellationRequested();
 
                 try
@@ -176,7 +176,7 @@ namespace Platibus.Filesystem
                 // TODO: Use TTL/Expiry instead of max attempts per queue
                 if (attemptCount >= _maxAttempts)
                 {
-                    Log.WarnFormat("Maximum attempts to proces message file {0} exceeded", queuedMessage.File);
+                    Log.WarnFormat("Maximum attempts to process message file {0} exceeded", queuedMessage.File);
                     deadLetter = true;
                 }
 

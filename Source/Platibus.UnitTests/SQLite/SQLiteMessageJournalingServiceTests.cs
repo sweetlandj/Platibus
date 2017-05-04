@@ -1,8 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using Platibus.SQL;
-using Platibus.SQLite;
 
 namespace Platibus.UnitTests.SQLite
 {
@@ -17,18 +15,11 @@ namespace Platibus.UnitTests.SQLite
         }
 
         public SQLiteMessageJournalingServiceTests(SQLiteCollectionFixture fixture)
-            : base(InitMessageJournalingService(fixture))
+            : base(fixture.MessageJournalingService)
         {
             _inspector = new SQLiteMessageJournalInspector(fixture.BaseDirectory);
         }
-
-        private static SQLMessageJournalingService InitMessageJournalingService(SQLiteCollectionFixture fixture)
-        {
-            var messageJournalingService = new SQLiteMessageJournalingService(fixture.BaseDirectory);
-            messageJournalingService.Init();
-            return messageJournalingService;
-        }
-
+        
         protected override async Task AssertSentMessageIsWrittenToJournal()
         {
             var journaledMessages = await _inspector.EnumerateMessages();

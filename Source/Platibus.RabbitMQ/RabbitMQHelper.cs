@@ -201,16 +201,10 @@ namespace Platibus.RabbitMQ
                 encoding = Encoding.UTF8;
             }
 
-            var senderPrincipal = principal as SenderPrincipal;
-            if (senderPrincipal == null && principal != null)
-            {
-                senderPrincipal = new SenderPrincipal(principal);
-            }
-
             using (var stringWriter = new StringWriter())
             using (var messageWriter = new MessageWriter(stringWriter))
             {
-                await messageWriter.WritePrincipal(senderPrincipal);
+                await messageWriter.WritePrincipal(principal);
                 await messageWriter.WriteMessage(message);
                 var messageBody = stringWriter.ToString();
                 var properties = channel.CreateBasicProperties();

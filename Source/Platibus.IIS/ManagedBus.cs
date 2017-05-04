@@ -88,8 +88,7 @@ namespace Platibus.IIS
         private async Task HandleMessage(Message message, CancellationToken cancellationToken)
         {
             await _initialization;
-            var senderPrincipal = SenderPrincipal.From(Thread.CurrentPrincipal);
-            await _bus.HandleMessage(message, senderPrincipal);
+            await _bus.HandleMessage(message, Thread.CurrentPrincipal);
         }
 
         /// <summary>

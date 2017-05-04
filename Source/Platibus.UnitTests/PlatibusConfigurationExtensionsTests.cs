@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Platibus.UnitTests
 {
-    internal class PlatibusConfigurationExtensionTests
+    internal class PlatibusConfigurationExtensionsTests
     {
         private class TestMessageNamingService : IMessageNamingService
         {

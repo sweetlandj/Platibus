@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using Platibus.Filesystem;
 
 namespace Platibus.UnitTests.Filesystem
 {
@@ -15,18 +14,11 @@ namespace Platibus.UnitTests.Filesystem
         }
 
         public FilesystemMessageJournalingServiceTests(FilesystemCollectionFixture fixture)
-            : base(InitMessageJournalingService(fixture))
+            : base(fixture.MessageJournalingService)
         {
             _inspector = new FilesystemMessageJournalInspector(fixture.BaseDirectory);
         }
-
-        private static FilesystemMessageJournalingService InitMessageJournalingService(FilesystemCollectionFixture fixture)
-        {
-            var messageJournalingService = new FilesystemMessageJournalingService(fixture.BaseDirectory);
-            messageJournalingService.Init();
-            return messageJournalingService;
-        }
-
+        
         protected override async Task AssertSentMessageIsWrittenToJournal()
         {
             var journaledMessages = await _inspector.EnumerateSentMessages();

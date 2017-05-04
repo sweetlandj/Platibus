@@ -128,7 +128,7 @@ namespace Platibus.Http
                 credentials = endpoint.Credentials;
             }
             cancellationToken.ThrowIfCancellationRequested();
-            Thread.CurrentPrincipal = context.SenderPrincipal;
+            Thread.CurrentPrincipal = context.Principal;
             await TransportMessage(message, credentials, cancellationToken);
             await context.Acknowledge();
         }
@@ -153,8 +153,7 @@ namespace Platibus.Http
             if (message.Headers.Importance == MessageImportance.Critical)
             {
                 Log.DebugFormat("Enqueueing critical message ID {0} for queued outbound delivery...", message.Headers.MessageId);
-                var senderPrincipal = SenderPrincipal.From(Thread.CurrentPrincipal);
-                await _messageQueueingService.EnqueueMessage(_outboundQueueName, message, senderPrincipal, cancellationToken);
+                await _messageQueueingService.EnqueueMessage(_outboundQueueName, message, Thread.CurrentPrincipal, cancellationToken);
                 return;
             }
 

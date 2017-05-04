@@ -29,7 +29,25 @@ namespace Platibus
     /// </summary>
     public class MessageEqualityComparer : IEqualityComparer<Message>
     {
-        private readonly MessageHeadersEqualityComparer _headersEqualityComparer = new MessageHeadersEqualityComparer();
+        private readonly MessageHeadersEqualityComparer _headersEqualityComparer;
+
+        /// <summary>
+        /// Initializes a new <see cref="MessageEqualityComparer"/>
+        /// </summary>
+        /// <param name="ignoredHeaders">(Optional) The headers to ignore</param>
+        public MessageEqualityComparer(params HeaderName[] ignoredHeaders)
+        {
+            _headersEqualityComparer = new MessageHeadersEqualityComparer(ignoredHeaders);
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="MessageEqualityComparer"/>
+        /// </summary>
+        /// <param name="ignoredHeaders">(Optional) The headers to ignore</param>
+        public MessageEqualityComparer(IEnumerable<HeaderName> ignoredHeaders)
+        {
+            _headersEqualityComparer = new MessageHeadersEqualityComparer(ignoredHeaders);
+        }
 
         /// <summary>
         /// Determines whether two messages are equal

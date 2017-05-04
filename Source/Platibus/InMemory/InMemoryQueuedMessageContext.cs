@@ -45,7 +45,7 @@ namespace Platibus.InMemory
             get { return _message.Headers; }
         }
 
-        public IPrincipal SenderPrincipal
+        public IPrincipal Principal
         {
             get { return _senderPrincipal; }
         }

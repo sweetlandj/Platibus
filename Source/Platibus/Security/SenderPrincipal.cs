@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Security.Claims;
@@ -37,7 +38,8 @@ namespace Platibus.Security
     /// contexts
     /// </remarks>
     [Serializable]
-    public class SenderPrincipal : IPrincipal, ISerializable
+    [Obsolete("Use MessageSecurityToken")]
+    public class SenderPrincipal : IPrincipal, ISerializable, IEquatable<SenderPrincipal>
     {
         private readonly SenderIdentity _identity;
         private readonly SenderRole[] _roles;
@@ -53,6 +55,14 @@ namespace Platibus.Security
             get { return _identity; }
         }
 
+        /// <summary>
+        /// Returns roles associated with this sender principal
+        /// </summary>
+        public IEnumerable<SenderRole> Roles
+        {
+            get { return _roles; }
+        }
+        
         /// <summary>
         /// Initializes a new <see cref="SenderPrincipal"/> based on the specifieed 
         /// <paramref name="principal"/>
@@ -168,6 +178,31 @@ namespace Platibus.Security
         public override string ToString()
         {
             return _identity.Name;
+        }
+
+        /// <inheritdoc />
+        public bool Equals(SenderPrincipal other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Equals(_identity, other._identity) && _roles.SequenceEqual(other._roles);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            return obj.GetType() == GetType() && Equals((SenderPrincipal) obj);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (_identity != null ? _identity.GetHashCode() : 0) * 397;
+            }
         }
     }
 }

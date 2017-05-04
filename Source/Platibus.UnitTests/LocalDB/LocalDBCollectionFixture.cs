@@ -17,17 +17,51 @@ namespace Platibus.UnitTests.LocalDB
             Instance.DeleteQueuedMessages();
         }
 
+        [TearDown]
+        public void TearDown()
+        {
+            if (Instance != null)
+            {
+                Instance._messageQueueingService.Dispose();
+            }
+        }
+
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly ISQLDialect _dialect;
+        private readonly SQLMessageJournalingService _messageJournalingService;
+        private readonly SQLMessageQueueingService _messageQueueingService;
 
-        public IDbConnectionProvider ConnectionProvider { get { return _connectionProvider; } }
-        public ISQLDialect Dialect { get { return _dialect; } }
+        public IDbConnectionProvider ConnectionProvider
+        {
+            get { return _connectionProvider; }
+        }
+
+        public ISQLDialect Dialect
+        {
+            get { return _dialect; }
+        }
+
+        public SQLMessageJournalingService MessageJournalingService
+        {
+            get { return _messageJournalingService; }
+        }
+
+        public SQLMessageQueueingService MessageQueueingService
+        {
+            get { return _messageQueueingService; }
+        }
 
         public LocalDBCollectionFixture()
         {
             var connectionStringSettings = ConfigurationManager.ConnectionStrings["PlatibusUnitTests.LocalDB"];
             _connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
             _dialect = new MSSQLDialect();
+
+            _messageJournalingService = new SQLMessageJournalingService(_connectionProvider, _dialect);
+            _messageJournalingService.Init();
+
+            _messageQueueingService = new SQLMessageQueueingService(_connectionProvider, _dialect);
+            _messageQueueingService.Init();
         }
 
         public void DeleteQueuedMessages()

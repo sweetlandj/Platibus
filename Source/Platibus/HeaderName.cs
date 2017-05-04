@@ -103,6 +103,12 @@ namespace Platibus
         /// </summary>
         public static readonly HeaderName Importance = "Platibus-Importance";
 
+        /// <summary>
+        ///     Security token capturing the claims associated with the principal from which the
+        ///     message was originally received.
+        /// </summary>
+        public static readonly HeaderName SecurityToken = "Platibus-SecurityToken";
+
         private readonly string _value;
 
         /// <summary>

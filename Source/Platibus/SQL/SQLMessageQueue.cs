@@ -26,7 +26,6 @@ using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
@@ -162,7 +161,7 @@ namespace Platibus.SQL
                     _maxAttempts);
 
                 var context = new SQLQueuedMessageContext(queuedMessage);
-                Thread.CurrentPrincipal = context.SenderPrincipal;
+                Thread.CurrentPrincipal = context.Principal;
                 cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
@@ -189,7 +188,7 @@ namespace Platibus.SQL
 
                 if (attemptCount >= _maxAttempts)
                 {
-                    Log.WarnFormat("Maximum attempts to proces message {0} exceeded", messageId);
+                    Log.WarnFormat("Maximum attempts to process message {0} exceeded", messageId);
                     abandoned = true;
                 }
 
@@ -420,14 +419,8 @@ namespace Platibus.SQL
         {
             if (principal == null) return null;
 
-            var senderPrincipal = SenderPrincipal.From(principal);
-            using (var memoryStream = new MemoryStream())
-            {
-                var formatter = new BinaryFormatter();
-                formatter.Serialize(memoryStream, senderPrincipal);
-                var base64String = Convert.ToBase64String(memoryStream.GetBuffer());
-                return base64String;
-            }
+            var messageSecurityToken = MessageSecurityToken.Create(principal);
+            return messageSecurityToken.ToString();
         }
 
         /// <summary>
@@ -478,14 +471,9 @@ namespace Platibus.SQL
         /// </remarks>
         protected virtual IPrincipal DeserializePrincipal(string str)
         {
-            if (string.IsNullOrWhiteSpace(str)) return null;
-
-            var bytes = Convert.FromBase64String(str);
-            using (var memoryStream = new MemoryStream(bytes))
-            {
-                var formatter = new BinaryFormatter();
-                return (IPrincipal)formatter.Deserialize(memoryStream);
-            }
+            return string.IsNullOrWhiteSpace(str) 
+                ? null 
+                : MessageSecurityToken.Validate(str);
         }
 
         /// <summary>

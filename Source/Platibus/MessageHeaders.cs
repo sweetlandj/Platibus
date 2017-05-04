@@ -73,13 +73,7 @@ namespace Platibus
             }
         }
 
-        /// <summary>
-        /// Returns the value of the specified <paramref name="header"/>
-        /// as a string
-        /// </summary>
-        /// <param name="header">The name of the header</param>
-        /// <returns>The value of the specified header, or <c>null</c>
-        /// if that header is not present</returns>
+        /// <inheritdoc/>
         public string this[HeaderName header]
         {
             get
@@ -91,133 +85,102 @@ namespace Platibus
             set { _headers[header] = value; }
         }
 
-        /// <summary>
-        /// Returns the unique identifier associated with the message
-        /// </summary>
+        /// <inheritdoc/>
         public MessageId MessageId
         {
             get { return this[HeaderName.MessageId]; }
             set { this[HeaderName.MessageId] = value; }
         }
 
-        /// <summary>
-        /// Returns the name of the message
-        /// </summary>
-        /// <remarks>
-        /// The message name is used to identify an appropriate type for
-        /// content deserialization
-        /// </remarks>
-        /// <seealso cref="IMessageNamingService"/>
+        /// <inheritdoc/>
         public MessageName MessageName
         {
             get { return this[HeaderName.MessageName]; }
             set { this[HeaderName.MessageName] = value; }
         }
 
-        /// <summary>
-        /// Returns the date and time at which the message expires
-        /// </summary>
-        /// <remarks>
-        /// Expired messages should not be handled (UTC)
-        /// </remarks>
+        /// <inheritdoc/>
         public DateTime Expires
         {
             get { return GetDateTime(HeaderName.Expires).GetValueOrDefault(DateTime.MaxValue); }
             set { SetDateTime(HeaderName.Expires, value); }
         }
 
-        /// <summary>
-        /// Returns the base URI of the endpoint to which the message
-        /// was or is to be sent
-        /// </summary>
+        /// <inheritdoc/>
         public Uri Destination
         {
             get { return GetUri(HeaderName.Destination); }
             set { SetUri(HeaderName.Destination, value); }
         }
 
-        /// <summary>
-        /// Returns the base URI of the endpoint from which the message
-        /// was sent
-        /// </summary>
+        /// <inheritdoc/>
         public Uri Origination
         {
             get { return GetUri(HeaderName.Origination); }
             set { SetUri(HeaderName.Origination, value); }
         }
 
-        /// <summary>
-        /// Returns the base URI of the endpoint to which replies should
-        /// be sent (if different than the <see cref="IMessageHeaders.Origination"/>)
-        /// </summary>
+        /// <inheritdoc/>
         public Uri ReplyTo
         {
             get { return GetUri(HeaderName.ReplyTo); }
             set { SetUri(HeaderName.ReplyTo, value); }
         }
 
-        /// <summary>
-        /// Returns the message ID of the message to which this message
-        /// is a reply
-        /// </summary>
+        /// <inheritdoc/>
         public MessageId RelatedTo
         {
             get { return this[HeaderName.RelatedTo]; }
             set { this[HeaderName.RelatedTo] = value; }
         }
 
-        /// <summary>
-        /// Returns the date and time the message was published (UTC)
-        /// </summary>
+        /// <inheritdoc/>
         public DateTime Published
         {
             get { return GetDateTime(HeaderName.Published).GetValueOrDefault(DateTime.UtcNow); }
             set { SetDateTime(HeaderName.Published, value); }
         }
 
-        /// <summary>
-        /// Returns the name of the topic to which the message was published
-        /// </summary>
+        //// <inheritdoc/>
         public TopicName Topic
         {
             get { return this[HeaderName.Topic]; }
             set { this[HeaderName.Topic] = value; }
         }
 
-        /// <summary>
-        /// Returns the date and time the message was sent (UTC)
-        /// </summary>
+        /// <inheritdoc/>
         public DateTime Sent
         {
             get { return GetDateTime(HeaderName.Sent).GetValueOrDefault(DateTime.UtcNow); }
             set { SetDateTime(HeaderName.Sent, value); }
         }
 
-        /// <summary>
-        /// Returns the date and time the message was received (UTC)
-        /// </summary>
+        /// <inheritdoc/>
         public DateTime Received
         {
             get { return GetDateTime(HeaderName.Received).GetValueOrDefault(DateTime.UtcNow); }
             set { SetDateTime(HeaderName.Received, value); }
         }
 
-        /// <summary>
-        /// Returns the MIME type of the message content
-        /// </summary>
+        /// <inheritdoc/>
         public string ContentType
         {
             get { return this[HeaderName.ContentType]; }
             set { this[HeaderName.ContentType] = value; }
         }
 
-        /// <summary>
-        /// Returns the importance of the message
-        /// </summary>
+        /// <inheritdoc/>
         public MessageImportance Importance
         {
             get { return GetInt(HeaderName.Importance); }
             set { SetInt(HeaderName.Importance, value); }
+        }
+
+        /// <inheritdoc/>
+        public string SecurityToken
+        {
+            get { return this[HeaderName.SecurityToken]; }
+            set { this[HeaderName.SecurityToken] = value; }
         }
 
         /// <summary>
@@ -237,12 +200,7 @@ namespace Platibus
             return 0;
         }
 
-        /// <summary>
-        /// Returns the specified header value as a URI
-        /// </summary>
-        /// <param name="headerName">The name of the header</param>
-        /// <returns>Returns the specified header value as URI if it exists,
-        /// <c>null</c> otherwise</returns>
+        /// <inheritdoc/>
         public Uri GetUri(HeaderName headerName)
         {
             var value = this[headerName];
@@ -253,12 +211,7 @@ namespace Platibus
             return null;
         }
 
-        /// <summary>
-        /// Returns the specified header value as a UTC date/time
-        /// </summary>
-        /// <param name="headerName">The name of the header</param>
-        /// <returns>Returns the specified header value as UTC date/time if 
-        /// it exists, <c>null</c> otherwise</returns>
+        /// <inheritdoc/>
         public DateTime? GetDateTime(HeaderName headerName)
         {
             var value = this[headerName];
@@ -269,13 +222,7 @@ namespace Platibus
             return null;
         }
 
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="T:System.Collections.Generic.IEnumerator`1"/> that can be used to iterate through the collection.
-        /// </returns>
-        /// <filterpriority>1</filterpriority>
+        /// <inheritdoc/>
         public IEnumerator<KeyValuePair<HeaderName, string>> GetEnumerator()
         {
             return _headers.GetEnumerator();

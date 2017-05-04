@@ -11,7 +11,7 @@ using NUnit.Framework;
 using Platibus.Http;
 using Platibus.Serialization;
 
-namespace Platibus.UnitTests
+namespace Platibus.UnitTests.Http
 {
     internal class TopicControllerTests
     {

@@ -1,18 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Platibus.SQL;
+using Platibus.SQLite;
 
-namespace Platibus.UnitTests
+namespace Platibus.UnitTests.SQLite
 {
-    internal class SQLMessageQueueInspector : SQLMessageQueue
+    internal class SQLiteMessageQueueInspector : SQLiteMessageQueue
     {
-        public SQLMessageQueueInspector(SQLMessageQueueingService messageQueueingService, QueueName queueName)
-            : base(
-                messageQueueingService.ConnectionProvider, messageQueueingService.Dialect, queueName,
-                new NoopQueueListener())
+        public SQLiteMessageQueueInspector(DirectoryInfo baseDirectory, QueueName queueName)
+            : base(baseDirectory, queueName, new NoopQueueListener())
         {
         }
 

@@ -7,7 +7,7 @@ using Platibus.Config;
 using Platibus.Http;
 using Platibus.InMemory;
 
-namespace Platibus.UnitTests
+namespace Platibus.UnitTests.Http
 {
     internal class HttpTransportServiceTests
     {

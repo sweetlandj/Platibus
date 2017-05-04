@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using Platibus.Security;
 
 namespace Platibus
 {
@@ -116,6 +117,12 @@ namespace Platibus
         /// Returns the importance of the message
         /// </summary>
         MessageImportance Importance { get; }
+
+        /// <summary>
+        /// Returns a security token capturing the claims of the current principal from which the
+        /// message was originally received.
+        /// </summary>
+        string SecurityToken { get; }
 
         /// <summary>
         /// Returns the specified header value as a URI

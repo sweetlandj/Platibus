@@ -10,7 +10,7 @@ using Moq;
 using NUnit.Framework;
 using Platibus.Http;
 
-namespace Platibus.UnitTests
+namespace Platibus.UnitTests.Http
 {
     internal class MessageControllerTests
     {

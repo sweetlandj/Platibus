@@ -26,10 +26,14 @@ using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
+using Platibus.Security;
 
 namespace Platibus.Filesystem
 {
-    internal class MessageFile : IDisposable
+    /// <summary>
+    /// An abstraction that represents a message stored in a file on disk
+    /// </summary>
+    public class MessageFile : IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Filesystem);
 
@@ -40,18 +44,36 @@ namespace Platibus.Filesystem
         private volatile Message _message;
         private volatile IPrincipal _principal;
 
+        /// <summary>
+        /// The path and filename in which the message is stored
+        /// </summary>
         public FileInfo File
         {
             get { return _file; }
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="MessageFile"/> for an message file stored in disk
+        /// </summary>
+        /// <param name="file">The path and filename in which the message file is stored</param>
         public MessageFile(FileInfo file)
         {
             if (file == null) throw new ArgumentNullException("file");
             _file = file;
         }
 
-        public static async Task<MessageFile> Create(DirectoryInfo directory, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
+        /// <summary>
+        /// A factory method used to initialize and store a message file on disk
+        /// </summary>
+        /// <param name="directory">The directory in which the message file should be created</param>
+        /// <param name="message">The message to persist</param>
+        /// <param name="principal">(Optional) The principal from which the message was originally
+        /// received</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by
+        /// the caller to cancel creation of the message file</param>
+        /// <returns>Returns a task whose result is a <see cref="MessageFile"/> representing the 
+        /// stored message</returns>
+        public static async Task<MessageFile> Create(DirectoryInfo directory, Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
         {
             FileInfo file;
             var counter = 0;
@@ -67,10 +89,10 @@ namespace Platibus.Filesystem
             } while (file.Exists);
 
             cancellationToken.ThrowIfCancellationRequested();
-            return await Create(message, senderPrincipal, file, cancellationToken);
+            return await Create(message, principal, file, cancellationToken);
         }
 
-        private static async Task<MessageFile> Create(Message message, IPrincipal senderPrincipal, FileInfo file, CancellationToken cancellationToken = default(CancellationToken))
+        private static async Task<MessageFile> Create(Message message, IPrincipal principal, FileInfo file, CancellationToken cancellationToken = default(CancellationToken))
         {
             Log.DebugFormat("Creating message file {0} for message ID {1}...", file, message.Headers.MessageId);
 
@@ -80,8 +102,10 @@ namespace Platibus.Filesystem
             using (var stringWriter = new StringWriter())
             using (var messageFileWriter = new MessageFileWriter(stringWriter))
             {
-                await messageFileWriter.WritePrincipal(senderPrincipal);
-                await messageFileWriter.WriteMessage(message);
+                // Add or update the SecurityToken header in the message and write the message 
+                // with the updated headers
+                var messageWithSecurityToken = WithSecurityToken(message, principal);
+                await messageFileWriter.WriteMessage(messageWithSecurityToken);
                 messageFileContent = stringWriter.ToString();
             }
 
@@ -98,7 +122,19 @@ namespace Platibus.Filesystem
             return new MessageFile(file);
         }
 
-        public async Task<IPrincipal> ReadSenderPrincipal(
+        private static Message WithSecurityToken(Message message, IPrincipal principal)
+        {
+            var securityToken = principal == null ? null : MessageSecurityToken.Create(principal);
+            if (message.Headers.SecurityToken == securityToken) return message;
+
+            var updatedHeaders = new MessageHeaders(message.Headers)
+            {
+                SecurityToken = securityToken
+            };
+            return new Message(updatedHeaders, message.Content);
+        }
+
+        public async Task<IPrincipal> ReadPrincipal(
             CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
@@ -108,6 +144,12 @@ namespace Platibus.Filesystem
             return _principal;
         }
 
+        /// <summary>
+        /// Reads the message from the file
+        /// </summary>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by
+        /// the caller to cancel the read operation</param>
+        /// <returns>Returns a task whose result is the <see cref="Message"/> stored in the file</returns>
         public async Task<Message> ReadMessage(CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
@@ -145,9 +187,13 @@ namespace Platibus.Filesystem
                 using (var stringReader = new StringReader(messageFileContent))
                 using (var messageFileReader = new MessageFileReader(stringReader))
                 {
-                    // Read principal and then message (same order they are written)
-                    _principal = await messageFileReader.ReadPrincipal();
                     _message = await messageFileReader.ReadMessage();
+                }
+
+                var securityToken = _message.Headers.SecurityToken;
+                if (!string.IsNullOrWhiteSpace(securityToken))
+                {
+                    _principal = MessageSecurityToken.Validate(securityToken);
                 }
 
                 Log.DebugFormat("Message file {0} read successfully", _file);
@@ -166,6 +212,14 @@ namespace Platibus.Filesystem
             }
         }
 
+        /// <summary>
+        /// Moves the message file another directory
+        /// </summary>
+        /// <param name="destinationDirectory">The destination directory</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by
+        /// the caller to cancel the move operation</param>
+        /// <returns>Returns a task whose result is a new <see cref="MessageFile"/> representing
+        /// the file in the new directory</returns>
         public async Task<MessageFile> MoveTo(DirectoryInfo destinationDirectory,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -183,6 +237,12 @@ namespace Platibus.Filesystem
             }
         }
 
+        /// <summary>
+        /// Deletes a message file from disk
+        /// </summary>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by
+        /// the caller to cancel the delete operation</param>
+        /// <returns>Returns a task that will complete when the delete operation has completed</returns>
         public async Task Delete(CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
@@ -215,11 +275,13 @@ namespace Platibus.Filesystem
             if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }
 
+        /// <inheritdoc />
         ~MessageFile()
         {
             Dispose(false);
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (_disposed) return;
@@ -228,6 +290,11 @@ namespace Platibus.Filesystem
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Disposes resources held by this object
+        /// </summary>
+        /// <param name="disposing">Indicates whether this method is called from the 
+        /// <see cref="Dispose()"/> method</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_fileAccess")]
         protected virtual void Dispose(bool disposing)
         {

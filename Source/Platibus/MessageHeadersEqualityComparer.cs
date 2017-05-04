@@ -30,6 +30,26 @@ namespace Platibus
     /// </summary>
     public class MessageHeadersEqualityComparer : IEqualityComparer<IMessageHeaders>
     {
+        private readonly IList<HeaderName> _ignoredHeaders;
+
+        /// <summary>
+        /// Initializes a new <see cref="MessageHeadersEqualityComparer"/>
+        /// </summary>
+        /// <param name="ignoredHeaders">(Optional) The headers to ignore</param>
+        public MessageHeadersEqualityComparer(params HeaderName[] ignoredHeaders)
+        {
+            _ignoredHeaders = ignoredHeaders == null ? new List<HeaderName>() : ignoredHeaders.ToList();
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="MessageHeadersEqualityComparer"/>
+        /// </summary>
+        /// <param name="ignoredHeaders">(Optional) The headers to ignore</param>
+        public MessageHeadersEqualityComparer(IEnumerable<HeaderName> ignoredHeaders)
+        {
+            _ignoredHeaders = ignoredHeaders == null ? new List<HeaderName>() : ignoredHeaders.ToList();
+        }
+
         /// <summary>
         /// Determines whether two sets of message headers are equal by comparing
         /// their header names and values
@@ -47,7 +67,10 @@ namespace Platibus
             if (ReferenceEquals(x, y)) return true;
             if (ReferenceEquals(null, x) || ReferenceEquals(null, y)) return false;
 
-            return x.Count() == y.Count() && x.All(xel => Equals(xel.Value, y[xel.Key]));
+            var xs = x.Where(xel => !_ignoredHeaders.Contains(xel.Key)).ToList();
+            var ys = y.Where(xel => !_ignoredHeaders.Contains(xel.Key)).ToList();
+
+            return xs.Count == ys.Count && xs.All(xel => Equals(xel.Value, y[xel.Key]));
         }
 
         /// <summary>
@@ -57,7 +80,10 @@ namespace Platibus
         /// <returns>Returns a hash code for the specified message headers</returns>
         public int GetHashCode(IMessageHeaders headers)
         {
-            return headers == null ? 0 : headers.Aggregate(0, (current, entry) => (current*397) ^ entry.Key.GetHashCode());
+            if (headers == null) return 0;
+            var xs = headers.Where(xel => !_ignoredHeaders.Contains(xel.Key)).ToList();
+            return xs.Aggregate(0, (current, entry) => (current*397) ^ entry.Key.GetHashCode());
         }
+        
     }
 }

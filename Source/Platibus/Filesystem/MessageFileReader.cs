@@ -21,11 +21,14 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Security.Principal;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using Platibus.Security;
 
 namespace Platibus.Filesystem
 {
@@ -50,7 +53,8 @@ namespace Platibus.Filesystem
             _leaveOpen = leaveOpen;
         }
 
-        public async Task<IPrincipal> ReadPrincipal()
+#pragma warning disable 618
+        private async Task<SenderPrincipal> ReadLegacySenderPrincipal()
         {
             var base64Buffer = new StringBuilder();
             string currentLine;
@@ -67,13 +71,35 @@ namespace Platibus.Filesystem
             using (var memoryStream = new MemoryStream(bytes))
             {
                 var formatter = new BinaryFormatter();
-                return (IPrincipal) formatter.Deserialize(memoryStream);
+                return (SenderPrincipal) formatter.Deserialize(memoryStream);
             }
         }
+
+        private static ClaimsPrincipal MapToClaimsPrincipal(SenderPrincipal senderPrincipal)
+        {
+            if (senderPrincipal == null) return null;
+
+            var roleClaims = senderPrincipal.Roles.Select(role => new Claim(ClaimTypes.Role, role.Name));
+            var claims = new List<Claim>(roleClaims)
+            {
+                new Claim(ClaimTypes.Name, senderPrincipal.Identity.Name)
+            };
+            return new ClaimsPrincipal(new ClaimsIdentity(claims, senderPrincipal.Identity.AuthenticationType));
+        }
+
+#pragma warning restore 618
 
         public async Task<Message> ReadMessage()
         {
             var headers = new MessageHeaders();
+            var legacySenderPrincipal = await ReadLegacySenderPrincipal();
+            if (legacySenderPrincipal != null)
+            {
+                var claimsPrincipal = MapToClaimsPrincipal(legacySenderPrincipal);
+                var securityToken = MessageSecurityToken.Create(claimsPrincipal);
+                headers.SecurityToken = securityToken;
+            }
+            
             var currentHeaderName = (HeaderName) null;
             var currentHeaderValue = new StringWriter();
             var finishedReadingHeaders = false;

@@ -4,7 +4,7 @@ using NUnit.Framework;
 
 namespace Platibus.UnitTests
 {
-    internal class SentMessageExtensionTests
+    internal class SentMessageExtensionsTests
     {
         [Test]
         public async Task Given_SentMessage_When_Reply_Received_Awaited_Task_Should_Return_Reply()

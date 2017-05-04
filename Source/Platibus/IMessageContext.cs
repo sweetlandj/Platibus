@@ -47,7 +47,7 @@ namespace Platibus
         /// <summary>
         /// The identity of the sender
         /// </summary>
-        IPrincipal SenderPrincipal { get; }
+        IPrincipal Principal { get; }
 
         /// <summary>
         /// Acknowledge receipt of the message, indicating that the message has been successfully handled.
