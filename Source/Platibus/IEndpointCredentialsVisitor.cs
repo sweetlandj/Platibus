@@ -42,5 +42,11 @@ namespace Platibus
         /// </summary>
         /// <param name="credentials">The set of default credentials to visit</param>
         void Visit(DefaultCredentials credentials);
+
+        /// <summary>
+        /// Visits a set of bearer credentials
+        /// </summary>
+        /// <param name="credentials">The set of bearer credentials to visit</param>
+        void Visit(BearerCredentials credentials);
     }
 }

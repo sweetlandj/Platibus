@@ -21,8 +21,9 @@
 // THE SOFTWARE.
 
 using System;
-using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
 using Platibus.Security;
 
 namespace Platibus.Http
@@ -30,21 +31,34 @@ namespace Platibus.Http
     internal class HttpEndpointCredentialsVisitor : IEndpointCredentialsVisitor
     {
         private readonly HttpClientHandler _clientHandler;
+        private readonly HttpClient _client;
 
-        public HttpEndpointCredentialsVisitor(HttpClientHandler clientHandler)
+        public HttpEndpointCredentialsVisitor(HttpClientHandler clientHandler, HttpClient client)
         {
-            if (clientHandler == null) throw new ArgumentNullException("clientHandler");
+            if (client == null) throw new ArgumentNullException("client");
             _clientHandler = clientHandler;
+            _client = client;
         }
 
         public void Visit(BasicAuthCredentials credentials)
         {
-            _clientHandler.Credentials = new NetworkCredential(credentials.Username, credentials.Password);
+            var authorization = new AuthenticationHeaderValue("Basic",
+                Convert.ToBase64String(
+                    Encoding.UTF8.GetBytes(
+                        credentials.Username + ":" + credentials.Password)));
+
+            _client.DefaultRequestHeaders.Authorization = authorization;
         }
 
         public void Visit(DefaultCredentials credentials)
         {
             _clientHandler.UseDefaultCredentials = true;
+        }
+
+        public void Visit(BearerCredentials credentials)
+        {
+            var authorization = new AuthenticationHeaderValue("Bearer", credentials.Credentials);
+            _client.DefaultRequestHeaders.Authorization = authorization;
         }
     }
 }

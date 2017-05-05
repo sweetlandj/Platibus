@@ -36,7 +36,12 @@ namespace Platibus.Http
 
         private bool _disposed;
 
-        public async Task<HttpClient> GetClient(Uri uri, IEndpointCredentials credentials, CancellationToken cancellationToken)
+        public int Size
+        {
+            get { return _pool.Count; }
+        }
+
+        public async Task<HttpClient> GetClient(Uri uri, IEndpointCredentials credentials, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
 
@@ -44,7 +49,7 @@ namespace Platibus.Http
             HttpClientHandler clientHandler;
             if (_pool.TryGetValue(key, out clientHandler))
             {
-                return CreateClient(clientHandler, uri);
+                return CreateClient(clientHandler, uri, credentials);
             }
 
             await _poolSync.WaitAsync(cancellationToken);
@@ -57,12 +62,7 @@ namespace Platibus.Http
                         AllowAutoRedirect = true,
                         UseProxy = false
                     };
-
-                    if (credentials != null)
-                    {
-                        credentials.Accept(new HttpEndpointCredentialsVisitor(clientHandler));
-                    }
-
+                    
                     _pool[key] = clientHandler;
 
                     // Make sure DNS TTL is honored
@@ -75,15 +75,21 @@ namespace Platibus.Http
                 _poolSync.Release();
             }
 
-            return CreateClient(clientHandler, uri);
+            return CreateClient(clientHandler, uri, credentials);
         }
 
-        private static HttpClient CreateClient(HttpMessageHandler clientHandler, Uri baseAddress)
+        private static HttpClient CreateClient(HttpClientHandler clientHandler, Uri baseAddress, IEndpointCredentials credentials)
         {
-            return new HttpClient(clientHandler, false)
+            var client = new HttpClient(clientHandler, false)
             {
                 BaseAddress = baseAddress
             };
+
+            if (credentials != null)
+            {
+                credentials.Accept(new HttpEndpointCredentialsVisitor(clientHandler, client));
+            }
+            return client;
         }
 
         /// <summary>
@@ -101,6 +107,10 @@ namespace Platibus.Http
             if (disposing)
             {
                 _poolSync.TryDispose();
+                foreach (var httpClientHandler in _pool)
+                {
+                    httpClientHandler.Value.TryDispose();
+                }
             }
         }
 
@@ -115,19 +125,19 @@ namespace Platibus.Http
         private class PoolKey : IEquatable<PoolKey>
         {
             private readonly Uri _uri;
-            private readonly IEndpointCredentials _credentials;
+            private readonly Type _credentialType;
 
             public PoolKey(Uri uri, IEndpointCredentials credentials)
             {
                 _uri = uri;
-                _credentials = credentials;
+                _credentialType = credentials == null ? null : credentials.GetType();
             }
 
             public bool Equals(PoolKey other)
             {
                 if (ReferenceEquals(null, other)) return false;
                 if (ReferenceEquals(this, other)) return true;
-                return Equals(_uri, other._uri) && Equals(_credentials, other._credentials);
+                return Equals(_uri, other._uri) && _credentialType == other._credentialType;
             }
 
             public override bool Equals(object obj)
@@ -141,7 +151,7 @@ namespace Platibus.Http
             {
                 unchecked
                 {
-                    return ((_uri != null ? _uri.GetHashCode() : 0) * 397) ^ (_credentials != null ? _credentials.GetHashCode() : 0);
+                    return ((_uri != null ? _uri.GetHashCode() : 0) * 397) ^ (_credentialType != null ? _credentialType.GetHashCode() : 0);
                 }
             }
 

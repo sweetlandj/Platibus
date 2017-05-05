@@ -30,7 +30,6 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using Platibus.Security;
 
 namespace Platibus.Http
 {
@@ -229,7 +228,6 @@ namespace Platibus.Http
                 var messageId = message.Headers.MessageId;
                 var urlEncodedMessageId = HttpUtility.UrlEncode(messageId);
                 var relativeUri = string.Format("message/{0}", urlEncodedMessageId);
-
                 var postUri = new Uri(endpointBaseUri, relativeUri);
                 Log.DebugFormat("POSTing content of message ID {0} to URI {1}...", message.Headers.MessageId, postUri);
                 var httpResponseMessage = await httpClient.PostAsync(relativeUri, httpContent, cancellationToken);

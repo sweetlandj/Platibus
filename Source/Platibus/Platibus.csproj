@@ -118,6 +118,7 @@
     <Compile Include="Multicast\SubscriptionTrackingDatagram.cs" />
     <Compile Include="NoMatchingSendRulesException.cs" />
     <Compile Include="ResourceNotFoundException.cs" />
+    <Compile Include="Security\BearerCredentials.cs" />
     <Compile Include="Security\IAuthorizationService.cs" />
     <Compile Include="Http\HttpServerConfigurationManager.cs" />
     <Compile Include="Http\IHttpServerConfiguration.cs" />

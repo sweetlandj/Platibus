@@ -21,14 +21,13 @@
 // THE SOFTWARE.
 
 using System;
-using Platibus.Serialization;
 
 namespace Platibus
 {
     /// <summary>
     /// Parameters that influence how a message is sent
     /// </summary>
-    public struct SendOptions
+    public class SendOptions
     {
         /// <summary>
         /// The MIME type of the message content
@@ -40,8 +39,8 @@ namespace Platibus
         /// then the content will be an XML string; and if the content type is
         /// "application/octet-stream" then the content will be a base-64
         /// encoded byte stream.  Which content types are supported and how
-        /// they are serialized depends on the <see cref="ISerializationService"/>
-        /// used.
+        /// they are serialized depends on the 
+        /// <see cref="Platibus.Serialization.ISerializationService"/> used.
         /// </remarks>
         public string ContentType { get; set; }
 
@@ -62,5 +61,13 @@ namespace Platibus
         /// them at least once.
         /// </remarks>
         public MessageImportance Importance { get; set; }
+
+        /// <summary>
+        /// Credentials to use when sending the message
+        /// </summary>
+        /// <remarks>
+        /// Overrides any existing credentials configured for the target endpoint
+        /// </remarks>
+        public IEndpointCredentials Credentials { get; set; }
     }
 }

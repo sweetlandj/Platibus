@@ -61,8 +61,20 @@ namespace Platibus
         /// at the specified URI.</param>
         /// <param name="options">Optional settings that influence how the message is sent.</param>
         /// <param name="cancellationToken">An optional cancellation token</param>
+        [Obsolete("Endpoint credentials override has been moved to SendOptions")]
         Task<ISentMessage> Send(object content, Uri endpointAddress, IEndpointCredentials credentials = null,
             SendOptions options = default(SendOptions),
+            CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <summary>
+        ///     Sends <paramref name="content" /> to a single caller-specified
+        ///     endpoint <paramref name="endpointAddress" />.
+        /// </summary>
+        /// <param name="content">The message to send.</param>
+        /// <param name="endpointAddress">The URI of the endpoint to which the message should be sent.</param>
+        /// <param name="options">Optional settings that influence how the message is sent.</param>
+        /// <param name="cancellationToken">An optional cancellation token</param>
+        Task<ISentMessage> Send(object content, Uri endpointAddress, SendOptions options = default(SendOptions),
             CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>

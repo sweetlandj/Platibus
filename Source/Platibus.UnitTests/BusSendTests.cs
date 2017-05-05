@@ -110,7 +110,11 @@ namespace Platibus.UnitTests
             const string messageContent = "Hello, world!";
             using (var bus = await GivenConfiguredBus(mockTransportService.Object))
             {
-                await bus.Send(messageContent, OtherEndpointUri, overridingCredentials);
+                var options = new SendOptions
+                {
+                    Credentials = overridingCredentials
+                };
+                await bus.Send(messageContent, OtherEndpointUri, options);
             }
 
             // Only one call to ITransportService.SendMessage

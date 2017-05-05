@@ -154,12 +154,7 @@ namespace Platibus
             await _transportService.SendMessage(message, credentials, cancellationToken);
         }
 
-        /// <summary>
-        ///     Sends a <paramref name="content" /> to default configured endpoints.
-        /// </summary>
-        /// <param name="content">The content to send.</param>
-        /// <param name="options">Optional settings that influence how the message is sent.</param>
-        /// <param name="cancellationToken">An optional cancellation token</param>
+        /// <inheritdoc />
         public async Task<ISentMessage> Send(object content, SendOptions options = default(SendOptions),
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -182,6 +177,11 @@ namespace Platibus
                 var endpointName = kvp.Key;
                 var endpoint = kvp.Value;
                 var credentials = endpoint.Credentials;
+                if (options != null && options.Credentials != null)
+                {
+                    credentials = options.Credentials;
+                }
+
                 var perEndpointHeaders = new MessageHeaders(prototypicalMessage.Headers)
                 {
                     Destination = endpoint.Address
@@ -196,17 +196,10 @@ namespace Platibus
             await Task.WhenAll(transportTasks);
             return sentMessage;
         }
-
-        /// <summary>
-        ///     Sends <paramref name="content" /> to a single caller-specified
-        ///     <paramref name="endpointName" />.
-        /// </summary>
-        /// <param name="content">The message to send.</param>
-        /// <param name="endpointName">The name of the endpoint to which the message should be sent.</param>
-        /// <param name="options">Optional settings that influence how the message is sent.</param>
-        /// <param name="cancellationToken">An optional cancellation token</param>
+        
+        /// <inheritdoc />
         public async Task<ISentMessage> Send(object content, EndpointName endpointName,
-            SendOptions options = default(SendOptions), CancellationToken cancellationToken = default(CancellationToken))
+            SendOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
 
@@ -215,6 +208,11 @@ namespace Platibus
 
             var endpoint = _endpoints[endpointName];
             var credentials = endpoint.Credentials;
+            if (options != null && options.Credentials != null)
+            {
+                credentials = options.Credentials;
+            }
+
             var headers = new MessageHeaders
             {
                 Destination = endpoint.Address
@@ -231,19 +229,21 @@ namespace Platibus
             return sentMessage;
         }
 
-        /// <summary>
-        ///     Sends <paramref name="content" /> to a single caller-specified
-        ///     endpoint <paramref name="endpointAddress" />.
-        /// </summary>
-        /// <param name="content">The message to send.</param>
-        /// <param name="endpointAddress">The URI of the endpoint to which the message should be sent.</param>
-        /// <param name="credentials">Optional credentials for authenticating with the endpoint
-        /// at the specified URI.</param>
-        /// <param name="options">Optional settings that influence how the message is sent.</param>
-        /// <param name="cancellationToken">An optional cancellation token</param>
-        public async Task<ISentMessage> Send(object content, Uri endpointAddress, IEndpointCredentials credentials = null,
-            SendOptions options = default(SendOptions),
-            CancellationToken cancellationToken = default(CancellationToken))
+        /// <inheritdoc />
+        [Obsolete("Endpoint credentials override has been moved to SendOptions")]
+        public Task<ISentMessage> Send(object content, Uri endpointAddress, IEndpointCredentials credentials,
+            SendOptions options = null, CancellationToken cancellationToken = new CancellationToken())
+        {
+            if (options != null && options.Credentials == null)
+            {
+                options.Credentials = credentials;
+            }
+            return Send(content, endpointAddress, options, cancellationToken);
+        }
+        
+        /// <inheritdoc />
+        public async Task<ISentMessage> Send(object content, Uri endpointAddress,
+            SendOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
 
@@ -256,6 +256,7 @@ namespace Platibus
             };
 
             var message = BuildMessage(content, headers, options);
+            var credentials = options == null ? null : options.Credentials;
 
             IEndpoint knownEndpoint;
             if (credentials == null && _endpoints.TryGetEndpointByAddress(endpointAddress, out knownEndpoint))
@@ -272,14 +273,8 @@ namespace Platibus
             await TransportMessage(message, credentials, cancellationToken);
             return sentMessage;
         }
-
-        /// <summary>
-        ///     Publishes <paramref name="content" /> to the specified
-        ///     <paramref name="topic" />.
-        /// </summary>
-        /// <param name="content">The message to publish.</param>
-        /// <param name="topic">The topic to which the message should be published.</param>
-        /// <param name="cancellationToken">An optional cancellation token</param>
+        
+        /// <inheritdoc />
         public async Task Publish(object content, TopicName topic,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -313,7 +308,7 @@ namespace Platibus
         }
 
         private Message BuildMessage(object content, IMessageHeaders suppliedHeaders = null,
-            SendOptions options = default(SendOptions))
+            SendOptions options = null)
         {
             if (content == null) throw new ArgumentNullException("content");
             var messageName = _messageNamingService.GetNameForType(content.GetType());
@@ -322,10 +317,10 @@ namespace Platibus
                 MessageId = MessageId.Generate(),
                 MessageName = messageName,
                 Origination = _baseUri,
-                Importance = options.Importance
+                Importance = options == null ? default(MessageImportance) : options.Importance
             };
 
-            var contentType = options.ContentType;
+            var contentType = options == null ? null : options.ContentType;
             if (string.IsNullOrWhiteSpace(contentType))
             {
                 contentType = _defaultContentType;
@@ -478,10 +473,7 @@ namespace Platibus
             Dispose(false);
         }
 
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        /// <filterpriority>2</filterpriority>
+        /// <inheritdoc />
         public void Dispose()
         {
             if (_disposed) return;
