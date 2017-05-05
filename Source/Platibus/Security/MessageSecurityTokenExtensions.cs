@@ -27,6 +27,7 @@ namespace Platibus.Security
             {
                 SecurityToken = securityToken
             };
+
             return new Message(updatedHeaders, message.Content);
         }
     }

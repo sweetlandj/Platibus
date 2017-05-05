@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
@@ -93,10 +94,19 @@ namespace Platibus.Http
                 return;
             }
 
+            // The authorization header should have been processed by the HTTP host prior to this
+            // point in order to initialize the principal on the request context.  This is
+            // sensitive information and should not be copied into and thus exposed by the message 
+            // headers.
+            var authorizationHeader = HttpRequestHeader.Authorization.ToString("G");
+            var sensitiveHeaders = new[] {authorizationHeader};
+
             var flattenedHeaders = request.Headers.AllKeys
+                .Except(sensitiveHeaders, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(k => k, k => request.Headers[k]);
 
             var messageHeaders = new MessageHeaders(flattenedHeaders);
+            
             var content = await request.ReadContentAsString();
             var message = new Message(messageHeaders, content);
             Thread.CurrentPrincipal = request.Principal;

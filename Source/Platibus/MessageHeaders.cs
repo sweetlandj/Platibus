@@ -82,7 +82,17 @@ namespace Platibus
                 _headers.TryGetValue(header, out value);
                 return value;
             }
-            set { _headers[header] = value; }
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    _headers.Remove(header);
+                }
+                else
+                {
+                    _headers[header] = value;
+                }
+            }
         }
 
         /// <inheritdoc/>
@@ -200,15 +210,18 @@ namespace Platibus
             return 0;
         }
 
+        public void Remove(HeaderName headerName)
+        {
+            _headers.Remove(headerName);
+        }
+
         /// <inheritdoc/>
         public Uri GetUri(HeaderName headerName)
         {
             var value = this[headerName];
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                return new Uri(value, UriKind.Absolute);
-            }
-            return null;
+            return string.IsNullOrWhiteSpace(value) 
+                ? null 
+                : new Uri(value, UriKind.Absolute);
         }
 
         /// <inheritdoc/>
