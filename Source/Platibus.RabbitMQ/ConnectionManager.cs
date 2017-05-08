@@ -88,6 +88,7 @@ namespace Platibus.RabbitMQ
         {
             if (disposing)
             {
+                Log.Info("Closing RabbitMQ connections...");
                 foreach (var uri in _managedConnections.Keys)
                 {
                     ManagedConnection connection;

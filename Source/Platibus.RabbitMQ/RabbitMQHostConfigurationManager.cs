@@ -67,8 +67,9 @@ namespace Platibus.RabbitMQ
 
             configuration.AutoAcknowledge = configSection.AutoAcknowledge;
             configuration.ConcurrencyLimit = configSection.ConcurrencyLimit;
-            configuration.MaxAttempts = configuration.MaxAttempts;
-            configuration.RetryDelay = configuration.RetryDelay;
+            configuration.MaxAttempts = configSection.MaxAttempts;
+            configuration.RetryDelay = configSection.RetryDelay;
+            configuration.IsDurable = configSection.IsDurable;
             
             return configuration;
         }

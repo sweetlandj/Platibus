@@ -85,7 +85,8 @@ namespace Platibus.UnitTests
             var listener = new QueueListenerStub((m, c) => { });
             var autoAcknowledgeOptions = new QueueOptions
             {
-                AutoAcknowledge = true
+                AutoAcknowledge = true,
+                IsDurable = false
             };
             await MessageQueueingService.CreateQueue(queue, listener, autoAcknowledgeOptions);
             await MessageQueueingService.EnqueueMessage(queue, message, Principal);
@@ -104,7 +105,8 @@ namespace Platibus.UnitTests
             var listener = new QueueListenerStub((m, c) => { throw new Exception("Test"); });
             var maxAttemptOptions = new QueueOptions
             {
-                MaxAttempts = 1
+                MaxAttempts = 1,
+                IsDurable = false
             };
             await MessageQueueingService.CreateQueue(queue, listener, maxAttemptOptions);
             await MessageQueueingService.EnqueueMessage(queue, message, Principal);
@@ -125,7 +127,8 @@ namespace Platibus.UnitTests
             var maxAttemptOptions = new QueueOptions
             {
                 MaxAttempts = 2,
-                RetryDelay = TimeSpan.FromMilliseconds(100)
+                RetryDelay = TimeSpan.FromMilliseconds(100),
+                IsDurable = false
             };
             await MessageQueueingService.CreateQueue(queue, listener, maxAttemptOptions);
             await MessageQueueingService.EnqueueMessage(queue, message, Principal);
@@ -146,7 +149,8 @@ namespace Platibus.UnitTests
             var listener = new QueueListenerStub((m, c) => { throw new Exception("Test"); });
             var autoAcknowledgeOptions = new QueueOptions
             {
-                AutoAcknowledge = true
+                AutoAcknowledge = true,
+                IsDurable = false
             };
             await MessageQueueingService.CreateQueue(queue, listener, autoAcknowledgeOptions);
             await MessageQueueingService.EnqueueMessage(queue, message, Principal);

@@ -33,7 +33,10 @@ namespace Platibus.UnitTests.RabbitMQ
         public RabbitMQCollectionFixture()
         {
             _uri = new Uri("amqp://test:test@localhost:5672/test");
-            _messageQueueingService = new RabbitMQMessageQueueingService(_uri);
+            _messageQueueingService = new RabbitMQMessageQueueingService(_uri, new QueueOptions
+            {
+                IsDurable = false
+            });
         }
     }
 }

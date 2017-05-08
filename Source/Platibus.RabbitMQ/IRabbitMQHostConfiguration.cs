@@ -55,17 +55,22 @@ namespace Platibus.RabbitMQ
         /// Whether queues should be configured to automatically acknowledge
         /// messages when read by a consumer
         /// </summary>
-        bool AutoAcknowledge { get; set; }
+        bool AutoAcknowledge { get; }
 
         /// <summary>
         /// The maximum number of attempts to process a message before moving it to
         /// a dead letter queue
         /// </summary>
-        int MaxAttempts { get; set; }
+        int MaxAttempts { get; }
 
         /// <summary>
         /// The amount of time to wait between redelivery attempts
         /// </summary>
-        TimeSpan RetryDelay { get; set; }
+        TimeSpan RetryDelay { get; }
+
+        /// <summary>
+        /// Whether queues should be transient by default
+        /// </summary>
+        bool IsDurable { get; }
     }
 }

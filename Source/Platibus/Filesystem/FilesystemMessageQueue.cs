@@ -46,28 +46,22 @@ namespace Platibus.Filesystem
         private readonly TimeSpan _retryDelay;
 
         public FilesystemMessageQueue(DirectoryInfo directory, IQueueListener listener,
-            QueueOptions options = default(QueueOptions))
+            QueueOptions options = null)
         {
             if (directory == null) throw new ArgumentNullException("directory");
             if (listener == null) throw new ArgumentNullException("listener");
 
             _directory = directory;
             _deadLetterDirectory = new DirectoryInfo(Path.Combine(directory.FullName, "dead"));
-
             _listener = listener;
-            _autoAcknowledge = options.AutoAcknowledge;
 
-            _maxAttempts = options.MaxAttempts <= 0
-                ? QueueOptions.DefaultMaxAttempts
-                : options.MaxAttempts;
+            var myOptions = options ?? new QueueOptions();
 
-            _retryDelay = options.RetryDelay <= TimeSpan.Zero
-                ? TimeSpan.FromMilliseconds(QueueOptions.DefaultRetryDelay)
-                : options.RetryDelay;
+            _autoAcknowledge = myOptions.AutoAcknowledge;
+            _maxAttempts = myOptions.MaxAttempts;
+            _retryDelay = myOptions.RetryDelay;
 
-            var concurrencyLimit = options.ConcurrencyLimit <= 0
-                ? QueueOptions.DefaultConcurrencyLimit
-                : options.ConcurrencyLimit;
+            var concurrencyLimit = myOptions.ConcurrencyLimit;
 
             _cancellationTokenSource = new CancellationTokenSource();
             _queuedMessages = new ActionBlock<MessageFile>(async msg =>

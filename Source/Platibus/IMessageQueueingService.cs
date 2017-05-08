@@ -46,7 +46,7 @@ namespace Platibus
         /// <paramref name="listener"/> is <c>null</c></exception>
         /// <exception cref="QueueAlreadyExistsException">Thrown if a queue with the specified
         /// name already exists</exception>
-        Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions), CancellationToken cancellationToken = default(CancellationToken));
+        Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Enqueues a message on a queue

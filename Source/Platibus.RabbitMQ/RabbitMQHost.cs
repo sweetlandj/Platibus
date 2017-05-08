@@ -76,7 +76,10 @@ namespace Platibus.RabbitMQ
         private readonly IConnectionManager _connectionManager;
         private readonly Uri _baseUri;
         private readonly Encoding _encoding;
+        private readonly QueueOptions _defaultQueueOptions;
         private readonly RabbitMQQueue _inboundQueue;
+        private readonly IMessageQueueingService _messageQueueingService;
+        private readonly IMessageJournalingService _messageJournalingService;
         private readonly Bus _bus;
         private readonly ConcurrentDictionary<SubscriptionKey, RabbitMQQueue> _subscriptions = new ConcurrentDictionary<SubscriptionKey, RabbitMQQueue>(); 
 
@@ -97,17 +100,19 @@ namespace Platibus.RabbitMQ
             _baseUri = configuration.BaseUri.WithoutTrailingSlash();
             _connectionManager = new ConnectionManager();
             _encoding = configuration.Encoding ?? Encoding.UTF8;
-            
-            var messageQueueingService = new RabbitMQMessageQueueingService(_baseUri, _connectionManager, _encoding);
 
-            var inboundQueueOptions = new QueueOptions
+            _defaultQueueOptions = new QueueOptions
             {
                 AutoAcknowledge = configuration.AutoAcknowledge,
                 MaxAttempts = configuration.MaxAttempts,
                 ConcurrencyLimit = configuration.ConcurrencyLimit,
-                RetryDelay = configuration.RetryDelay
+                RetryDelay = configuration.RetryDelay,
+                IsDurable = configuration.IsDurable
             };
 
+            _messageQueueingService = new RabbitMQMessageQueueingService(_baseUri, _defaultQueueOptions, _connectionManager, _encoding);
+            _messageJournalingService = configuration.MessageJournalingService;
+            
             var connection = _connectionManager.GetConnection(_baseUri);
             using (var channel = connection.CreateModel())
             {
@@ -115,13 +120,13 @@ namespace Platibus.RabbitMQ
                 {
                     var exchangeName = topicName.GetTopicExchangeName();
                     Log.DebugFormat("Initializing fanout exchange '{0}' for topic '{1}'...", exchangeName, topicName);
-                    channel.ExchangeDeclare(exchangeName, "fanout", true);
+                    channel.ExchangeDeclare(exchangeName, "fanout", configuration.IsDurable);
                 }
             }
 
             Log.DebugFormat("Initializing inbox queue '{0}'...", InboxQueueName);
-            _inboundQueue = new RabbitMQQueue(InboxQueueName, this, connection, _encoding, inboundQueueOptions);
-            _bus = new Bus(configuration, configuration.BaseUri, this, messageQueueingService);
+            _inboundQueue = new RabbitMQQueue(InboxQueueName, this, connection, _encoding, _defaultQueueOptions);
+            _bus = new Bus(configuration, configuration.BaseUri, this, _messageQueueingService);
         }
 
         private async Task Init(CancellationToken cancellationToken = default(CancellationToken))
@@ -209,13 +214,13 @@ namespace Platibus.RabbitMQ
                 var publisherTopicExchange = topicName.GetTopicExchangeName();
                 
                 Log.DebugFormat("Creating subscription queue '{0}'...", subscriptionQueueName);
-                var subscriptionQueue = new RabbitMQQueue(subscriptionQueueName, this, connection, _encoding);
+                var subscriptionQueue = new RabbitMQQueue(subscriptionQueueName, this, connection, _encoding, _defaultQueueOptions);
                 subscriptionQueue.Init();
 
                 using (var channel = connection.CreateModel())
                 {
                     Log.DebugFormat("Binding subscription queue '{0}' to topic exchange '{1}'...", subscriptionQueueName, publisherTopicExchange);
-                    channel.ExchangeDeclare(publisherTopicExchange, "fanout", true);
+                    channel.ExchangeDeclare(publisherTopicExchange, "fanout");
                     channel.QueueBind(subscriptionQueueName, publisherTopicExchange, "", null);    
                 }
                 
@@ -244,7 +249,7 @@ namespace Platibus.RabbitMQ
         public void Dispose()
         {
             if (_disposed) return;
-            Dispose(false);
+            Dispose(true);
             _disposed = true;
             GC.SuppressFinalize(this);
         }
@@ -269,6 +274,8 @@ namespace Platibus.RabbitMQ
                     subscriptionQueue.TryDispose();
                 }
                 _inboundQueue.TryDispose();
+                _messageQueueingService.TryDispose();
+                _messageJournalingService.TryDispose();
                 _connectionManager.TryDispose();
             }
         }

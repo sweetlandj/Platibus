@@ -78,7 +78,7 @@ namespace Platibus.Filesystem
         /// <paramref name="listener"/> is <c>null</c></exception>
         /// <exception cref="QueueAlreadyExistsException">Thrown if a queue with the specified
         /// name already exists</exception>
-        public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions), CancellationToken cancellationToken = default(CancellationToken))
+        public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
 

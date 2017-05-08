@@ -22,7 +22,7 @@ namespace Platibus.UnitTests
             var mockQueueingService = GivenMockQueueingService();
             
             var queueName = new QueueName("queue1");
-            var handlingRule1 = FakeHandlingRule(".*", queueName, default(QueueOptions));
+            var handlingRule1 = FakeHandlingRule(".*", queueName, null);
             Configuration.AddHandlingRule(handlingRule1);
 
             var overriddenOptions = new QueueOptions

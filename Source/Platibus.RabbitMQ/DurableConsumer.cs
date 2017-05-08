@@ -93,12 +93,12 @@ namespace Platibus.RabbitMQ
         {
             EventingBasicConsumer consumer = null;
             while (!cancellationToken.IsCancellationRequested)
-            {   
+            {
                 try
-                {   
+                {
                     if (_channel == null || !_channel.IsOpen)
                     {
-                        _channel = CreateChannel(cancellationToken);                            
+                        _channel = CreateChannel(cancellationToken);
                         consumer = null;
                     }
 
@@ -109,18 +109,22 @@ namespace Platibus.RabbitMQ
 
                     if (consumer == null)
                     {
-                        Log.DebugFormat("Initializing consumer '{0}' on channel number '{1}'...", _consumerTag, _channel.ChannelNumber);
+                        Log.DebugFormat("Initializing consumer '{0}' on channel number '{1}' for queue '{2}'...",
+                            _consumerTag, _channel.ChannelNumber, _queueName);
                         consumer = new EventingBasicConsumer(_channel);
                         consumer.Received += (sender, args) =>
                         {
-                            Log.DebugFormat("Consumer '{0}' received delivery '{1}'", _consumerTag, args.DeliveryTag);
+                            Log.DebugFormat("Consumer '{0}' received delivery '{1}' from queue '{2}'", _consumerTag,
+                                args.DeliveryTag, _queueName);
                             try
                             {
                                 _consume(_channel, args, cancellationToken);
                             }
                             catch (Exception ex)
                             {
-                                Log.Error("Unhandled exception in callback", ex);
+                                Log.ErrorFormat(
+                                    "Unhandled exception in callback (consumer '{0}', channel '{1}', queue '{2}'", ex,
+                                    _consumerTag, _channel, _queueName);
                                 _channel.BasicNack(args.DeliveryTag, true, false);
                             }
                         };
@@ -132,9 +136,12 @@ namespace Platibus.RabbitMQ
                     TryCancelConsumer();
                     TryCloseChannel();
                 }
+                catch (OperationCanceledException ex)
+                {
+                }
                 catch (Exception ex)
                 {
-                    Log.ErrorFormat("Error consuming messages from queue \"{0}\"", ex, _queueName);
+                    Log.ErrorFormat("Unhandled exception consuming messages from queue \"{0}\"", ex, _queueName);
                 }
             }
         }
@@ -147,9 +154,9 @@ namespace Platibus.RabbitMQ
                 cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
-                    Log.DebugFormat("Attempting to create RabbitMQ channel for consumer '{0}'...", _consumerTag);
+                    Log.DebugFormat("Attempting to create RabbitMQ channel for consumer '{0}' of queue '{1}'...", _consumerTag, _queueName);
                     channel = _connection.CreateModel();
-                    Log.DebugFormat("RabbitMQ channel number \"{0}\" created successfully", channel.ChannelNumber);
+                    Log.DebugFormat("RabbitMQ channel number \"{0}\" successfully created for consumer '{1}' of queue '{2}'", channel.ChannelNumber, _consumerTag, _queueName);
                     channel.BasicQos(0, _concurrencyLimit, false);
                 }
                 catch (Exception ex)
@@ -169,6 +176,7 @@ namespace Platibus.RabbitMQ
             
             try
             {
+                Log.DebugFormat("Canceling consumer '{0}' on channel number '{1}' for queue '{2}'...", _consumerTag, _channel.ChannelNumber, _queueName);
                 _channel.BasicCancel(_consumerTag);
             }
             catch (Exception ex)
@@ -184,11 +192,12 @@ namespace Platibus.RabbitMQ
 
             try
             {
+                Log.DebugFormat("Closing channel number '{0}' for queue '{1}'...", _channel.ChannelNumber, _queueName);
                 _channel.Close();
             }
             catch (Exception ex)
             {
-                Log.WarnFormat("Error closing RabbitMQ channel #0}", ex, _channel.ChannelNumber);
+                Log.WarnFormat("Error closing RabbitMQ channel number '{0}' for queue '{1}'", ex, _channel.ChannelNumber, _queueName);
             }
             _channel = null;
         }
@@ -215,12 +224,6 @@ namespace Platibus.RabbitMQ
             _consumerTask.Wait(TimeSpan.FromSeconds(30));
             if (disposing)
             {
-                if (_channel != null)
-                {
-                    _channel.Close();
-                    _channel = null;
-                }
-
                 _cancellationTokenSource.TryDispose();
             }
         }

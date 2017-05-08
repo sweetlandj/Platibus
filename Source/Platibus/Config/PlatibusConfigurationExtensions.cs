@@ -53,7 +53,7 @@ namespace Platibus.Config
         /// should be processed</param>
         public static void AddHandlingRule(this PlatibusConfiguration configuration, 
             string namePattern, IMessageHandler messageHandler, 
-            QueueName queueName = null, QueueOptions queueOptions = default(QueueOptions))
+            QueueName queueName = null, QueueOptions queueOptions = null)
         {
             var specification = new MessageNamePatternSpecification(namePattern);
             var handlingRule = new HandlingRule(specification, messageHandler, queueName, queueOptions);
@@ -77,7 +77,7 @@ namespace Platibus.Config
         /// should be processed</param>
         public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration, 
             string namePattern, IMessageHandler<TContent> messageHandler, 
-            QueueName queueName = null, QueueOptions queueOptions = default(QueueOptions))
+            QueueName queueName = null, QueueOptions queueOptions = null)
         {
             var specification = new MessageNamePatternSpecification(namePattern);
             var genericMessageHandler = GenericMessageHandlerAdapter.For(messageHandler);
@@ -103,7 +103,7 @@ namespace Platibus.Config
         /// should be processed</param>
         public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration,
             IMessageSpecification specification, Func<TContent, IMessageContext, Task> handleContent, 
-            QueueName queueName = null, QueueOptions queueOptions = default(QueueOptions))
+            QueueName queueName = null, QueueOptions queueOptions = null)
         {
             var messageHandler = DelegateMessageHandler.For(handleContent);
             var handlingRule = new HandlingRule(specification, messageHandler, queueName, queueOptions);
@@ -129,7 +129,7 @@ namespace Platibus.Config
         public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration,
             IMessageSpecification specification,
             Func<TContent, IMessageContext, CancellationToken, Task> handleContent,
-            QueueName queueName = null, QueueOptions queueOptions = default(QueueOptions))
+            QueueName queueName = null, QueueOptions queueOptions = null)
         {
             var messageHandler = DelegateMessageHandler.For(handleContent);
             var handlingRule = new HandlingRule(specification, messageHandler, queueName, queueOptions);
@@ -154,7 +154,7 @@ namespace Platibus.Config
         /// should be processed</param>
         public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration,
             IMessageSpecification specification, Action<TContent, IMessageContext> handleContent,
-            QueueName queueName = null, QueueOptions queueOptions = default(QueueOptions))
+            QueueName queueName = null, QueueOptions queueOptions = null)
         {
             var messageHandler = DelegateMessageHandler.For(handleContent);
             var handlingRule = new HandlingRule(specification, messageHandler, queueName, queueOptions);
@@ -178,7 +178,7 @@ namespace Platibus.Config
         /// should be processed</param>
         public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration, 
             string namePattern, Func<TContent, IMessageContext, Task> handleContent, 
-            QueueName queueName = null, QueueOptions queueOptions = default(QueueOptions))
+            QueueName queueName = null, QueueOptions queueOptions = null)
         {
             var specification = new MessageNamePatternSpecification(namePattern);
             var messageHandler = DelegateMessageHandler.For(handleContent);
@@ -203,7 +203,7 @@ namespace Platibus.Config
         /// should be processed</param>
         public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration, string namePattern,
             Func<TContent, IMessageContext, CancellationToken, Task> handleContent,
-            QueueName queueName = null, QueueOptions queueOptions = default(QueueOptions))
+            QueueName queueName = null, QueueOptions queueOptions = null)
         {
             var specification = new MessageNamePatternSpecification(namePattern);
             var messageHandler = DelegateMessageHandler.For(handleContent);
@@ -228,7 +228,7 @@ namespace Platibus.Config
         /// should be processed</param>
         public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration, 
             string namePattern, Action<TContent, IMessageContext> handleContent, 
-            QueueName queueName = null, QueueOptions queueOptions = default(QueueOptions))
+            QueueName queueName = null, QueueOptions queueOptions = null)
         {
             var specification = new MessageNamePatternSpecification(namePattern);
             var messageHandler = DelegateMessageHandler.For(handleContent);
@@ -261,7 +261,7 @@ namespace Platibus.Config
         /// should be processed</param>
         public static void AddHandlingRules<THandler>(this PlatibusConfiguration configuration, 
             THandler handler, QueueNameFactory queueNameFactory = null, 
-            QueueOptions queueOptions = default(QueueOptions))
+            QueueOptions queueOptions = null)
         {
             configuration.AddHandlingRulesForType(typeof(THandler), () => handler, queueNameFactory, queueOptions);
         }
@@ -294,7 +294,7 @@ namespace Platibus.Config
         /// should be processed</param>
         public static void AddHandlingRules<THandler>(this PlatibusConfiguration configuration,
             Func<THandler> handlerFactory = null, QueueNameFactory queueNameFactory = null,
-            QueueOptions queueOptions = default(QueueOptions))
+            QueueOptions queueOptions = null)
         {
             Func<object> factory = null;
             if (handlerFactory != null)
@@ -332,7 +332,7 @@ namespace Platibus.Config
         /// should be processed</param>
         public static void AddHandlingRulesForType(this PlatibusConfiguration configuration, 
             Type handlerType, Func<object> handlerFactory = null, 
-            QueueNameFactory queueNameFactory = null, QueueOptions queueOptions = default(QueueOptions))
+            QueueNameFactory queueNameFactory = null, QueueOptions queueOptions = null)
         {
             var autoBindInterfaces = handlerType
                 .GetInterfaces()

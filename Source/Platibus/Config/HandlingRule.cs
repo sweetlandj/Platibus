@@ -80,7 +80,7 @@ namespace Platibus.Config
         /// <paramref name="messageHandler"/>
         /// </remarks>
         /// <seealso cref="GenerateQueueName"/>
-        public HandlingRule(IMessageSpecification specification, IMessageHandler messageHandler, QueueName queueName = null, QueueOptions queueOptions = default(QueueOptions))
+        public HandlingRule(IMessageSpecification specification, IMessageHandler messageHandler, QueueName queueName = null, QueueOptions queueOptions = null)
         {
             if (specification == null) throw new ArgumentNullException("specification");
             if (messageHandler == null) throw new ArgumentNullException("messageHandler");

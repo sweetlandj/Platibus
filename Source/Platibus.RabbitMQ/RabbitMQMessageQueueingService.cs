@@ -42,6 +42,7 @@ namespace Platibus.RabbitMQ
 
         private readonly Encoding _encoding;
         private readonly Uri _uri;
+        private readonly QueueOptions _defaultQueueOptions;
         private readonly IConnectionManager _connectionManager;
         private readonly bool _disposeConnectionManager;
         private bool _disposed;
@@ -50,15 +51,17 @@ namespace Platibus.RabbitMQ
         /// Initializes a new <see cref="RabbitMQMessageQueueingService"/>
         /// </summary>
         /// <param name="uri">The URI of the RabbitMQ server</param>
+        /// <param name="defaultQueueOptions">(Optional) Default options for queues</param>
         /// <param name="connectionManager">(Optional) The connection manager</param>
         /// <param name="encoding">(Optional) The encoding to use for converting serialized
         /// message content to byte streams</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="uri"/> is
         /// <c>null</c></exception>
-        public RabbitMQMessageQueueingService(Uri uri, IConnectionManager connectionManager = null, Encoding encoding = null)
+        public RabbitMQMessageQueueingService(Uri uri, QueueOptions defaultQueueOptions = null, IConnectionManager connectionManager = null, Encoding encoding = null)
         {
             if (uri == null) throw new ArgumentNullException("uri");
             _uri = uri;
+            _defaultQueueOptions = defaultQueueOptions ?? new QueueOptions();
             if (connectionManager == null)
             {
                 connectionManager = new ConnectionManager();
@@ -81,11 +84,11 @@ namespace Platibus.RabbitMQ
         /// <paramref name="listener"/> is <c>null</c></exception>
         /// <exception cref="QueueAlreadyExistsException">Thrown if a queue with the specified
         /// name already exists</exception>
-        public Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions), CancellationToken cancellationToken = default(CancellationToken))
+        public Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
             var connection = _connectionManager.GetConnection(_uri);
-            var queue = new RabbitMQQueue(queueName, listener, connection, _encoding, options);
+            var queue = new RabbitMQQueue(queueName, listener, connection, _encoding, options ?? _defaultQueueOptions);
             if (!_queues.TryAdd(queueName, queue))
             {
                 throw new QueueAlreadyExistsException(queueName);
@@ -177,10 +180,6 @@ namespace Platibus.RabbitMQ
                 foreach (var queue in _queues.Values)
                 {
                     queue.TryDispose();
-                }
-                if (_disposeConnectionManager)
-                {
-                    _connectionManager.TryDispose();
                 }
             }
             _disposed = true;

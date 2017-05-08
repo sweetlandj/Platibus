@@ -40,25 +40,19 @@ namespace Platibus.InMemory
         private readonly ActionBlock<QueuedMessage> _queuedMessages;
         private readonly TimeSpan _retryDelay;
 
-        public InMemoryQueue(IQueueListener listener, QueueOptions options = default(QueueOptions))
+        public InMemoryQueue(IQueueListener listener, QueueOptions options = null)
         {
             if (listener == null) throw new ArgumentNullException("listener");
 
             _listener = listener;
-            _autoAcknowledge = options.AutoAcknowledge;
 
-            _maxAttempts = options.MaxAttempts <= 0 
-                ? QueueOptions.DefaultMaxAttempts 
-                : options.MaxAttempts;
+            var myOptions = options ?? new QueueOptions();
 
-            _retryDelay = options.RetryDelay <= TimeSpan.Zero 
-                ? TimeSpan.FromMilliseconds(QueueOptions.DefaultRetryDelay) 
-                : options.RetryDelay;
+            _autoAcknowledge = myOptions.AutoAcknowledge;
+            _maxAttempts = myOptions.MaxAttempts;
+            _retryDelay = myOptions.RetryDelay;
 
-            var concurrencyLimit = options.ConcurrencyLimit <= 0
-                ? QueueOptions.DefaultConcurrencyLimit
-                : options.ConcurrencyLimit;
-
+            var concurrencyLimit = myOptions.ConcurrencyLimit;
             _queuedMessages = new ActionBlock<QueuedMessage>(async msg =>
                 await ProcessQueuedMessage(msg, _cancellationTokenSource.Token),
                 new ExecutionDataflowBlockOptions

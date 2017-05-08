@@ -27,7 +27,7 @@ namespace Platibus
     /// <summary>
     /// Options for setting behavior on queues
     /// </summary>
-    public struct QueueOptions : IEquatable<QueueOptions>
+    public class QueueOptions : IEquatable<QueueOptions>
     {
         /// <summary>
         /// The default maximum number of attempts
@@ -45,6 +45,11 @@ namespace Platibus
         /// </summary>
         public const int DefaultRetryDelay = 1000;
 
+        private int _concurrencyLimit = DefaultConcurrencyLimit;
+        private int _maxAttempts = DefaultMaxAttempts;
+        private TimeSpan _retryDelay = TimeSpan.FromMilliseconds(DefaultRetryDelay);
+        private bool _isDurable = true;
+
         /// <summary>
         ///     The maximum number of messages that will be processed concurrently.
         /// </summary>
@@ -53,7 +58,18 @@ namespace Platibus
         ///     will be applied.
         /// </remarks>
         /// <seealso cref="DefaultConcurrencyLimit" />
-        public int ConcurrencyLimit { get; set; }
+        public int ConcurrencyLimit
+        {
+            get { return _concurrencyLimit; }
+            set
+            {
+                if (value <= 0)
+                {
+                    throw new ArgumentOutOfRangeException("value", value, "Concurrency limit must be greater than zero");
+                }
+                _concurrencyLimit = value;
+            }
+        }
 
         /// <summary>
         ///     Whether the messages should be acknowledged automatically.  If auto-acknowledge
@@ -70,33 +86,67 @@ namespace Platibus
         ///     an exception is thrown from the <see cref="IQueueListener.MessageReceived" /> method, the
         ///     message will be put back on the queue and retried up to this maximum number of attempts.
         /// </summary>
-        public int MaxAttempts { get; set; }
+        public int MaxAttempts
+        {
+            get { return _maxAttempts; }
+            set
+            {
+                if (value <= 0)
+                {
+                    throw new ArgumentOutOfRangeException("value", value, "Maximum number of attempts must be greater than zero");
+                }
+                _maxAttempts = value;
+            }
+        }
 
         /// <summary>
         ///     The amount of time to wait before putting an unacknowledged message back on the queue.
         /// </summary>
-        public TimeSpan RetryDelay { get; set; }
+        public TimeSpan RetryDelay
+        {
+            get { return _retryDelay; }
+            set
+            {
+                if (value <= TimeSpan.Zero)
+                {
+                    throw new ArgumentOutOfRangeException("value", value, "Retry delay must be greater than zero");
+                }
+                _retryDelay = value;
+            }
+        }
 
         /// <summary>
         /// The maximum amount of time the queue should live.
         /// </summary>
         public TimeSpan TTL { get; set; }
 
+        /// <summary>
+        /// Indicates whether the queue should be durable or transient (if supported)
+        /// </summary>
+        public bool IsDurable
+        {
+            get { return _isDurable; }
+            set { _isDurable = value; }
+        }
+        
         /// <inheritdoc />
         public bool Equals(QueueOptions other)
         {
-            return ConcurrencyLimit == other.ConcurrencyLimit 
-                && AutoAcknowledge == other.AutoAcknowledge 
-                && MaxAttempts == other.MaxAttempts 
-                && RetryDelay.Equals(other.RetryDelay) 
-                && TTL.Equals(other.TTL);
+            if (ReferenceEquals(null, other)) return false;
+            return ConcurrencyLimit == other.ConcurrencyLimit
+                   && AutoAcknowledge == other.AutoAcknowledge
+                   && MaxAttempts == other.MaxAttempts
+                   && RetryDelay.Equals(other.RetryDelay)
+                   && TTL.Equals(other.TTL)
+                   && IsDurable == other.IsDurable;
         }
 
         /// <inheritdoc />
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
-            return obj is QueueOptions && Equals((QueueOptions) obj);
+            var other = obj as QueueOptions;
+            return Equals(other);
         }
 
         /// <inheritdoc />
@@ -109,6 +159,7 @@ namespace Platibus
                 hashCode = (hashCode * 397) ^ MaxAttempts;
                 hashCode = (hashCode * 397) ^ RetryDelay.GetHashCode();
                 hashCode = (hashCode * 397) ^ TTL.GetHashCode();
+                hashCode = (hashCode * 397) ^ IsDurable.GetHashCode();
                 return hashCode;
             }
         }
@@ -124,7 +175,7 @@ namespace Platibus
         /// </returns>
         public static bool operator ==(QueueOptions left, QueueOptions right)
         {
-            return left.Equals(right);
+            return Equals(left, right);
         }
 
         /// <summary>
@@ -138,7 +189,7 @@ namespace Platibus
         /// </returns>
         public static bool operator !=(QueueOptions left, QueueOptions right)
         {
-            return !left.Equals(right);
+            return !Equals(left, right);
         }
     }
 }

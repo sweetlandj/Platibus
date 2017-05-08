@@ -43,6 +43,7 @@ namespace Platibus.RabbitMQ
         private const string ConcurrencyLimitPropertyName = "concurrencyLimit";
         private const string MaxAttemptsPropertyName = "maxAttempts";
         private const string RetryDelayPropertyName = "retryDelay";
+        private const string DurablePropertyName = "durable";
 
         /// <summary>
         /// The base URI for the RabbitMQ hosted bus instance
@@ -109,6 +110,19 @@ namespace Platibus.RabbitMQ
         {
             get { return (TimeSpan)base[RetryDelayPropertyName]; }
             set { base[RetryDelayPropertyName] = value; }
+        }
+
+        /// <summary>
+        /// Indicates whether queues should be durable by default
+        /// </summary>
+        /// <remarks>
+        /// The default value of this property is <c>true</c>.
+        /// </remarks>
+        [ConfigurationProperty(DurablePropertyName, DefaultValue = true)]
+        public bool IsDurable
+        {
+            get { return (bool)base[DurablePropertyName]; }
+            set { base[DurablePropertyName] = value; }
         }
     }
 }

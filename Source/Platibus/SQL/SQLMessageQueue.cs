@@ -71,7 +71,7 @@ namespace Platibus.SQL
         /// <paramref name="dialect"/>, <paramref name="queueName"/>, or <paramref name="listener"/>
         /// are <c>null</c></exception>
         public SQLMessageQueue(IDbConnectionProvider connectionProvider, ISQLDialect dialect, QueueName queueName,
-            IQueueListener listener, QueueOptions options = default(QueueOptions))
+            IQueueListener listener, QueueOptions options = null)
         {
             if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
             if (dialect == null) throw new ArgumentNullException("dialect");
@@ -81,22 +81,15 @@ namespace Platibus.SQL
             _connectionProvider = connectionProvider;
             _dialect = dialect;
             _queueName = queueName;
-
             _listener = listener;
-            _autoAcknowledge = options.AutoAcknowledge;
 
-            _maxAttempts = options.MaxAttempts <= 0
-                ? QueueOptions.DefaultMaxAttempts
-                : options.MaxAttempts;
+            var myOptions = options ?? new QueueOptions();
 
-            _retryDelay = options.RetryDelay <= TimeSpan.Zero
-                ? TimeSpan.FromMilliseconds(QueueOptions.DefaultRetryDelay)
-                : options.RetryDelay;
+            _autoAcknowledge = myOptions.AutoAcknowledge;
+            _maxAttempts = myOptions.MaxAttempts;
+            _retryDelay = myOptions.RetryDelay;
 
-            var concurrencyLimit = options.ConcurrencyLimit <= 0
-                ? QueueOptions.DefaultConcurrencyLimit
-                : options.ConcurrencyLimit;
-
+            var concurrencyLimit = myOptions.ConcurrencyLimit;
             _cancellationTokenSource = new CancellationTokenSource();
             _queuedMessages = new ActionBlock<SQLQueuedMessage>(async msg =>
                 await ProcessQueuedMessage(msg, _cancellationTokenSource.Token),

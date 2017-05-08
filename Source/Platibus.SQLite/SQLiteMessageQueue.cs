@@ -39,8 +39,8 @@ namespace Platibus.SQLite
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly ActionBlock<ISQLiteOperation> _operationQueue;
 
-        public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, IQueueListener listener,
-            QueueOptions options = default(QueueOptions))
+        public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, 
+            IQueueListener listener, QueueOptions options = null)
             : base(InitDb(baseDirectory, queueName), new SQLiteDialect(), queueName, listener, options)
         {
             _cancellationTokenSource = new CancellationTokenSource();

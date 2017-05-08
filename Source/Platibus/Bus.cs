@@ -145,7 +145,7 @@ namespace Platibus
         private static int QueueOptionPrecedence(QueueOptions queueOptions)
         {
             // Prefer overrides to default options
-            return default(QueueOptions).Equals(queueOptions) ? 1 : 0;
+            return queueOptions == null ? 1 : 0;
         }
 
         private async Task TransportMessage(Message message, IEndpointCredentials credentials,

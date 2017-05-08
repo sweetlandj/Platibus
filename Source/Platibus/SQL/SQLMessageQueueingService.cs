@@ -140,7 +140,7 @@ namespace Platibus.SQL
         /// <exception cref="QueueAlreadyExistsException">Thrown if a queue with the specified
         /// name already exists</exception>
         /// <exception cref="ObjectDisposedException">Thrown if the object is already disposed</exception>
-        public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = default(QueueOptions), CancellationToken cancellationToken = default(CancellationToken))
+        public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
             var queue = new SQLMessageQueue(_connectionProvider, _dialect, queueName, listener, options);

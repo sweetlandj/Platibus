@@ -55,6 +55,7 @@ namespace Platibus.RabbitMQ
         private readonly TimeSpan _ttl;
         private readonly int _maxAttempts;
         private readonly TimeSpan _retryDelay;
+        private readonly bool _isDurable;
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly DurableConsumer _consumer;
         
@@ -73,7 +74,7 @@ namespace Platibus.RabbitMQ
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/>, 
         /// <paramref name="listener"/>, or <paramref name="connection"/> is <c>null</c></exception>
         public RabbitMQQueue(QueueName queueName, IQueueListener listener, IConnection connection,
-            Encoding encoding = null, QueueOptions options = default(QueueOptions))
+            Encoding encoding = null, QueueOptions options = null)
         {
             if (queueName == null) throw new ArgumentNullException("queueName");
             if (listener == null) throw new ArgumentNullException("listener");
@@ -88,22 +89,16 @@ namespace Platibus.RabbitMQ
             _listener = listener;
             _connection = connection;
             _encoding = encoding ?? Encoding.UTF8;
-            _ttl = options.TTL;
 
-            _autoAcknowledge = options.AutoAcknowledge;
+            var myOptions = options ?? new QueueOptions();
 
-            _maxAttempts = options.MaxAttempts <= 0
-                ? QueueOptions.DefaultMaxAttempts
-                : options.MaxAttempts;
+            _ttl = myOptions.TTL;
+            _autoAcknowledge = myOptions.AutoAcknowledge;
+            _maxAttempts = myOptions.MaxAttempts;
+            _retryDelay = myOptions.RetryDelay;
+            _isDurable = myOptions.IsDurable;
 
-            _retryDelay = options.RetryDelay <= TimeSpan.Zero
-                ? TimeSpan.FromMilliseconds(QueueOptions.DefaultRetryDelay)
-                : options.RetryDelay;
-
-            var concurrencyLimit = options.ConcurrencyLimit <= 0
-                ? QueueOptions.DefaultConcurrencyLimit
-                : options.ConcurrencyLimit;
-
+            var concurrencyLimit = myOptions.ConcurrencyLimit;
             _cancellationTokenSource = new CancellationTokenSource();
 
             var consumerTag = _queueName;
@@ -128,9 +123,9 @@ namespace Platibus.RabbitMQ
                     queueArgs["x-expires"] = _ttl;
                 }
 
-                channel.ExchangeDeclare(_queueExchange, "direct", true, false, null);
-                channel.ExchangeDeclare(_deadLetterExchange, "direct", true, false, null);
-                channel.QueueDeclare(_queueName, true, false, false, queueArgs);
+                channel.ExchangeDeclare(_queueExchange, "direct", _isDurable, false, null);
+                channel.ExchangeDeclare(_deadLetterExchange, "direct", _isDurable, false, null);
+                channel.QueueDeclare(_queueName, _isDurable, false, false, queueArgs);
                 channel.QueueBind(_queueName, _queueExchange, "", null);
 
                 var retryTtlMs = (int) _retryDelay.TotalMilliseconds;
@@ -140,8 +135,8 @@ namespace Platibus.RabbitMQ
                     {"x-message-ttl", retryTtlMs}
                 };
 
-                channel.ExchangeDeclare(_retryExchange, "direct", true, false, null);
-                channel.QueueDeclare(_retryQueueName, true, false, false, retryQueueArgs);
+                channel.ExchangeDeclare(_retryExchange, "direct", _isDurable, false, null);
+                channel.QueueDeclare(_retryQueueName, _isDurable, false, false, retryQueueArgs);
                 channel.QueueBind(_retryQueueName, _retryExchange, "", null);
             }
 
@@ -183,11 +178,12 @@ namespace Platibus.RabbitMQ
             try
             {
                 // Put on the thread pool to avoid deadlock
-                var acknowleged = Task.Run(async () => await DispatchToListener(delivery, cancellationToken), cancellationToken).Result;
+                var acknowleged = Task.Run(async () => await DispatchToListener(delivery, cancellationToken),
+                    cancellationToken).Result;
                 if (acknowleged || _autoAcknowledge)
                 {
                     Log.DebugFormat(
-                        "Acknowledging message {0} from RabbitMQ queue \"{1}\" on channel {2}...",
+                        "Acknowledging message {0} from RabbitMQ queue '{1}' on channel '{2}'...",
                         delivery.DeliveryTag, _queueName, channel.ChannelNumber);
 
                     channel.BasicAck(delivery.DeliveryTag, false);
@@ -195,7 +191,7 @@ namespace Platibus.RabbitMQ
                 else
                 {
                     Log.DebugFormat(
-                        "Message {0} from RabbitMQ queue \"{1}\" received on channel {2} not acknowledged",
+                        "Message {0} from RabbitMQ queue '{1}' received on channel '{2}' not acknowledged",
                         delivery.DeliveryTag, _queueName, channel.ChannelNumber);
 
                     // Add 1 to the header value because the number of attempts will be zero
@@ -204,7 +200,7 @@ namespace Platibus.RabbitMQ
                     if (currentAttempt < _maxAttempts)
                     {
                         Log.DebugFormat(
-                            "Re-publishing message {0} to retry queue \"{1}\" for redelivery...",
+                            "Re-publishing message {0} to retry queue '{1}' for redelivery...",
                             delivery.DeliveryTag, _retryQueueName);
 
                         var retryProperties = delivery.BasicProperties;
@@ -214,16 +210,23 @@ namespace Platibus.RabbitMQ
                     else
                     {
                         Log.WarnFormat(
-                            "Maximum delivery attempts for message {0} exceeded.  Sending NACK on channel {1}...",
+                            "Maximum delivery attempts for message {0} exceeded.  Sending NACK on channel '{1}'...",
                             delivery.DeliveryTag, channel.ChannelNumber);
 
                         channel.BasicNack(delivery.DeliveryTag, false, false);
                     }
                 }
             }
-            catch (Exception e)
+            catch (OperationCanceledException)
             {
-                Log.ErrorFormat("Error processing message {0} from RabbitMQ queue \"{1}\" on channel {2}", e,
+                Log.WarnFormat("Processing of message {0} from RabbitMQ queue '{1}' on channel '{2}' was canceled",
+                    delivery.DeliveryTag, _queueName, channel.ChannelNumber);
+
+                channel.BasicNack(delivery.DeliveryTag, false, false);
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorFormat("Error processing message {0} from RabbitMQ queue '{1}' on channel {2}", ex,
                     delivery.DeliveryTag, _queueName, channel.ChannelNumber);
 
                 // Due to the complexity of managing retry counts and delays in
@@ -256,6 +259,9 @@ namespace Platibus.RabbitMQ
                     await _listener.MessageReceived(message, context, cancellationToken);
                     return context.Acknowledged;
                 }
+            }
+            catch (OperationCanceledException)
+            {
             }
             catch (MessageFileFormatException ex)
             {
