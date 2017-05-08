@@ -9,7 +9,7 @@ namespace Platibus.UnitTests.LocalDB
     {
         public static LocalDBCollectionFixture Instance;
 
-        [SetUp]
+        [OneTimeSetUp]
         public void SetUp()
         {
             Instance = new LocalDBCollectionFixture();
@@ -17,7 +17,7 @@ namespace Platibus.UnitTests.LocalDB
             Instance.DeleteQueuedMessages();
         }
 
-        [TearDown]
+        [OneTimeTearDown]
         public void TearDown()
         {
             if (Instance != null)

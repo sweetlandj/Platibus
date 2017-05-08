@@ -1,8 +1,7 @@
 ﻿using System;
-using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Security.Principal;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Platibus.Security
 {
@@ -12,7 +11,7 @@ namespace Platibus.Security
     /// </summary>
     public class MessageSecurityToken
     {
-        private readonly JwtSecurityToken _jwt;
+        private readonly SecurityToken _jwt;
 
         /// <summary>
         /// Initializes a new <see cref="MessageSecurityToken"/> for the specified 
@@ -27,7 +26,7 @@ namespace Platibus.Security
             {
                 Subject = subject
             };
-            _jwt = handler.CreateJwtSecurityToken(descriptor);
+            _jwt = handler.CreateToken(descriptor);
         }
 
         /// <inheritdoc />
@@ -59,6 +58,7 @@ namespace Platibus.Security
         {
             if (messageToken == null) throw new ArgumentNullException("messageToken");
             var handler = new JwtSecurityTokenHandler();
+            
             var parameters = new TokenValidationParameters
             {
                 RequireSignedTokens = false,

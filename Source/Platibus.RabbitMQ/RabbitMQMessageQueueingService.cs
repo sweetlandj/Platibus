@@ -181,6 +181,11 @@ namespace Platibus.RabbitMQ
                 {
                     queue.TryDispose();
                 }
+
+                if (_disposeConnectionManager)
+                {
+                    _connectionManager.TryDispose();
+                }
             }
             _disposed = true;
         }

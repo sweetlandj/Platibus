@@ -23,6 +23,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -120,7 +121,7 @@ namespace Platibus.RabbitMQ
                 {
                     var exchangeName = topicName.GetTopicExchangeName();
                     Log.DebugFormat("Initializing fanout exchange '{0}' for topic '{1}'...", exchangeName, topicName);
-                    channel.ExchangeDeclare(exchangeName, "fanout", configuration.IsDurable);
+                    channel.ExchangeDeclare(exchangeName, "fanout", configuration.IsDurable, false, new Dictionary<string, object>());
                 }
             }
 
@@ -208,25 +209,52 @@ namespace Platibus.RabbitMQ
             var publisherUri = endpoint.Address;
             var subscriptionQueueName = _baseUri.GetSubscriptionQueueName(topicName);
             var subscriptionKey = new SubscriptionKey(publisherUri, subscriptionQueueName);
-            _subscriptions.GetOrAdd(subscriptionKey, key =>
-            {
-                var connection = _connectionManager.GetConnection(publisherUri);
-                var publisherTopicExchange = topicName.GetTopicExchangeName();
-                
-                Log.DebugFormat("Creating subscription queue '{0}'...", subscriptionQueueName);
-                var subscriptionQueue = new RabbitMQQueue(subscriptionQueueName, this, connection, _encoding, _defaultQueueOptions);
-                subscriptionQueue.Init();
-
-                using (var channel = connection.CreateModel())
-                {
-                    Log.DebugFormat("Binding subscription queue '{0}' to topic exchange '{1}'...", subscriptionQueueName, publisherTopicExchange);
-                    channel.ExchangeDeclare(publisherTopicExchange, "fanout");
-                    channel.QueueBind(subscriptionQueueName, publisherTopicExchange, "", null);    
-                }
-                
-                return subscriptionQueue;
-            });
+            _subscriptions.GetOrAdd(subscriptionKey, _ => BindSubscriptionQueue(topicName, publisherUri, subscriptionQueueName, cancellationToken));
             return Task.FromResult(true);
+        }
+
+        private RabbitMQQueue BindSubscriptionQueue(TopicName topicName, Uri publisherUri, string subscriptionQueueName, CancellationToken cancellationToken)
+        {
+            var publisherTopicExchange = topicName.GetTopicExchangeName();
+            Log.DebugFormat("Binding subscription queue '{0}' to topic exchange '{1}'...", subscriptionQueueName, publisherTopicExchange);
+            
+            var attempts = 0;
+            const int maxAttempts = 10;
+            var retryDelay = TimeSpan.FromSeconds(5);
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    using (var connection = _connectionManager.GetConnection(publisherUri))
+                    using (var channel = connection.CreateModel())
+                    {
+                        attempts++;
+                        Log.DebugFormat("Binding subscription queue '{0}' to topic exchange '{1}' (attempt {2} of {3})...", subscriptionQueueName, publisherTopicExchange, attempts, maxAttempts);
+                        channel.ExchangeDeclarePassive(publisherTopicExchange);
+
+                        var subscriptionQueue = new RabbitMQQueue(subscriptionQueueName, this, connection, _encoding, _defaultQueueOptions);
+                        subscriptionQueue.Init();
+
+                        channel.QueueBind(subscriptionQueueName, publisherTopicExchange, "", null);
+                        return subscriptionQueue;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (attempts >= maxAttempts)
+                    {
+                        throw;
+                    }
+
+                    Log.ErrorFormat(
+                        "Error binding subscription queue '{0}' to topic exchange '{1}' (attempt {2} of {3}).  Retrying in {4}...",
+                        ex, subscriptionQueueName, publisherTopicExchange, attempts, maxAttempts, retryDelay);
+
+                    Task.Delay(retryDelay, cancellationToken).Wait(cancellationToken);
+                }
+            }
+
+            throw new OperationCanceledException();
         }
 
         private void CheckDisposed()
@@ -268,7 +296,6 @@ namespace Platibus.RabbitMQ
         {
             if (disposing)
             {
-                _bus.TryDispose();
                 foreach (var subscriptionQueue in _subscriptions)
                 {
                     subscriptionQueue.TryDispose();
@@ -277,6 +304,7 @@ namespace Platibus.RabbitMQ
                 _messageQueueingService.TryDispose();
                 _messageJournalingService.TryDispose();
                 _connectionManager.TryDispose();
+                _bus.TryDispose();
             }
         }
 

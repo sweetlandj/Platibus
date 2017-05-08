@@ -36,7 +36,7 @@ namespace Platibus.UnitTests.RabbitMQ
                 {
                     {"x-dead-letter-exchange", deadLetterExchange}
                 };
-                channel.ExchangeDeclare(deadLetterExchange, "direct", true, false, null);
+                channel.ExchangeDeclare(deadLetterExchange, "direct", false, false, null);
                 channel.QueueDeclare(queueName, false, false, false, queueArgs);
                 await RabbitMQHelper.PublishMessage(message, Thread.CurrentPrincipal, channel, queueName);
             }

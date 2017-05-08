@@ -30,7 +30,7 @@ namespace Platibus.RabbitMQ
     /// <summary>
     /// Maintains a single connection to each endpoint, reconnecting if necessary
     /// </summary>
-    internal class ConnectionManager : IDisposable, IConnectionManager
+    public class ConnectionManager : IDisposable, IConnectionManager
     {
         private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
         private readonly ConcurrentDictionary<Uri, ManagedConnection> _managedConnections = new ConcurrentDictionary<Uri, ManagedConnection>();
@@ -113,21 +113,23 @@ namespace Platibus.RabbitMQ
             if (connection == null) return;
             try
             {
-                connection.Close();
+                Log.DebugFormat("Closing RabbitMQ connection {0}...", connection.ManagedConnectionId);
+                connection.CloseManagedConnection(true);
+                Log.DebugFormat("RabbitMQ connection {0} closed successfully", connection.ManagedConnectionId);
                 return;
             }
             catch (Exception ex)
             {
-                Log.Info("Error closing RabbitMQ connection.  Attempting to destroy...", ex);
+                Log.Info("Error closing RabbitMQ connection.  Attempting to abort...", ex);
             }
 
             try
             {
-                connection.Destroy(true);
+                connection.Abort();
             }
             catch (Exception ex)
             {
-                Log.Info("Error destroying RabbitMQ connection", ex);
+                Log.Info("Error aborting RabbitMQ connection", ex);
             }
         }
 

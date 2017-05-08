@@ -7,22 +7,31 @@ namespace Platibus.UnitTests.Mocks
 {
     public class FilteredMessageJournalingServiceTests : MessageJournalingServiceTests
     {
-        private readonly Mock<IMessageJournalingService> _mockMessageJournalingService;
+        protected readonly Mock<IMessageJournalingService> MockMessageJournalingService;
 
         protected bool JournalSentMessages = true;
         protected bool JournalReceivedMessages = true;
         protected bool JournalPublishedMessages = true;
 
         public FilteredMessageJournalingServiceTests() 
-            : this(MockCollectionFixture.Instance)
+            : this(new Mock<IMessageJournalingService>())
         {
         }
 
-        public FilteredMessageJournalingServiceTests(MockCollectionFixture fixture)
-            : base(fixture.MockMessageJournalingService.Object)
+        public FilteredMessageJournalingServiceTests(Mock<IMessageJournalingService> mockMessageJournalingService)
+            : base(mockMessageJournalingService.Object)
         {
-            _mockMessageJournalingService = fixture.MockMessageJournalingService;
+            MockMessageJournalingService = mockMessageJournalingService;
         }
+
+        [SetUp]
+        public void SetUp()
+        {
+            MockMessageJournalingService.ResetCalls();
+            JournalSentMessages = true;
+            JournalReceivedMessages = true;
+            JournalPublishedMessages = true;
+    }
 
         [Test]
         public async Task SentMessagesNotJournaledWhenSentMessagesFilteredOut()
@@ -92,35 +101,35 @@ namespace Platibus.UnitTests.Mocks
 
         protected override Task AssertSentMessageIsWrittenToJournal()
         {
-            _mockMessageJournalingService.Verify(x => x.MessageSent(Message, It.IsAny<CancellationToken>()), Times.Once());
+            MockMessageJournalingService.Verify(x => x.MessageSent(Message, It.IsAny<CancellationToken>()), Times.Once());
             return Task.FromResult(true);
         }
 
         protected override Task AssertReceivedMessageIsWrittenToJournal()
         {
-            _mockMessageJournalingService.Verify(x => x.MessageReceived(Message, It.IsAny<CancellationToken>()), Times.Once());
+            MockMessageJournalingService.Verify(x => x.MessageReceived(Message, It.IsAny<CancellationToken>()), Times.Once());
             return Task.FromResult(true);
         }
 
         protected override Task AssertPublishedMessageIsWrittenToJournal()
         {
-            _mockMessageJournalingService.Verify(x => x.MessagePublished(Message, It.IsAny<CancellationToken>()), Times.Once());
+            MockMessageJournalingService.Verify(x => x.MessagePublished(Message, It.IsAny<CancellationToken>()), Times.Once());
             return Task.FromResult(true);
         }
 
         protected void AssertSentMessageIsNotWrittenToJournal()
         {
-            _mockMessageJournalingService.Verify(x => x.MessageSent(Message, It.IsAny<CancellationToken>()), Times.Never);
+            MockMessageJournalingService.Verify(x => x.MessageSent(Message, It.IsAny<CancellationToken>()), Times.Never);
         }
 
         protected void AssertReceivedMessageIsNotWrittenToJournal()
         {
-            _mockMessageJournalingService.Verify(x => x.MessageReceived(Message, It.IsAny<CancellationToken>()), Times.Never);
+            MockMessageJournalingService.Verify(x => x.MessageReceived(Message, It.IsAny<CancellationToken>()), Times.Never);
         }
 
         protected void AssertPublishedMessageIsNotWrittenToJournal()
         {
-            _mockMessageJournalingService.Verify(x => x.MessagePublished(Message, It.IsAny<CancellationToken>()), Times.Never);
+            MockMessageJournalingService.Verify(x => x.MessagePublished(Message, It.IsAny<CancellationToken>()), Times.Never);
         }
     }
 }

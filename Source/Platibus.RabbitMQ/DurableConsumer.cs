@@ -104,8 +104,6 @@ namespace Platibus.RabbitMQ
 
                     var interruption = new TaskCompletionSource<bool>();
                     cancellationToken.Register(() => interruption.TrySetResult(true));
-                    _channel.CallbackException += (sender, args) => interruption.TrySetResult(true);
-                    _channel.ModelShutdown += (sender, args) => interruption.TrySetResult(true);
 
                     if (consumer == null)
                     {
@@ -133,31 +131,36 @@ namespace Platibus.RabbitMQ
                     }
 
                     interruption.Task.Wait(cancellationToken);
-                    TryCancelConsumer();
-                    TryCloseChannel();
                 }
-                catch (OperationCanceledException ex)
+                catch (OperationCanceledException)
                 {
                 }
                 catch (Exception ex)
                 {
                     Log.ErrorFormat("Unhandled exception consuming messages from queue \"{0}\"", ex, _queueName);
                 }
+
+                TryCancelConsumer();
+                TryCloseChannel();
             }
         }
 
         private IModel CreateChannel(CancellationToken cancellationToken = default(CancellationToken))
         {
-            IModel channel = null;
-            while (channel == null || !channel.IsOpen)
+            while (!cancellationToken.IsCancellationRequested)
             {
-                cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
-                    Log.DebugFormat("Attempting to create RabbitMQ channel for consumer '{0}' of queue '{1}'...", _consumerTag, _queueName);
-                    channel = _connection.CreateModel();
-                    Log.DebugFormat("RabbitMQ channel number \"{0}\" successfully created for consumer '{1}' of queue '{2}'", channel.ChannelNumber, _consumerTag, _queueName);
+                    Log.DebugFormat("Attempting to create RabbitMQ channel for consumer '{0}' of queue '{1}'...",
+                        _consumerTag, _queueName);
+
+                    var channel = _connection.CreateModel();
+                    Log.DebugFormat(
+                        "RabbitMQ channel number \"{0}\" successfully created for consumer '{1}' of queue '{2}'",
+                        channel.ChannelNumber, _consumerTag, _queueName);
+
                     channel.BasicQos(0, _concurrencyLimit, false);
+                    return channel;
                 }
                 catch (Exception ex)
                 {
@@ -166,7 +169,7 @@ namespace Platibus.RabbitMQ
                     Task.Delay(delay, cancellationToken).Wait(cancellationToken);
                 }
             } 
-            return channel;
+            throw new OperationCanceledException();
         }
 
         private void TryCancelConsumer()
@@ -178,6 +181,7 @@ namespace Platibus.RabbitMQ
             {
                 Log.DebugFormat("Canceling consumer '{0}' on channel number '{1}' for queue '{2}'...", _consumerTag, _channel.ChannelNumber, _queueName);
                 _channel.BasicCancel(_consumerTag);
+                Log.DebugFormat("Consumer '{0}' on channel number '{1}' for queue '{2}' canceled successfully", _consumerTag, _channel.ChannelNumber, _queueName);
             }
             catch (Exception ex)
             {
@@ -194,6 +198,7 @@ namespace Platibus.RabbitMQ
             {
                 Log.DebugFormat("Closing channel number '{0}' for queue '{1}'...", _channel.ChannelNumber, _queueName);
                 _channel.Close();
+                Log.DebugFormat("Channel number '{0}' for queue '{1}' closed successfully", _channel.ChannelNumber, _queueName);
             }
             catch (Exception ex)
             {
@@ -201,8 +206,7 @@ namespace Platibus.RabbitMQ
             }
             _channel = null;
         }
-
-
+        
         ~DurableConsumer()
         {
             if (_disposed) return;
@@ -221,7 +225,18 @@ namespace Platibus.RabbitMQ
         protected virtual void Dispose(bool disposing)
         {
             _cancellationTokenSource.Cancel();
-            _consumerTask.Wait(TimeSpan.FromSeconds(30));
+
+            Log.DebugFormat("Waiting for consumer task for queue '{0}' to finish...", _queueName);
+            var stoppedGracefully = _consumerTask.Wait(TimeSpan.FromSeconds(30));
+            if (!stoppedGracefully)
+            {
+                Log.WarnFormat("Timeout waiting for consumer for queue '{0}' to finish", _queueName);
+            }
+            else
+            {
+                Log.DebugFormat("Consumer task for queue '{0}' finished", _queueName);
+            }
+
             if (disposing)
             {
                 _cancellationTokenSource.TryDispose();

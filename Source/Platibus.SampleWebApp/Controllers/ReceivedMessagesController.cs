@@ -9,6 +9,7 @@ using Platibus.SampleWebApp.Models;
 
 namespace Platibus.SampleWebApp.Controllers
 {
+    [Authorize(Roles = "test")]
     public class ReceivedMessagesController : Controller
     {
         private static readonly ILog Log = LogManager.GetLogger(SampleWebAppLoggingCategories.SampleWebApp);

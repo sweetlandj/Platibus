@@ -24,7 +24,6 @@ namespace Platibus.SampleWebApp.Controllers
                         IF (OBJECT_ID('ReceivedMessages') IS NULL)
                         CREATE TABLE ReceivedMessages (
                             MessageId VARCHAR(100) NOT NULL PRIMARY KEY,                      
-                            SenderPrincipal VARCHAR(100) NOT NULL,
                             MessageName VARCHAR(500) NOT NULL,
                             Origination VARCHAR(500) NOT NULL,
                             Destination VARCHAR(500) NOT NULL,
@@ -33,7 +32,8 @@ namespace Platibus.SampleWebApp.Controllers
                             Received DATETIME NOT NULL,
                             Expires DATETIME,
                             ContentType VARCHAR(100) NOT NULL,
-                            Content TEXT
+                            SenderPrincipal VARCHAR(4000) NOT NULL,
+                            Content TEXT NOT NULL
                         )";
 
                     return command.ExecuteNonQueryAsync();
@@ -154,17 +154,17 @@ namespace Platibus.SampleWebApp.Controllers
                             @Content
                         )";
 
-                    SetParameter(command, "@SenderPrincipal", message.SenderPrincipal);
-                    SetParameter(command, "@MessageId", message.MessageId);
-                    SetParameter(command, "@MessageName", message.MessageName);
-                    SetParameter(command, "@Origination", message.Origination);
-                    SetParameter(command, "@Destination", message.Destination);
-                    SetParameter(command, "@RelatedTo", message.RelatedTo);
+                    SetParameter(command, "@SenderPrincipal", message.SenderPrincipal ?? "");
+                    SetParameter(command, "@MessageId", message.MessageId ?? "");
+                    SetParameter(command, "@MessageName", message.MessageName ?? "");
+                    SetParameter(command, "@Origination", message.Origination ?? "");
+                    SetParameter(command, "@Destination", message.Destination ?? "");
+                    SetParameter(command, "@RelatedTo", message.RelatedTo ?? "");
                     SetParameter(command, "@Sent", message.Sent);
                     SetParameter(command, "@Received", message.Received);
                     SetParameter(command, "@Expires", message.Expires);
-                    SetParameter(command, "@ContentType", message.ContentType);
-                    SetParameter(command, "@Content", message.Content);
+                    SetParameter(command, "@ContentType", message.ContentType ?? "");
+                    SetParameter(command, "@Content", message.Content ?? "");
 
                     return command.ExecuteNonQueryAsync();
                 }

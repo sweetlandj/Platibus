@@ -4,9 +4,11 @@ using System.Web;
 using System.Web.Mvc;
 using Platibus.IIS;
 using Platibus.Owin;
+using Platibus.Security;
 
 namespace Platibus.SampleWebApp.Controllers
 {
+    [Authorize(Roles = "test")]
     public class TestMessageController : Controller
     {
         public ActionResult Index()
@@ -23,10 +25,15 @@ namespace Platibus.SampleWebApp.Controllers
         {
             try
             {
+                // The name of the claim containing the access token may vary depending on the
+                // callback registered with the SecurityTokenValidated notification in the
+                // OpenIdConnectAuthentication middleware.  See the AugmentClaims 
+                var accessToken = HttpContext.User.GetClaimValue("access_token");
                 var sendOptions = new SendOptions
                 {
                     ContentType = testMessage.ContentType,
-                    Importance = testMessage.Importance
+                    Importance = testMessage.Importance,
+                    Credentials = new BearerCredentials(accessToken)
                 };
 
                 var message = new TestMessage

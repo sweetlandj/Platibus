@@ -22,7 +22,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Net;
 using Common.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -42,7 +41,9 @@ namespace Platibus.RabbitMQ
         private readonly IConnectionFactory _connectionFactory;
         private volatile IConnection _connection;
 
-        private bool _destroyed;
+        private bool _closed;
+
+        public string ManagedConnectionId { get { return _managedConnectionId; } }
 
         public ManagedConnection(Uri uri)
         {
@@ -71,7 +72,7 @@ namespace Platibus.RabbitMQ
         {
             get
             {
-                CheckDestroyed();
+                CheckClosed();
                 var myConnection = _connection;
                 if (myConnection != null && myConnection.IsOpen) return myConnection;
                 lock (_syncRoot)
@@ -94,26 +95,21 @@ namespace Platibus.RabbitMQ
             }
         }
 
+        public string ClientProvidedName
+        {
+            get { return Connection.ClientProvidedName; }
+        }
+
         public IDictionary<string, object> ClientProperties
         {
             get { return Connection.ClientProperties; }
         }
-
-        public EndPoint LocalEndPoint
-        {
-            get { return Connection.LocalEndPoint; }
-        }
-
+        
         public int LocalPort
         {
             get { return Connection.LocalPort; }
         }
-
-        public EndPoint RemoteEndPoint
-        {
-            get { return Connection.RemoteEndPoint; }
-        }
-
+        
         public int RemotePort
         {
             get { return Connection.RemotePort; }
@@ -123,27 +119,29 @@ namespace Platibus.RabbitMQ
         {
         }
 
-        private void CheckDestroyed()
+        private void CheckClosed()
         {
-            if (_destroyed) throw new ObjectDisposedException(GetType().FullName);
+            if (_closed)
+            {
+                throw new ObjectDisposedException(GetType().FullName);
+            }
         }
 
         ~ManagedConnection()
         {
-            Destroy(false);
+            CloseManagedConnection(false);
         }
 
-        public void Destroy(bool disposing)
+        public void CloseManagedConnection(bool disposing)
         {
-            if (_destroyed) return;
-            _destroyed = true;
+            if (_closed) return;
+            _closed = true;
             if (disposing)
             {
-                Log.InfoFormat("Destroying managed connection to {0}...", _managedConnectionId);
-                _connection.TryDispose();
+                Log.InfoFormat("Closing managed connection {0}...", _managedConnectionId);
+                _connection.Close();
                 _connection = null;    
             }
-            _destroyed = true;
             GC.SuppressFinalize(this);
         }
 

@@ -10,13 +10,13 @@ namespace Platibus.UnitTests.SQLite
     {
         public static SQLiteCollectionFixture Instance;
 
-        [SetUp]
+        [OneTimeSetUp]
         public void SetUp()
         {
             Instance = new SQLiteCollectionFixture();
         }
 
-        [TearDown]
+        [OneTimeTearDown]
         public void TearDown()
         {
             if (Instance != null)

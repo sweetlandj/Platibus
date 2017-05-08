@@ -11,13 +11,13 @@ namespace Platibus.UnitTests.Filesystem
     {
         public static FilesystemCollectionFixture Instance;
 
-        [SetUp]
+        [OneTimeSetUp]
         public void SetUp()
         {
             Instance = new FilesystemCollectionFixture();
         }
 
-        [TearDown]
+        [OneTimeTearDown]
         public void TearDown()
         {
             if (Instance != null)

@@ -149,12 +149,16 @@ namespace Platibus.IntegrationTests
         {
             Cleanup();
 
-            using (var host0 = await RabbitMQHost.Start("platibus.rabbitmq0"))
-            using (var host1 = await RabbitMQHost.Start("platibus.rabbitmq1"))
+            // Initialize concurrently to enable topic subscription queue bindings to eventually 
+            // succeed
+            var host0Initialization = Task.Run(async () => await RabbitMQHost.Start("platibus.rabbitmq0"));
+            var host1Initialization = Task.Run(async () => await RabbitMQHost.Start("platibus.rabbitmq1"));
+
+            using (var host0 = await host0Initialization)
+            using (var host1 = await host1Initialization)
             {
                 // Give Rabbit MQ hosts time to initialize
                 await Task.Delay(TimeSpan.FromSeconds(1));
-
                 return await test(host0.Bus, host1.Bus);
             }
         }

@@ -9,9 +9,11 @@ namespace Platibus.SampleWebApp
         {
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
 
-            routes.MapRoute("Default", "{controller}/{action}/{id}",
+            routes.MapRoute(
+                "Default",
+                "{controller}/{action}/{id}",
                 new {controller = "TestMessage", action = "Index", id = UrlParameter.Optional}
-                );
+            );
         }
     }
 }

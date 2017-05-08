@@ -9,13 +9,13 @@ namespace Platibus.UnitTests.RabbitMQ
     {
         public static RabbitMQCollectionFixture Instance;
 
-        [SetUp]
+        [OneTimeSetUp]
         public void SetUp()
         {
             Instance = new RabbitMQCollectionFixture();
         }
 
-        [TearDown]
+        [OneTimeTearDown]
         public void TearDown()
         {
             if (Instance != null)
