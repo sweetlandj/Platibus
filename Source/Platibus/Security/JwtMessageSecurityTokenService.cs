@@ -15,6 +15,9 @@ namespace Platibus.Security
     /// </summary>
     public class JwtMessageSecurityTokenService : IMessageSecurityTokenService
     {
+        private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        private static readonly DateTime MaxExpires = UnixEpoch.AddSeconds(int.MaxValue);
+
         private readonly SecurityKey _signingKey;
         private readonly SecurityKey _fallbackSigningKey;
         private readonly string _signingAlgorithm = "http://www.w3.org/2001/04/xmldsig-more#hmac-sha256";
@@ -35,11 +38,15 @@ namespace Platibus.Security
         /// <inheritdoc />
         public Task<string> Issue(IPrincipal principal, DateTime? expires = null)
         {
-            if (principal == null) throw new ArgumentNullException("principal");
+            if (principal == null)
+            {
+                throw new ArgumentNullException("principal");
+            }
 
+            var myExpires = expires > MaxExpires ? null : expires;
             var identity = principal.Identity;
             var claimsIdentity = identity as ClaimsIdentity ?? new ClaimsIdentity(identity);
-            var lifetime = new Lifetime(DateTime.UtcNow, expires);
+            var lifetime = new Lifetime(DateTime.UtcNow, myExpires);
             
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -61,6 +68,11 @@ namespace Platibus.Security
         /// <inheritdoc />
         public Task<IPrincipal> Validate(string messageSecurityToken)
         {
+            if (string.IsNullOrWhiteSpace(messageSecurityToken))
+            {
+                throw new ArgumentNullException("messageSecurityToken");
+            }
+
             var tokenHandler = new JwtSecurityTokenHandler();
 
             var signingKeys = new List<SecurityKey>();

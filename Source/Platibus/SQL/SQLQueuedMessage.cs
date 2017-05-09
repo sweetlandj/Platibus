@@ -32,7 +32,7 @@ namespace Platibus.SQL
     public class SQLQueuedMessage
     {
         private readonly Message _message;
-        private readonly IPrincipal _senderPrincipal;
+        private readonly IPrincipal _principal;
         private readonly int _attempts;
 
         /// <summary>
@@ -46,9 +46,9 @@ namespace Platibus.SQL
         /// <summary>
         /// The principal that sent the message or from which the message was received
         /// </summary>
-        public IPrincipal SenderPrincipal
+        public IPrincipal Principal
         {
-            get { return _senderPrincipal; }
+            get { return _principal; }
         }
 
         /// <summary>
@@ -61,36 +61,36 @@ namespace Platibus.SQL
 
         /// <summary>
         /// Initializes a new <see cref="SQLQueuedMessage"/> with the specified
-        /// <paramref name="message"/> and <paramref name="senderPrincipal"/>
+        /// <paramref name="message"/> and <paramref name="principal"/>
         /// </summary>
         /// <param name="message">The message</param>
-        /// <param name="senderPrincipal">The principal that sent the message or
+        /// <param name="principal">The principal that sent the message or
         /// from which the message was received</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="message"/>
         /// is <c>null</c></exception>
-        public SQLQueuedMessage(Message message, IPrincipal senderPrincipal)
+        public SQLQueuedMessage(Message message, IPrincipal principal)
         {
             if (message == null) throw new ArgumentNullException("message");
             _message = message;
-            _senderPrincipal = senderPrincipal;
+            _principal = principal;
         }
 
         /// <summary>
         /// Initializes a new <see cref="SQLQueuedMessage"/> with the specified
-        /// <paramref name="message"/> and <paramref name="senderPrincipal"/>
+        /// <paramref name="message"/> and <paramref name="principal"/>
         /// </summary>
         /// <param name="message">The message</param>
-        /// <param name="senderPrincipal">The principal that sent the message or
+        /// <param name="principal">The principal that sent the message or
         /// from which the message was received</param>
         /// <param name="attempts">The total number of attempts so far that have been
         /// made to handle the message</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="message"/>
         /// is <c>null</c></exception>
-        public SQLQueuedMessage(Message message, IPrincipal senderPrincipal, int attempts)
+        public SQLQueuedMessage(Message message, IPrincipal principal, int attempts)
         {
             if (message == null) throw new ArgumentNullException("message");
             _message = message;
-            _senderPrincipal = senderPrincipal;
+            _principal = principal;
             _attempts = attempts;
         }
     }

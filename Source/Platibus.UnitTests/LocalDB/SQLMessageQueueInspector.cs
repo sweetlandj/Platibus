@@ -3,16 +3,17 @@ using System.Collections.Generic;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
+using Platibus.Security;
 using Platibus.SQL;
 
 namespace Platibus.UnitTests.LocalDB
 {
     internal class SQLMessageQueueInspector : SQLMessageQueue
     {
-        public SQLMessageQueueInspector(SQLMessageQueueingService messageQueueingService, QueueName queueName)
+        public SQLMessageQueueInspector(SQLMessageQueueingService messageQueueingService, QueueName queueName, IMessageSecurityTokenService messageSecurityTokenService)
             : base(
                 messageQueueingService.ConnectionProvider, messageQueueingService.Dialect, queueName,
-                new NoopQueueListener())
+                new NoopQueueListener(), messageSecurityTokenService)
         {
         }
 

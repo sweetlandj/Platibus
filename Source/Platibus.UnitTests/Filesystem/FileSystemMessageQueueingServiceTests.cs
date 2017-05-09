@@ -24,7 +24,7 @@ namespace Platibus.UnitTests.Filesystem
         protected override async Task GivenExistingQueuedMessage(QueueName queueName, Message message, IPrincipal principal)
         {
             var queueDirectory = QueueDirectory(queueName);
-            await MessageFile.Create(queueDirectory, message, principal);
+            await MessageFile.Create(queueDirectory, message);
         }
 
         protected override Task<bool> MessageQueued(QueueName queueName, Message message)

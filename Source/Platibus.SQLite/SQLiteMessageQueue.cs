@@ -30,6 +30,7 @@ using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Platibus.Security;
 using Platibus.SQL;
 
 namespace Platibus.SQLite
@@ -39,9 +40,8 @@ namespace Platibus.SQLite
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly ActionBlock<ISQLiteOperation> _operationQueue;
 
-        public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, 
-            IQueueListener listener, QueueOptions options = null)
-            : base(InitDb(baseDirectory, queueName), new SQLiteDialect(), queueName, listener, options)
+        public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, IQueueListener listener, IMessageSecurityTokenService messageSecurityTokenService, QueueOptions options = null)
+            : base(InitDb(baseDirectory, queueName), new SQLiteDialect(), queueName, listener, messageSecurityTokenService, options)
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _operationQueue = new ActionBlock<ISQLiteOperation>(
@@ -112,10 +112,10 @@ namespace Platibus.SQLite
         protected override void Dispose(bool disposing)
         {
             if (disposing)
-			{
-				_cancellationTokenSource.Cancel();
-				_cancellationTokenSource.TryDispose();
-				_operationQueue.Complete();
+            {
+                _cancellationTokenSource.Cancel();
+                _cancellationTokenSource.TryDispose();
+                _operationQueue.Complete();
             }
             base.Dispose(disposing);
         }

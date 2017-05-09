@@ -50,8 +50,9 @@ namespace Platibus.RabbitMQ
         private readonly string _retryExchange;
 
         private readonly IQueueListener _listener;
+        private readonly IMessageSecurityTokenService _messageSecurityTokenService;
         private readonly Encoding _encoding;
-
+        
         private readonly TimeSpan _ttl;
         private readonly int _maxAttempts;
         private readonly TimeSpan _retryDelay;
@@ -68,17 +69,21 @@ namespace Platibus.RabbitMQ
         /// <param name="queueName">The name of the queue</param>
         /// <param name="listener">The listener that will receive new messages off of the queue</param>
         /// <param name="connection">The connection to the RabbitMQ server</param>
+        /// <param name="messageSecurityTokenService">(Optional) The message security token
+        /// service to use to issue and validate security tokens for persisted messages.</param>
         /// <param name="encoding">(Optional) The encoding to use when converting serialized message 
         /// content to byte streams</param>
         /// <param name="options">(Optional) Queueing options</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/>, 
         /// <paramref name="listener"/>, or <paramref name="connection"/> is <c>null</c></exception>
         public RabbitMQQueue(QueueName queueName, IQueueListener listener, IConnection connection,
+            IMessageSecurityTokenService messageSecurityTokenService,
             Encoding encoding = null, QueueOptions options = null)
         {
             if (queueName == null) throw new ArgumentNullException("queueName");
             if (listener == null) throw new ArgumentNullException("listener");
             if (connection == null) throw new ArgumentNullException("connection");
+            if (messageSecurityTokenService == null) throw new ArgumentNullException("messageSecurityTokenService");
 
             _queueName = queueName;
             _queueExchange = _queueName.GetExchangeName();
@@ -88,6 +93,7 @@ namespace Platibus.RabbitMQ
 
             _listener = listener;
             _connection = connection;
+            _messageSecurityTokenService = messageSecurityTokenService;
             _encoding = encoding ?? Encoding.UTF8;
 
             var myOptions = options ?? new QueueOptions();
@@ -149,10 +155,13 @@ namespace Platibus.RabbitMQ
         /// <param name="message">The message to enqueue</param>
         /// <param name="principal">The sender principal</param>
         /// <returns>Returns a task that completes when the message has been enqueued</returns>
-        public Task Enqueue(Message message, IPrincipal principal)
+        public async Task Enqueue(Message message, IPrincipal principal)
         {
             CheckDisposed();
-            return RabbitMQHelper.PublishMessage(message, principal, _connection, null, _queueExchange, _encoding);
+            var expires = message.Headers.Expires;
+            var securityToken = await _messageSecurityTokenService.NullSafeIssue(principal, expires);
+            var messageWithSecurityToken = message.WithSecurityToken(securityToken);
+            await RabbitMQHelper.PublishMessage(messageWithSecurityToken, principal, _connection, null, _queueExchange, _encoding);
         }
         
         /// <summary>
@@ -178,8 +187,7 @@ namespace Platibus.RabbitMQ
             try
             {
                 // Put on the thread pool to avoid deadlock
-                var acknowleged = Task.Run(async () => await DispatchToListener(delivery, cancellationToken),
-                    cancellationToken).Result;
+                var acknowleged = Task.Run(async () => await DispatchToListener(delivery, cancellationToken), cancellationToken).Result;
                 if (acknowleged || _autoAcknowledge)
                 {
                     Log.DebugFormat(
@@ -245,13 +253,12 @@ namespace Platibus.RabbitMQ
                 using (var reader = new StringReader(messageBody))
                 using (var messageReader = new MessageReader(reader))
                 {
+                    var principal = await messageReader.ReadLegacySenderPrincipal();
                     var message = await messageReader.ReadMessage();
-
-                    IPrincipal principal = null;
                     var securityToken = message.Headers.SecurityToken;
                     if (!string.IsNullOrWhiteSpace(securityToken))
                     {
-                        principal = MessageSecurityToken.Validate(securityToken);
+                        principal = await _messageSecurityTokenService.Validate(securityToken);
                     }
 
                     var context = new RabbitMQQueuedMessageContext(message.Headers, principal);

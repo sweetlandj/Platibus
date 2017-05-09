@@ -27,7 +27,6 @@ using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Platibus.Security;
 using RabbitMQ.Client;
 
 namespace Platibus.RabbitMQ
@@ -201,21 +200,17 @@ namespace Platibus.RabbitMQ
                 encoding = Encoding.UTF8;
             }
 
-            // Add or update the SecurityToken header in the message and write the message 
-            // with the updated headers
-            var messageWithSecurityToken = message.WithSecurityToken(principal);
-
             using (var stringWriter = new StringWriter())
             using (var messageWriter = new MessageWriter(stringWriter))
             {
-                await messageWriter.WriteMessage(messageWithSecurityToken);
+                await messageWriter.WriteMessage(message);
                 var messageBody = stringWriter.ToString();
                 var properties = channel.CreateBasicProperties();
                 properties.Persistent = true;
                 properties.ContentEncoding = Encoding.UTF8.HeaderName;
-                properties.ContentType = messageWithSecurityToken.Headers.ContentType;
-                properties.MessageId = messageWithSecurityToken.Headers.MessageId.ToString();
-                properties.CorrelationId = messageWithSecurityToken.Headers.RelatedTo.ToString();
+                properties.ContentType = message.Headers.ContentType;
+                properties.MessageId = message.Headers.MessageId.ToString();
+                properties.CorrelationId = message.Headers.RelatedTo.ToString();
                 var headers = properties.Headers;
                 if (headers == null)
                 {

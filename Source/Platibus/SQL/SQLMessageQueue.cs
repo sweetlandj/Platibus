@@ -48,6 +48,7 @@ namespace Platibus.SQL
         private readonly ISQLDialect _dialect;
         private readonly QueueName _queueName;
         private readonly IQueueListener _listener;
+        private readonly IMessageSecurityTokenService _messageSecurityTokenService;
 
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly bool _autoAcknowledge;
@@ -66,22 +67,25 @@ namespace Platibus.SQL
         /// <param name="queueName">The name of the queue</param>
         /// <param name="listener">The object that will be notified when messages are
         /// added to the queue</param>
+        /// <param name="messageSecurityTokenService"></param>
         /// <param name="options">(Optional) Settings that influence how the queue behaves</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>,
         /// <paramref name="dialect"/>, <paramref name="queueName"/>, or <paramref name="listener"/>
         /// are <c>null</c></exception>
         public SQLMessageQueue(IDbConnectionProvider connectionProvider, ISQLDialect dialect, QueueName queueName,
-            IQueueListener listener, QueueOptions options = null)
+            IQueueListener listener, IMessageSecurityTokenService messageSecurityTokenService, QueueOptions options = null)
         {
             if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
             if (dialect == null) throw new ArgumentNullException("dialect");
             if (queueName == null) throw new ArgumentNullException("queueName");
             if (listener == null) throw new ArgumentNullException("listener");
+            if (messageSecurityTokenService == null) throw new ArgumentNullException("messageSecurityTokenService");
 
             _connectionProvider = connectionProvider;
             _dialect = dialect;
             _queueName = queueName;
             _listener = listener;
+            _messageSecurityTokenService = messageSecurityTokenService;
 
             var myOptions = options ?? new QueueOptions();
 
@@ -146,6 +150,8 @@ namespace Platibus.SQL
             var messageId = queuedMessage.Message.Headers.MessageId;
             var attemptCount = queuedMessage.Attempts;
             var abandoned = false;
+            var message = queuedMessage.Message;
+            var principal = queuedMessage.Principal;
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             while (!abandoned && attemptCount < _maxAttempts)
             {
@@ -154,12 +160,11 @@ namespace Platibus.SQL
                 Log.DebugFormat("Processing queued message {0} (attempt {1} of {2})...", messageId, attemptCount,
                     _maxAttempts);
 
-                var context = new SQLQueuedMessageContext(queuedMessage);
+                var context = new SQLQueuedMessageContext(message.Headers, principal);
                 Thread.CurrentPrincipal = context.Principal;
                 cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
-                    var message = queuedMessage.Message;
                     await _listener.MessageReceived(message, context, cancellationToken);
                     if (_autoAcknowledge && !context.Acknowledged)
                     {
@@ -208,14 +213,16 @@ namespace Platibus.SQL
         /// <returns>Returns a task that completes when the message has been inserted into the SQL
         /// database and whose result is a copy of the inserted record</returns>
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual Task<SQLQueuedMessage> InsertQueuedMessage(Message message, IPrincipal principal)
+        protected virtual async Task<SQLQueuedMessage> InsertQueuedMessage(Message message, IPrincipal principal)
         {
             SQLQueuedMessage queuedMessage;
+            var expires = message.Headers.Expires;
             var connection = _connectionProvider.GetConnection();
-            var messageWithSecurityToken = message.WithSecurityToken(principal);
+            var securityToken = await _messageSecurityTokenService.NullSafeIssue(principal, expires);
+            var messageWithSecurityToken = message.WithSecurityToken(securityToken);
             try
             {
-                using (var scope = new TransactionScope(TransactionScopeOption.Required))
+                using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
                 {
                     using (var command = connection.CreateCommand())
                     {
@@ -238,7 +245,7 @@ namespace Platibus.SQL
                         command.SetParameter(_dialect.HeadersParameterName, SerializeHeaders(headers));
                         command.SetParameter(_dialect.MessageContentParameterName, messageWithSecurityToken.Content);
 
-                        command.ExecuteNonQuery();
+                        await command.ExecuteNonQueryAsync();
                     }
                     scope.Complete();
                 }
@@ -249,9 +256,7 @@ namespace Platibus.SQL
                 _connectionProvider.ReleaseConnection(connection);
             }
 
-            // SQL calls are not async to avoid the need for TransactionAsyncFlowOption
-            // and dependency on .NET 4.5.1 and later
-            return Task.FromResult(queuedMessage);
+            return queuedMessage;
         }
         
         /// <summary>
@@ -260,13 +265,13 @@ namespace Platibus.SQL
         /// <returns>Returns a task that completes when all records have been selected and whose
         /// result is the enumerable sequence of the selected records</returns>
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual Task<IEnumerable<SQLQueuedMessage>> SelectQueuedMessages()
+        protected virtual async Task<IEnumerable<SQLQueuedMessage>> SelectQueuedMessages()
         {
             var queuedMessages = new List<SQLQueuedMessage>();
             var connection = _connectionProvider.GetConnection();
             try
             {
-                using (var scope = new TransactionScope(TransactionScopeOption.Required))
+                using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
                 {
                     using (var command = connection.CreateCommand())
                     {
@@ -274,14 +279,14 @@ namespace Platibus.SQL
                         command.CommandText = _dialect.SelectQueuedMessagesCommand;
                         command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
 
-                        using (var reader = command.ExecuteReader())
+                        using (var reader = await command.ExecuteReaderAsync())
                         {
-                            while (reader.Read())
+                            while (await reader.ReadAsync())
                             {
                                 var messageContent = reader.GetString("MessageContent");
                                 var headers = DeserializeHeaders(reader.GetString("Headers"));
                                 var message = new Message(headers, messageContent);
-                                var principal = ResolvePrincipal(headers, reader);
+                                var principal = await ResolvePrincipal(headers, reader);
                                 var attempts = reader.GetInt("Attempts").GetValueOrDefault(0);
                                 var queuedMessage = new SQLQueuedMessage(message, principal, attempts);
                                 queuedMessages.Add(queuedMessage);
@@ -298,7 +303,7 @@ namespace Platibus.SQL
 
             // SQL calls are not async to avoid the need for TransactionAsyncFlowOption
             // and dependency on .NET 4.5.1 and later
-            return Task.FromResult(queuedMessages.AsEnumerable());
+            return queuedMessages.AsEnumerable();
         }
 
         /// <summary>
@@ -307,13 +312,13 @@ namespace Platibus.SQL
         /// <returns>Returns a task that completes when all records have been selected and whose
         /// result is the enumerable sequence of the selected records</returns>
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual Task<IEnumerable<SQLQueuedMessage>> SelectAbandonedMessages(DateTime startDate, DateTime endDate)
+        protected virtual async Task<IEnumerable<SQLQueuedMessage>> SelectAbandonedMessages(DateTime startDate, DateTime endDate)
         {
             var queuedMessages = new List<SQLQueuedMessage>();
             var connection = _connectionProvider.GetConnection();
             try
             {
-                using (var scope = new TransactionScope(TransactionScopeOption.Required))
+                using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
                 {
                     using (var command = connection.CreateCommand())
                     {
@@ -323,14 +328,14 @@ namespace Platibus.SQL
                         command.SetParameter(_dialect.StartDateParameterName, startDate);
                         command.SetParameter(_dialect.EndDateParameterName, endDate);
 
-                        using (var reader = command.ExecuteReader())
+                        using (var reader = await command.ExecuteReaderAsync())
                         {
-                            while (reader.Read())
+                            while (await reader.ReadAsync())
                             {
                                 var messageContent = reader.GetString("MessageContent");
                                 var headers = DeserializeHeaders(reader.GetString("Headers"));
                                 var message = new Message(headers, messageContent);
-                                var principal = ResolvePrincipal(headers, reader);
+                                var principal = await ResolvePrincipal(headers, reader);
                                 var attempts = reader.GetInt("Attempts").GetValueOrDefault(0);
                                 var queuedMessage = new SQLQueuedMessage(message, principal, attempts);
                                 queuedMessages.Add(queuedMessage);
@@ -344,10 +349,7 @@ namespace Platibus.SQL
             {
                 _connectionProvider.ReleaseConnection(connection);
             }
-
-            // SQL calls are not async to avoid the need for TransactionAsyncFlowOption
-            // and dependency on .NET 4.5.1 and later
-            return Task.FromResult(queuedMessages.AsEnumerable());
+            return queuedMessages.AsEnumerable();
         }
 
         /// <summary>
@@ -359,13 +361,13 @@ namespace Platibus.SQL
         /// <param name="attempts">The number of attempts to process the message so far</param>
         /// <returns>Returns a task that completes when the record has been updated</returns>
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual Task UpdateQueuedMessage(SQLQueuedMessage queuedMessage, DateTime? acknowledged,
+        protected virtual async Task UpdateQueuedMessage(SQLQueuedMessage queuedMessage, DateTime? acknowledged,
             DateTime? abandoned, int attempts)
         {
             var connection = _connectionProvider.GetConnection();
             try
             {
-                using (var scope = new TransactionScope(TransactionScopeOption.Required))
+                using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
                 {
                     using (var command = connection.CreateCommand())
                     {
@@ -378,7 +380,7 @@ namespace Platibus.SQL
                         command.SetParameter(_dialect.AbandonedParameterName, abandoned);
                         command.SetParameter(_dialect.AttemptsParameterName, attempts);
 
-                        command.ExecuteNonQuery();
+                        await command.ExecuteNonQueryAsync();
                     }
                     scope.Complete();
                 }
@@ -387,10 +389,6 @@ namespace Platibus.SQL
             {
                 _connectionProvider.ReleaseConnection(connection);
             }
-
-            // SQL calls are not async to avoid the need for TransactionAsyncFlowOption
-            // and dependency on .NET 4.5.1 and later
-            return Task.FromResult(true);
         }
 
         private async Task EnqueueExistingMessages()
@@ -442,11 +440,11 @@ namespace Platibus.SQL
         }
 
 #pragma warning disable 618
-        protected IPrincipal ResolvePrincipal(IMessageHeaders headers, IDataRecord record)
+        protected async Task<IPrincipal> ResolvePrincipal(IMessageHeaders headers, IDataRecord record)
         {
             if (!string.IsNullOrWhiteSpace(headers.SecurityToken))
             {
-                return MessageSecurityToken.Validate(headers.SecurityToken);
+                return await _messageSecurityTokenService.NullSafeValidate(headers.SecurityToken);
             }
 
             try
@@ -461,8 +459,7 @@ namespace Platibus.SQL
                 return null;
             }
         }
-#pragma warning restore 618
-
+        
         /// <summary>
         /// Helper method to deserialize the sender principal from a record in the SQL database
         /// </summary>
@@ -477,9 +474,10 @@ namespace Platibus.SQL
             using (var memoryStream = new MemoryStream(bytes))
             {
                 var formatter = new BinaryFormatter();
-                return (IPrincipal)formatter.Deserialize(memoryStream);
+                return (SenderPrincipal)formatter.Deserialize(memoryStream);
             }
         }
+#pragma warning restore 618
 
         /// <summary>
         /// Helper method to deserialize message headers read from a record in the SQL database

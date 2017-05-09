@@ -29,6 +29,7 @@ using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
+using Platibus.Security;
 
 namespace Platibus.SQL
 {
@@ -42,6 +43,7 @@ namespace Platibus.SQL
 
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly ISQLDialect _dialect;
+        private readonly IMessageSecurityTokenService _messageSecurityTokenService;
 
         private readonly ConcurrentDictionary<QueueName, SQLMessageQueue> _queues =
             new ConcurrentDictionary<QueueName, SQLMessageQueue>();
@@ -71,19 +73,24 @@ namespace Platibus.SQL
         /// <param name="connectionStringSettings">The connection string settings to use to connect to
         /// the SQL database</param>
         /// <param name="dialect">(Optional) The SQL dialect to use</param>
+        /// <param name="messageSecurityTokenService">(Optional) The message security token
+        /// service to use to issue and validate security tokens for persisted messages.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionStringSettings"/>
         /// is <c>null</c></exception>
         /// <remarks>
-        /// If a SQL dialect is not specified, then one will be selected based on the supplied
-        /// connection string settings
+        /// <para>If a SQL dialect is not specified, then one will be selected based on the supplied
+        /// connection string settings</para>
+        /// <para>If a <paramref name="messageSecurityTokenService"/> is not specified then a
+        /// default implementation based on unsigned JWTs will be used.</para>
         /// </remarks>
         /// <seealso cref="DbExtensions.GetSQLDialect"/>
         /// <seealso cref="ISQLDialectProvider"/>
-        public SQLMessageQueueingService(ConnectionStringSettings connectionStringSettings, ISQLDialect dialect = null)
+        public SQLMessageQueueingService(ConnectionStringSettings connectionStringSettings, ISQLDialect dialect = null, IMessageSecurityTokenService messageSecurityTokenService = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
             _connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
             _dialect = dialect ?? connectionStringSettings.GetSQLDialect();
+            _messageSecurityTokenService = messageSecurityTokenService ?? new JwtMessageSecurityTokenService();
         }
 
         /// <summary>
@@ -93,14 +100,21 @@ namespace Platibus.SQL
         /// <param name="connectionProvider">The connection provider to use to connect to
         /// the SQL database</param>
         /// <param name="dialect">The SQL dialect to use</param>
+        /// <param name="messageSecurityTokenService">(Optional) The message security token
+        /// service to use to issue and validate security tokens for persisted messages.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>
         /// or <paramref name="dialect"/> is <c>null</c></exception>
-        public SQLMessageQueueingService(IDbConnectionProvider connectionProvider, ISQLDialect dialect)
+        /// <remarks>
+        /// <para>If a <paramref name="messageSecurityTokenService"/> is not specified then a
+        /// default implementation based on unsigned JWTs will be used.</para>
+        /// </remarks>
+        public SQLMessageQueueingService(IDbConnectionProvider connectionProvider, ISQLDialect dialect, IMessageSecurityTokenService messageSecurityTokenService = null)
         {
             if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
             if (dialect == null) throw new ArgumentNullException("dialect");
             _connectionProvider = connectionProvider;
             _dialect = dialect;
+            _messageSecurityTokenService = messageSecurityTokenService ?? new JwtMessageSecurityTokenService();
         }
 
         /// <summary>
@@ -143,7 +157,7 @@ namespace Platibus.SQL
         public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
-            var queue = new SQLMessageQueue(_connectionProvider, _dialect, queueName, listener, options);
+            var queue = new SQLMessageQueue(_connectionProvider, _dialect, queueName, listener, _messageSecurityTokenService, options);
             if (!_queues.TryAdd(queueName, queue))
             {
                 throw new QueueAlreadyExistsException(queueName);

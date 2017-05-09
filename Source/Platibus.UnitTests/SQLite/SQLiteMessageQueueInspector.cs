@@ -4,6 +4,7 @@ using System.IO;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
+using Platibus.Security;
 using Platibus.SQL;
 using Platibus.SQLite;
 
@@ -11,8 +12,8 @@ namespace Platibus.UnitTests.SQLite
 {
     internal class SQLiteMessageQueueInspector : SQLiteMessageQueue
     {
-        public SQLiteMessageQueueInspector(DirectoryInfo baseDirectory, QueueName queueName)
-            : base(baseDirectory, queueName, new NoopQueueListener())
+        public SQLiteMessageQueueInspector(DirectoryInfo baseDirectory, QueueName queueName, IMessageSecurityTokenService messageSecurityTokenService)
+            : base(baseDirectory, queueName, new NoopQueueListener(), messageSecurityTokenService)
         {
         }
 

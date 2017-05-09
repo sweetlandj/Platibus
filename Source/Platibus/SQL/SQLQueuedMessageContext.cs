@@ -27,23 +27,25 @@ namespace Platibus.SQL
 {
     internal class SQLQueuedMessageContext : IQueuedMessageContext
     {
-        private readonly SQLQueuedMessage _queuedMessage;
+        private readonly IMessageHeaders _headers;
+        private readonly IPrincipal _principal;
 
-        public SQLQueuedMessageContext(SQLQueuedMessage queuedMessage)
+        public SQLQueuedMessageContext(IMessageHeaders headers, IPrincipal principal)
         {
-            _queuedMessage = queuedMessage;
+            _headers = headers;
+            _principal = principal;
         }
-
+        
         public bool Acknowledged { get; private set; }
 
         public IMessageHeaders Headers
         {
-            get { return _queuedMessage.Message.Headers; }
+            get { return _headers; }
         }
 
         public IPrincipal Principal
         {
-            get { return _queuedMessage.SenderPrincipal; }
+            get { return _principal; }
         }
 
         public Task Acknowledge()

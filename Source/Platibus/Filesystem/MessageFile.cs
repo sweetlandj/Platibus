@@ -26,7 +26,6 @@ using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
-using Platibus.Security;
 
 namespace Platibus.Filesystem
 {
@@ -67,13 +66,11 @@ namespace Platibus.Filesystem
         /// </summary>
         /// <param name="directory">The directory in which the message file should be created</param>
         /// <param name="message">The message to persist</param>
-        /// <param name="principal">(Optional) The principal from which the message was originally
-        /// received</param>
         /// <param name="cancellationToken">(Optional) A cancellation token that can be used by
-        /// the caller to cancel creation of the message file</param>
+        ///     the caller to cancel creation of the message file</param>
         /// <returns>Returns a task whose result is a <see cref="MessageFile"/> representing the 
         /// stored message</returns>
-        public static async Task<MessageFile> Create(DirectoryInfo directory, Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
+        public static async Task<MessageFile> Create(DirectoryInfo directory, Message message, CancellationToken cancellationToken = default(CancellationToken))
         {
             FileInfo file;
             var counter = 0;
@@ -89,10 +86,10 @@ namespace Platibus.Filesystem
             } while (file.Exists);
 
             cancellationToken.ThrowIfCancellationRequested();
-            return await Create(message, principal, file, cancellationToken);
+            return await Create(message, file, cancellationToken);
         }
 
-        private static async Task<MessageFile> Create(Message message, IPrincipal principal, FileInfo file, CancellationToken cancellationToken = default(CancellationToken))
+        private static async Task<MessageFile> Create(Message message, FileInfo file, CancellationToken cancellationToken = default(CancellationToken))
         {
             Log.DebugFormat("Creating message file {0} for message ID {1}...", file, message.Headers.MessageId);
 
@@ -102,10 +99,7 @@ namespace Platibus.Filesystem
             using (var stringWriter = new StringWriter())
             using (var messageFileWriter = new MessageFileWriter(stringWriter))
             {
-                // Add or update the SecurityToken header in the message and write the message 
-                // with the updated headers
-                var messageWithSecurityToken = message.WithSecurityToken(principal);
-                await messageFileWriter.WriteMessage(messageWithSecurityToken);
+                await messageFileWriter.WriteMessage(message);
                 messageFileContent = stringWriter.ToString();
             }
 
@@ -175,15 +169,9 @@ namespace Platibus.Filesystem
                 using (var stringReader = new StringReader(messageFileContent))
                 using (var messageFileReader = new MessageFileReader(stringReader))
                 {
+                    _principal = await messageFileReader.ReadLegacySenderPrincipal();
                     _message = await messageFileReader.ReadMessage();
                 }
-
-                var securityToken = _message.Headers.SecurityToken;
-                if (!string.IsNullOrWhiteSpace(securityToken))
-                {
-                    _principal = MessageSecurityToken.Validate(securityToken);
-                }
-
                 Log.DebugFormat("Message file {0} read successfully", _file);
             }
             catch (TaskCanceledException)

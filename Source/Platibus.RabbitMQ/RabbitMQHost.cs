@@ -28,6 +28,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
+using Platibus.Security;
 
 namespace Platibus.RabbitMQ
 {
@@ -81,6 +82,7 @@ namespace Platibus.RabbitMQ
         private readonly RabbitMQQueue _inboundQueue;
         private readonly IMessageQueueingService _messageQueueingService;
         private readonly IMessageJournalingService _messageJournalingService;
+        private readonly IMessageSecurityTokenService _messageSecurityTokenService;
         private readonly Bus _bus;
         private readonly ConcurrentDictionary<SubscriptionKey, RabbitMQQueue> _subscriptions = new ConcurrentDictionary<SubscriptionKey, RabbitMQQueue>(); 
 
@@ -113,6 +115,7 @@ namespace Platibus.RabbitMQ
 
             _messageQueueingService = new RabbitMQMessageQueueingService(_baseUri, _defaultQueueOptions, _connectionManager, _encoding);
             _messageJournalingService = configuration.MessageJournalingService;
+            _messageSecurityTokenService = new JwtMessageSecurityTokenService();
             
             var connection = _connectionManager.GetConnection(_baseUri);
             using (var channel = connection.CreateModel())
@@ -126,7 +129,7 @@ namespace Platibus.RabbitMQ
             }
 
             Log.DebugFormat("Initializing inbox queue '{0}'...", InboxQueueName);
-            _inboundQueue = new RabbitMQQueue(InboxQueueName, this, connection, _encoding, _defaultQueueOptions);
+            _inboundQueue = new RabbitMQQueue(InboxQueueName, this, connection, _messageSecurityTokenService, _encoding, _defaultQueueOptions);
             _bus = new Bus(configuration, configuration.BaseUri, this, _messageQueueingService);
         }
 
@@ -232,7 +235,7 @@ namespace Platibus.RabbitMQ
                         Log.DebugFormat("Binding subscription queue '{0}' to topic exchange '{1}' (attempt {2} of {3})...", subscriptionQueueName, publisherTopicExchange, attempts, maxAttempts);
                         channel.ExchangeDeclarePassive(publisherTopicExchange);
 
-                        var subscriptionQueue = new RabbitMQQueue(subscriptionQueueName, this, connection, _encoding, _defaultQueueOptions);
+                        var subscriptionQueue = new RabbitMQQueue(subscriptionQueueName, this, connection, _messageSecurityTokenService, _encoding, _defaultQueueOptions);
                         subscriptionQueue.Init();
 
                         channel.QueueBind(subscriptionQueueName, publisherTopicExchange, "", null);

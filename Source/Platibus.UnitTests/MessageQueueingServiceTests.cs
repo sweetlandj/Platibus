@@ -4,6 +4,7 @@ using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using Platibus.Security;
 
 namespace Platibus.UnitTests
 {
@@ -12,6 +13,7 @@ namespace Platibus.UnitTests
     {
         protected readonly TMessageQueueingService MessageQueueingService;
 
+        protected IMessageSecurityTokenService MessageSecurityTokenService;
         protected IPrincipal Principal;
         protected QueueListenerStub Listener;
         protected Message HandledMessage;
@@ -19,6 +21,7 @@ namespace Platibus.UnitTests
         protected MessageQueueingServiceTests(TMessageQueueingService messageQueueingService)
         {
             MessageQueueingService = messageQueueingService;
+            MessageSecurityTokenService = new JwtMessageSecurityTokenService();
         }
 
         [Test]

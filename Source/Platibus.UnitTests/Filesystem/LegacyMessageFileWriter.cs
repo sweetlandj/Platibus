@@ -9,7 +9,7 @@ namespace Platibus.UnitTests.Filesystem
 {
     /// <summary>
     /// A copy of the MessageFileWriter class as it existed prior to the introduction of the
-    /// <see cref="Platibus.Security.MessageSecurityToken"/> class and the 
+    /// <see cref="Platibus.Security.IMessageSecurityTokenService"/> interface and the 
     /// <see cref="IMessageHeaders.SecurityToken"/> message header.
     /// </summary>
     internal class LegacyMessageFileWriter : IDisposable

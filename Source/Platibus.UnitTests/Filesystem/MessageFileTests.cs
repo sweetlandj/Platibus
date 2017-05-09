@@ -25,7 +25,6 @@ namespace Platibus.UnitTests.Filesystem
             WhenReadingTheMessageFileContent();
             await ThenTheSenderPrincipalShouldBeReadSuccessfully();
             await ThenTheMessageShouldBeReadSuccessfully();
-            await ThenTheMessageShouldHaveASecurityTokenHeader();
         }
 
         [Test]
@@ -35,7 +34,6 @@ namespace Platibus.UnitTests.Filesystem
             WhenReadingTheMessageFileContent();
             await ThenThePrincipalShouldBeNull();
             await ThenTheMessageShouldBeReadSuccessfully();
-            await ThenTheMessageShouldNotHaveASecurityTokenHeader();
         }
 
         [Test]
@@ -43,7 +41,6 @@ namespace Platibus.UnitTests.Filesystem
         {
             await GivenMessageFileWithClaimsPrincipal();
             WhenReadingTheMessageFileContent();
-            await ThenTheClaimsPrincipalShouldBeReadSuccessfully();
             await ThenTheMessageShouldBeReadSuccessfully();
             await ThenTheMessageShouldHaveASecurityTokenHeader();
         }
@@ -131,8 +128,13 @@ namespace Platibus.UnitTests.Filesystem
             GivenClaimsPrincipal();
             GivenSampleSentMessage();
 
+            var securityToken = await new JwtMessageSecurityTokenService()
+                .Issue(Principal);
+
+            var messageWithSecurityToken = Message.WithSecurityToken(securityToken);
+
             var directory = new DirectoryInfo(Path.GetTempPath());
-            var messageFile = await MessageFile.Create(directory, Message, Principal);
+            var messageFile = await MessageFile.Create(directory, messageWithSecurityToken);
             return MessageFileInfo = messageFile.File;
         }
 
@@ -142,7 +144,7 @@ namespace Platibus.UnitTests.Filesystem
             GivenSampleSentMessage();
 
             var directory = new DirectoryInfo(Path.GetTempPath());
-            var messageFile = await MessageFile.Create(directory, Message, Principal);
+            var messageFile = await MessageFile.Create(directory, Message);
             return MessageFileInfo = messageFile.File;
         }
         

@@ -132,7 +132,7 @@ namespace Platibus.Filesystem
                 directory.Create();
                 directory.Refresh();
             }
-            await MessageFile.Create(directory, message, null, cancellationToken);
+            await MessageFile.Create(directory, message, cancellationToken);
         }
 
         /// <summary>
@@ -154,7 +154,7 @@ namespace Platibus.Filesystem
                 directory.Create();
                 directory.Refresh();
             }
-            await MessageFile.Create(directory, message, null, cancellationToken);
+            await MessageFile.Create(directory, message, cancellationToken);
         }
 
         /// <summary>
@@ -186,7 +186,7 @@ namespace Platibus.Filesystem
                 directory.Create();
                 directory.Refresh();
             }
-            await MessageFile.Create(directory, message, null, cancellationToken);
+            await MessageFile.Create(directory, message, cancellationToken);
         }
     }
 }

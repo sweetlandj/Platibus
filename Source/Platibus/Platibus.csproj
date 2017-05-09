@@ -135,9 +135,9 @@
     <Compile Include="ReadOnlyEndpointCollection.cs" />
     <Compile Include="Security\IMessageSecurityTokenService.cs" />
     <Compile Include="Security\JwtMessageSecurityTokenService.cs" />
-    <Compile Include="Security\MessageSecurityToken.cs" />
     <Compile Include="Security\MessageSecurityTokenExtensions.cs" />
     <Compile Include="Security\HexEncodedSecurityKey.cs" />
+    <Compile Include="Security\MessageSecurityTokenServiceExtensions.cs" />
     <Compile Include="Security\PrincipalExtensions.cs" />
     <Compile Include="Security\SenderIdentity.cs" />
     <Compile Include="Security\SenderPrincipal.cs" />
