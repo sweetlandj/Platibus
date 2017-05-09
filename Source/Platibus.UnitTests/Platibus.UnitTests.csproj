@@ -93,6 +93,7 @@
       <HintPath>..\packages\System.Data.SQLite.Core.1.0.105.0\lib\net451\System.Data.SQLite.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.IdentityModel" />
     <Reference Include="System.IdentityModel.Tokens.Jwt, Version=4.0.40306.1554, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\System.IdentityModel.Tokens.Jwt.4.0.4.403061554\lib\net45\System.IdentityModel.Tokens.Jwt.dll</HintPath>
       <Private>True</Private>
@@ -140,7 +141,8 @@
     <Compile Include="PlatibusConfigurationExtensionsTests.cs" />
     <Compile Include="RabbitMQ\RabbitMQCollectionFixture.cs" />
     <Compile Include="RabbitMQ\RabbitMQMessageQueueingServiceTests.cs" />
-    <Compile Include="Security\MessageSecurityTokenTests.cs" />
+    <Compile Include="Security\HexEncodingTests.cs" />
+    <Compile Include="Security\JwtMessageSecurityTokenServiceTests.cs" />
     <Compile Include="SQLite\SQLiteMessageQueueingServiceTests.cs" />
     <Compile Include="SQLite\SQLiteMessageJournalInspector.cs" />
     <Compile Include="SQLite\SQLiteCollectionFixture.cs" />

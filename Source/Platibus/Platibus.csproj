@@ -116,6 +116,7 @@
     <Compile Include="NoMatchingSendRulesException.cs" />
     <Compile Include="ResourceNotFoundException.cs" />
     <Compile Include="Security\BearerCredentials.cs" />
+    <Compile Include="Security\HexEncoding.cs" />
     <Compile Include="Security\IAuthorizationService.cs" />
     <Compile Include="Http\HttpServerConfigurationManager.cs" />
     <Compile Include="Http\IHttpServerConfiguration.cs" />
@@ -132,8 +133,11 @@
     <Compile Include="MessageHandler.cs" />
     <Compile Include="MessageNotAcknowledgedException.cs" />
     <Compile Include="ReadOnlyEndpointCollection.cs" />
+    <Compile Include="Security\IMessageSecurityTokenService.cs" />
+    <Compile Include="Security\JwtMessageSecurityTokenService.cs" />
     <Compile Include="Security\MessageSecurityToken.cs" />
     <Compile Include="Security\MessageSecurityTokenExtensions.cs" />
+    <Compile Include="Security\HexEncodedSecurityKey.cs" />
     <Compile Include="Security\PrincipalExtensions.cs" />
     <Compile Include="Security\SenderIdentity.cs" />
     <Compile Include="Security\SenderPrincipal.cs" />

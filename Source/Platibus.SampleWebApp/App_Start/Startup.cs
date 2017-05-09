@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using IdentityModel.Client;
-using IdentityServer3.Core;
 using IdentityServer3.Core.Configuration;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.Owin;
@@ -111,7 +109,8 @@ namespace Platibus.SampleWebApp
 
             // Add access token for API calls.  The value of this claim will be used as the
             // argument to the BearerCredentials constructor when specifying credentials as part
-            // of the SendOptions passed to Bus.Send methods.
+            // of the SendOptions passed to Bus.Send methods.  See example Bus.Send operation in
+            // the TestMessageController.SendTestMessage method.
             identity.AddClaim(new Claim("access_token", accessToken));
 
             // Keep track of access token expiration
@@ -141,7 +140,7 @@ namespace Platibus.SampleWebApp
                 // JWT specifies claim types like "sub", "iss", "aud", etc. whereas the .NET
                 // platform has claim types that are more verbose
                 // ("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name" for example).  To 
-                // ensure good interop with Windows/.NET claims and security primitives the
+                // ensure good interop with Windows/.NET claims and other security primitives the
                 // JwtSecurityTokenHandler.InboundClaimsMap can be leveraged to map the JWT claims
                 // onto their .NET equivalents.
                 var inboundClaimType = claim.Type;
