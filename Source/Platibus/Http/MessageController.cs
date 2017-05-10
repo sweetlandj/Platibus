@@ -105,7 +105,10 @@ namespace Platibus.Http
                 .Except(sensitiveHeaders, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(k => k, k => request.Headers[k]);
 
-            var messageHeaders = new MessageHeaders(flattenedHeaders);
+            var messageHeaders = new MessageHeaders(flattenedHeaders)
+            {
+                Received = DateTime.UtcNow
+            };
             
             var content = await request.ReadContentAsString();
             var message = new Message(messageHeaders, content);

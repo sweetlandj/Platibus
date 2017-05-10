@@ -111,8 +111,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Expectation.cs" />
     <Compile Include="LoopbackPubSubTests.cs" />
     <Compile Include="LoopbackSendAndReplyTests.cs" />
+    <Compile Include="MessageHandledExpectation.cs" />
     <Compile Include="OwinPubSubTests.cs" />
     <Compile Include="OwinSendAndReplyTests.cs" />
     <Compile Include="OwinSubscriptionRenewalTests.cs" />

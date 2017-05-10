@@ -42,23 +42,23 @@ namespace Platibus.Filesystem
         private readonly DirectoryInfo _directory;
         private readonly DirectoryInfo _deadLetterDirectory;
         private readonly IQueueListener _listener;
-        private readonly IMessageSecurityTokenService _messageSecurityTokenService;
+        private readonly ISecurityTokenService _securityTokenService;
         private readonly int _maxAttempts;
         private readonly ActionBlock<MessageFile> _queuedMessages;
         private readonly TimeSpan _retryDelay;
 
         public FilesystemMessageQueue(DirectoryInfo directory, IQueueListener listener,
-            IMessageSecurityTokenService messageSecurityTokenService,
+            ISecurityTokenService securityTokenService,
             QueueOptions options = null)
         {
             if (directory == null) throw new ArgumentNullException("directory");
             if (listener == null) throw new ArgumentNullException("listener");
-            if (messageSecurityTokenService == null) throw new ArgumentNullException("messageSecurityTokenService");
+            if (securityTokenService == null) throw new ArgumentNullException("securityTokenService");
 
             _directory = directory;
             _deadLetterDirectory = new DirectoryInfo(Path.Combine(directory.FullName, "dead"));
             _listener = listener;
-            _messageSecurityTokenService = messageSecurityTokenService;
+            _securityTokenService = securityTokenService;
 
             var myOptions = options ?? new QueueOptions();
 
@@ -81,7 +81,7 @@ namespace Platibus.Filesystem
         public async Task Enqueue(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
-            var securityToken = await _messageSecurityTokenService.NullSafeIssue(principal, message.Headers.Expires);
+            var securityToken = await _securityTokenService.NullSafeIssue(principal, message.Headers.Expires);
             var messageWithSecurityToken = message.WithSecurityToken(securityToken);
             var queuedMessage = await MessageFile.Create(_directory, messageWithSecurityToken, cancellationToken);
             await _queuedMessages.SendAsync(queuedMessage, cancellationToken);
@@ -137,7 +137,7 @@ namespace Platibus.Filesystem
             var principal = await queuedMessage.ReadPrincipal(cancellationToken);
             if (!string.IsNullOrWhiteSpace(message.Headers.SecurityToken))
             {
-                principal = await _messageSecurityTokenService.NullSafeValidate(message.Headers.SecurityToken);
+                principal = await _securityTokenService.NullSafeValidate(message.Headers.SecurityToken);
             }
 
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse

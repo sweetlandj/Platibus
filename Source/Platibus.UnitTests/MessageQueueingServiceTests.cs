@@ -13,7 +13,7 @@ namespace Platibus.UnitTests
     {
         protected readonly TMessageQueueingService MessageQueueingService;
 
-        protected IMessageSecurityTokenService MessageSecurityTokenService;
+        protected ISecurityTokenService SecurityTokenService;
         protected IPrincipal Principal;
         protected QueueListenerStub Listener;
         protected Message HandledMessage;
@@ -21,7 +21,7 @@ namespace Platibus.UnitTests
         protected MessageQueueingServiceTests(TMessageQueueingService messageQueueingService)
         {
             MessageQueueingService = messageQueueingService;
-            MessageSecurityTokenService = new JwtMessageSecurityTokenService();
+            SecurityTokenService = new JwtSecurityTokenService();
         }
 
         [Test]

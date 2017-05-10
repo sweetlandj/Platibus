@@ -162,6 +162,7 @@ namespace Platibus
 
             if (content == null) throw new ArgumentNullException("content");
 
+            var sent = DateTime.UtcNow;
             var prototypicalMessage = BuildMessage(content, options: options);
             var endpoints = GetEndpointsForSend(prototypicalMessage);
 
@@ -184,7 +185,8 @@ namespace Platibus
 
                 var perEndpointHeaders = new MessageHeaders(prototypicalMessage.Headers)
                 {
-                    Destination = endpoint.Address
+                    Destination = endpoint.Address,
+                    Sent = sent
                 };
 
                 Log.DebugFormat("Sending message ID {0} to endpoint \"{1}\" ({2})...",
@@ -215,7 +217,8 @@ namespace Platibus
 
             var headers = new MessageHeaders
             {
-                Destination = endpoint.Address
+                Destination = endpoint.Address,
+                Sent = DateTime.UtcNow
             };
             var message = BuildMessage(content, headers, options);
 
@@ -252,7 +255,8 @@ namespace Platibus
 
             var headers = new MessageHeaders
             {
-                Destination = endpointAddress
+                Destination = endpointAddress,
+                Sent = DateTime.UtcNow
             };
 
             var message = BuildMessage(content, headers, options);
@@ -285,7 +289,6 @@ namespace Platibus
             {
                 Topic = topic,
                 Published = DateTime.UtcNow,
-                
                 Importance = MessageImportance.Critical
             };
 

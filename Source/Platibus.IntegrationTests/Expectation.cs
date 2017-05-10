@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2016 Jesse Sweetland
+// Copyright (c) 2015 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,22 +22,19 @@
 
 using System.Threading.Tasks;
 
-namespace Platibus.Config.Extensibility
+namespace Platibus.IntegrationTests
 {
-    /// <summary>
-    /// A factory for initializing a <see cref="ISubscriptionTrackingService"/>
-    /// during bus initialization.
-    /// </summary>
-    public interface ISubscriptionTrackingServiceProvider
+    internal abstract class Expectation
     {
-        /// <summary>
-        /// Creates an initializes a <see cref="ISubscriptionTrackingService"/>
-        /// based on the provided <paramref name="configuration"/>.
-        /// </summary>
-        /// <param name="configuration">The journaling configuration
-        /// element.</param>
-        /// <returns>Returns a task whose result is an initialized
-        /// <see cref="ISubscriptionTrackingService"/>.</returns>
-        Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(SubscriptionTrackingElement configuration);
+        protected readonly TaskCompletionSource<bool> TaskCompletionSource = new TaskCompletionSource<bool>();
+
+        public Task Satisfied { get { return TaskCompletionSource.Task; } }
+
+        public bool WasSatisfied { get { return Satisfied.Status == TaskStatus.RanToCompletion; } }
+
+        public void Cancel()
+        {
+            TaskCompletionSource.TrySetCanceled();
+        }
     }
 }

@@ -89,6 +89,7 @@
       <Link>Properties\Copyright.cs</Link>
     </Compile>
     <Compile Include="Config\ClientCredentialType.cs" />
+    <Compile Include="Config\Extensibility\ISecurityTokenServiceProvider.cs" />
     <Compile Include="Config\Extensibility\ProviderHelper.cs" />
     <Compile Include="Config\GenericMessageHandlerAdapter.cs" />
     <Compile Include="Config\IAsyncConfigurationHook.cs" />
@@ -99,6 +100,7 @@
     <Compile Include="Config\MulticastElement.cs" />
     <Compile Include="Config\PlatibusConfigurationValidationExtensions.cs" />
     <Compile Include="Config\QueueNameFactory.cs" />
+    <Compile Include="Config\SecurityTokensElement.cs" />
     <Compile Include="DataContractMessageNamingService.cs" />
     <Compile Include="EndpointAddressEqualityComparer.cs" />
     <Compile Include="EndpointCollection.cs" />
@@ -133,11 +135,12 @@
     <Compile Include="MessageHandler.cs" />
     <Compile Include="MessageNotAcknowledgedException.cs" />
     <Compile Include="ReadOnlyEndpointCollection.cs" />
-    <Compile Include="Security\IMessageSecurityTokenService.cs" />
-    <Compile Include="Security\JwtMessageSecurityTokenService.cs" />
-    <Compile Include="Security\MessageSecurityTokenExtensions.cs" />
+    <Compile Include="Security\ISecurityTokenService.cs" />
+    <Compile Include="Security\JwtSecurityTokenService.cs" />
+    <Compile Include="Security\JwtSecurityTokenServiceProvider.cs" />
+    <Compile Include="Security\SecurityTokenExtensions.cs" />
     <Compile Include="Security\HexEncodedSecurityKey.cs" />
-    <Compile Include="Security\MessageSecurityTokenServiceExtensions.cs" />
+    <Compile Include="Security\SecurityTokenServiceExtensions.cs" />
     <Compile Include="Security\PrincipalExtensions.cs" />
     <Compile Include="Security\SenderIdentity.cs" />
     <Compile Include="Security\SenderPrincipal.cs" />

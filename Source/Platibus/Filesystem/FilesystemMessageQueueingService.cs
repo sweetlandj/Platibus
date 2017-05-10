@@ -39,7 +39,7 @@ namespace Platibus.Filesystem
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Filesystem);
 
         private readonly DirectoryInfo _baseDirectory;
-        private readonly IMessageSecurityTokenService _messageSecurityTokenService;
+        private readonly ISecurityTokenService _securityTokenService;
         private readonly ConcurrentDictionary<QueueName, FilesystemMessageQueue> _queues =
             new ConcurrentDictionary<QueueName, FilesystemMessageQueue>();
 
@@ -51,17 +51,17 @@ namespace Platibus.Filesystem
         /// </summary>
         /// <param name="baseDirectory">(Optional) The directory in which queued message files
         /// will be stored</param>
-        /// <param name="messageSecurityTokenService">(Optional) The message security token
+        /// <param name="securityTokenService">(Optional) The message security token
         /// service to use to issue and validate security tokens for persisted messages.</param>
         /// <remarks>
         /// <para>If a base directory is not specified then the base directory will default to a
         /// directory named <c>platibus\queues</c> beneath the current app domain base 
         /// directory.  If the base directory does not exist it will be created in the
         /// <see cref="Init"/> method.</para>
-        /// <para>If a <paramref name="messageSecurityTokenService"/> is not specified then a
+        /// <para>If a <paramref name="securityTokenService"/> is not specified then a
         /// default implementation based on unsigned JWTs will be used.</para>
         /// </remarks>
-        public FilesystemMessageQueueingService(DirectoryInfo baseDirectory = null, IMessageSecurityTokenService messageSecurityTokenService = null)
+        public FilesystemMessageQueueingService(DirectoryInfo baseDirectory = null, ISecurityTokenService securityTokenService = null)
         {
             if (baseDirectory == null)
             {
@@ -69,7 +69,7 @@ namespace Platibus.Filesystem
                 baseDirectory = new DirectoryInfo(Path.Combine(appdomainDirectory, "platibus", "queues"));
             }
             _baseDirectory = baseDirectory;
-            _messageSecurityTokenService = messageSecurityTokenService ?? new JwtMessageSecurityTokenService();
+            _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
         }
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace Platibus.Filesystem
             CheckDisposed();
 
             var queueDirectory = new DirectoryInfo(Path.Combine(_baseDirectory.FullName, queueName));
-            var queue = new FilesystemMessageQueue(queueDirectory, listener, _messageSecurityTokenService, options);
+            var queue = new FilesystemMessageQueue(queueDirectory, listener, _securityTokenService, options);
             if (!_queues.TryAdd(queueName, queue))
             {
                 throw new QueueAlreadyExistsException(queueName);

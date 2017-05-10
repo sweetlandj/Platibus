@@ -20,7 +20,7 @@ namespace Platibus.UnitTests.LocalDB
 
         protected override async Task GivenExistingQueuedMessage(QueueName queueName, Message message, IPrincipal principal)
         {
-            using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, MessageSecurityTokenService))
+            using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, SecurityTokenService))
             {
                 await queueInspector.InsertMessage(message, principal);
             }
@@ -29,7 +29,7 @@ namespace Platibus.UnitTests.LocalDB
         protected override async Task<bool> MessageQueued(QueueName queueName, Message message)
         {
             var messageId = message.Headers.MessageId;
-            using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, MessageSecurityTokenService))
+            using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, SecurityTokenService))
             {
                 var messagesInQueue = await queueInspector.EnumerateMessages();
                 return messagesInQueue.Any(m => m.Message.Headers.MessageId == messageId);
@@ -41,7 +41,7 @@ namespace Platibus.UnitTests.LocalDB
             var messageId = message.Headers.MessageId;
             var endDate = DateTime.UtcNow;
             var startDate = endDate.AddSeconds(-5);
-            using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, MessageSecurityTokenService))
+            using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, SecurityTokenService))
             {
                 var messagesInQueue = await queueInspector.EnumerateAbandonedMessages(startDate, endDate);
                 return messagesInQueue.Any(m => m.Message.Headers.MessageId == messageId);

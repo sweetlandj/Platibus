@@ -50,7 +50,7 @@ namespace Platibus.RabbitMQ
         private readonly string _retryExchange;
 
         private readonly IQueueListener _listener;
-        private readonly IMessageSecurityTokenService _messageSecurityTokenService;
+        private readonly ISecurityTokenService _securityTokenService;
         private readonly Encoding _encoding;
         
         private readonly TimeSpan _ttl;
@@ -69,7 +69,7 @@ namespace Platibus.RabbitMQ
         /// <param name="queueName">The name of the queue</param>
         /// <param name="listener">The listener that will receive new messages off of the queue</param>
         /// <param name="connection">The connection to the RabbitMQ server</param>
-        /// <param name="messageSecurityTokenService">(Optional) The message security token
+        /// <param name="securityTokenService">(Optional) The message security token
         /// service to use to issue and validate security tokens for persisted messages.</param>
         /// <param name="encoding">(Optional) The encoding to use when converting serialized message 
         /// content to byte streams</param>
@@ -77,13 +77,13 @@ namespace Platibus.RabbitMQ
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/>, 
         /// <paramref name="listener"/>, or <paramref name="connection"/> is <c>null</c></exception>
         public RabbitMQQueue(QueueName queueName, IQueueListener listener, IConnection connection,
-            IMessageSecurityTokenService messageSecurityTokenService,
+            ISecurityTokenService securityTokenService,
             Encoding encoding = null, QueueOptions options = null)
         {
             if (queueName == null) throw new ArgumentNullException("queueName");
             if (listener == null) throw new ArgumentNullException("listener");
             if (connection == null) throw new ArgumentNullException("connection");
-            if (messageSecurityTokenService == null) throw new ArgumentNullException("messageSecurityTokenService");
+            if (securityTokenService == null) throw new ArgumentNullException("securityTokenService");
 
             _queueName = queueName;
             _queueExchange = _queueName.GetExchangeName();
@@ -93,7 +93,7 @@ namespace Platibus.RabbitMQ
 
             _listener = listener;
             _connection = connection;
-            _messageSecurityTokenService = messageSecurityTokenService;
+            _securityTokenService = securityTokenService;
             _encoding = encoding ?? Encoding.UTF8;
 
             var myOptions = options ?? new QueueOptions();
@@ -159,7 +159,7 @@ namespace Platibus.RabbitMQ
         {
             CheckDisposed();
             var expires = message.Headers.Expires;
-            var securityToken = await _messageSecurityTokenService.NullSafeIssue(principal, expires);
+            var securityToken = await _securityTokenService.NullSafeIssue(principal, expires);
             var messageWithSecurityToken = message.WithSecurityToken(securityToken);
             await RabbitMQHelper.PublishMessage(messageWithSecurityToken, principal, _connection, null, _queueExchange, _encoding);
         }
@@ -258,10 +258,15 @@ namespace Platibus.RabbitMQ
                     var securityToken = message.Headers.SecurityToken;
                     if (!string.IsNullOrWhiteSpace(securityToken))
                     {
-                        principal = await _messageSecurityTokenService.Validate(securityToken);
+                        principal = await _securityTokenService.Validate(securityToken);
                     }
 
-                    var context = new RabbitMQQueuedMessageContext(message.Headers, principal);
+                    var headers = new MessageHeaders(message.Headers)
+                    {
+                        Received = DateTime.UtcNow
+                    };
+
+                    var context = new RabbitMQQueuedMessageContext(headers, principal);
                     Thread.CurrentPrincipal = context.Principal;
                     await _listener.MessageReceived(message, context, cancellationToken);
                     return context.Acknowledged;

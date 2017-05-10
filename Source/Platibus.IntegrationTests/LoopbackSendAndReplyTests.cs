@@ -140,6 +140,9 @@ namespace Platibus.IntegrationTests
                     PublishHandledPublication = true
                 };
 
+                var expectation = new MessageHandledExpectation<TestPublication>((content, context) => message.GuidData == content.GuidData);
+                TestPublicationHandler.SetExpectation(expectation);
+
                 var sentMessage = await bus.Send(message);
                 var subscription = sentMessage
                     .ObserveReplies()
@@ -153,13 +156,14 @@ namespace Platibus.IntegrationTests
                 var repliesCompleted = await repliesCompletedEvent.WaitOneAsync(TimeSpan.FromSeconds(30));
 				subscription.TryDispose();
 
-                var publicationReceived = await TestPublicationHandler.WaitHandle.WaitOneAsync(TimeSpan.FromSeconds(30));
-                
+                var timeout = Task.Delay(TimeSpan.FromSeconds(3));
+                var timedOut = await Task.WhenAny(expectation.Satisfied, timeout) == timeout;
+                Assert.False(timedOut);
+                Assert.True(expectation.WasSatisfied);
+
                 Assert.That(replyReceived, Is.True);
                 Assert.That(repliesCompleted, Is.True);
                 Assert.That(replies.Count, Is.EqualTo(1));
-
-                Assert.That(publicationReceived, Is.True);
 
                 var reply = replies.First();
                 Assert.That(reply, Is.InstanceOf<TestReply>());

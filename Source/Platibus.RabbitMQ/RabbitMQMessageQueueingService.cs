@@ -45,7 +45,7 @@ namespace Platibus.RabbitMQ
         private readonly Uri _uri;
         private readonly QueueOptions _defaultQueueOptions;
         private readonly IConnectionManager _connectionManager;
-        private readonly IMessageSecurityTokenService _messageSecurityTokenService;
+        private readonly ISecurityTokenService _securityTokenService;
         private readonly bool _disposeConnectionManager;
         private bool _disposed;
 
@@ -57,15 +57,15 @@ namespace Platibus.RabbitMQ
         /// <param name="connectionManager">(Optional) The connection manager</param>
         /// <param name="encoding">(Optional) The encoding to use for converting serialized
         /// message content to byte streams</param>
-        /// <param name="messageSecurityTokenService">(Optional) The message security token
+        /// <param name="securityTokenService">(Optional) The message security token
         /// service to use to issue and validate security tokens for persisted messages.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="uri"/> is
         /// <c>null</c></exception>
         /// <remarks>
-        /// <para>If a <paramref name="messageSecurityTokenService"/> is not specified then a
+        /// <para>If a <paramref name="securityTokenService"/> is not specified then a
         /// default implementation based on unsigned JWTs will be used.</para>
         /// </remarks>
-        public RabbitMQMessageQueueingService(Uri uri, QueueOptions defaultQueueOptions = null, IConnectionManager connectionManager = null, Encoding encoding = null, IMessageSecurityTokenService messageSecurityTokenService = null)
+        public RabbitMQMessageQueueingService(Uri uri, QueueOptions defaultQueueOptions = null, IConnectionManager connectionManager = null, Encoding encoding = null, ISecurityTokenService securityTokenService = null)
         {
             if (uri == null) throw new ArgumentNullException("uri");
             _uri = uri;
@@ -77,7 +77,7 @@ namespace Platibus.RabbitMQ
             }
             _connectionManager = connectionManager;
             _encoding = encoding ?? Encoding.UTF8;
-            _messageSecurityTokenService = messageSecurityTokenService ?? new JwtMessageSecurityTokenService();
+            _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace Platibus.RabbitMQ
         {
             CheckDisposed();
             var connection = _connectionManager.GetConnection(_uri);
-            var queue = new RabbitMQQueue(queueName, listener, connection, _messageSecurityTokenService, _encoding, options ?? _defaultQueueOptions);
+            var queue = new RabbitMQQueue(queueName, listener, connection, _securityTokenService, _encoding, options ?? _defaultQueueOptions);
             if (!_queues.TryAdd(queueName, queue))
             {
                 throw new QueueAlreadyExistsException(queueName);

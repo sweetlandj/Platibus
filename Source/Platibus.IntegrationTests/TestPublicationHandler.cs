@@ -20,32 +20,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Platibus.IntegrationTests
 {
-    public class TestPublicationHandler : IMessageHandler
+    internal class TestPublicationHandler : IMessageHandler
     {
         private static readonly object SyncRoot = new object();
-        private volatile static CountdownEvent _messageReceivedEvent = new CountdownEvent(1);
+        private static readonly IList<MessageHandledExpectation> Expectations = new List<MessageHandledExpectation>();
 
-        public static CountdownEvent MessageReceivedEvent { get { return _messageReceivedEvent; } }
-
-        public static WaitHandle WaitHandle
+        internal static void SetExpectation(MessageHandledExpectation expectation)
         {
-            get
+            lock (SyncRoot)
             {
-                lock (SyncRoot)
-                {
-                    return _messageReceivedEvent.WaitHandle;
-                }
+                Expectations.Add(expectation);
             }
-        }
-
-        public string Name
-        {
-            get { return "PublicationHandler"; }
         }
 
         public Task HandleMessage(object content, IMessageContext messageContext, CancellationToken cancellationToken)
@@ -53,7 +44,10 @@ namespace Platibus.IntegrationTests
             messageContext.Acknowledge();
             lock (SyncRoot)
             {
-                _messageReceivedEvent.Signal();
+                foreach (var expectation in Expectations)
+                {
+                    expectation.MessageHandled(content, messageContext);
+                }
             }
             return Task.FromResult(true);
         }
@@ -62,8 +56,7 @@ namespace Platibus.IntegrationTests
         {
             lock (SyncRoot)
             {
-                if (_messageReceivedEvent != null) _messageReceivedEvent.Dispose();
-                _messageReceivedEvent = new CountdownEvent(1);
+                Expectations.Clear();
             }
         }
     }

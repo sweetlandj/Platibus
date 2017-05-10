@@ -36,13 +36,13 @@ namespace Platibus.RabbitMQ
     {
         /// <summary>
         /// Creates an initializes a <see cref="IMessageQueueingService"/>
-        /// based on the provideds <paramref name="configuration"/>
+        /// based on the provided <paramref name="configuration"/>
         /// </summary>
         /// <param name="configuration">The journaling configuration
         /// element</param>
         /// <returns>Returns a task whose result is an initialized
         /// <see cref="IMessageQueueingService"/></returns>
-        public Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
+        public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
             var uri = configuration.GetUri("uri") ?? new Uri("amqp://localhost:5672");
 
@@ -53,8 +53,9 @@ namespace Platibus.RabbitMQ
             }
 
             var encoding = ParseEncoding(encodingName);
-            var messageQueueingService = new RabbitMQMessageQueueingService(uri, encoding: encoding);
-            return Task.FromResult<IMessageQueueingService>(messageQueueingService);
+            var securityTokenService = await PlatibusConfigurationManager.InitSecurityTokenService(configuration.SecurityTokens);
+            var messageQueueingService = new RabbitMQMessageQueueingService(uri, encoding: encoding, securityTokenService: securityTokenService);
+            return messageQueueingService;
         }
 
         private static Encoding ParseEncoding(string encodingName)

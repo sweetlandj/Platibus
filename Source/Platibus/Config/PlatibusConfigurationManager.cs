@@ -238,13 +238,10 @@ namespace Platibus.Config
         /// </summary>
         /// <param name="config">The queueing configuration element</param>
         /// <returns>Returns a task whose result is an initialized message queueing service</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="config"/> is
-        /// <c>null</c></exception>
         public static Task<IMessageQueueingService> InitMessageQueueingService(QueueingElement config)
         {
-            if (config == null) throw new ArgumentNullException("config");
-
-            var providerName = config.Provider;
+            var myConfig = config ?? new QueueingElement();
+            var providerName = myConfig.Provider;
             IMessageQueueingServiceProvider provider;
             if (string.IsNullOrWhiteSpace(providerName))
             {
@@ -257,7 +254,33 @@ namespace Platibus.Config
             }
 
             Log.Debug("Initializing message queueing service...");
-            return provider.CreateMessageQueueingService(config);
+            return provider.CreateMessageQueueingService(myConfig);
+        }
+
+        /// <summary>
+        /// Helper method to initialize security token services based on the
+        /// supplied configuration element
+        /// </summary>
+        /// <param name="config">The security tokens configuration element</param>
+        /// <returns>Returns a task whose result is an initialized security token service</returns>
+        public static Task<ISecurityTokenService> InitSecurityTokenService(SecurityTokensElement config)
+        {
+            var myConfig = config ?? new SecurityTokensElement();
+
+            var providerName = myConfig.Provider;
+            ISecurityTokenServiceProvider provider;
+            if (string.IsNullOrWhiteSpace(providerName))
+            {
+                Log.Debug("No security token service provider specified; using default provider...");
+                provider = new JwtSecurityTokenServiceProvider();
+            }
+            else
+            {
+                provider = ProviderHelper.GetProvider<ISecurityTokenServiceProvider>(providerName);
+            }
+
+            Log.Debug("Initializing security token service...");
+            return provider.CreateSecurityTokenService(myConfig);
         }
 
         /// <summary>

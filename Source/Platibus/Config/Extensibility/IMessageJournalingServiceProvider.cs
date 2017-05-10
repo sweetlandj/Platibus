@@ -32,7 +32,7 @@ namespace Platibus.Config.Extensibility
     {
         /// <summary>
         /// Creates an initializes a <see cref="IMessageJournalingService"/>
-        /// based on the provideds <paramref name="configuration"/>.
+        /// based on the provided <paramref name="configuration"/>.
         /// </summary>
         /// <param name="configuration">The journaling configuration
         /// element.</param>

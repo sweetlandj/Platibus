@@ -21,7 +21,6 @@
 // THE SOFTWARE.
 
 using System.Configuration;
-using Platibus.Config.Extensibility;
 
 namespace Platibus.Config
 {
@@ -49,8 +48,8 @@ namespace Platibus.Config
         /// <summary>
         /// The name of the message journaling service provider
         /// </summary>
-        /// <seealso cref="IMessageJournalingServiceProvider"/>
-        /// <seealso cref="ProviderAttribute"/>
+        /// <seealso cref="Platibus.Config.Extensibility.IMessageJournalingServiceProvider"/>
+        /// <seealso cref="Platibus.Config.Extensibility.ProviderAttribute"/>
         [ConfigurationProperty(ProviderPropertyName)]
         public string Provider
         {

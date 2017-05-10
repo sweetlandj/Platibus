@@ -1,4 +1,26 @@
-﻿using System;
+﻿// The MIT License (MIT)
+// 
+// Copyright (c) 2016 Jesse Sweetland
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens;
 using System.Security.Claims;
@@ -13,7 +35,7 @@ namespace Platibus.UnitTests.Security
     {
         private static readonly RNGCryptoServiceProvider RNG = new RNGCryptoServiceProvider();
 
-        protected JwtMessageSecurityTokenService MessageSecurityTokenService;
+        protected JwtSecurityTokenService SecurityTokenService;
         protected ClaimsPrincipal Principal;
         protected DateTime? Expiration;
         protected string IssuedToken;
@@ -52,12 +74,12 @@ namespace Platibus.UnitTests.Security
         protected void GivenJwtMessageSecurityTokenServiceWithSigningKey()
         {
             var signingKey = GenerateSecurityKey();
-            MessageSecurityTokenService = new JwtMessageSecurityTokenService(signingKey);
+            SecurityTokenService = new JwtSecurityTokenService(signingKey);
         }
 
         protected void GivenJwtMessageSecurityTokenServiceWithNoSigningKey()
         {
-            MessageSecurityTokenService = new JwtMessageSecurityTokenService();
+            SecurityTokenService = new JwtSecurityTokenService();
         }
 
         protected void GivenClaimsPrincipal()
@@ -78,13 +100,13 @@ namespace Platibus.UnitTests.Security
 
         protected async Task WhenATokenIsIssued()
         {
-            IssuedToken = await MessageSecurityTokenService.Issue(Principal, Expiration);
+            IssuedToken = await SecurityTokenService.Issue(Principal, Expiration);
         }
 
         protected async Task AssertIssuedTokenIsValid()
         {
             if (string.IsNullOrWhiteSpace(IssuedToken)) Assert.Inconclusive();
-            var validatedPrincipal = await MessageSecurityTokenService.Validate(IssuedToken);
+            var validatedPrincipal = await SecurityTokenService.Validate(IssuedToken);
             Assert.NotNull(validatedPrincipal);
 
             Assert.True(validatedPrincipal.IsInRole("test"));

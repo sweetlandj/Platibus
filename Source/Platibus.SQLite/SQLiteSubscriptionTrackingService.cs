@@ -76,7 +76,7 @@ namespace Platibus.SQLite
             var connectionStringSettings = new ConnectionStringSettings
             {
                 Name = dbPath,
-                ConnectionString = "Data Source=" + dbPath + "; Version=3",
+                ConnectionString = "Data Source=" + dbPath + "; Version=3; BinaryGUID=False",
                 ProviderName = "System.Data.SQLite"
             };
 

@@ -50,10 +50,15 @@ namespace Platibus.IntegrationTests
                     DateData = DateTime.UtcNow
                 };
 
+                var expectation = new MessageHandledExpectation<TestPublication>((content, ctx) => publication.Equals(content));
+                TestPublicationHandler.SetExpectation(expectation);
+
                 await platibus0.Publish(publication, "Topic0");
 
-                var publicationReceived = await TestPublicationHandler.WaitHandle.WaitOneAsync(TimeSpan.FromSeconds(3));
-                Assert.That(publicationReceived, Is.True);
+                var timeout = Task.Delay(TimeSpan.FromSeconds(3));
+                var timedOut = await Task.WhenAny(expectation.Satisfied, timeout) == timeout;
+                Assert.False(timedOut);
+                Assert.True(expectation.WasSatisfied);
             });
         }
 
@@ -63,11 +68,9 @@ namespace Platibus.IntegrationTests
             await With.HttpHostedBusInstances(async (platibus0, platibus1) =>
             {
                 // Start second subscriber
-                using (await HttpServer.Start("platibus.http2"))
+                using (var httpServer2 = await HttpServer.Start("platibus.http2"))
                 {
-                    // Wait for two publications to be received (one on each subscriber)
-                    TestPublicationHandler.MessageReceivedEvent.AddCount(1);
-
+                    var platibus2 = httpServer2.Bus;
                     var publication = new TestPublication
                     {
                         GuidData = Guid.NewGuid(),
@@ -79,10 +82,23 @@ namespace Platibus.IntegrationTests
                     // Wait for subscription request for platibus.http2 to be processed
                     await Task.Delay(TimeSpan.FromSeconds(1));
 
+                    var expectation1 = new MessageHandledExpectation<TestPublication>((content, ctx) =>
+                        publication.Equals(content) && ctx.Bus == platibus1);
+
+                    var expectation2 = new MessageHandledExpectation<TestPublication>((content, ctx) =>
+                        publication.Equals(content) && ctx.Bus == platibus2);
+
+                    TestPublicationHandler.SetExpectation(expectation1);
+                    TestPublicationHandler.SetExpectation(expectation2);
+
                     await platibus0.Publish(publication, "Topic0");
 
-                    var publicationReceived = await TestPublicationHandler.WaitHandle.WaitOneAsync(TimeSpan.FromSeconds(3));
-                    Assert.That(publicationReceived, Is.True);
+                    var expectationsSatisfied = Task.WhenAll(expectation1.Satisfied, expectation2.Satisfied);
+                    var timeout = Task.Delay(TimeSpan.FromSeconds(3));
+                    var timedOut = await Task.WhenAny(expectationsSatisfied, timeout) == timeout;
+                    Assert.False(timedOut);
+                    Assert.True(expectation1.WasSatisfied);
+                    Assert.True(expectation2.WasSatisfied);
                 }
             });
         }
@@ -105,6 +121,11 @@ namespace Platibus.IntegrationTests
                     DateData = DateTime.UtcNow
                 };
 
+                var expectation = new MessageHandledExpectation<TestPublication>((content, ctx) =>
+                    publication.Equals(content) && ctx.Bus == platibus1);
+
+                TestPublicationHandler.SetExpectation(expectation);
+                
                 try
                 {
                     await platibus0.Publish(publication, "Topic0");
@@ -113,9 +134,11 @@ namespace Platibus.IntegrationTests
                 {
                     // We expect an aggregate exception with a 404 error for the second subscriber
                 }
-
-                var publicationReceived = await TestPublicationHandler.WaitHandle.WaitOneAsync(TimeSpan.FromSeconds(3));
-                Assert.That(publicationReceived, Is.True);
+                
+                var timeout = Task.Delay(TimeSpan.FromSeconds(5));
+                var timedOut = await Task.WhenAny(expectation.Satisfied, timeout) == timeout;
+                Assert.False(timedOut);
+                Assert.True(expectation.WasSatisfied);
             });
         }
     }

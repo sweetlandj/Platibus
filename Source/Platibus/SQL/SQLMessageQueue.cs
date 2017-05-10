@@ -48,7 +48,7 @@ namespace Platibus.SQL
         private readonly ISQLDialect _dialect;
         private readonly QueueName _queueName;
         private readonly IQueueListener _listener;
-        private readonly IMessageSecurityTokenService _messageSecurityTokenService;
+        private readonly ISecurityTokenService _securityTokenService;
 
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly bool _autoAcknowledge;
@@ -67,25 +67,25 @@ namespace Platibus.SQL
         /// <param name="queueName">The name of the queue</param>
         /// <param name="listener">The object that will be notified when messages are
         /// added to the queue</param>
-        /// <param name="messageSecurityTokenService"></param>
+        /// <param name="securityTokenService"></param>
         /// <param name="options">(Optional) Settings that influence how the queue behaves</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>,
         /// <paramref name="dialect"/>, <paramref name="queueName"/>, or <paramref name="listener"/>
         /// are <c>null</c></exception>
         public SQLMessageQueue(IDbConnectionProvider connectionProvider, ISQLDialect dialect, QueueName queueName,
-            IQueueListener listener, IMessageSecurityTokenService messageSecurityTokenService, QueueOptions options = null)
+            IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null)
         {
             if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
             if (dialect == null) throw new ArgumentNullException("dialect");
             if (queueName == null) throw new ArgumentNullException("queueName");
             if (listener == null) throw new ArgumentNullException("listener");
-            if (messageSecurityTokenService == null) throw new ArgumentNullException("messageSecurityTokenService");
+            if (securityTokenService == null) throw new ArgumentNullException("securityTokenService");
 
             _connectionProvider = connectionProvider;
             _dialect = dialect;
             _queueName = queueName;
             _listener = listener;
-            _messageSecurityTokenService = messageSecurityTokenService;
+            _securityTokenService = securityTokenService;
 
             var myOptions = options ?? new QueueOptions();
 
@@ -218,7 +218,7 @@ namespace Platibus.SQL
             SQLQueuedMessage queuedMessage;
             var expires = message.Headers.Expires;
             var connection = _connectionProvider.GetConnection();
-            var securityToken = await _messageSecurityTokenService.NullSafeIssue(principal, expires);
+            var securityToken = await _securityTokenService.NullSafeIssue(principal, expires);
             var messageWithSecurityToken = message.WithSecurityToken(securityToken);
             try
             {
@@ -444,7 +444,7 @@ namespace Platibus.SQL
         {
             if (!string.IsNullOrWhiteSpace(headers.SecurityToken))
             {
-                return await _messageSecurityTokenService.NullSafeValidate(headers.SecurityToken);
+                return await _securityTokenService.NullSafeValidate(headers.SecurityToken);
             }
 
             try

@@ -40,7 +40,7 @@ namespace Platibus.SQLite
         private static readonly ILog Log = LogManager.GetLogger(SQLiteLoggingCategories.SQLite);
 
         private readonly DirectoryInfo _baseDirectory;
-        private readonly IMessageSecurityTokenService _messageSecurityTokenService;
+        private readonly ISecurityTokenService _securityTokenService;
 
         private readonly ConcurrentDictionary<QueueName, SQLiteMessageQueue> _queues =
             new ConcurrentDictionary<QueueName, SQLiteMessageQueue>();
@@ -52,16 +52,16 @@ namespace Platibus.SQLite
         /// </summary>
         /// <param name="baseDirectory">The directory in which the SQLite database files will
         /// be created</param>
-        /// <param name="messageSecurityTokenService">(Optional) The message security token
+        /// <param name="securityTokenService">(Optional) The message security token
         /// service to use to issue and validate security tokens for persisted messages.</param>
         /// <remarks>
         /// <para>If a base directory is not specified then the base directory will default to a
         /// directory named <c>platibus\queues</c> beneath the current app domain base 
         /// directory.  If the base directory does not exist it will be created.</para>
-        /// <para>If a <paramref name="messageSecurityTokenService"/> is not specified then a
+        /// <para>If a <paramref name="securityTokenService"/> is not specified then a
         /// default implementation based on unsigned JWTs will be used.</para>
         /// </remarks>
-        public SQLiteMessageQueueingService(DirectoryInfo baseDirectory, IMessageSecurityTokenService messageSecurityTokenService = null)
+        public SQLiteMessageQueueingService(DirectoryInfo baseDirectory, ISecurityTokenService securityTokenService = null)
         {
             if (baseDirectory == null)
             {
@@ -69,7 +69,7 @@ namespace Platibus.SQLite
                 baseDirectory = new DirectoryInfo(Path.Combine(appdomainDirectory, "platibus", "queues"));
             }
             _baseDirectory = baseDirectory;
-            _messageSecurityTokenService = messageSecurityTokenService ?? new JwtMessageSecurityTokenService();
+            _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace Platibus.SQLite
         public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
-            var queue = new SQLiteMessageQueue(_baseDirectory, queueName, listener, _messageSecurityTokenService, options);
+            var queue = new SQLiteMessageQueue(_baseDirectory, queueName, listener, _securityTokenService, options);
             if (!_queues.TryAdd(queueName, queue))
             {
                 throw new QueueAlreadyExistsException(queueName);

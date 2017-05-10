@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2016 Jesse Sweetland
+// Copyright (c) 2015 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,24 +20,33 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Threading.Tasks;
+using System;
 
-namespace Platibus.Config.Extensibility
+namespace Platibus.IntegrationTests
 {
-    /// <summary>
-    /// A factory for initializing a <see cref="ISubscriptionTrackingService"/>
-    /// during bus initialization.
-    /// </summary>
-    public interface ISubscriptionTrackingServiceProvider
+    internal class MessageHandledExpectation : Expectation
     {
-        /// <summary>
-        /// Creates an initializes a <see cref="ISubscriptionTrackingService"/>
-        /// based on the provided <paramref name="configuration"/>.
-        /// </summary>
-        /// <param name="configuration">The journaling configuration
-        /// element.</param>
-        /// <returns>Returns a task whose result is an initialized
-        /// <see cref="ISubscriptionTrackingService"/>.</returns>
-        Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(SubscriptionTrackingElement configuration);
+        private readonly Func<object, IMessageContext, bool> _isSatisfied;
+
+        public MessageHandledExpectation(Func<object, IMessageContext, bool> isSatisfied)
+        {
+            _isSatisfied = isSatisfied;
+        }
+
+        public void MessageHandled(object content, IMessageContext context)
+        {
+            if (_isSatisfied(content, context))
+            {
+                TaskCompletionSource.TrySetResult(true);
+            }
+        }
+    }
+
+    internal class MessageHandledExpectation<TContent> : MessageHandledExpectation
+    {
+        public MessageHandledExpectation(Func<TContent, IMessageContext, bool> isSatisfied)
+            : base((obj, ctx) => obj is TContent && isSatisfied((TContent)obj, ctx))
+        {
+        }
     }
 }

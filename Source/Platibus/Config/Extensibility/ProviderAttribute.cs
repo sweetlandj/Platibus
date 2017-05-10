@@ -55,6 +55,14 @@ namespace Platibus.Config.Extensibility
     /// <see cref="QueueingElement"/>.</description>
     /// </item>
     /// <item>
+    /// <term><see cref="ISecurityTokenServiceProvider"/></term>
+    /// <description>Indicates that the decorated type provides a
+    /// <see cref="Platibus.Security.ISecurityTokenService"/>.  The <see cref="Name"/> 
+    /// specified in <see cref="ProviderAttribute"/> corresponds to the value of 
+    /// the <see cref="QueueingElement.Provider"/> property in a
+    /// <see cref="SecurityTokensElement"/>.</description>
+    /// </item>
+    /// <item>
     /// <term><see cref="ISubscriptionTrackingServiceProvider"/></term>
     /// <description>Indicates that the decorated type provides a
     /// <see cref="ISubscriptionTrackingService"/>.  The <see cref="Name"/> 

@@ -25,33 +25,22 @@ using System.Configuration;
 namespace Platibus.Config
 {
     /// <summary>
-    /// Configuration element for message queueing
+    /// Configuration element for specifying parameters for security token generation
     /// </summary>
-    public class QueueingElement : ExtensibleConfigurationElement
+    public class SecurityTokensElement : ExtensibleConfigurationElement
     {
         private const string ProviderPropertyName = "provider";
-        private const string SecurityTokensPropertyName = "securityTokens";
 
         /// <summary>
-        /// The name of the message journaling service provider
+        /// The name of the security token service provider
         /// </summary>
-        /// <seealso cref="Platibus.Config.Extensibility.IMessageQueueingServiceProvider"/>
+        /// <seealso cref="Platibus.Config.Extensibility.ISecurityTokenServiceProvider"/>
         /// <seealso cref="Platibus.Config.Extensibility.ProviderAttribute"/>
-        [ConfigurationProperty(ProviderPropertyName, DefaultValue = "Filesystem")]
+        [ConfigurationProperty(ProviderPropertyName, DefaultValue = "JWT")]
         public string Provider
         {
-            get { return (string) base[ProviderPropertyName]; }
+            get { return (string)base[ProviderPropertyName]; }
             set { base[ProviderPropertyName] = value; }
-        }
-
-        /// <summary>
-        /// Security token configuration
-        /// </summary>
-        [ConfigurationProperty(SecurityTokensPropertyName)]
-        public SecurityTokensElement SecurityTokens
-        {
-            get { return (SecurityTokensElement)base[SecurityTokensPropertyName]; }
-            set { base[SecurityTokensPropertyName] = value; }
         }
     }
 }

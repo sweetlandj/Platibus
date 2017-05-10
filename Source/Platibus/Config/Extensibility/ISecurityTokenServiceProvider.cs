@@ -20,38 +20,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Configuration;
+using System.Threading.Tasks;
+using Platibus.Security;
 
-namespace Platibus.Config
+namespace Platibus.Config.Extensibility
 {
     /// <summary>
-    /// Configuration element for message queueing
+    /// A factory for initializing a <see cref="ISecurityTokenService"/>
+    /// during bus initialization.
     /// </summary>
-    public class QueueingElement : ExtensibleConfigurationElement
+    public interface ISecurityTokenServiceProvider
     {
-        private const string ProviderPropertyName = "provider";
-        private const string SecurityTokensPropertyName = "securityTokens";
-
         /// <summary>
-        /// The name of the message journaling service provider
+        /// Creates an initializes a <see cref="ISecurityTokenService"/>
+        /// based on the provided <paramref name="configuration"/>.
         /// </summary>
-        /// <seealso cref="Platibus.Config.Extensibility.IMessageQueueingServiceProvider"/>
-        /// <seealso cref="Platibus.Config.Extensibility.ProviderAttribute"/>
-        [ConfigurationProperty(ProviderPropertyName, DefaultValue = "Filesystem")]
-        public string Provider
-        {
-            get { return (string) base[ProviderPropertyName]; }
-            set { base[ProviderPropertyName] = value; }
-        }
-
-        /// <summary>
-        /// Security token configuration
-        /// </summary>
-        [ConfigurationProperty(SecurityTokensPropertyName)]
-        public SecurityTokensElement SecurityTokens
-        {
-            get { return (SecurityTokensElement)base[SecurityTokensPropertyName]; }
-            set { base[SecurityTokensPropertyName] = value; }
-        }
+        /// <param name="configuration">The journaling configuration
+        /// element.</param>
+        /// <returns>Returns a task whose result is an initialized
+        /// <see cref="IMessageJournalingService"/>.</returns>
+        Task<ISecurityTokenService> CreateSecurityTokenService(SecurityTokensElement configuration);
     }
 }

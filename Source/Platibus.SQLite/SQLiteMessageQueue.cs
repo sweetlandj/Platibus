@@ -40,8 +40,8 @@ namespace Platibus.SQLite
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly ActionBlock<ISQLiteOperation> _operationQueue;
 
-        public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, IQueueListener listener, IMessageSecurityTokenService messageSecurityTokenService, QueueOptions options = null)
-            : base(InitDb(baseDirectory, queueName), new SQLiteDialect(), queueName, listener, messageSecurityTokenService, options)
+        public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null)
+            : base(InitDb(baseDirectory, queueName), new SQLiteDialect(), queueName, listener, securityTokenService, options)
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _operationQueue = new ActionBlock<ISQLiteOperation>(
@@ -60,7 +60,7 @@ namespace Platibus.SQLite
             var connectionStringSettings = new ConnectionStringSettings
             {
                 Name = dbPath,
-                ConnectionString = "Data Source=" + dbPath + "; Version=3",
+                ConnectionString = "Data Source=" + dbPath + "; Version=3; BinaryGUID=False",
                 ProviderName = "System.Data.SQLite"
             };
 

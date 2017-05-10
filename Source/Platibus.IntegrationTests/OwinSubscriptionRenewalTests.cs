@@ -29,10 +29,16 @@ namespace Platibus.IntegrationTests
                     DateData = DateTime.UtcNow
                 };
 
+                var expectation = new MessageHandledExpectation<TestPublication>((content, context) => publication.Equals(content));
+                TestPublicationHandler.SetExpectation(expectation);
+
                 await platibus0.Publish(publication, "Topic0");
 
-                var publicationReceived = await TestPublicationHandler.WaitHandle.WaitOneAsync(TimeSpan.FromSeconds(3));
-                Assert.That(publicationReceived, Is.True);
+                var timeout = Task.Delay(TimeSpan.FromSeconds(3));
+                var timedOut = await Task.WhenAny(expectation.Satisfied, timeout) == timeout;
+                Assert.False(timedOut);
+                Assert.True(expectation.WasSatisfied);
+;
             });
         }
     }

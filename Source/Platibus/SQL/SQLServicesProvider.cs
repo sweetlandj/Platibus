@@ -35,7 +35,7 @@ namespace Platibus.SQL
     public class SQLServicesProvider : IMessageQueueingServiceProvider, IMessageJournalingServiceProvider, ISubscriptionTrackingServiceProvider
     {
         /// <inheritdoc />
-        public Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
+        public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
             var connectionName = configuration.GetString("connectionName");
             if (string.IsNullOrWhiteSpace(connectionName))
@@ -49,9 +49,10 @@ namespace Platibus.SQL
             {
                 throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
             }
-            var sqlMessageQueueingService = new SQLMessageQueueingService(connectionStringSettings);
+            var securityTokenService = await PlatibusConfigurationManager.InitSecurityTokenService(configuration.SecurityTokens);
+            var sqlMessageQueueingService = new SQLMessageQueueingService(connectionStringSettings, securityTokenService: securityTokenService);
             sqlMessageQueueingService.Init();
-            return Task.FromResult<IMessageQueueingService>(sqlMessageQueueingService);
+            return sqlMessageQueueingService;
         }
 
         /// <inheritdoc />

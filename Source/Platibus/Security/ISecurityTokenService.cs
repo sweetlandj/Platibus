@@ -20,38 +20,35 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Configuration;
+using System;
+using System.Security.Principal;
+using System.Threading.Tasks;
 
-namespace Platibus.Config
+namespace Platibus.Security
 {
     /// <summary>
-    /// Configuration element for message queueing
+    /// An interface describing an object that can generate a security token for a 
+    /// <see cref="System.Security.Principal.IPrincipal"/> or validate a previously generated
+    /// security token.
     /// </summary>
-    public class QueueingElement : ExtensibleConfigurationElement
+    public interface ISecurityTokenService
     {
-        private const string ProviderPropertyName = "provider";
-        private const string SecurityTokensPropertyName = "securityTokens";
+        /// <summary>
+        /// Issues a new security token representing the specified
+        /// <paramref name="principal"/>
+        /// </summary>
+        /// <param name="principal">The principal</param>
+        /// <param name="expires">(Optional) The date/time at which the token should expire</param>
+        /// <returns>Returns a task whose result is a message security token representing the
+        /// specified <paramref name="principal"/></returns>
+        Task<string> Issue(IPrincipal principal, DateTime? expires = null);
 
         /// <summary>
-        /// The name of the message journaling service provider
+        /// Validates a previously issued security token
         /// </summary>
-        /// <seealso cref="Platibus.Config.Extensibility.IMessageQueueingServiceProvider"/>
-        /// <seealso cref="Platibus.Config.Extensibility.ProviderAttribute"/>
-        [ConfigurationProperty(ProviderPropertyName, DefaultValue = "Filesystem")]
-        public string Provider
-        {
-            get { return (string) base[ProviderPropertyName]; }
-            set { base[ProviderPropertyName] = value; }
-        }
-
-        /// <summary>
-        /// Security token configuration
-        /// </summary>
-        [ConfigurationProperty(SecurityTokensPropertyName)]
-        public SecurityTokensElement SecurityTokens
-        {
-            get { return (SecurityTokensElement)base[SecurityTokensPropertyName]; }
-            set { base[SecurityTokensPropertyName] = value; }
-        }
+        /// <param name="securityToken">The message security token</param>
+        /// <returns>Returns the principal represented b the specified 
+        /// <paramref name="securityToken"/></returns>
+        Task<IPrincipal> Validate(string securityToken);
     }
 }
