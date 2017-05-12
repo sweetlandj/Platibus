@@ -284,85 +284,90 @@ namespace Platibus.Http
         /// subscription is canceled by the caller or a non-recoverable error occurs.</returns>
         public async Task Subscribe(IEndpoint endpoint, TopicName topicName, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
         {
-            while (!cancellationToken.IsCancellationRequested)
+            try
             {
-                TimeSpan retryOrRenewAfter;
-                try
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    Log.DebugFormat("Sending subscription request for topic {0} to {1}...", topicName, endpoint);
-
-                    await SendSubscriptionRequest(endpoint, topicName, ttl, cancellationToken);
-
-                    if (ttl <= TimeSpan.Zero)
+                    TimeSpan retryOrRenewAfter;
+                    try
                     {
-                        // No TTL specified; subscription lives forever on the
-                        // remote server.  Since publications are pushed to the
-                        // subscribers, we don't need to keep this task running.
+                        Log.DebugFormat("Sending subscription request for topic {0} to {1}...", topicName, endpoint);
+
+                        await SendSubscriptionRequest(endpoint, topicName, ttl, cancellationToken);
+
+                        if (ttl <= TimeSpan.Zero)
+                        {
+                            // No TTL specified; subscription lives forever on the
+                            // remote server.  Since publications are pushed to the
+                            // subscribers, we don't need to keep this task running.
+                            return;
+                        }
+
+                        // Attempt to renew after half of the TTL to allow for
+                        // issues that may occur when attempting to renew the
+                        // subscription.
+                        retryOrRenewAfter = TimeSpan.FromTicks(ttl.Ticks / 2);
+                        Log.DebugFormat(
+                            "Subscription request for topic {0} successfuly sent to {1}.  Subscription TTL is {2} and is scheduled to auto-renew in {3}",
+                            topicName, endpoint, ttl, retryOrRenewAfter);
+                    }
+                    catch (EndpointNotFoundException enfe)
+                    {
+                        // Endpoint is not defined in the supplied configuration,
+                        // so we cannot determine the URI.  This is an unrecoverable
+                        // error, so simply return.
+                        Log.ErrorFormat("Fatal error subscribing to topic {0} of endpoint \"{1}\"", enfe, topicName,
+                            endpoint);
                         return;
                     }
-
-                    // Attempt to renew after half of the TTL to allow for
-                    // issues that may occur when attempting to renew the
-                    // subscription.
-                    retryOrRenewAfter = TimeSpan.FromTicks(ttl.Ticks/2);
-                    Log.DebugFormat(
-                        "Subscription request for topic {0} successfuly sent to {1}.  Subscription TTL is {2} and is scheduled to auto-renew in {3}",
-                        topicName, endpoint, ttl, retryOrRenewAfter);
+                    catch (NameResolutionFailedException nrfe)
+                    {
+                        // The transport was unable to resolve the hostname in the
+                        // endpoint URI.  This may or may not be a temporary error.
+                        // In either case, retry after 30 seconds.
+                        retryOrRenewAfter = TimeSpan.FromSeconds(30);
+                        Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", nrfe,
+                            topicName, endpoint, retryOrRenewAfter);
+                    }
+                    catch (ConnectionRefusedException cre)
+                    {
+                        // The transport was unable to resolve the hostname in the
+                        // endpoint URI.  This may or may not be a temporary error.
+                        // In either case, retry after 30 seconds.
+                        retryOrRenewAfter = TimeSpan.FromSeconds(30);
+                        Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", cre,
+                            topicName, endpoint, retryOrRenewAfter);
+                    }
+                    catch (ResourceNotFoundException ire)
+                    {
+                        // Topic is not found.  This may be temporary.
+                        retryOrRenewAfter = TimeSpan.FromSeconds(30);
+                        Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", ire,
+                            topicName, endpoint, retryOrRenewAfter);
+                    }
+                    catch (InvalidRequestException ire)
+                    {
+                        // Request is not valid.  Either the URL is malformed or the
+                        // topic does not exist.  In any case, retrying would be
+                        // fruitless, so just return.
+                        Log.ErrorFormat("Fatal error subscribing to topic {0} of endpoint {1}", ire, topicName,
+                            endpoint);
+                        return;
+                    }
+                    catch (TransportException te)
+                    {
+                        // Unspecified transport error.  This may or may not be
+                        // due to temporary conditions that will resolve 
+                        // themselves.  Retry in 30 seconds.
+                        retryOrRenewAfter = TimeSpan.FromSeconds(30);
+                        Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", te,
+                            topicName, endpoint, retryOrRenewAfter);
+                    }
+                    await Task.Delay(retryOrRenewAfter, cancellationToken);
                 }
-                catch (EndpointNotFoundException enfe)
-                {
-                    // Endpoint is not defined in the supplied configuration,
-                    // so we cannot determine the URI.  This is an unrecoverable
-                    // error, so simply return.
-                    Log.ErrorFormat("Fatal error subscribing to topic {0} of endpoint \"{1}\"", enfe, topicName,
-                        endpoint);
-                    return;
-                }
-                catch (NameResolutionFailedException nrfe)
-                {
-                    // The transport was unable to resolve the hostname in the
-                    // endpoint URI.  This may or may not be a temporary error.
-                    // In either case, retry after 30 seconds.
-                    retryOrRenewAfter = TimeSpan.FromSeconds(30);
-                    Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", nrfe,
-                        topicName, endpoint, retryOrRenewAfter);
-                }
-                catch (ConnectionRefusedException cre)
-                {
-                    // The transport was unable to resolve the hostname in the
-                    // endpoint URI.  This may or may not be a temporary error.
-                    // In either case, retry after 30 seconds.
-                    retryOrRenewAfter = TimeSpan.FromSeconds(30);
-                    Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", cre,
-                        topicName, endpoint, retryOrRenewAfter);
-                }
-				catch (ResourceNotFoundException ire)
-				{
-					// Topic is not found.  This may be temporary.
-					retryOrRenewAfter = TimeSpan.FromSeconds(30);
-					Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", ire,
-						topicName, endpoint, retryOrRenewAfter);
-				}
-                catch (InvalidRequestException ire)
-                {
-                    // Request is not valid.  Either the URL is malformed or the
-                    // topic does not exist.  In any case, retrying would be
-                    // fruitless, so just return.
-                    Log.ErrorFormat("Fatal error subscribing to topic {0} of endpoint {1}", ire, topicName,
-                        endpoint);
-                    return;
-                }
-                catch (TransportException te)
-                {
-                    // Unspecified transport error.  This may or may not be
-                    // due to temporary conditions that will resolve 
-                    // themselves.  Retry in 30 seconds.
-                    retryOrRenewAfter = TimeSpan.FromSeconds(30);
-                    Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", te,
-                        topicName, endpoint, retryOrRenewAfter);
-                }
-
-                await Task.Delay(retryOrRenewAfter, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
             }
         }
 

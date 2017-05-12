@@ -174,8 +174,7 @@ namespace Platibus.Filesystem
             _fileAccess.Wait();
             try
             {
-                using (var fileStream = subscriptionFile.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                using (var fileReader = new StreamReader(fileStream))
+                using (var fileReader = new StreamReader(subscriptionFile.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
                 {
                     fileContents = fileReader.ReadToEnd();        
                 }

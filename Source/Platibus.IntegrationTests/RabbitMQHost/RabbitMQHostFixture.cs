@@ -8,6 +8,8 @@ namespace Platibus.IntegrationTests.RabbitMQHost
         private readonly Task<RabbitMQ.RabbitMQHost> _sendingHost;
         private readonly Task<RabbitMQ.RabbitMQHost> _receivingHost;
 
+        private bool _disposed;
+
         public Task<IBus> Sender
         {
             get { return _sendingHost.ContinueWith(hostTask => (IBus) hostTask.Result.Bus); }
@@ -26,11 +28,18 @@ namespace Platibus.IntegrationTests.RabbitMQHost
 
         public void Dispose()
         {
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
             Task.WhenAll(
                     _sendingHost.ContinueWith(t => t.Result.TryDispose()),
                     _receivingHost.ContinueWith(t => t.Result.TryDispose()))
                 .Wait(TimeSpan.FromSeconds(10));
         }
-
     }
 }

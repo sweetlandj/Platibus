@@ -12,6 +12,8 @@ namespace Platibus.UnitTests.LocalDB
         private readonly SQLMessageJournalingService _messageJournalingService;
         private readonly SQLMessageQueueingService _messageQueueingService;
         private readonly SQLSubscriptionTrackingService _subscriptionTrackingService;
+
+        private bool _disposed;
         
         public IDbConnectionProvider ConnectionProvider
         {
@@ -60,8 +62,19 @@ namespace Platibus.UnitTests.LocalDB
 
         public void Dispose()
         {
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_subscriptionTrackingService")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_messageQueueingService")]
+        protected virtual void Dispose(bool disposing)
+        {
             _messageQueueingService.TryDispose();
             _subscriptionTrackingService.TryDispose();
+            _messageJournalingService.TryDispose();
         }
 
         public void DeleteQueuedMessages()

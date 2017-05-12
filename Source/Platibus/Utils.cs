@@ -87,34 +87,5 @@ namespace Platibus
                 return false;
             }
         }
-
-        /// <summary>
-        /// Waits for a task to complete until a timeout is reached,
-        /// catching any exceptions that occur
-        /// </summary>
-        /// <param name="t">The task to wait on</param>
-        /// <param name="timeout">The maximum amount of time to wait</param>
-        /// <returns>Returns <c>true</c> if the task completed or was
-        /// canceled; <c>false</c> otherwise</returns>
-        public static bool TryWait(this Task t, TimeSpan timeout)
-        {
-            if (t == null) return false;
-            if (t.IsCompleted || t.IsCanceled) return false;
-
-            try
-            {
-                t.Wait(timeout);
-                return true;
-            }
-            catch (TaskCanceledException)
-            {
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Log.InfoFormat("Unhandled exception in task {0}", ex, t.Id);
-                return false;
-            }
-        }
     }
 }

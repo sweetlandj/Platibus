@@ -501,7 +501,7 @@ namespace Platibus
         protected virtual void Dispose(bool disposing)
         {
             _cancellationTokenSource.Cancel();
-            Task.WhenAll(_subscriptionTasks).TryWait(TimeSpan.FromSeconds(30));
+            Task.WhenAll(_subscriptionTasks).Wait(TimeSpan.FromSeconds(10));
             if (disposing)
             {
                 _cancellationTokenSource.TryDispose();

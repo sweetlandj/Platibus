@@ -11,6 +11,8 @@ namespace Platibus.UnitTests.Filesystem
         private readonly FilesystemMessageQueueingService _messageQueueingService;
         private readonly FilesystemSubscriptionTrackingService _subscriptionTrackingService;
 
+        private bool _disposed;
+
         public DirectoryInfo BaseDirectory
         {
             get { return _baseDirectory; }
@@ -55,8 +57,18 @@ namespace Platibus.UnitTests.Filesystem
             }
             return tempDir;
         }
-
+        
         public void Dispose()
+        {
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_subscriptionTrackingService")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_messageQueueingService")]
+        protected virtual void Dispose(bool disposing)
         {
             _messageQueueingService.TryDispose();
             _subscriptionTrackingService.TryDispose();

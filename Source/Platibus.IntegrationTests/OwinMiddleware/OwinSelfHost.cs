@@ -10,6 +10,8 @@ namespace Platibus.IntegrationTests.OwinMiddleware
         private readonly PlatibusMiddleware _middleware;
         private readonly IBus _bus;
 
+        private bool _disposed;
+
         public IDisposable WebApp { get { return _webApp; } }
         public PlatibusMiddleware Middleware { get { return _middleware; } }
         public IBus Bus { get { return _bus; } }
@@ -33,9 +35,17 @@ namespace Platibus.IntegrationTests.OwinMiddleware
 
         public void Dispose()
         {
-            if (_webApp != null) _webApp.Dispose();
-            if (_bus != null) _bus.TryDispose();
-            if (_middleware != null) _middleware.Dispose();
+            if (_disposed) return;
+            _disposed = true;
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            _webApp.TryDispose();
+            _bus.TryDispose();
+            _middleware.TryDispose();
         }
     }
 }

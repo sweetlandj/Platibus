@@ -8,6 +8,8 @@ namespace Platibus.UnitTests.RabbitMQ
         private readonly Uri _uri;
         private readonly RabbitMQMessageQueueingService _messageQueueingService;
 
+        private bool _disposed;
+
         public Uri Uri { get { return _uri; } }
         public RabbitMQMessageQueueingService MessageQueueingService { get { return _messageQueueingService; } }
 
@@ -22,8 +24,16 @@ namespace Platibus.UnitTests.RabbitMQ
 
         public void Dispose()
         {
-            _messageQueueingService.TryDispose();
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_messageQueueingService")]
+        protected virtual void Dispose(bool disposing)
+        {
+            _messageQueueingService.TryDispose();
+        }
     }
 }

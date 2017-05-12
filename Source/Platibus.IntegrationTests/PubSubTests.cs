@@ -36,7 +36,8 @@ namespace Platibus.IntegrationTests
         protected TopicName Topic = "Topic0";
         protected TestPublication Publication;
         protected MessageHandledExpectation SubscriberHandlesPublication;
-        
+        private bool _disposed;
+
         protected PubSubTests(Task<IBus> publisher, Task<IBus> subscriber)
         {
             Publisher = publisher;
@@ -44,6 +45,14 @@ namespace Platibus.IntegrationTests
         }
 
         public void Dispose()
+        {
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
         {
             TestPublicationHandler.RemoveExpectation(SubscriberHandlesPublication);
         }

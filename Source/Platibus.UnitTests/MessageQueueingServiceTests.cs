@@ -263,6 +263,8 @@ namespace Platibus.UnitTests
             private readonly TaskCompletionSource<Message> _taskCompletionSource;
             private readonly CancellationTokenSource _cancellationTokenSource;
 
+            private bool _disposed;
+
             public Task Completed
             {
                 get { return _taskCompletionSource.Task; }
@@ -303,7 +305,18 @@ namespace Platibus.UnitTests
 
             public void Dispose()
             {
-                if (_cancellationTokenSource != null) _cancellationTokenSource.Dispose();
+                if (_disposed) return;
+                Dispose(true);
+                _disposed = true;
+                GC.SuppressFinalize(this);
+            }
+
+            protected virtual void Dispose(bool disposing)
+            {
+                if (disposing)
+                {
+                    _cancellationTokenSource.TryDispose();
+                }
             }
         }
 
@@ -313,6 +326,7 @@ namespace Platibus.UnitTests
             private readonly CancellationTokenSource _cancellationTokenSource;
             private readonly int _target;
             private int _count;
+            private bool _disposed;
 
             public Task Completed
             {
@@ -351,7 +365,18 @@ namespace Platibus.UnitTests
 
             public void Dispose()
             {
-                if (_cancellationTokenSource != null) _cancellationTokenSource.Dispose();
+                if (_disposed) return;
+                Dispose(true);
+                _disposed = true;
+                GC.SuppressFinalize(this);
+            }
+
+            protected virtual void Dispose(bool disposing)
+            {
+                if (disposing)
+                {
+                    _cancellationTokenSource.TryDispose();
+                }
             }
         }
     }

@@ -11,6 +11,8 @@ namespace Platibus.UnitTests.SQLite
         private readonly SQLiteMessageQueueingService _messageQueueingService;
         private readonly SQLiteSubscriptionTrackingService _subscriptionTrackingService;
 
+        private bool _disposed;
+
         public DirectoryInfo BaseDirectory
         {
             get { return _baseDirectory; }
@@ -58,9 +60,20 @@ namespace Platibus.UnitTests.SQLite
 
         public void Dispose()
         {
-            _messageQueueingService.TryDispose();
-            _subscriptionTrackingService.TryDispose();
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_subscriptionTrackingService")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_messageQueueingService")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_messageJournalingService")]
+        protected virtual void Dispose(bool disposing)
+        {
+            _messageQueueingService.TryDispose();
+            _subscriptionTrackingService.TryDispose();
+            _messageJournalingService.TryDispose();
+        }
     }
 }

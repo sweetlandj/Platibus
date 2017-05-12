@@ -8,6 +8,8 @@ namespace Platibus.IntegrationTests.OwinMiddleware
         private readonly Task<OwinSelfHost> _sendingHost;
         private readonly Task<OwinSelfHost> _receivingHost;
 
+        private bool _disposed;
+
         public Task<IBus> Sender
         {
             get { return _sendingHost.ContinueWith(hostTask => hostTask.Result.Bus); }
@@ -25,6 +27,14 @@ namespace Platibus.IntegrationTests.OwinMiddleware
         }
 
         public void Dispose()
+        {
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
         {
             Task.WhenAll(
                     _sendingHost.ContinueWith(t => t.Result.TryDispose()),

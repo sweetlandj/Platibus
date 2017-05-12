@@ -107,6 +107,7 @@ namespace Platibus.SQL
         /// Initializes the subscription tracking service by creating the necessary objects in the
         /// SQL database
         /// </summary>
+        [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public void Init()
         {
             var connection = _connectionProvider.GetConnection();

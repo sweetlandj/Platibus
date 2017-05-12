@@ -16,6 +16,8 @@ namespace Platibus.UnitTests.Multicast
         protected SubscriptionTrackingServiceStub ReceivingSubscriptionTrackingServiceStub;
         protected MulticastSubscriptionTrackingService ReceivingMulticastSubscriptionTrackingService;
 
+        private bool _disposed;
+
         public MulticastSubscriptionTrackingServiceTests()
         {
             var groupAddress = IPAddress.Parse("239.255.21.80");
@@ -28,12 +30,6 @@ namespace Platibus.UnitTests.Multicast
             ReceivingSubscriptionTrackingServiceStub = new SubscriptionTrackingServiceStub();
             ReceivingMulticastSubscriptionTrackingService = new MulticastSubscriptionTrackingService(
                 ReceivingSubscriptionTrackingServiceStub, groupAddress, port);
-        }
-
-        public void Dispose()
-        {
-            SendingMulticastSubscriptionTrackingService.TryDispose();
-            ReceivingMulticastSubscriptionTrackingService.TryDispose();
         }
 
         [Fact]
@@ -81,6 +77,22 @@ namespace Platibus.UnitTests.Multicast
 
             var subscribers = await ReceivingSubscriptionTrackingServiceStub.GetSubscribers(topic, cts.Token);
             Assert.DoesNotContain(subscriber, subscribers);
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "SendingMulticastSubscriptionTrackingService")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "ReceivingMulticastSubscriptionTrackingService")]
+        protected virtual void Dispose(bool disposing)
+        {
+            SendingMulticastSubscriptionTrackingService.TryDispose();
+            ReceivingMulticastSubscriptionTrackingService.TryDispose();
         }
     }
 }

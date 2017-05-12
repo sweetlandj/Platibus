@@ -9,6 +9,8 @@ namespace Platibus.IntegrationTests.HttpServer
         private readonly Task<Http.HttpServer> _sendingHttpServer;
         private readonly Task<Http.HttpServer> _receivingHttpServer;
 
+        private bool _disposed;
+
         public Task<IBus> Sender
         {
             get { return _sendingHttpServer.ContinueWith(serverTask => serverTask.Result.Bus); }
@@ -38,6 +40,14 @@ namespace Platibus.IntegrationTests.HttpServer
         }
 
         public void Dispose()
+        {
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
         {
             Task.WhenAll(
                     _sendingHttpServer.ContinueWith(t => t.Result.TryDispose()),
