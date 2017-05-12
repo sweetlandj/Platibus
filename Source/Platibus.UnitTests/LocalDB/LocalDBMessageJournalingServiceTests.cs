@@ -5,6 +5,7 @@ using Platibus.SQL;
 
 namespace Platibus.UnitTests.LocalDB
 {
+    [Trait("Category", "UnitTests")]
     [Collection(LocalDBCollection.Name)]
     public class LocalDBMessageJournalingServiceTests : MessageJournalingServiceTests
     {

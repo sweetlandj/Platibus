@@ -7,6 +7,7 @@ using Platibus.Config;
 
 namespace Platibus.UnitTests
 {
+    [Trait("Category", "UnitTests")]
     public class BusInitTests
     {
         protected Uri BaseUri = new Uri("http://localhost:52180/platibus/");

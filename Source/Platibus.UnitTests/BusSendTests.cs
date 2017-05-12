@@ -8,6 +8,7 @@ using Platibus.Security;
 
 namespace Platibus.UnitTests
 {
+    [Trait("Category", "UnitTests")]
     internal class BusSendTests
     {
         protected readonly EndpointName DefaultEndpointName = "local";

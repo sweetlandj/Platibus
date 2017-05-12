@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Platibus.UnitTests.SQLite
 {
+    [Trait("Category", "UnitTests")]
     [Collection(SQLiteCollection.Name)]
     public class SQLiteMessageQueueingServiceTests : MessageQueueingServiceTests<SQLiteMessageQueueingService>
     {

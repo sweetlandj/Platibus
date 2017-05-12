@@ -27,6 +27,7 @@ using Platibus.Config;
 
 namespace Platibus.UnitTests.Config
 {
+    [Trait("Category", "UnitTests")]
     public class ConfigurationValidationTests
     {
         protected PlatibusConfiguration Configuration;

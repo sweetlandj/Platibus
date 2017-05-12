@@ -2,7 +2,8 @@ using Xunit;
 
 namespace Platibus.UnitTests
 {
-    internal class DefaultMessageNamingServiceTests
+    [Trait("Category", "UnitTests")]
+    public class DefaultMessageNamingServiceTests
     {
         public class ContractA
         {
@@ -20,7 +21,7 @@ namespace Platibus.UnitTests
             var messageNamingService = new DefaultMessageNamingService();
             var messageType = messageNamingService.GetTypeForName("Platibus.UnitTests.DefaultMessageNamingServiceTests+ContractA");
             Assert.NotNull(messageType);
-            Assert.IsType<ContractA>(messageType);
+            Assert.Equal(typeof(ContractA), messageType);
         }
 
         [Fact]

@@ -1,15 +1,15 @@
-﻿
-using Moq;
-using Xunit;
-using Platibus.Config;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Moq;
+using Platibus.Config;
+using Xunit;
 
-namespace Platibus.UnitTests
+namespace Platibus.UnitTests.Config
 {
-    internal class PlatibusConfigurationExtensionsTests
+    [Trait("Category", "UnitTests")]
+    public class PlatibusConfigurationExtensionsTests
     {
         private class TestMessageNamingService : IMessageNamingService
         {
@@ -77,7 +77,7 @@ namespace Platibus.UnitTests
 
             var expectedBSpec = new MessageNamePatternSpecification(@"^B$");
             var bRules = handlingRules.Where(r => expectedBSpec.Equals(r.Specification)).ToList();
-            Assert.Equal(2, bRules.Count);
+            Assert.Equal(1, bRules.Count);
             Assert.Equal((QueueName)"QHB", bRules[0].QueueName);
         }
 

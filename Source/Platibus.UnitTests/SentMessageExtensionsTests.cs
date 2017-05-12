@@ -4,14 +4,15 @@ using Xunit;
 
 namespace Platibus.UnitTests
 {
+    [Trait("Category", "UnitTests")]
     internal class SentMessageExtensionsTests
     {
-       [Fact]
+        [Fact]
         public async Task FirstReplyIsReturned()
         {
             var memoryCacheReplyHub = new MemoryCacheReplyHub(TimeSpan.FromSeconds(3));
             var messageId = MessageId.Generate();
-            var message = new Message(new MessageHeaders {MessageId = messageId}, "Hello, world!");
+            var message = new Message(new MessageHeaders { MessageId = messageId }, "Hello, world!");
             var sentMessage = memoryCacheReplyHub.CreateSentMessage(message);
 
             const string reply = "Hello yourself!";

@@ -26,6 +26,7 @@ using Platibus.Security;
 
 namespace Platibus.UnitTests.Security
 {
+    [Trait("Category", "UnitTests")]
     public class HexEncodingTests
     {
         [Fact]

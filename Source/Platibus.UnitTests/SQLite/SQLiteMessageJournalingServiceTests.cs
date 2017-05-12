@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Platibus.UnitTests.SQLite
 {
+    [Trait("Category", "UnitTests")]
     [Collection(SQLiteCollection.Name)]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable")]
     public class SQLiteMessageJournalingServiceTests : MessageJournalingServiceTests

@@ -1,10 +1,11 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Xunit;
 using Platibus.Config;
+using Xunit;
 
-namespace Platibus.UnitTests
+namespace Platibus.UnitTests.Config
 {
+    [Trait("Category", "UnitTests")]
     public class PlatibusConfigurationManagerTests
     {
         public class TestConfigurationHook : IConfigurationHook

@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Platibus.UnitTests.LocalDB
 {
+    [Trait("Category", "UnitTests")]
     [Collection(LocalDBCollection.Name)]
     public class LocalDBMessageQueueingServiceTests : MessageQueueingServiceTests<SQLMessageQueueingService>
     {

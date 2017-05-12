@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Platibus.UnitTests
 {
+    [Trait("Category", "UnitTests")]
     public abstract class SubscriptionTrackingServiceTests<TSubscriptionTrackingService>
         where TSubscriptionTrackingService : ISubscriptionTrackingService
     {

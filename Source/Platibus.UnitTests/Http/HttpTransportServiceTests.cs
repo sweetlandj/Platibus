@@ -8,6 +8,7 @@ using Platibus.InMemory;
 
 namespace Platibus.UnitTests.Http
 {
+    [Trait("Category", "UnitTests")]
     internal class HttpTransportServiceTests
     {
         [Fact]

@@ -28,6 +28,7 @@ using Platibus.Config;
 
 namespace Platibus.UnitTests.Config
 {
+    [Trait("Category", "UnitTests")]
     public class SendRuleValidationTests
     {
         protected PlatibusConfiguration Configuration;

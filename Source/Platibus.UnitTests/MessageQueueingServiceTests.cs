@@ -8,6 +8,7 @@ using Platibus.Security;
 
 namespace Platibus.UnitTests
 {
+    [Trait("Category", "UnitTests")]
     public abstract class MessageQueueingServiceTests<TMessageQueueingService>
         where TMessageQueueingService : IMessageQueueingService
     {

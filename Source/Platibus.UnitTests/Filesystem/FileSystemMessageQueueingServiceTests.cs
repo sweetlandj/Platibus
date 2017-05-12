@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Platibus.UnitTests.Filesystem
 {
+    [Trait("Category", "UnitTests")]
     [Collection(FilesystemCollection.Name)]
     public class FileSystemMessageQueueingServiceTests : MessageQueueingServiceTests<FilesystemMessageQueueingService>
     {

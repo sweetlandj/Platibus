@@ -12,6 +12,7 @@ using Platibus.Http;
 
 namespace Platibus.UnitTests.Http
 {
+    [Trait("Category", "UnitTests")]
     internal class MessageControllerTests
     {
         [Fact]

@@ -13,6 +13,7 @@ using Platibus.Serialization;
 
 namespace Platibus.UnitTests.Http
 {
+    [Trait("Category", "UnitTests")]
     internal class TopicControllerTests
     {
         [Fact]

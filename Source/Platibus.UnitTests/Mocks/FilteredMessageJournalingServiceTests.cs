@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Platibus.UnitTests.Mocks
 {
+    [Trait("Category", "UnitTests")]
     public class FilteredMessageJournalingServiceTests : MessageJournalingServiceTests
     {
         protected readonly Mock<IMessageJournalingService> MockMessageJournalingService;

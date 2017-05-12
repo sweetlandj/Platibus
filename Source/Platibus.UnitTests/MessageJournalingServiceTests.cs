@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Platibus.UnitTests
 {
+    [Trait("Category", "UnitTests")]
     public abstract class MessageJournalingServiceTests
     {
         protected IMessageJournalingService MessageJournalingService;

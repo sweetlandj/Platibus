@@ -9,6 +9,8 @@ using Xunit;
 
 namespace Platibus.UnitTests.RabbitMQ
 {
+    [Trait("Category", "UnitTests")]
+    [Trait("Dependency", "RabbitMQ")]
     [Collection(RabbitMQCollection.Name)]
     public class RabbitMQMessageQueueingServiceTests : MessageQueueingServiceTests<RabbitMQMessageQueueingService>
     {

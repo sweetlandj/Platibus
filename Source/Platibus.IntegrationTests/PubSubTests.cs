@@ -26,6 +26,7 @@ using Xunit;
 
 namespace Platibus.IntegrationTests
 {
+    [Trait("Category", "IntegrationTests")]
     public abstract class PubSubTests : IDisposable
     {
         private static readonly Random RNG = new Random();

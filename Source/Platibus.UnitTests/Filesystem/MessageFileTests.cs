@@ -32,6 +32,7 @@ using Platibus.Security;
 #pragma warning disable 618
 namespace Platibus.UnitTests.Filesystem
 {
+    [Trait("Category", "UnitTests")]
     public class MessageFileTests
     {
         protected IPrincipal Principal;

@@ -6,7 +6,8 @@ using Xunit;
 
 namespace Platibus.UnitTests
 {
-    internal class MessageContextExtensionsTests
+    [Trait("Category", "UnitTests")]
+    public class MessageContextExtensionsTests
     {
         [Fact]
         public async Task MessageAcknowledgedWhenContextEnlistedInCompletedTransaction()

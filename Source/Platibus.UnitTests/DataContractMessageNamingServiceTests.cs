@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Platibus.UnitTests
 {
+    [Trait("Category", "UnitTests")]
     internal class DataContractMessageNamingServiceTests
     {
         [DataContract]

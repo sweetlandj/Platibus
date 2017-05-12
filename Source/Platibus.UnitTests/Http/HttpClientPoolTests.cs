@@ -7,9 +7,10 @@ using Platibus.Security;
 
 namespace Platibus.UnitTests.Http
 {
+    [Trait("Category", "UnitTests")]
     public class HttpClientPoolTests
     {
-       [Fact]
+        [Fact]
         public async Task HttpClientPoolAllocatesOneHandlerPerUriAndManyCredentialsOfTheSameType()
         {
             var uri = new Uri("http://localhost/platibus");
@@ -30,7 +31,7 @@ namespace Platibus.UnitTests.Http
             Assert.Equal(1, finalSize - initialSize);
         }
 
-       [Fact]
+        [Fact]
         public async Task HttpClientPoolAllocatesOneHandlerPerUriAndCredentialType()
         {
             var uri = new Uri("http://localhost/platibus");
@@ -51,7 +52,7 @@ namespace Platibus.UnitTests.Http
 
             var finalSize = clientPool.Size;
             clientPool.Dispose();
-             
+
             Assert.Equal(3, finalSize - initialSize);
         }
     }

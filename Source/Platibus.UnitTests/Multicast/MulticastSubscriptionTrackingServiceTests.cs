@@ -8,6 +8,7 @@ using Platibus.UnitTests.Stubs;
 
 namespace Platibus.UnitTests.Multicast
 {
+    [Trait("Category", "UnitTests")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable")]
     public class MulticastSubscriptionTrackingServiceTests : IDisposable
     {
