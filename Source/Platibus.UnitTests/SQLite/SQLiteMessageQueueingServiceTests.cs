@@ -4,19 +4,16 @@ using System.Linq;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using Platibus.SQLite;
+using Xunit;
 
 namespace Platibus.UnitTests.SQLite
 {
+    [Collection(SQLiteCollection.Name)]
     public class SQLiteMessageQueueingServiceTests : MessageQueueingServiceTests<SQLiteMessageQueueingService>
     {
         private readonly DirectoryInfo _baseDirectory;
-
-        public SQLiteMessageQueueingServiceTests() 
-            : this(SQLiteCollectionFixture.Instance)
-        {
-        }
-
-        public SQLiteMessageQueueingServiceTests(SQLiteCollectionFixture fixture)
+        
+        public SQLiteMessageQueueingServiceTests(SQLiteFixture fixture)
             : base(fixture.MessageQueueingService)
         {
             _baseDirectory = fixture.BaseDirectory;

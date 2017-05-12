@@ -41,7 +41,6 @@ namespace Platibus.RabbitMQ
         private readonly bool _autoAcknowledge;
         private readonly CancellationTokenSource _cancellationTokenSource;
         
-        private Task _consumerTask;
         private volatile IConnection _connection;
         private volatile IModel _channel;
         
@@ -70,79 +69,30 @@ namespace Platibus.RabbitMQ
         public void Init()
         {
             var cancellationToken = _cancellationTokenSource.Token;
-            _consumerTask = Task.Run(() => Consume(cancellationToken), cancellationToken);
-        }
+            _channel = CreateChannel(cancellationToken);
+            
+            Log.DebugFormat("Initializing consumer '{0}' on channel number '{1}' for queue '{2}'...",
+                _consumerTag, _channel.ChannelNumber, _queueName);
 
-        public void Reconnect(IConnection newConnection)
-        {
-            var currentChannel = _channel;
-            _connection = newConnection;
-            _channel = null;
-
-            try
+            var consumer = new EventingBasicConsumer(_channel);
+            consumer.Received += (sender, args) =>
             {
-                currentChannel.Close();
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error closing channel", ex);
-            }
-        }
-
-        private void Consume(CancellationToken cancellationToken)
-        {
-            EventingBasicConsumer consumer = null;
-            while (!cancellationToken.IsCancellationRequested)
-            {
+                Log.DebugFormat("Consumer '{0}' received delivery '{1}' from queue '{2}'", _consumerTag,
+                    args.DeliveryTag, _queueName);
                 try
                 {
-                    if (_channel == null || !_channel.IsOpen)
-                    {
-                        _channel = CreateChannel(cancellationToken);
-                        consumer = null;
-                    }
-
-                    var interruption = new TaskCompletionSource<bool>();
-                    cancellationToken.Register(() => interruption.TrySetResult(true));
-
-                    if (consumer == null)
-                    {
-                        Log.DebugFormat("Initializing consumer '{0}' on channel number '{1}' for queue '{2}'...",
-                            _consumerTag, _channel.ChannelNumber, _queueName);
-                        consumer = new EventingBasicConsumer(_channel);
-                        consumer.Received += (sender, args) =>
-                        {
-                            Log.DebugFormat("Consumer '{0}' received delivery '{1}' from queue '{2}'", _consumerTag,
-                                args.DeliveryTag, _queueName);
-                            try
-                            {
-                                _consume(_channel, args, cancellationToken);
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.ErrorFormat(
-                                    "Unhandled exception in callback (consumer '{0}', channel '{1}', queue '{2}'", ex,
-                                    _consumerTag, _channel, _queueName);
-                                _channel.BasicNack(args.DeliveryTag, true, false);
-                            }
-                        };
-
-                        _channel.BasicConsume(_queueName, _autoAcknowledge, _consumerTag, consumer);
-                    }
-
-                    interruption.Task.Wait(cancellationToken);
-                }
-                catch (OperationCanceledException)
-                {
+                    _consume(_channel, args, cancellationToken);
                 }
                 catch (Exception ex)
                 {
-                    Log.ErrorFormat("Unhandled exception consuming messages from queue \"{0}\"", ex, _queueName);
+                    Log.ErrorFormat(
+                        "Unhandled exception in callback (consumer '{0}', channel '{1}', queue '{2}'", ex,
+                        _consumerTag, _channel, _queueName);
+                    _channel.BasicNack(args.DeliveryTag, true, false);
                 }
+            };
 
-                TryCancelConsumer();
-                TryCloseChannel();
-            }
+            _channel.BasicConsume(_queueName, _autoAcknowledge, _consumerTag, consumer);
         }
 
         private IModel CreateChannel(CancellationToken cancellationToken = default(CancellationToken))
@@ -226,16 +176,8 @@ namespace Platibus.RabbitMQ
         {
             _cancellationTokenSource.Cancel();
 
-            Log.DebugFormat("Waiting for consumer task for queue '{0}' to finish...", _queueName);
-            var stoppedGracefully = _consumerTask.Wait(TimeSpan.FromSeconds(30));
-            if (!stoppedGracefully)
-            {
-                Log.WarnFormat("Timeout waiting for consumer for queue '{0}' to finish", _queueName);
-            }
-            else
-            {
-                Log.DebugFormat("Consumer task for queue '{0}' finished", _queueName);
-            }
+            TryCancelConsumer();
+            TryCloseChannel();
 
             if (disposing)
             {

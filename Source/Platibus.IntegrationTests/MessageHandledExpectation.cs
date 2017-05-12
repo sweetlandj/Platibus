@@ -24,7 +24,7 @@ using System;
 
 namespace Platibus.IntegrationTests
 {
-    internal class MessageHandledExpectation : Expectation
+    public class MessageHandledExpectation : Expectation
     {
         private readonly Func<object, IMessageContext, bool> _isSatisfied;
 

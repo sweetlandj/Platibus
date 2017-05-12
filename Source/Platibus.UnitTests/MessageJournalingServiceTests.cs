@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 namespace Platibus.UnitTests
 {
@@ -14,7 +14,7 @@ namespace Platibus.UnitTests
             MessageJournalingService = messageJournalingService;
         }
 
-        [Test]
+        [Fact]
         public async Task SentMessagesShouldBeWrittenToJournal()
         {
             GivenSentMessage();
@@ -22,7 +22,7 @@ namespace Platibus.UnitTests
             await AssertSentMessageIsWrittenToJournal();
         }
 
-        [Test]
+        [Fact]
         public async Task ReceivedMessagesShouldBeWrittenToJournal()
         {
             GivenReceivedMessage();
@@ -30,7 +30,7 @@ namespace Platibus.UnitTests
             await AssertReceivedMessageIsWrittenToJournal();
         }
 
-        [Test]
+        [Fact]
         public async Task PublishedMessagesShouldBeWrittenToJournal()
         {
             GivenPublishedMessage();
@@ -99,7 +99,7 @@ namespace Platibus.UnitTests
         {
             return MessageJournalingService.MessagePublished(Message);
         }
-        
+
         protected abstract Task AssertPublishedMessageIsWrittenToJournal();
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 using Platibus.Config;
 
 namespace Platibus.UnitTests
@@ -15,18 +15,18 @@ namespace Platibus.UnitTests
             }
         }
 
-        [Test]
+       [Fact]
         public async Task HandlingRulesAreAdded()
         {
             var configuration = await PlatibusConfigurationManager.LoadConfiguration();
 
             var handlingRules = configuration.HandlingRules.ToList();
-            Assert.That(handlingRules.Count, Is.EqualTo(1));
-            Assert.That(handlingRules[0].Specification, Is.InstanceOf<MessageNamePatternSpecification>());
+            Assert.Equal(1, handlingRules.Count);
+            Assert.IsType<MessageNamePatternSpecification>(handlingRules[0].Specification);
 
             var namePatternSpec = (MessageNamePatternSpecification) handlingRules[0].Specification;
-            Assert.That(namePatternSpec.NameRegex.ToString(), Is.EqualTo(".*(?i)example.*"));
-            Assert.That(handlingRules[0].MessageHandler, Is.InstanceOf<MessageHandlerStub>());
+            Assert.Equal(".*(?i)example.*", namePatternSpec.NameRegex.ToString());
+            Assert.IsType<MessageHandlerStub>(handlingRules[0].MessageHandler);
         }
     }
 }

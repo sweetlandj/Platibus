@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 using Platibus.Config;
 using Platibus.Http;
 using Platibus.InMemory;
@@ -11,7 +10,7 @@ namespace Platibus.UnitTests.Http
 {
     internal class HttpTransportServiceTests
     {
-        [Test]
+        [Fact]
         public async Task MessageCanBePostedToRemote()
         {
             var messageReceivedEvent = new ManualResetEvent(false);
@@ -59,11 +58,11 @@ namespace Platibus.UnitTests.Http
             // Sanity check.  We're really testing the transport to ensure
             // that it doesn't throw.  But if it does throw, then it would
             // be nice to get some info about how the server behaved.
-            Assert.That(messageReceived, Is.True);
-            Assert.That(content, Is.EqualTo("Hello, world!"));
+            Assert.True(messageReceived);
+            Assert.Equal("Hello, world!", content);
         }
 
-        [Test]
+        [Fact]
         public async Task TransportExceptionThrownIfConnectionRefused()
         {
             var endpoint = new UriBuilder
@@ -83,24 +82,10 @@ namespace Platibus.UnitTests.Http
                 {HeaderName.Destination, endpoint.ToString()}
             }, "Hello, world!");
 
-            Exception exception = null;
-            try
-            {
-                await transportService.SendMessage(message);
-            }
-            catch (AggregateException ae)
-            {
-                exception = ae.InnerExceptions.FirstOrDefault();
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
-            Assert.That(exception, Is.Not.Null);
-            Assert.That(exception, Is.InstanceOf<ConnectionRefusedException>());
+            await Assert.ThrowsAsync<ConnectionRefusedException>(() => transportService.SendMessage(message));
         }
 
-        [Test]
+        [Fact]
         public async Task TransportExceptionThrownIfNameResolutionFails()
         {
             var endpoint = new UriBuilder
@@ -120,21 +105,7 @@ namespace Platibus.UnitTests.Http
                 {HeaderName.Destination, endpoint.ToString()}
             }, "Hello, world!");
 
-            Exception exception = null;
-            try
-            {
-                await transportService.SendMessage(message);
-            }
-            catch (AggregateException ae)
-            {
-                exception = ae.InnerExceptions.FirstOrDefault();
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
-            Assert.That(exception, Is.Not.Null);
-            Assert.That(exception, Is.InstanceOf<NameResolutionFailedException>());
+            await Assert.ThrowsAsync<NameResolutionFailedException>(() => transportService.SendMessage(message));
         }
     }
 }

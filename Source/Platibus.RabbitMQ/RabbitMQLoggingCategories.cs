@@ -30,6 +30,6 @@ namespace Platibus.RabbitMQ
         /// <summary>
         /// Logging category for messages related to RabbitMQ
         /// </summary>
-        public const string RabbitMQ = "RabbitMQ";
+        public const string RabbitMQ = "Platibus.RabbitMQ";
     }
 }

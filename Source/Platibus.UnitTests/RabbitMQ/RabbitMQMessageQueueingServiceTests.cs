@@ -5,19 +5,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using Platibus.RabbitMQ;
 using RabbitMQ.Client;
+using Xunit;
 
 namespace Platibus.UnitTests.RabbitMQ
 {
+    [Collection(RabbitMQCollection.Name)]
     public class RabbitMQMessageQueueingServiceTests : MessageQueueingServiceTests<RabbitMQMessageQueueingService>
     {
         private readonly Uri _uri;
-
-        public RabbitMQMessageQueueingServiceTests()
-            : this(RabbitMQCollectionFixture.Instance)
-        {
-        }
-
-        public RabbitMQMessageQueueingServiceTests(RabbitMQCollectionFixture fixture)
+        
+        public RabbitMQMessageQueueingServiceTests(RabbitMQFixture fixture)
             : base(fixture.MessageQueueingService)
         {
             _uri = fixture.Uri;

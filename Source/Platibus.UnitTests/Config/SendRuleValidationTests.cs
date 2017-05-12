@@ -23,7 +23,7 @@
 using System;
 using System.Linq;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 using Platibus.Config;
 
 namespace Platibus.UnitTests.Config
@@ -32,28 +32,28 @@ namespace Platibus.UnitTests.Config
     {
         protected PlatibusConfiguration Configuration;
 
-        [Test]
+        [Fact]
         public void SendRuleWithKnownEndpointIsValid()
         {
             GivenValidConfiguration();
             GivenSendRuleWithUnknownEndpoint();
-            Assert.Throws<InvalidSendRuleException>(WhenValidating);
+            Assert.Throws<InvalidSendRuleException>(() => WhenValidating());
         }
 
-        [Test]
+        [Fact]
         public void SendRuleWithNoEndpointsIsInvalid()
         {
             GivenValidConfiguration();
             GivenSendRuleWithNoEndpoints();
-            Assert.Throws<InvalidSendRuleException>(WhenValidating);
+            Assert.Throws<InvalidSendRuleException>(() => WhenValidating());
         }
 
-        [Test]
+        [Fact]
         public void SendRuleWithUnknownEndpointIsInvalid()
         {
             GivenValidConfiguration();
             GivenSendRuleWithKnownEndpoint();
-            Assert.DoesNotThrow(WhenValidating);
+            AssertDoesNotThrow(WhenValidating);
         }
 
         private void GivenValidConfiguration()
@@ -88,6 +88,15 @@ namespace Platibus.UnitTests.Config
         private void WhenValidating()
         {
             Configuration.Validate();
+        }
+
+        /// <summary>
+        /// Helper method to improve readability
+        /// </summary>
+        /// <param name="action">The action that does not throw</param>
+        private static void AssertDoesNotThrow(Action action)
+        {
+            action();
         }
     }
 }

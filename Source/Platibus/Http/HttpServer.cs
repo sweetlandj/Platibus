@@ -170,7 +170,7 @@ namespace Platibus.Http
             
             Log.InfoFormat("Starting HTTP server listening on {0}...", _baseUri);
             _httpListener.Start();
-            Log.InfoFormat("HTTP started successfully");
+            Log.InfoFormat("HTTP server started successfully");
 
             // Create a new async task but do not wait for it to complete.
             _listenTask = Listen(_cancellationTokenSource.Token);
@@ -181,9 +181,18 @@ namespace Platibus.Http
         {
             try
             {
+                var cancelationSource = new TaskCompletionSource<bool>();
+                cancellationToken.Register(() => cancelationSource.TrySetResult(true));
+                var canceled = cancelationSource.Task;
+
                 while (_httpListener.IsListening && !cancellationToken.IsCancellationRequested)
                 {
-                    var context = await _httpListener.GetContextAsync();
+                    var contextReceived = _httpListener.GetContextAsync();
+                    await Task.WhenAny(contextReceived, canceled);
+
+                    if (cancellationToken.IsCancellationRequested) break;
+
+                    var context = await contextReceived;
 
                     Log.DebugFormat("Accepting {0} request for resource {1} from {2}...",
                         context.Request.HttpMethod, context.Request.Url, context.Request.RemoteEndPoint);
@@ -271,7 +280,7 @@ namespace Platibus.Http
             Log.Info("Stopping HTTP server...");
             _httpListener.Stop();
             _cancellationTokenSource.Cancel();
-            _listenTask.TryWait(TimeSpan.FromSeconds(30));
+            _listenTask.Wait(TimeSpan.FromSeconds(30));
             Log.InfoFormat("HTTP server stopped");
 
             _bus.TryDispose();

@@ -20,8 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Configuration;
-using NUnit.Framework;
+using Xunit;
 using Platibus.Config;
 
 namespace Platibus.UnitTests.Config
@@ -30,27 +31,27 @@ namespace Platibus.UnitTests.Config
     {
         protected PlatibusConfiguration Configuration;
 
-        [Test]
+        [Fact]
         public void DefaultConfigurationIsValid()
         {
             GivenDefaultConfiguration();
-            Assert.DoesNotThrow(WhenValidating);
+            AssertDoesNotThrow(WhenValidating);
         }
 
-        [Test]
+        [Fact]
         public void MessageNamingServiceIsRequired()
         {
             GivenValidConfiguration();
             Configuration.MessageNamingService = null;
-            Assert.Throws<ConfigurationErrorsException>(WhenValidating);
+            Assert.Throws<ConfigurationErrorsException>(() => WhenValidating());
         }
 
-        [Test]
+        [Fact]
         public void SerializationServiceIsRequired()
         {
             GivenValidConfiguration();
             Configuration.SerializationService = null;
-            Assert.Throws<ConfigurationErrorsException>(WhenValidating);
+            Assert.Throws<ConfigurationErrorsException>(() => WhenValidating());
         }
 
         private void GivenDefaultConfiguration()
@@ -62,10 +63,19 @@ namespace Platibus.UnitTests.Config
         {
             Configuration = new PlatibusConfiguration();
         }
-        
+
         private void WhenValidating()
         {
             Configuration.Validate();
+        }
+
+        /// <summary>
+        /// Helper method to improve readability
+        /// </summary>
+        /// <param name="action">The action that does not throw</param>
+        private static void AssertDoesNotThrow(Action action)
+        {
+            action();
         }
     }
 }

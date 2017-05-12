@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 
 namespace Platibus.UnitTests.Mocks
 {
@@ -13,27 +13,29 @@ namespace Platibus.UnitTests.Mocks
         protected bool JournalReceivedMessages = true;
         protected bool JournalPublishedMessages = true;
 
-        public FilteredMessageJournalingServiceTests() 
+        public FilteredMessageJournalingServiceTests()
             : this(new Mock<IMessageJournalingService>())
         {
         }
 
-        public FilteredMessageJournalingServiceTests(Mock<IMessageJournalingService> mockMessageJournalingService)
+        private FilteredMessageJournalingServiceTests(Mock<IMessageJournalingService> mockMessageJournalingService)
             : base(mockMessageJournalingService.Object)
         {
             MockMessageJournalingService = mockMessageJournalingService;
+            MockMessageJournalingService
+                .Setup(x => x.MessageSent(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(0));
+
+            MockMessageJournalingService
+                .Setup(x => x.MessageReceived(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(0));
+
+            MockMessageJournalingService
+                .Setup(x => x.MessagePublished(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(0));
         }
 
-        [SetUp]
-        public void SetUp()
-        {
-            MockMessageJournalingService.ResetCalls();
-            JournalSentMessages = true;
-            JournalReceivedMessages = true;
-            JournalPublishedMessages = true;
-    }
-
-        [Test]
+        [Fact]
         public async Task SentMessagesNotJournaledWhenSentMessagesFilteredOut()
         {
             GivenSentMessage();
@@ -42,7 +44,7 @@ namespace Platibus.UnitTests.Mocks
             AssertSentMessageIsNotWrittenToJournal();
         }
 
-        [Test]
+        [Fact]
         public async Task ReceivedMessagesNotJournaledWhenReceivedMessagesFilteredOut()
         {
             GivenReceivedMessage();
@@ -51,7 +53,7 @@ namespace Platibus.UnitTests.Mocks
             AssertReceivedMessageIsNotWrittenToJournal();
         }
 
-        [Test]
+        [Fact]
         public async Task PublishedMessagesNotJournaledWhenPublishedMessagesFilteredOut()
         {
             GivenPublishedMessage();
@@ -80,10 +82,10 @@ namespace Platibus.UnitTests.Mocks
             return new FilteredMessageJournalingService(
                 MessageJournalingService,
                 JournalSentMessages,
-                JournalReceivedMessages, 
+                JournalReceivedMessages,
                 JournalPublishedMessages);
         }
-        
+
         protected override Task WhenJournalingSentMessage()
         {
             return CreateFilteredMessageJournalingService().MessageSent(Message);

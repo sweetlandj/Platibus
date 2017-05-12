@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 using Platibus.Config;
 
 namespace Platibus.UnitTests
@@ -14,13 +14,13 @@ namespace Platibus.UnitTests
         protected IMessageQueueingService MessageQueueingService;
         protected ITransportService TransportService;
 
-        [Test]
+        [Fact]
         public async Task OverriddenQueueOptionsShouldTakePrecedenceOverDefaults()
         {
             GivenDefaultConfiguration();
             GivenMockTransportService();
             var mockQueueingService = GivenMockQueueingService();
-            
+
             var queueName = new QueueName("queue1");
             var handlingRule1 = FakeHandlingRule(".*", queueName, null);
             Configuration.AddHandlingRule(handlingRule1);
@@ -60,7 +60,7 @@ namespace Platibus.UnitTests
             return mockQueueingService;
         }
 
-        private Mock<ITransportService> GivenMockTransportService()
+        private void GivenMockTransportService()
         {
             var mockTransportService = new Mock<ITransportService>();
             mockTransportService.Setup(x => x.SendMessage(
@@ -83,7 +83,6 @@ namespace Platibus.UnitTests
                 .Returns(Task.FromResult(true));
 
             TransportService = mockTransportService.Object;
-            return mockTransportService;
         }
 
         private async Task WhenInitializingBus()

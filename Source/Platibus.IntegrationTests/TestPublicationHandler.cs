@@ -39,6 +39,14 @@ namespace Platibus.IntegrationTests
             }
         }
 
+        internal static void RemoveExpectation(MessageHandledExpectation expectation)
+        {
+            lock (SyncRoot)
+            {
+                Expectations.Remove(expectation);
+            }
+        }
+
         public Task HandleMessage(object content, IMessageContext messageContext, CancellationToken cancellationToken)
         {
             messageContext.Acknowledge();
@@ -50,14 +58,6 @@ namespace Platibus.IntegrationTests
                 }
             }
             return Task.FromResult(true);
-        }
-
-        public static void Reset()
-        {
-            lock (SyncRoot)
-            {
-                Expectations.Clear();
-            }
         }
     }
 }

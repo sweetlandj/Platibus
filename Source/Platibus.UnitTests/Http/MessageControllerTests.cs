@@ -7,14 +7,14 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 using Platibus.Http;
 
 namespace Platibus.UnitTests.Http
 {
     internal class MessageControllerTests
     {
-        [Test]
+        [Fact]
         public async Task ValidPostRequestToMessageResourceAccepted()
         {
             var messageId = MessageId.Generate();
@@ -48,12 +48,12 @@ namespace Platibus.UnitTests.Http
 
             var messageReceived = messageReceivedEvent.WaitOne(TimeSpan.FromSeconds(1));
 
-            Assert.That(messageReceived, Is.True);
-            Assert.That(receivedMessage, Is.Not.Null);
-            Assert.That(receivedMessage.Content, Is.EqualTo("Hello, world!"));
-            Assert.That(receivedMessage.Headers.MessageId, Is.EqualTo(messageId));
+            Assert.True(messageReceived);
+            Assert.NotNull(receivedMessage);
+            Assert.Equal("Hello, world!", receivedMessage.Content);
+            Assert.Equal(messageId, receivedMessage.Headers.MessageId);
 
-            mockResponse.VerifySet(r => r.StatusCode = (int) HttpStatusCode.Accepted);
+            mockResponse.VerifySet(r => r.StatusCode = (int)HttpStatusCode.Accepted);
 
             Console.WriteLine(receivedMessage.Content);
         }

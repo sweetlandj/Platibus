@@ -20,7 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Net;
 using Platibus.Config;
+using Platibus.Http;
 
 namespace Platibus.IntegrationTests
 {
@@ -28,8 +30,17 @@ namespace Platibus.IntegrationTests
     {
         public void Configure(PlatibusConfiguration configuration)
         {
-            configuration.AddHandlingRule<TestMessage>(".*TestMessage", TestHandler.HandleMessage);
-            configuration.AddHandlingRule(".*TestPublication", new TestPublicationHandler());
+            configuration.AddHandlingRule<TestMessage>(".*TestMessage", TestHandler.HandleMessage, "TestHandler");
+            configuration.AddHandlingRule(".*TestPublication", new TestPublicationHandler(), "TestPublicationHandler");
+
+            var httpServerConfiguration = configuration as HttpServerConfiguration;
+            if (httpServerConfiguration != null)
+            {
+                if (httpServerConfiguration.AuthenticationSchemes.HasFlag(AuthenticationSchemes.Basic))
+                {
+                    httpServerConfiguration.AuthorizationService = new TestAuthorizationService("platibus", "Pbu$", true, true);
+                }
+            }
         }
     }
 }

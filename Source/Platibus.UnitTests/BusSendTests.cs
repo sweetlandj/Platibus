@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 using Platibus.Config;
 using Platibus.Security;
 
@@ -18,10 +18,10 @@ namespace Platibus.UnitTests
         protected readonly Uri OtherEndpointUri = new Uri("http://localhost/other/");
         protected readonly IEndpointCredentials OtherEndpointCredentials = new BasicAuthCredentials("other", "otherpw");
 
-        [Test]
+        [Fact]
         public async Task SendRulesDetermineMessageDestination()
         {
-            var mockTransportService =  GivenMockTransportService();
+            var mockTransportService = GivenMockTransportService();
             const string messageContent = "Hello, world!";
             using (var bus = await GivenConfiguredBus(mockTransportService.Object))
             {
@@ -41,12 +41,12 @@ namespace Platibus.UnitTests
             mockTransportService.Verify(
                 ts => ts.SendMessage(
                     It.Is<Message>(m => m.Content == messageContent && m.Headers.Destination == DefaultEndpointUri),
-                    DefaultEndpointCredentials, 
+                    DefaultEndpointCredentials,
                     It.IsAny<CancellationToken>()),
                 Times.Once());
         }
-        
-        [Test]
+
+        [Fact]
         public async Task MessageCanBeAddressedToSpecificEndpointByName()
         {
             var mockTransportService = GivenMockTransportService();
@@ -74,7 +74,7 @@ namespace Platibus.UnitTests
                 Times.Once());
         }
 
-        [Test]
+        [Fact]
         public async Task MessageCanBeAddressedToSpecificEndpointUri()
         {
             var mockTransportService = GivenMockTransportService();
@@ -102,7 +102,7 @@ namespace Platibus.UnitTests
                 Times.Once());
         }
 
-        [Test]
+        [Fact]
         public async Task MessageCanBeAddressedToSpecificEndpointUriWithOverridingCredentials()
         {
             var overridingCredentials = new BasicAuthCredentials("override", "overridepw");
@@ -163,7 +163,7 @@ namespace Platibus.UnitTests
 
             config.AddEndpoint(OtherEndpointName, new Endpoint(OtherEndpointUri, OtherEndpointCredentials));
             config.AddSendRule(new SendRule(noMatchSpecification, OtherEndpointName));
-            
+
             var baseUri = new Uri("http://localhost/platibus");
             var bus = new Bus(config, baseUri, transportService, messageQueueingService.Object);
             await bus.Init();

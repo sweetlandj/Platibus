@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 using Platibus.Http;
 using Platibus.Security;
 
@@ -9,7 +9,7 @@ namespace Platibus.UnitTests.Http
 {
     public class HttpClientPoolTests
     {
-        [Test]
+       [Fact]
         public async Task HttpClientPoolAllocatesOneHandlerPerUriAndManyCredentialsOfTheSameType()
         {
             var uri = new Uri("http://localhost/platibus");
@@ -27,10 +27,10 @@ namespace Platibus.UnitTests.Http
             var finalSize = clientPool.Size;
             clientPool.Dispose();
 
-            Assert.AreEqual(1, finalSize - initialSize);
+            Assert.Equal(1, finalSize - initialSize);
         }
 
-        [Test]
+       [Fact]
         public async Task HttpClientPoolAllocatesOneHandlerPerUriAndCredentialType()
         {
             var uri = new Uri("http://localhost/platibus");
@@ -52,7 +52,7 @@ namespace Platibus.UnitTests.Http
             var finalSize = clientPool.Size;
             clientPool.Dispose();
              
-            Assert.AreEqual(3, finalSize - initialSize);
+            Assert.Equal(3, finalSize - initialSize);
         }
     }
 }

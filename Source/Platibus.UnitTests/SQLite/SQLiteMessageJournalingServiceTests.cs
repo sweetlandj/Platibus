@@ -1,20 +1,16 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 namespace Platibus.UnitTests.SQLite
 {
+    [Collection(SQLiteCollection.Name)]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable")]
     public class SQLiteMessageJournalingServiceTests : MessageJournalingServiceTests
     {
         private readonly SQLiteMessageJournalInspector _inspector;
-
-        public SQLiteMessageJournalingServiceTests() 
-            : this(SQLiteCollectionFixture.Instance)
-        {
-        }
-
-        public SQLiteMessageJournalingServiceTests(SQLiteCollectionFixture fixture)
+        
+        public SQLiteMessageJournalingServiceTests(SQLiteFixture fixture)
             : base(fixture.MessageJournalingService)
         {
             _inspector = new SQLiteMessageJournalInspector(fixture.BaseDirectory);
@@ -25,7 +21,7 @@ namespace Platibus.UnitTests.SQLite
             var journaledMessages = await _inspector.EnumerateMessages();
             var messageIsJournaled = journaledMessages
                 .Any(m => m.Message.Headers.MessageId == Message.Headers.MessageId && m.Category == "Sent");
-            Assert.That(messageIsJournaled, Is.True);
+            Assert.True(messageIsJournaled);
         }
 
         protected override async Task AssertReceivedMessageIsWrittenToJournal()
@@ -33,7 +29,7 @@ namespace Platibus.UnitTests.SQLite
             var journaledMessages = await _inspector.EnumerateMessages();
             var messageIsJournaled = journaledMessages
                 .Any(m => m.Message.Headers.MessageId == Message.Headers.MessageId && m.Category == "Received");
-            Assert.That(messageIsJournaled, Is.True);
+            Assert.True(messageIsJournaled);
         }
 
         protected override async Task AssertPublishedMessageIsWrittenToJournal()
@@ -41,7 +37,7 @@ namespace Platibus.UnitTests.SQLite
             var journaledMessages = await _inspector.EnumerateMessages();
             var messageIsJournaled = journaledMessages
                 .Any(m => m.Message.Headers.MessageId == Message.Headers.MessageId && m.Category == "Published");
-            Assert.That(messageIsJournaled, Is.True);
+            Assert.True(messageIsJournaled);
         }
     }
 }

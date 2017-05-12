@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 using Platibus.Http;
 using Platibus.Serialization;
 
@@ -15,11 +15,11 @@ namespace Platibus.UnitTests.Http
 {
     internal class TopicControllerTests
     {
-        [Test]
+        [Fact]
         public async Task GetRequestToTopicResourceReturnsListOfTopics()
         {
             var mockSubscriptionTrackingService = new Mock<ISubscriptionTrackingService>();
-            var topics = new TopicName[] {"topic-1", "topic-2", "topic-3"};
+            var topics = new TopicName[] { "topic-1", "topic-2", "topic-3" };
             var controller = new TopicController(mockSubscriptionTrackingService.Object, topics);
 
             var mockRequest = new Mock<IHttpResourceRequest>();
@@ -45,17 +45,17 @@ namespace Platibus.UnitTests.Http
             var responseContent = responseEncoding.GetString(responseOutputStream.GetBuffer());
             var topicsFromResponse = new NewtonsoftJsonSerializer().Deserialize<string[]>(responseContent);
 
-            Assert.That(topicsFromResponse.Length, Is.EqualTo(3));
-            Assert.That(topicsFromResponse, Contains.Item("topic-1"));
-            Assert.That(topicsFromResponse, Contains.Item("topic-2"));
-            Assert.That(topicsFromResponse, Contains.Item("topic-3"));
+            Assert.Equal(3, topicsFromResponse.Length);
+            Assert.Contains("topic-1", topicsFromResponse);
+            Assert.Contains("topic-2", topicsFromResponse);
+            Assert.Contains("topic-3", topicsFromResponse);
         }
 
-        [Test]
+        [Fact]
         public async Task BadRequestWhenPostingToUnknownTopic()
         {
             var mockSubscriptionTrackingService = new Mock<ISubscriptionTrackingService>();
-            var topics = new TopicName[] {"topic-1", "topic-2", "topic-3"};
+            var topics = new TopicName[] { "topic-1", "topic-2", "topic-3" };
             var controller = new TopicController(mockSubscriptionTrackingService.Object, topics);
 
             var mockRequest = new Mock<IHttpResourceRequest>();
@@ -79,7 +79,7 @@ namespace Platibus.UnitTests.Http
             mockResponse.VerifySet(r => r.StatusCode = 400);
         }
 
-        [Test]
+        [Fact]
         public async Task ValidPostRequestToTopicSubscriberResourceCreatesSubscription()
         {
             var mockSubscriptionTrackingService = new Mock<ISubscriptionTrackingService>();
@@ -88,7 +88,7 @@ namespace Platibus.UnitTests.Http
                     It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(true));
 
-            var topics = new TopicName[] {"topic-1", "topic-2", "topic-3"};
+            var topics = new TopicName[] { "topic-1", "topic-2", "topic-3" };
             var controller = new TopicController(mockSubscriptionTrackingService.Object, topics);
 
             var mockRequest = new Mock<IHttpResourceRequest>();
@@ -111,7 +111,7 @@ namespace Platibus.UnitTests.Http
 
             var mockResponse = new Mock<IHttpResourceResponse>();
 
-            await controller.Process(mockRequest.Object, mockResponse.Object, new[] {"topic-1", "subscriber", encodedSubscriberUri});
+            await controller.Process(mockRequest.Object, mockResponse.Object, new[] { "topic-1", "subscriber", encodedSubscriberUri });
 
             mockResponse.VerifySet(r => r.StatusCode = 202);
             mockSubscriptionTrackingService.Verify(ts => ts.AddSubscription(
@@ -119,7 +119,7 @@ namespace Platibus.UnitTests.Http
                 It.IsAny<CancellationToken>()));
         }
 
-        [Test]
+        [Fact]
         public async Task ValidDeleteRequestToTopicSubscriberResourceRemovesSubscription()
         {
             var mockSubscriptionTrackingService = new Mock<ISubscriptionTrackingService>();
@@ -128,7 +128,7 @@ namespace Platibus.UnitTests.Http
                     It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(true));
 
-            var topics = new TopicName[] {"topic-1", "topic-2", "topic-3"};
+            var topics = new TopicName[] { "topic-1", "topic-2", "topic-3" };
             var controller = new TopicController(mockSubscriptionTrackingService.Object, topics);
 
             var mockRequest = new Mock<IHttpResourceRequest>();
@@ -150,7 +150,7 @@ namespace Platibus.UnitTests.Http
 
             var mockResponse = new Mock<IHttpResourceResponse>();
 
-            await controller.Process(mockRequest.Object, mockResponse.Object, new[] {"topic-1", "subscriber", encodedSubscriberUri});
+            await controller.Process(mockRequest.Object, mockResponse.Object, new[] { "topic-1", "subscriber", encodedSubscriberUri });
 
             mockResponse.VerifySet(r => r.StatusCode = 202);
             mockSubscriptionTrackingService.Verify(ts => ts.RemoveSubscription(

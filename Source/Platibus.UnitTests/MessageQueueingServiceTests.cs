@@ -3,7 +3,7 @@ using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 using Platibus.Security;
 
 namespace Platibus.UnitTests
@@ -24,7 +24,7 @@ namespace Platibus.UnitTests
             SecurityTokenService = new JwtSecurityTokenService();
         }
 
-        [Test]
+        [Fact]
         public async Task QueueListenerFiresWhenNewMessageEnqueued()
         {
             var listener = new QueueListenerStub();
@@ -38,7 +38,7 @@ namespace Platibus.UnitTests
             AssertMessageHandled(message, listener.Message);
         }
 
-        [Test]
+        [Fact]
         public async Task PrincipalIsPreservedWhenListenerInvoked()
         {
             var listener = new QueueListenerStub();
@@ -52,7 +52,7 @@ namespace Platibus.UnitTests
             AssertPrincipalPreserved(listener.Context.Principal);
         }
 
-        [Test]
+        [Fact]
         public async Task QueueListenerFiresForExistingMessagesWhenQueueCreated()
         {
             var queue = GivenUniqueQueueName();
@@ -65,7 +65,7 @@ namespace Platibus.UnitTests
             AssertMessageHandled(message, listener.Message);
         }
 
-        [Test]
+        [Fact]
         public async Task MessageIsRemovedFromQueueWhenAcknowledged()
         {
             var queue = GivenUniqueQueueName();
@@ -80,7 +80,7 @@ namespace Platibus.UnitTests
             await AssertMessageNoLongerQueued(queue, message);
         }
 
-        [Test]
+        [Fact]
         public async Task MessageCanBeAutomaticallyAcknowledged()
         {
             var queue = GivenUniqueQueueName();
@@ -100,7 +100,7 @@ namespace Platibus.UnitTests
             await AssertMessageNoLongerQueued(queue, message);
         }
 
-        [Test]
+        [Fact]
         public async Task MessageIsDeadWhenMaxAttemptsAreExceeded()
         {
             var queue = GivenUniqueQueueName();
@@ -121,7 +121,7 @@ namespace Platibus.UnitTests
             await AssertMessageNoLongerQueued(queue, message);
         }
 
-        [Test]
+        [Fact]
         public async Task MessageIsRetriedIfNotAcknowledged()
         {
             var queue = GivenUniqueQueueName();
@@ -137,14 +137,14 @@ namespace Platibus.UnitTests
             await MessageQueueingService.EnqueueMessage(queue, message, Principal);
             await listener.Completed;
             listener.Dispose();
-            Assert.AreEqual(2, listener.Count);
+            Assert.Equal(2, listener.Count);
 
             await QueueOperationCompletion();
             await AssertMessageIsDead(queue, message);
             await AssertMessageNoLongerQueued(queue, message);
         }
 
-        [Test]
+        [Fact]
         public async Task MessageNotAutomaticallyAcknowledgedWhenListenerThrows()
         {
             var queue = GivenUniqueQueueName();
@@ -159,13 +159,13 @@ namespace Platibus.UnitTests
             await MessageQueueingService.EnqueueMessage(queue, message, Principal);
             await listener.Completed;
             listener.Dispose();
-            
+
             await QueueOperationCompletion();
             await AssertMessageStillQueuedForRetry(queue, message);
         }
-        
+
         protected abstract Task GivenExistingQueuedMessage(QueueName queueName, Message message, IPrincipal principal);
-        
+
         protected abstract Task<bool> MessageQueued(QueueName queueName, Message message);
 
         protected abstract Task<bool> MessageDead(QueueName queueName, Message message);
@@ -200,7 +200,7 @@ namespace Platibus.UnitTests
         {
             var comparer = new MessageEqualityComparer(HeaderName.SecurityToken);
             Assert.NotNull(handledMessage);
-            Assert.That(handledMessage, Is.EqualTo(originalMessage).Using(comparer));
+            Assert.Equal(originalMessage, handledMessage, comparer);
         }
 
         protected void AssertPrincipalPreserved(IPrincipal contextPrincipal)
@@ -209,19 +209,14 @@ namespace Platibus.UnitTests
             Assert.NotNull(contextPrincipal);
 
             var originalClaimsPrincipal = Principal as ClaimsPrincipal;
-            if (originalClaimsPrincipal != null)
+            Assert.NotNull(originalClaimsPrincipal);
+
+            var contextClaimsPrincipal = contextPrincipal as ClaimsPrincipal;
+            Assert.NotNull(contextClaimsPrincipal);
+            var originalClaims = originalClaimsPrincipal.Claims;
+            foreach (var originalClaim in originalClaims)
             {
-                var contextClaimsPrincipal = contextPrincipal as ClaimsPrincipal;
-                Assert.NotNull(contextClaimsPrincipal);
-                var originalClaims = originalClaimsPrincipal.Claims;
-                foreach (var originalClaim in originalClaims)
-                {
-                    Assert.True(contextClaimsPrincipal.HasClaim(originalClaim.Type, originalClaim.Value));
-                }
-            }
-            else
-            {
-                Assert.Inconclusive();
+                Assert.True(contextClaimsPrincipal.HasClaim(originalClaim.Type, originalClaim.Value));
             }
         }
 
@@ -267,7 +262,7 @@ namespace Platibus.UnitTests
             private readonly Action<Message, IQueuedMessageContext> _callback;
             private readonly TaskCompletionSource<Message> _taskCompletionSource;
             private readonly CancellationTokenSource _cancellationTokenSource;
-            
+
             public Task Completed
             {
                 get { return _taskCompletionSource.Task; }
@@ -275,8 +270,8 @@ namespace Platibus.UnitTests
 
             public Message Message { get; private set; }
             public IQueuedMessageContext Context { get; private set; }
-           
-            public QueueListenerStub(Action<Message, IQueuedMessageContext> callback = null, TimeSpan timeout = default (TimeSpan))
+
+            public QueueListenerStub(Action<Message, IQueuedMessageContext> callback = null, TimeSpan timeout = default(TimeSpan))
             {
                 _callback = callback ?? ((m, c) => c.Acknowledge());
 
@@ -328,7 +323,7 @@ namespace Platibus.UnitTests
             {
                 get { return _count; }
             }
-            
+
             public CountdownListenerStub(int target, TimeSpan timeout = default(TimeSpan))
             {
                 _target = target;

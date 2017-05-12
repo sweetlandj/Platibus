@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2016 Jesse Sweetland
+// Copyright (c) 2017 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@ using System.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 using Platibus.Security;
 
 namespace Platibus.UnitTests.Security
@@ -40,7 +40,7 @@ namespace Platibus.UnitTests.Security
         protected DateTime? Expiration;
         protected string IssuedToken;
 
-        [Test]
+        [Fact]
         public async Task SignedMessageSecurityTokenCanBeValidated()
         {
             GivenJwtMessageSecurityTokenServiceWithSigningKey();
@@ -51,7 +51,7 @@ namespace Platibus.UnitTests.Security
             await AssertIssuedTokenIsValid();
         }
 
-        [Test]
+        [Fact]
         public async Task UnsignedMessageSecurityTokenCanBeValidated()
         {
             GivenJwtMessageSecurityTokenServiceWithNoSigningKey();
@@ -105,7 +105,7 @@ namespace Platibus.UnitTests.Security
 
         protected async Task AssertIssuedTokenIsValid()
         {
-            if (string.IsNullOrWhiteSpace(IssuedToken)) Assert.Inconclusive();
+            Assert.NotNull(IssuedToken);
             var validatedPrincipal = await SecurityTokenService.Validate(IssuedToken);
             Assert.NotNull(validatedPrincipal);
 
@@ -117,7 +117,7 @@ namespace Platibus.UnitTests.Security
 
             var validatedIdentity = validatedClaimsPrincipal.Identity;
             Assert.NotNull(validatedIdentity);
-            Assert.AreEqual(Principal.Identity.Name, validatedIdentity.Name);
+            Assert.Equal(Principal.Identity.Name, validatedIdentity.Name);
 
             foreach (var claim in Principal.Claims)
             {

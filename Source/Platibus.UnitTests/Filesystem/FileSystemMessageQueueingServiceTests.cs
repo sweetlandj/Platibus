@@ -3,19 +3,16 @@ using System.Linq;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using Platibus.Filesystem;
+using Xunit;
 
 namespace Platibus.UnitTests.Filesystem
 {
+    [Collection(FilesystemCollection.Name)]
     public class FileSystemMessageQueueingServiceTests : MessageQueueingServiceTests<FilesystemMessageQueueingService>
     {
         private readonly DirectoryInfo _baseDirectory;
-
-        public FileSystemMessageQueueingServiceTests() 
-            : this(FilesystemCollectionFixture.Instance)
-        {
-        }
-
-        public FileSystemMessageQueueingServiceTests(FilesystemCollectionFixture fixture)
+        
+        public FileSystemMessageQueueingServiceTests(FilesystemFixture fixture)
             : base(fixture.MessageQueueingService)
         {
             _baseDirectory = fixture.BaseDirectory;

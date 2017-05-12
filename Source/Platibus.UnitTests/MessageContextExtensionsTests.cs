@@ -2,16 +2,16 @@
 using System.Threading.Tasks;
 using System.Transactions;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 
 namespace Platibus.UnitTests
 {
     internal class MessageContextExtensionsTests
     {
-        [Test]
+        [Fact]
         public async Task MessageAcknowledgedWhenContextEnlistedInCompletedTransaction()
         {
-            var message = "Hello, world!";
+            const string message = "Hello, world!";
             var mockMessageContext = new Mock<IMessageContext>();
             var cancellationTokenSource = new CancellationTokenSource();
             var messageHandler = new DelegateMessageHandler((msg, msgCtx) =>
@@ -27,10 +27,10 @@ namespace Platibus.UnitTests
             mockMessageContext.Verify(msgCtx => msgCtx.Acknowledge(), Times.Once());
         }
 
-        [Test]
+        [Fact]
         public async Task MessageNotAcknowledgedWhenContextEnlistedInIncompleteTransaction()
         {
-            var message = "Hello, world!";
+            const string message = "Hello, world!";
             var mockMessageContext = new Mock<IMessageContext>();
             var cancellationTokenSource = new CancellationTokenSource();
             var messageHandler = new DelegateMessageHandler((msg, msgCtx) =>

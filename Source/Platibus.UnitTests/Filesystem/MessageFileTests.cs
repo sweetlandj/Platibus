@@ -25,7 +25,7 @@ using System.IO;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 using Platibus.Filesystem;
 using Platibus.Security;
 
@@ -40,7 +40,7 @@ namespace Platibus.UnitTests.Filesystem
 
         protected MessageFile MessageFile;
 
-        [Test]
+       [Fact]
         public async Task LegacyMessageFileWithSenderPrincipalCanBeRead()
         {
             await GivenLegacyMessageFileWithSenderPrincipal();
@@ -49,7 +49,7 @@ namespace Platibus.UnitTests.Filesystem
             await ThenTheMessageShouldBeReadSuccessfully();
         }
 
-        [Test]
+       [Fact]
         public async Task LegacyMessageFileWithNoSenderPrincipalCanBeRead()
         {
             await GivenLegacyMessageFileWithNoPrincipal();
@@ -58,7 +58,7 @@ namespace Platibus.UnitTests.Filesystem
             await ThenTheMessageShouldBeReadSuccessfully();
         }
 
-        [Test]
+       [Fact]
         public async Task MessageFileWithSecurityTokenCanBeRead()
         {
             await GivenMessageFileWithClaimsPrincipal();
@@ -67,7 +67,7 @@ namespace Platibus.UnitTests.Filesystem
             await ThenTheMessageShouldHaveASecurityTokenHeader();
         }
 
-        [Test]
+       [Fact]
         public async Task MessageFileWithNoPrincipalCanBeRead()
         {
             await GivenMessageFileWithNoPrincipal();
@@ -172,60 +172,60 @@ namespace Platibus.UnitTests.Filesystem
         
         protected MessageFile WhenReadingTheMessageFileContent()
         {
-            if (MessageFileInfo == null) Assert.Inconclusive();
+            Assert.NotNull(MessageFileInfo);
             return MessageFile = new MessageFile(MessageFileInfo);
         }
 
         protected async Task ThenTheSenderPrincipalShouldBeReadSuccessfully()
         {
-            if (MessageFile == null) Assert.Inconclusive();
+            Assert.NotNull(MessageFileInfo);
             var principal = await MessageFile.ReadPrincipal();
             var principalAsSenderPrincipal = SenderPrincipal.From(principal);
-            Assert.That(principalAsSenderPrincipal, Is.EqualTo(Principal));
+            Assert.Equal(Principal, principalAsSenderPrincipal);
         }
 
         protected async Task ThenTheClaimsPrincipalShouldBeReadSuccessfully()
         {
-            if (MessageFile == null) Assert.Inconclusive();
+            Assert.NotNull(MessageFile);
             var principal = await MessageFile.ReadPrincipal();
 
             Assert.NotNull(principal);
 
-            Assert.That(principal.IsInRole("user"));
-            Assert.That(principal.IsInRole("staff"));
+            Assert.True(principal.IsInRole("user"));
+            Assert.True(principal.IsInRole("staff"));
 
             var readIdentity = principal.Identity;
             Assert.NotNull(readIdentity);
-            Assert.AreEqual(readIdentity.Name, Principal.Identity.Name);
+            Assert.Equal(Principal.Identity.Name, readIdentity.Name);
         }
 
         protected async Task ThenThePrincipalShouldBeNull()
         {
-            if (MessageFile == null) Assert.Inconclusive();
+            Assert.NotNull(MessageFile);
             var principal = await MessageFile.ReadPrincipal();
-            Assert.That(principal, Is.Null);
+            Assert.Null(principal);
         }
 
         protected async Task ThenTheMessageShouldBeReadSuccessfully()
         {
-            if (MessageFile == null) Assert.Inconclusive();
+            Assert.NotNull(MessageFile);
             var message = await MessageFile.ReadMessage();
-            Assert.That(message, Is.EqualTo(Message).Using(new MessageEqualityComparer(HeaderName.SecurityToken)));
+            Assert.Equal(Message, message, new MessageEqualityComparer(HeaderName.SecurityToken));
         }
 
         protected async Task ThenTheMessageShouldHaveASecurityTokenHeader()
         {
-            if (MessageFile == null) Assert.Inconclusive();
+            Assert.NotNull(MessageFile);
             var message = await MessageFile.ReadMessage();
-            Assert.That(message.Headers.SecurityToken, Is.Not.Null);
-            Assert.That(message.Headers.SecurityToken, Has.Length.GreaterThan(0));
+            Assert.NotNull(message.Headers.SecurityToken);
+            Assert.True(message.Headers.SecurityToken.Length > 0);
         }
 
         protected async Task ThenTheMessageShouldNotHaveASecurityTokenHeader()
         {
-            if (MessageFile == null) Assert.Inconclusive();
+            Assert.NotNull(MessageFile);
             var message = await MessageFile.ReadMessage();
-            Assert.That(message.Headers.SecurityToken, Is.Null);
+            Assert.Null(message.Headers.SecurityToken);
         }
     }
 }

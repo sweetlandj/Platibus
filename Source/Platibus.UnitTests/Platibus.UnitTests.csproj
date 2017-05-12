@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\xunit.runner.visualstudio.2.2.0\build\net20\xunit.runner.visualstudio.props" Condition="Exists('..\packages\xunit.runner.visualstudio.2.2.0\build\net20\xunit.runner.visualstudio.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -78,10 +79,6 @@
       <HintPath>..\packages\NLog.4.0.1\lib\net45\NLog.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="nunit.framework, Version=3.6.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
-      <HintPath>..\packages\NUnit.3.6.1\lib\net45\nunit.framework.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="RabbitMQ.Client, Version=4.0.0.0, Culture=neutral, PublicKeyToken=89e7d7c5feba84ce, processorArchitecture=MSIL">
       <HintPath>..\packages\RabbitMQ.Client.4.1.3\lib\net451\RabbitMQ.Client.dll</HintPath>
       <Private>True</Private>
@@ -111,6 +108,22 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="xunit.abstractions, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
+      <HintPath>..\packages\xunit.abstractions.2.0.1\lib\net35\xunit.abstractions.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="xunit.assert, Version=2.2.0.3545, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
+      <HintPath>..\packages\xunit.assert.2.2.0\lib\netstandard1.1\xunit.assert.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="xunit.core, Version=2.2.0.3545, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
+      <HintPath>..\packages\xunit.extensibility.core.2.2.0\lib\netstandard1.1\xunit.core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="xunit.execution.desktop, Version=2.2.0.3545, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
+      <HintPath>..\packages\xunit.extensibility.execution.2.2.0\lib\net452\xunit.execution.desktop.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BusInitTests.cs" />
@@ -121,7 +134,8 @@
     <Compile Include="DataContractMessageNamingServiceTests.cs" />
     <Compile Include="DefaultMessageNamingServiceTests.cs" />
     <Compile Include="EndpointAddressEqualityComparerTests.cs" />
-    <Compile Include="Filesystem\FilesystemCollectionFixture.cs" />
+    <Compile Include="Filesystem\FilesystemCollection.cs" />
+    <Compile Include="Filesystem\FilesystemFixture.cs" />
     <Compile Include="Filesystem\FilesystemMessageJournalInspector.cs" />
     <Compile Include="Filesystem\FilesystemMessageJournalingServiceTests.cs" />
     <Compile Include="Filesystem\FileSystemMessageQueueingServiceTests.cs" />
@@ -130,22 +144,25 @@
     <Compile Include="Filesystem\MessageFileTests.cs" />
     <Compile Include="Http\HttpClientPoolTests.cs" />
     <Compile Include="InMemory\InMemorySubscriptionTrackingServiceTests.cs" />
+    <Compile Include="LocalDB\LocalDBCollection.cs" />
     <Compile Include="LocalDB\LocalDBMessageQueueingServiceTests.cs" />
     <Compile Include="LocalDB\LocalDBSubscriptionTrackingServiceTests.cs" />
     <Compile Include="MessageQueueingServiceTests.cs" />
     <Compile Include="Mocks\FilteredMessageJournalingServiceTests.cs" />
-    <Compile Include="LocalDB\LocalDBCollectionFixture.cs" />
+    <Compile Include="LocalDB\LocalDBFixture.cs" />
     <Compile Include="LocalDB\LocalDBMessageJournalingServiceTests.cs" />
     <Compile Include="MessageJournalingServiceTests.cs" />
     <Compile Include="Multicast\MulticastSubscriptionTrackingServiceTests.cs" />
     <Compile Include="PlatibusConfigurationExtensionsTests.cs" />
-    <Compile Include="RabbitMQ\RabbitMQCollectionFixture.cs" />
+    <Compile Include="RabbitMQ\RabbitMQCollection.cs" />
+    <Compile Include="RabbitMQ\RabbitMQFixture.cs" />
     <Compile Include="RabbitMQ\RabbitMQMessageQueueingServiceTests.cs" />
     <Compile Include="Security\HexEncodingTests.cs" />
     <Compile Include="Security\JwtMessageSecurityTokenServiceTests.cs" />
+    <Compile Include="SQLite\SQLiteCollection.cs" />
     <Compile Include="SQLite\SQLiteMessageQueueingServiceTests.cs" />
     <Compile Include="SQLite\SQLiteMessageJournalInspector.cs" />
-    <Compile Include="SQLite\SQLiteCollectionFixture.cs" />
+    <Compile Include="SQLite\SQLiteFixture.cs" />
     <Compile Include="SQLite\SQLiteMessageJournalingServiceTests.cs" />
     <Compile Include="LocalDB\SQLMessageJournalInspector.cs" />
     <Compile Include="Http\HttpTransportServiceTests.cs" />
@@ -198,6 +215,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
     <Error Condition="!Exists('..\packages\System.Data.SQLite.Core.1.0.105.0\build\net451\System.Data.SQLite.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Data.SQLite.Core.1.0.105.0\build\net451\System.Data.SQLite.Core.targets'))" />
+    <Error Condition="!Exists('..\packages\xunit.runner.visualstudio.2.2.0\build\net20\xunit.runner.visualstudio.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\xunit.runner.visualstudio.2.2.0\build\net20\xunit.runner.visualstudio.props'))" />
   </Target>
   <Import Project="..\packages\System.Data.SQLite.Core.1.0.105.0\build\net451\System.Data.SQLite.Core.targets" Condition="Exists('..\packages\System.Data.SQLite.Core.1.0.105.0\build\net451\System.Data.SQLite.Core.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

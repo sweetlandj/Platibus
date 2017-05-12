@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 namespace Platibus.UnitTests
 {
@@ -16,7 +16,7 @@ namespace Platibus.UnitTests
             SubscriptionTrackingService = subscriptionTrackingService;
         }
 
-        [Test]
+        [Fact]
         public async Task AddingSubscriptionAddsSubscriberToTopic()
         {
             var topic = GenerateUniqueTopicName();
@@ -25,7 +25,7 @@ namespace Platibus.UnitTests
             await AssertSubscriberAddedToTopic(topic, subscriberUri);
         }
 
-        [Test]
+        [Fact]
         public async Task RemovingSubscriptionRemovesSubscriberFromTopic()
         {
             var topic = GenerateUniqueTopicName();
@@ -35,7 +35,7 @@ namespace Platibus.UnitTests
             await AssertSubscriberRemovedFromTopic(topic, subscriberUri);
         }
 
-        [Test]
+        [Fact]
         public async Task SubscriptionExpirationRemovesSubscriberFromTopic()
         {
             var topic = GenerateUniqueTopicName();
@@ -47,7 +47,7 @@ namespace Platibus.UnitTests
             await AssertSubscriberRemovedFromTopic(topic, subscriberUri);
         }
 
-        [Test]
+        [Fact]
         public async Task HandlesManyConcurrentOperationsWithoutError()
         {
             var subscriptions = GivenManySubscriptions().ToList();
@@ -99,22 +99,28 @@ namespace Platibus.UnitTests
             var subscriptionsByTopic = subscriptions.GroupBy(s => s.Topic);
             foreach (var grouping in subscriptionsByTopic)
             {
-                var expectedSubscribers = grouping.Select(g => g.SubscriberUri).ToList();
-                var actualSubscribers = await SubscriptionTrackingService.GetSubscribers(grouping.Key);
-                Assert.That(actualSubscribers, Is.EquivalentTo(expectedSubscribers));
+                var expectedSubscribers = grouping.Select(g => g.SubscriberUri)
+                    .OrderBy(uri => uri.ToString())
+                    .ToList();
+                var actualSubscribers = (await SubscriptionTrackingService
+                    .GetSubscribers(grouping.Key))
+                    .OrderBy(uri => uri.ToString())
+                    .ToList();
+                
+                Assert.Equal(expectedSubscribers, actualSubscribers);
             }
         }
 
         protected async Task AssertSubscriberAddedToTopic(TopicName topic, Uri subscriberUri)
         {
             var subscribers = await SubscriptionTrackingService.GetSubscribers(topic);
-            Assert.That(subscribers, Has.Member(subscriberUri));
+            Assert.Contains(subscriberUri, subscribers);
         }
 
         protected async Task AssertSubscriberRemovedFromTopic(TopicName topic, Uri subscriberUri)
         {
             var subscribers = await SubscriptionTrackingService.GetSubscribers(topic);
-            Assert.That(subscribers, Has.No.Member(subscriberUri));
+            Assert.DoesNotContain(subscriberUri, subscribers);
         }
 
         protected class Subscription

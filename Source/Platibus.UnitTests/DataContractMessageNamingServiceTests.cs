@@ -1,6 +1,6 @@
 ﻿
 using System.Runtime.Serialization;
-using NUnit.Framework;
+using Xunit;
 
 namespace Platibus.UnitTests
 {
@@ -9,89 +9,89 @@ namespace Platibus.UnitTests
         [DataContract]
         public class ContractA
         {
-            
+
         }
 
         [DataContract(Namespace = "http://platibus/unittests", Name = "Contract-B")]
         public class ContractB
         {
-            
+
         }
 
-        [Test]
+        [Fact]
         public void MessageTypeCanBeResolvedForRegisteredTypes()
         {
             var messageNamingService = new DataContractMessageNamingService();
             messageNamingService.Add(typeof(ContractA));
             var messageType = messageNamingService.GetTypeForName("http://schemas.datacontract.org/2004/07/Platibus.UnitTests:DataContractMessageNamingServiceTests.ContractA");
-            Assert.That(messageType, Is.Not.Null);
-            Assert.That(messageType, Is.EqualTo(typeof(ContractA)));
+            Assert.NotNull(messageType);
+            Assert.IsType<ContractA>(messageType);
         }
 
-        [Test]
+        [Fact]
         public void MessageNameCanBeResolvedForRegisteredTypes()
         {
             var messageNamingService = new DataContractMessageNamingService();
             messageNamingService.Add(typeof(ContractA));
             var messageName = messageNamingService.GetNameForType(typeof(ContractA));
-            Assert.That(messageName, Is.Not.Null);
-            Assert.That((string)messageName, Is.EqualTo("http://schemas.datacontract.org/2004/07/Platibus.UnitTests:DataContractMessageNamingServiceTests.ContractA"));
+            Assert.NotNull(messageName);
+            Assert.Equal("http://schemas.datacontract.org/2004/07/Platibus.UnitTests:DataContractMessageNamingServiceTests.ContractA", messageName);
         }
 
-        [Test]
+        [Fact]
         public void MessageTypeCanBeResolvedForRegisteredTypesWithExplicitNames()
         {
             var messageNamingService = new DataContractMessageNamingService();
             messageNamingService.Add(typeof(ContractB));
             var messageType = messageNamingService.GetTypeForName("http://platibus/unittests:Contract-B");
-            Assert.That(messageType, Is.Not.Null);
-            Assert.That(messageType, Is.EqualTo(typeof(ContractB)));
+            Assert.NotNull(messageType);
+            Assert.IsType<ContractB>(messageType);
         }
 
-        [Test]
+        [Fact]
         public void MessageNameCanBeResolvedForRegisteredTypesWithExplicitNames()
         {
             var messageNamingService = new DataContractMessageNamingService();
             messageNamingService.Add(typeof(ContractB));
             var messageName = messageNamingService.GetNameForType(typeof(ContractB));
-            Assert.That(messageName, Is.Not.Null);
-            Assert.That((string)messageName, Is.EqualTo("http://platibus/unittests:Contract-B"));
+            Assert.NotNull(messageName);
+            Assert.Equal("http://platibus/unittests:Contract-B", messageName);
         }
 
-        [Test]
+        [Fact]
         public void MessageTypeCanBeResolvedForUnregisteredTypes()
         {
             var messageNamingService = new DataContractMessageNamingService();
             var messageType = messageNamingService.GetTypeForName("http://schemas.datacontract.org/2004/07/Platibus.UnitTests:DataContractMessageNamingServiceTests.ContractA");
-            Assert.That(messageType, Is.Not.Null);
-            Assert.That(messageType, Is.EqualTo(typeof(ContractA)));
+            Assert.NotNull(messageType);
+            Assert.IsType<ContractA>(messageType);
         }
 
-        [Test]
+        [Fact]
         public void MessageNameCanBeResolvedForUnregisteredTypes()
         {
             var messageNamingService = new DataContractMessageNamingService();
             var messageName = messageNamingService.GetNameForType(typeof(ContractA));
-            Assert.That(messageName, Is.Not.Null);
-            Assert.That((string)messageName, Is.EqualTo("http://schemas.datacontract.org/2004/07/Platibus.UnitTests:DataContractMessageNamingServiceTests.ContractA"));
+            Assert.NotNull(messageName);
+            Assert.Equal("http://schemas.datacontract.org/2004/07/Platibus.UnitTests:DataContractMessageNamingServiceTests.ContractA", messageName);
         }
 
-        [Test]
+        [Fact]
         public void MessageTypeCanBeResolvedForUnregisteredTypesWithExplicitNames()
         {
             var messageNamingService = new DataContractMessageNamingService();
             var messageType = messageNamingService.GetTypeForName("http://platibus/unittests:Contract-B");
-            Assert.That(messageType, Is.Not.Null);
-            Assert.That(messageType, Is.EqualTo(typeof(ContractB)));
+            Assert.NotNull(messageType);
+            Assert.IsType<ContractB>(messageType);
         }
 
-        [Test]
+        [Fact]
         public void MessageNameCanBeResolvedForUnregisteredTypesWithExplicitNames()
         {
             var messageNamingService = new DataContractMessageNamingService();
             var messageName = messageNamingService.GetNameForType(typeof(ContractB));
-            Assert.That(messageName, Is.Not.Null);
-            Assert.That((string)messageName, Is.EqualTo("http://platibus/unittests:Contract-B"));
+            Assert.NotNull(messageName);
+            Assert.Equal("http://platibus/unittests:Contract-B", messageName);
         }
     }
 }

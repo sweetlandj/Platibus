@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 
 namespace Platibus.IntegrationTests
 {
-    internal abstract class Expectation
+    public abstract class Expectation
     {
         protected readonly TaskCompletionSource<bool> TaskCompletionSource = new TaskCompletionSource<bool>();
 

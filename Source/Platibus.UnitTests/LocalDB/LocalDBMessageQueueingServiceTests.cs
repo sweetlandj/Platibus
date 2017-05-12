@@ -3,17 +3,14 @@ using System.Linq;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using Platibus.SQL;
+using Xunit;
 
 namespace Platibus.UnitTests.LocalDB
 {
+    [Collection(LocalDBCollection.Name)]
     public class LocalDBMessageQueueingServiceTests : MessageQueueingServiceTests<SQLMessageQueueingService>
     {
-        public LocalDBMessageQueueingServiceTests() 
-            : this(LocalDBCollectionFixture.Instance)
-        {
-        }
-
-        public LocalDBMessageQueueingServiceTests(LocalDBCollectionFixture fixture)
+        public LocalDBMessageQueueingServiceTests(LocalDBFixture fixture)
             : base(fixture.MessageQueueingService)
         {
         }

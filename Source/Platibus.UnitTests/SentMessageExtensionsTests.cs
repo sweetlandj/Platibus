@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 namespace Platibus.UnitTests
 {
     internal class SentMessageExtensionsTests
     {
-        [Test]
+       [Fact]
         public async Task FirstReplyIsReturned()
         {
             var memoryCacheReplyHub = new MemoryCacheReplyHub(TimeSpan.FromSeconds(3));
@@ -21,8 +21,8 @@ namespace Platibus.UnitTests
             var awaitedReply = await sentMessage.GetReply(TimeSpan.FromSeconds(3));
             await replyTask;
 
-            Assert.That(awaitedReply, Is.Not.Null);
-            Assert.That(awaitedReply, Is.EqualTo(reply));
+            Assert.NotNull(awaitedReply);
+            Assert.Equal(reply, awaitedReply);
         }
     }
 }

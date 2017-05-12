@@ -2,22 +2,21 @@
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 using Platibus.Multicast;
 using Platibus.UnitTests.Stubs;
 
 namespace Platibus.UnitTests.Multicast
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable")]
-    public class MulticastSubscriptionTrackingServiceTests
+    public class MulticastSubscriptionTrackingServiceTests : IDisposable
     {
         protected SubscriptionTrackingServiceStub SendingSubscriptionTrackingServiceStub;
         protected MulticastSubscriptionTrackingService SendingMulticastSubscriptionTrackingService;
         protected SubscriptionTrackingServiceStub ReceivingSubscriptionTrackingServiceStub;
         protected MulticastSubscriptionTrackingService ReceivingMulticastSubscriptionTrackingService;
-        
-        [SetUp]
-        protected void SetUp()
+
+        public MulticastSubscriptionTrackingServiceTests()
         {
             var groupAddress = IPAddress.Parse("239.255.21.80");
             const int port = 52181;
@@ -31,14 +30,13 @@ namespace Platibus.UnitTests.Multicast
                 ReceivingSubscriptionTrackingServiceStub, groupAddress, port);
         }
 
-        [TearDown]
-        protected void TearDown()
+        public void Dispose()
         {
             SendingMulticastSubscriptionTrackingService.TryDispose();
             ReceivingMulticastSubscriptionTrackingService.TryDispose();
         }
 
-        [Test]
+        [Fact]
         public async Task AdditionsShouldPropagateToGroupMembers()
         {
             var topic = new TopicName("TestTopic");
@@ -58,11 +56,11 @@ namespace Platibus.UnitTests.Multicast
             cts.Token.Register(() => broadcastReceived.TrySetCanceled());
             await broadcastReceived.Task;
 
-            var subscribers = await ReceivingSubscriptionTrackingServiceStub.GetSubscribers(topic);
-            Assert.That(subscribers, Contains.Item(subscriber));
+            var subscribers = await ReceivingSubscriptionTrackingServiceStub.GetSubscribers(topic, cts.Token);
+            Assert.Contains(subscriber, subscribers);
         }
 
-        [Test]
+        [Fact]
         public async Task RemovalsShouldPropagateToGroupMembers()
         {
             var topic = new TopicName("TestTopic");
@@ -81,8 +79,8 @@ namespace Platibus.UnitTests.Multicast
             cts.Token.Register(() => broadcastReceived.TrySetCanceled());
             await broadcastReceived.Task;
 
-            var subscribers = await ReceivingSubscriptionTrackingServiceStub.GetSubscribers(topic);
-            Assert.That(subscribers, Has.No.Member(subscriber));
+            var subscribers = await ReceivingSubscriptionTrackingServiceStub.GetSubscribers(topic, cts.Token);
+            Assert.DoesNotContain(subscriber, subscribers);
         }
     }
 }

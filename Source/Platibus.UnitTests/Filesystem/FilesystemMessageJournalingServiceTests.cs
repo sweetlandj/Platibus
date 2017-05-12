@@ -1,19 +1,15 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 namespace Platibus.UnitTests.Filesystem
 {
+    [Collection(FilesystemCollection.Name)]
     public class FilesystemMessageJournalingServiceTests : MessageJournalingServiceTests
     {
         private readonly FilesystemMessageJournalInspector _inspector;
 
-        public FilesystemMessageJournalingServiceTests() 
-            : this(FilesystemCollectionFixture.Instance)
-        {
-        }
-
-        public FilesystemMessageJournalingServiceTests(FilesystemCollectionFixture fixture)
+        public FilesystemMessageJournalingServiceTests(FilesystemFixture fixture)
             : base(fixture.MessageJournalingService)
         {
             _inspector = new FilesystemMessageJournalInspector(fixture.BaseDirectory);
@@ -24,7 +20,7 @@ namespace Platibus.UnitTests.Filesystem
             var journaledMessages = await _inspector.EnumerateSentMessages();
             var messageIsJournaled = journaledMessages
                 .Any(m => m.Headers.MessageId == Message.Headers.MessageId);
-            Assert.That(messageIsJournaled, Is.True);
+            Assert.True(messageIsJournaled);
         }
 
         protected override async Task AssertReceivedMessageIsWrittenToJournal()
@@ -32,7 +28,7 @@ namespace Platibus.UnitTests.Filesystem
             var journaledMessages = await _inspector.EnumerateReceivedMessages();
             var messageIsJournaled = journaledMessages
                 .Any(m => m.Headers.MessageId == Message.Headers.MessageId);
-            Assert.That(messageIsJournaled, Is.True);
+            Assert.True(messageIsJournaled);
         }
 
         protected override async Task AssertPublishedMessageIsWrittenToJournal()
@@ -40,7 +36,7 @@ namespace Platibus.UnitTests.Filesystem
             var journaledMessages = await _inspector.EnumeratePublishedMessages();
             var messageIsJournaled = journaledMessages
                 .Any(m => m.Headers.MessageId == Message.Headers.MessageId);
-            Assert.That(messageIsJournaled, Is.True);
+            Assert.True(messageIsJournaled);
         }
     }
 }

@@ -1,15 +1,12 @@
 ﻿using Platibus.Filesystem;
+using Xunit;
 
 namespace Platibus.UnitTests.Filesystem
 {
+    [Collection(FilesystemCollection.Name)]
     public class FilesystemSubscriptionTrackingServiceTests : SubscriptionTrackingServiceTests<FilesystemSubscriptionTrackingService>
     {
-        public FilesystemSubscriptionTrackingServiceTests()
-            : this(FilesystemCollectionFixture.Instance)
-        {
-        }
-
-        public FilesystemSubscriptionTrackingServiceTests(FilesystemCollectionFixture fixture)
+        public FilesystemSubscriptionTrackingServiceTests(FilesystemFixture fixture)
             : base(fixture.SubscriptionTrackingService)
         {
         }

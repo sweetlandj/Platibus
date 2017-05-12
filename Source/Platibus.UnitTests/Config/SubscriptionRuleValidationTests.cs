@@ -22,7 +22,7 @@
 
 using System;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 using Platibus.Config;
 
 namespace Platibus.UnitTests.Config
@@ -31,27 +31,27 @@ namespace Platibus.UnitTests.Config
     {
         protected PlatibusConfiguration Configuration;
 
-        [Test]
+        [Fact]
         public void SubscriptionWithKnownEndpointIsValid()
         {
             GivenValidConfiguration();
             GivenSubscriptionWithUnknownEndpoint();
-            Assert.Throws<InvalidSubscriptionException>(WhenValidating);
+            Assert.Throws<InvalidSubscriptionException>(() => WhenValidating());
         }
-        
-        [Test]
+
+        [Fact]
         public void SubscriptionWithUnknownEndpointIsInvalid()
         {
             GivenValidConfiguration();
             GivenSubscriptionWithKnownEndpoint();
-            Assert.DoesNotThrow(WhenValidating);
+            AssertDoesNotThrow(WhenValidating);
         }
 
         private void GivenValidConfiguration()
         {
             Configuration = new PlatibusConfiguration();
         }
-        
+
         private void GivenSubscriptionWithUnknownEndpoint()
         {
             var endpointName = Guid.NewGuid().ToString();
@@ -71,6 +71,15 @@ namespace Platibus.UnitTests.Config
         private void WhenValidating()
         {
             Configuration.Validate();
+        }
+
+        /// <summary>
+        /// Helper method to improve readability
+        /// </summary>
+        /// <param name="action">The action that does not throw</param>
+        private static void AssertDoesNotThrow(Action action)
+        {
+            action();
         }
     }
 }

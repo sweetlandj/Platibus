@@ -24,6 +24,6 @@ namespace Platibus.SQLite
 {
     internal static class SQLiteLoggingCategories
     {
-        public const string SQLite = "SQLite";
+        public const string SQLite = "Platibus.SQLite";
     }
 }
