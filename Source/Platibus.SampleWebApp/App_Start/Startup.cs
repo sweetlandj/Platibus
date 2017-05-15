@@ -26,7 +26,10 @@ namespace Platibus.SampleWebApp
         public void Configuration(IAppBuilder app)
         {
             ConfigureIdentityServer3(app);
-            app.UsePlatibusMiddleware();
+            if (AppSettings.PlatibusMiddleware.IsEnabled())
+            {
+                app.UsePlatibusMiddleware();
+            }
         }
 
         public void ConfigureIdentityServer3(IAppBuilder app)
@@ -61,11 +64,11 @@ namespace Platibus.SampleWebApp
 
             app.UseOpenIdConnectAuthentication(new OpenIdConnectAuthenticationOptions
             {
-                Authority = "https://localhost:44338/identity",
+                Authority = "https://localhost:44359/identity",
                 ClientId = "sample",
                 Scope = "openid profile roles api",
                 ResponseType = "id_token token",
-                RedirectUri = "https://localhost:44338/",
+                RedirectUri = "https://localhost:44359/",
                 SignInAsAuthenticationType = "Cookies",
                 
                 UseTokenLifetime = false,

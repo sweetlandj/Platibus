@@ -173,6 +173,7 @@ namespace Platibus.Owin
         public void Dispose()
         {
             if (_disposed) return;
+            Log.InfoFormat("Disposing Platibus OWIN middleware...");
             Dispose(true);
             _disposed = true;
             GC.SuppressFinalize(this);

@@ -47,7 +47,7 @@ namespace Platibus.IIS
 		{
 		    _configuration = LoadDefaultConfiguration();
             _bus = InitBus(_configuration);
-		}
+        }
 
 		/// <summary>
 		/// Initializes a new <see cref="PlatibusHttpModule"/> with the specified configuration
@@ -59,7 +59,7 @@ namespace Platibus.IIS
 		    _configuration = Task.FromResult(configuration);
 		    _bus = InitBus(configuration);
 		}
-
+        
         private static async Task<IIISConfiguration> LoadDefaultConfiguration()
         {
             return await IISConfigurationManager.LoadConfiguration();
@@ -133,8 +133,7 @@ namespace Platibus.IIS
 		public void Dispose()
 		{
 			if (_disposed) return;
-
-			Dispose(true);
+            Dispose(true);
 			_disposed = true;
 			GC.SuppressFinalize(this);
 		}
@@ -149,11 +148,7 @@ namespace Platibus.IIS
 		/// This method will not be called more than once
 		/// </remarks>
 		protected virtual void Dispose(bool disposing)
-		{
-			if (disposing)
-			{
-			    
-			}
+        {
 		}
 	}
 }

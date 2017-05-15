@@ -22,16 +22,19 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using System.Web.Hosting;
+using Common.Logging;
 
 namespace Platibus.IIS
 {
     /// <summary>
     /// Initializes an IIS-hosted bus instance
     /// </summary>
-    public class BusManager : IBusManager, IDisposable
+    public class BusManager : IBusManager, IDisposable, IRegisteredObject
     {
+        private static readonly ILog Log = LogManager.GetLogger(IISLoggingCategories.IIS);
+
         internal static readonly BusManager SingletonInstance = new BusManager();
 
         /// <summary>
@@ -42,10 +45,21 @@ namespace Platibus.IIS
         {
             return SingletonInstance;
         }
-
+        
         private readonly object _syncRoot = new object();
         private readonly IDictionary<Uri, ManagedBus> _busInstances = new Dictionary<Uri, ManagedBus>(); 
         private bool _disposed;
+
+        private BusManager()
+        {
+            HostingEnvironment.RegisterObject(this);
+        }
+
+        void IRegisteredObject.Stop(bool immediate)
+        {
+            Log.Info("Stopping bus manager...");
+            Dispose(true);
+        }
 
         /// <summary>
         /// Provides access to the IIS-hosted bus with the default configuration
@@ -86,17 +100,41 @@ namespace Platibus.IIS
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
 
+            var uri = configuration.BaseUri;
             ManagedBus bus;
             lock (_syncRoot)
             {
-                if (_busInstances.TryGetValue(configuration.BaseUri, out bus))
+                if (_busInstances.TryGetValue(uri, out bus))
                 {
                     return bus;
                 }
+                Log.InfoFormat("Initializing managed bus instance {0}...", uri);
                 bus = new ManagedBus(configuration);
                 _busInstances[configuration.BaseUri] = bus;
+                Log.InfoFormat("Managed bus instance {0} successfully initialized", uri);
             }
             return await Task.FromResult(bus);
+        }
+
+        internal void DisposeManagedBus(IIISConfiguration configuration)
+        {
+            if (configuration == null) throw new ArgumentNullException("configuration");
+
+            var uri = configuration.BaseUri;
+            ManagedBus bus;
+            lock (_syncRoot)
+            {
+                if (_busInstances.TryGetValue(uri, out bus))
+                {
+                    _busInstances.Remove(configuration.BaseUri);
+                }
+            }
+
+            if (bus != null)
+            {
+                Log.InfoFormat("Disposing managed bus instance {0}...", uri);
+                bus.TryDispose();
+            }
         }
 
         /// <summary>
@@ -129,15 +167,18 @@ namespace Platibus.IIS
         {
             if (disposing)
             {
-                IList<ManagedBus> busInstances;
+                IDictionary<Uri, ManagedBus> busInstances;
                 lock (_syncRoot)
                 {
-                    busInstances = _busInstances.Values.ToList();
+                    busInstances = new Dictionary<Uri, ManagedBus>(_busInstances);
                 }
 
                 foreach (var busInstance in busInstances)
                 {
-                    busInstance.TryDispose();
+                    var uri = busInstance.Key;
+                    var managedBus = busInstance.Value;
+                    Log.InfoFormat("Disposing managed bus instance {0}...", uri);
+                    managedBus.TryDispose();
                 }
             }
         }
