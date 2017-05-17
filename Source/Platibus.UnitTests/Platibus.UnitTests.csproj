@@ -145,9 +145,11 @@
     <Compile Include="Http\HttpClientPoolTests.cs" />
     <Compile Include="InMemory\InMemorySubscriptionTrackingServiceTests.cs" />
     <Compile Include="LocalDB\LocalDBCollection.cs" />
+    <Compile Include="LocalDB\LocalDBMessageJournalReadTests.cs" />
     <Compile Include="LocalDB\LocalDBMessageJournalTests.cs" />
     <Compile Include="LocalDB\LocalDBMessageQueueingServiceTests.cs" />
     <Compile Include="LocalDB\LocalDBSubscriptionTrackingServiceTests.cs" />
+    <Compile Include="MessageJournalReadTests.cs" />
     <Compile Include="MessageJournalTests.cs" />
     <Compile Include="MessageQueueingServiceTests.cs" />
     <Compile Include="Mocks\FilteredMessageJournalingServiceTests.cs" />

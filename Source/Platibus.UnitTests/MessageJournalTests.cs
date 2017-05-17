@@ -62,7 +62,7 @@ namespace Platibus.UnitTests
             await WhenAppendingPublishedMessage();
             await AssertPublishedMessageIsWrittenToJournal();
         }
-
+        
         protected Message GivenSentMessage()
         {
             var messageHeaders = new MessageHeaders
