@@ -212,6 +212,7 @@ namespace Platibus.SQL
                         command.SetParameter(_dialect.MessageIdParameterName, (Guid)headers.MessageId);
                         command.SetParameter(_dialect.TimestampParameterName, timestamp);
                         command.SetParameter(_dialect.CategoryParameterName, category);
+                        command.SetParameter(_dialect.TopicNameParameterName, category);
                         command.SetParameter(_dialect.MessageNameParameterName, (string)headers.MessageName);
                         command.SetParameter(_dialect.OriginationParameterName,
                             headers.Origination == null ? null : headers.Origination.ToString());

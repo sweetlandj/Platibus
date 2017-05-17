@@ -11,6 +11,8 @@ namespace Platibus.UnitTests.SQLite
         private readonly SQLiteMessageQueueingService _messageQueueingService;
         private readonly SQLiteSubscriptionTrackingService _subscriptionTrackingService;
 
+        private readonly SQLiteMessageJournal _messageJournal;
+
         private bool _disposed;
 
         public DirectoryInfo BaseDirectory
@@ -33,6 +35,11 @@ namespace Platibus.UnitTests.SQLite
             get { return _subscriptionTrackingService; }
         }
 
+        public SQLiteMessageJournal MessageJournal
+        {
+            get { return _messageJournal; }
+        }
+
         public SQLiteFixture()
         {
             _baseDirectory = GetTempDirectory();
@@ -45,6 +52,9 @@ namespace Platibus.UnitTests.SQLite
 
             _subscriptionTrackingService = new SQLiteSubscriptionTrackingService(_baseDirectory);
             _subscriptionTrackingService.Init();
+
+            _messageJournal = new SQLiteMessageJournal(_baseDirectory);
+            _messageJournal.Init();
         }
 
         protected DirectoryInfo GetTempDirectory()
@@ -74,6 +84,7 @@ namespace Platibus.UnitTests.SQLite
             _messageQueueingService.TryDispose();
             _subscriptionTrackingService.TryDispose();
             _messageJournalingService.TryDispose();
+            _messageJournal.TryDispose();
         }
     }
 }

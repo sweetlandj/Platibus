@@ -38,8 +38,8 @@ namespace Platibus.Security
         /// </summary>
         /// <param name="service">The message security token service used to validate the token</param>
         /// <param name="token">The token to validate</param>
-        /// <returns>Returns the validated <see cref="IPrincipal"/> if <see cref="token"/> is not
-        /// null or whitespace; returns <c>null</c> otherwise</returns>
+        /// <returns>Returns the validated <see cref="IPrincipal"/> if <paramref name="token"/> is 
+        /// not <c>null</c> or whitespace; returns <c>null</c> otherwise</returns>
         public static async Task<IPrincipal> NullSafeValidate(this ISecurityTokenService service, string token)
         {
             if (string.IsNullOrWhiteSpace(token)) return null;
@@ -54,8 +54,8 @@ namespace Platibus.Security
         /// <param name="principal">The principal for which a security token is to be issued.  Can
         /// be <c>null</c>.</param>
         /// <param name="expires">(Optional) The date/time at which the issued token should expire</param>
-        /// <returns>Returns a security token for the specified <see cref="principal"/> if it is
-        /// not null; returns <c>null</c> otherwise</returns>
+        /// <returns>Returns a security token for the specified <paramref name="principal"/> if it 
+        /// is not <c>nul</c>; returns <c>null</c> otherwise</returns>
         public static async Task<string> NullSafeIssue(this ISecurityTokenService service, IPrincipal principal, DateTime? expires = null)
         {
             if (principal == null) return null;

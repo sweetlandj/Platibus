@@ -151,7 +151,7 @@ namespace Platibus
             set { SetDateTime(HeaderName.Published, value); }
         }
 
-        //// <inheritdoc/>
+        /// <inheritdoc/>
         public TopicName Topic
         {
             get { return this[HeaderName.Topic]; }
@@ -210,6 +210,10 @@ namespace Platibus
             return 0;
         }
 
+        /// <summary>
+        /// Removes the header with the specified name
+        /// </summary>
+        /// <param name="headerName">The name of the header to remove</param>
         public void Remove(HeaderName headerName)
         {
             _headers.Remove(headerName);

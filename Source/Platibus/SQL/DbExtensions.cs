@@ -118,6 +118,30 @@ namespace Platibus.SQL
         }
 
         /// <summary>
+        /// Returns the string value of the column with the specified <paramref name="name"/> as an
+        /// enum
+        /// </summary>
+        /// <typeparam name="TEnum">The type of enum value represented by the </typeparam>
+        /// <param name="record">The data record from which the value is to be read</param>
+        /// <param name="name">The name of the column from which the value is to be read</param>
+        /// <param name="defaultValue">(Optional) The default value to return if the value of
+        /// the named column <see cref="IDataRecord.IsDBNull"/></param>
+        /// <returns>Returns the value of the named column as a string, or 
+        /// <paramref name="defaultValue"/> if the value in the <paramref name="record"/> is
+        /// <c>null</c></returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="record"/> or
+        /// <paramref name="name"/> is <c>null</c> or whitespace</exception>
+        /// <exception cref="FormatException">Thrown if the value in the specified column is not
+        /// a string or is not a valid <typeparamref name="TEnum"/> value</exception>
+        public static TEnum Get<TEnum>(this IDataRecord record, string name, TEnum defaultValue = default(TEnum))
+            where TEnum : struct
+        {
+            var str = record.GetString(name);
+            if (string.IsNullOrWhiteSpace(str)) return defaultValue;
+            return (TEnum)Enum.Parse(typeof(TEnum), str, true);
+        }
+
+        /// <summary>
         /// Returns the value of the column with the specified <paramref name="name"/> as a 32-bit
         /// integer value (<c>int</c>)
         /// </summary>

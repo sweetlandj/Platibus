@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Configuration;
-using Xunit;
 using Platibus.SQL;
+using Platibus.SQL.Commands;
 
 namespace Platibus.UnitTests.LocalDB
 {
@@ -12,6 +12,8 @@ namespace Platibus.UnitTests.LocalDB
         private readonly SQLMessageJournalingService _messageJournalingService;
         private readonly SQLMessageQueueingService _messageQueueingService;
         private readonly SQLSubscriptionTrackingService _subscriptionTrackingService;
+
+        private readonly SQLMessageJournal _messageJournal;
 
         private bool _disposed;
         
@@ -30,6 +32,11 @@ namespace Platibus.UnitTests.LocalDB
             get { return _messageJournalingService; }
         }
 
+        public SQLMessageJournal MessageJournal
+        {
+            get { return _messageJournal; }
+        }
+
         public SQLMessageQueueingService MessageQueueingService
         {
             get { return _messageQueueingService; }
@@ -45,8 +52,11 @@ namespace Platibus.UnitTests.LocalDB
             var connectionStringSettings = ConfigurationManager.ConnectionStrings["PlatibusUnitTests.LocalDB"];
             _connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
             _dialect = new MSSQLDialect();
-
+            
             _messageJournalingService = new SQLMessageJournalingService(_connectionProvider, _dialect);
+            _messageJournalingService.Init();
+            
+            _messageJournal = new SQLMessageJournal(_connectionProvider, new MSSQLMessageJournalingCommandBuilders());
             _messageJournalingService.Init();
 
             _messageQueueingService = new SQLMessageQueueingService(_connectionProvider, _dialect);
@@ -75,6 +85,7 @@ namespace Platibus.UnitTests.LocalDB
             _messageQueueingService.TryDispose();
             _subscriptionTrackingService.TryDispose();
             _messageJournalingService.TryDispose();
+            _messageJournal.TryDispose();
         }
 
         public void DeleteQueuedMessages()

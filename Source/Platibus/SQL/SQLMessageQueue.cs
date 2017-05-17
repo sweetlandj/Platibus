@@ -179,7 +179,6 @@ namespace Platibus.SQL
                 if (context.Acknowledged)
                 {
                     Log.DebugFormat("Message acknowledged.  Marking message {0} as acknowledged...", messageId);
-                    // TODO: Implement journaling
                     await UpdateQueuedMessage(queuedMessage, DateTime.UtcNow, null, attemptCount);
                     Log.DebugFormat("Message {0} acknowledged successfully", messageId);
                     return;
@@ -440,11 +439,27 @@ namespace Platibus.SQL
         }
 
 #pragma warning disable 618
+        /// <summary>
+        /// Determines the principal stored with the queued message
+        /// </summary>
+        /// <param name="headers"></param>
+        /// <param name="record"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// <para>This method first looks for a security token stored in the 
+        /// <see cref="IMessageHeaders.SecurityToken"/> header.  If present, the 
+        /// <see cref="ISecurityTokenService"/> provided in the constructor is used to validate it
+        /// and reconstruct the <see cref="IPrincipal"/>.</para>
+        /// <para>If a security token is not present in the message headers then the legacy
+        /// SenderPrincipal column is read.  If the value of the SenderPrincipal is not <c>null</c>
+        /// then it will be deserialized into a <see cref="SenderPrincipal"/>.
+        /// </para>
+        /// </remarks>
         protected async Task<IPrincipal> ResolvePrincipal(IMessageHeaders headers, IDataRecord record)
         {
             if (!string.IsNullOrWhiteSpace(headers.SecurityToken))
             {
-                return await _securityTokenService.NullSafeValidate(headers.SecurityToken);
+                return await _securityTokenService.Validate(headers.SecurityToken);
             }
 
             try

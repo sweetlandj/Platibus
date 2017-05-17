@@ -29,13 +29,21 @@ namespace Platibus.Security
     {
         private readonly string _credentials;
 
+        /// <summary>
+        /// The bearer token
+        /// </summary>
         public string Credentials { get { return _credentials; } }
 
+        /// <summary>
+        /// Initializes a new <see cref="BearerCredentials"/>
+        /// </summary>
+        /// <param name="credentials">The bearer token</param>
         public BearerCredentials(string credentials)
         {
             _credentials = credentials;
         }
 
+        /// <inheritdoc />
         public void Accept(IEndpointCredentialsVisitor visitor)
         {
             visitor.Visit(this);

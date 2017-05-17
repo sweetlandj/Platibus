@@ -235,6 +235,4 @@ namespace Platibus.SQL
         /// </summary>
         string TimestampParameterName { get; }
     }
-
-
 }

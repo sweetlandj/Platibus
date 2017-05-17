@@ -116,6 +116,13 @@ namespace Platibus.Filesystem
             return new MessageFile(file);
         }
 
+        /// <summary>
+        /// Reads the principal information stored with the message file
+        /// </summary>
+        /// <param name="cancellationToken">(Optional) A cancellation token through which the
+        /// caller can request cancellation of the read operation</param>
+        /// <returns>Returns a task whose result is the principal information read from the message
+        /// file</returns>
         public async Task<IPrincipal> ReadPrincipal(
             CancellationToken cancellationToken = default(CancellationToken))
         {

@@ -134,7 +134,8 @@ AND [Abandoned] IS NULL"; }
         public virtual string SelectJournaledMessagesCommand
         {
             get { return @"
-SELECT 
+SELECT
+    [Id],
     [MessageId], 
     [Category], 
     [MessageName], 
