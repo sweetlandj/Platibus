@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using Platibus.Journaling;
 using Platibus.Serialization;
 
 namespace Platibus.Config
@@ -50,10 +51,10 @@ namespace Platibus.Config
         IMessageNamingService MessageNamingService { get; }
 
         /// <summary>
-        /// A service used to track and record the sending, receipt, and 
-        /// publication of messages.
+        /// A message log used to record and play back the sending, receipt, and publication of 
+        /// messages.
         /// </summary>
-        IMessageJournalingService MessageJournalingService { get; }
+        IMessageJournal MessageJournal { get; }
 
         /// <summary>
         /// The topics to which messages can be published

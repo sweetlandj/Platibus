@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using Platibus.Journaling;
 using Platibus.Serialization;
 
 namespace Platibus.Config
@@ -43,74 +44,50 @@ namespace Platibus.Config
         private readonly IList<ISubscription> _subscriptions = new List<ISubscription>();
         private readonly IList<TopicName> _topics = new List<TopicName>();
 
-        /// <summary>
-        /// The maximum amount of time to wait for a reply to a sent message
-        /// before clearing references and freeing held resources
-        /// </summary>
+        /// <inheritdoc />
         public TimeSpan ReplyTimeout { get; set; }
 
-        /// <summary>
-        /// The service used to map content object types onto canonical names
-        /// to facilitate deserialization
-        /// </summary>
+        /// <inheritdoc />
         public IMessageNamingService MessageNamingService { get; set; }
 
-        /// <summary>
-        /// The service used to serialize and deserialize message content
-        /// </summary>
+        /// <inheritdoc />
         public ISerializationService SerializationService { get; set; }
 
-        /// <summary>
-        /// A service used to track and record the sending, receipt, and 
-        /// publication of messages.
-        /// </summary>
-        public IMessageJournalingService MessageJournalingService { get; set; }
+        /// <inheritdoc />
+        public IMessageJournal MessageJournal { get; set; }
 
-        /// <summary>
-        /// The set of known endpoints and their addresses
-        /// </summary>
+        /// <inheritdoc />
         public IEndpointCollection Endpoints
         {
             get { return _endpoints; }
         }
 
-        /// <summary>
-        /// The topics to which messages can be published
-        /// </summary>
+        /// <inheritdoc />
         public IEnumerable<TopicName> Topics
         {
             get { return _topics; }
         }
 
-        /// <summary>
-        /// Rules that specify the endpoints to which messages should be sent
-        /// </summary>
+        /// <inheritdoc />
         public IEnumerable<ISendRule> SendRules
         {
             get { return _sendRules; }
         }
 
-        /// <summary>
-        /// Rules that specify the handlers to which inbound messages should be
-        /// routed
-        /// </summary>
+        /// <inheritdoc />
         public IEnumerable<IHandlingRule> HandlingRules
         {
             get { return _handlingRules; }
         }
 
-        /// <summary>
-        /// Subscriptions to topics hosted in local or remote bus instances
-        /// </summary>
+        /// <inheritdoc />
         public IEnumerable<ISubscription> Subscriptions
         {
             get { return _subscriptions; }
         }
 
-	    /// <summary>
-	    /// Gets or sets the default content type for message content serialization
-	    /// </summary>
-	    public string DefaultContentType { get; set; }
+        /// <inheritdoc />
+        public string DefaultContentType { get; set; }
 
         /// <summary>
         /// Initializes a new <see cref="PlatibusConfiguration"/> instance with

@@ -29,6 +29,7 @@ using System.Threading.Tasks;
 using Common.Logging;
 using Platibus.Config.Extensibility;
 using Platibus.Filesystem;
+using Platibus.Journaling;
 using Platibus.Security;
 using Platibus.Serialization;
 
@@ -110,7 +111,7 @@ namespace Platibus.Config
             var journaling = configSection.Journaling;
             if (journaling != null && journaling.IsEnabled && !string.IsNullOrWhiteSpace(journaling.Provider))
             {
-                configuration.MessageJournalingService = await InitMessageJournalingService(journaling);
+                configuration.MessageJournal = await InitMessageJournal(journaling);
             }
             
             if (processConfigurationHooks)
@@ -205,7 +206,7 @@ namespace Platibus.Config
             var journaling = configSection.Journaling;
             if (journaling != null && journaling.IsEnabled && !string.IsNullOrWhiteSpace(journaling.Provider))
             {
-                configuration.MessageJournalingService = await InitMessageJournalingService(journaling);
+                configuration.MessageJournal = await InitMessageJournal(journaling);
             }
 
             IEnumerable<SendRuleElement> sendRules = configSection.SendRules;
@@ -291,7 +292,7 @@ namespace Platibus.Config
         /// <returns>Returns a task whose result is an initialized message journaling service</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="config"/> is
         /// <c>null</c></exception>
-        public static async Task<IMessageJournalingService> InitMessageJournalingService(JournalingElement config)
+        public static async Task<IMessageJournal> InitMessageJournal(JournalingElement config)
         {
             if (config == null) throw new ArgumentNullException("config");
 
@@ -302,16 +303,17 @@ namespace Platibus.Config
                 return null;
             }
 
-            var provider = ProviderHelper.GetProvider<IMessageJournalingServiceProvider>(providerName);
+            var provider = ProviderHelper.GetProvider<IMessageJournalProvider>(providerName);
 
             Log.Debug("Initializing message journaling service...");
-            var messageJournalingService = await provider.CreateMessageJournalingService(config);
-            var filteredMessageJournalingService = new FilteredMessageJournalingService(
-                messageJournalingService,
-                config.JournalSentMessages,
-                config.JournalReceivedMessages,
-                config.JournalPublishedMessages);
+            var messageJournal = await provider.CreateMessageJournal(config);
 
+            var categories = new List<JournaledMessageCategory>();
+            if (config.JournalSentMessages) categories.Add(JournaledMessageCategory.Sent);
+            if (config.JournalReceivedMessages) categories.Add(JournaledMessageCategory.Received);
+            if (config.JournalPublishedMessages) categories.Add(JournaledMessageCategory.Published);
+
+            var filteredMessageJournalingService = new FilteredMessageJournal(messageJournal, categories);
             return filteredMessageJournalingService;
         }
 

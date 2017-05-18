@@ -26,6 +26,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Common.Logging;
+using Platibus.Journaling;
 
 namespace Platibus.Http
 {
@@ -74,7 +75,7 @@ namespace Platibus.Http
         private readonly Uri _baseUri;
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
         private readonly IMessageQueueingService _messageQueueingService;
-        private readonly IMessageJournalingService _messageJournalingService;
+        private readonly IMessageJournal _messageJournal;
         private readonly HttpTransportService _transportService;
         private readonly Bus _bus;
         private readonly IHttpResourceRouter _resourceRouter;
@@ -105,11 +106,11 @@ namespace Platibus.Http
             _baseUri = configuration.BaseUri;
             _subscriptionTrackingService = configuration.SubscriptionTrackingService;
             _messageQueueingService = configuration.MessageQueueingService;
-            _messageJournalingService = configuration.MessageJournalingService;
+            _messageJournal = configuration.MessageJournal;
 
             var endpoints = configuration.Endpoints;
             _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, 
-                _messageJournalingService, _subscriptionTrackingService,
+                _messageJournal, _subscriptionTrackingService,
                 configuration.BypassTransportLocalDestination, HandleMessage);
 
             _bus = new Bus(configuration, _baseUri, _transportService, _messageQueueingService);
@@ -286,7 +287,7 @@ namespace Platibus.Http
             _bus.TryDispose();
             _transportService.TryDispose();
             _messageQueueingService.TryDispose();
-            _messageJournalingService.TryDispose();
+            _messageJournal.TryDispose();
             _subscriptionTrackingService.TryDispose();
 
             try

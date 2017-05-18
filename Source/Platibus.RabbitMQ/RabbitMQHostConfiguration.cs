@@ -23,6 +23,7 @@
 using System;
 using System.Text;
 using Platibus.Config;
+using Platibus.Security;
 
 namespace Platibus.RabbitMQ
 {
@@ -49,5 +50,8 @@ namespace Platibus.RabbitMQ
 
         /// <inheritdoc />
         public bool IsDurable { get; set; }
+
+        /// <inheritdoc />
+        public ISecurityTokenService SecurityTokenService { get; set; }
     }
 }

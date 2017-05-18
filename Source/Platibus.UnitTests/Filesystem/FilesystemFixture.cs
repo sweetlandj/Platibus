@@ -7,7 +7,6 @@ namespace Platibus.UnitTests.Filesystem
     public class FilesystemFixture : IDisposable
     {
         private readonly DirectoryInfo _baseDirectory;
-        private readonly FilesystemMessageJournalingService _messageJournalingService;
         private readonly FilesystemMessageQueueingService _messageQueueingService;
         private readonly FilesystemSubscriptionTrackingService _subscriptionTrackingService;
 
@@ -17,12 +16,7 @@ namespace Platibus.UnitTests.Filesystem
         {
             get { return _baseDirectory; }
         }
-
-        public FilesystemMessageJournalingService MessageJournalingService
-        {
-            get { return _messageJournalingService; }
-        }
-
+        
         public FilesystemMessageQueueingService MessageQueueingService
         {
             get { return _messageQueueingService; }
@@ -36,10 +30,7 @@ namespace Platibus.UnitTests.Filesystem
         public FilesystemFixture()
         {
             _baseDirectory = GetTempDirectory();
-
-            _messageJournalingService = new FilesystemMessageJournalingService(_baseDirectory);
-            _messageJournalingService.Init();
-
+            
             _messageQueueingService = new FilesystemMessageQueueingService(_baseDirectory);
             _messageQueueingService.Init();
 

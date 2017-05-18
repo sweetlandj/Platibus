@@ -24,6 +24,7 @@ using System.Configuration;
 using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
+using Platibus.Journaling;
 using Platibus.Multicast;
 
 namespace Platibus.SQL
@@ -32,7 +33,7 @@ namespace Platibus.SQL
     /// A provider for SQL-based message queueing and subscription tracking services
     /// </summary>
     [Provider("SQL")]
-    public class SQLServicesProvider : IMessageQueueingServiceProvider, IMessageJournalingServiceProvider, ISubscriptionTrackingServiceProvider
+    public class SQLServicesProvider : IMessageQueueingServiceProvider, IMessageJournalProvider, ISubscriptionTrackingServiceProvider
     {
         /// <inheritdoc />
         public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
@@ -56,13 +57,13 @@ namespace Platibus.SQL
         }
 
         /// <inheritdoc />
-        public Task<IMessageJournalingService> CreateMessageJournalingService(JournalingElement configuration)
+        public Task<IMessageJournal> CreateMessageJournal(JournalingElement configuration)
         {
             var connectionName = configuration.GetString("connectionName");
             if (string.IsNullOrWhiteSpace(connectionName))
             {
                 throw new ConfigurationErrorsException(
-                    "Attribute 'connectionName' is required for SQL message journaling service");
+                    "Attribute 'connectionName' is required for SQL message journal");
             }
 
             var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
@@ -70,11 +71,11 @@ namespace Platibus.SQL
             {
                 throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
             }
-            var sqlMessageJournalingService = new SQLMessageJournalingService(connectionStringSettings);
+            var sqlMessageJournalingService = new SQLMessageJournal(connectionStringSettings);
             sqlMessageJournalingService.Init();
-            return Task.FromResult<IMessageJournalingService>(sqlMessageJournalingService);
+            return Task.FromResult<IMessageJournal>(sqlMessageJournalingService);
         }
-        
+
         /// <inheritdoc />
         public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
             SubscriptionTrackingElement configuration)

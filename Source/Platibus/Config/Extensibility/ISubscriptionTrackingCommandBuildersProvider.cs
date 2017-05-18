@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2016 Jesse Sweetland
+// Copyright (c) 2017 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,24 +20,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Threading.Tasks;
+using System.Configuration;
+using Platibus.SQL.Commands;
 
 namespace Platibus.Config.Extensibility
 {
     /// <summary>
-    /// A factory for initializing a <see cref="IMessageJournalingService"/>
-    /// during bus initialization.
+    /// An interface describing a class that provides subscription tracking service commands that 
+    /// conform the the SQL syntax appropriate for a given ADO.NET connection provider
     /// </summary>
-    public interface IMessageJournalingServiceProvider
+    public interface ISubscriptionTrackingCommandBuildersProvider
     {
         /// <summary>
-        /// Creates an initializes a <see cref="IMessageJournalingService"/>
-        /// based on the provided <paramref name="configuration"/>.
+        /// Returns the subscription tracking service commands that are most appropriate given the 
+        /// specified <paramref name="connectionStringSettings"/>
         /// </summary>
-        /// <param name="configuration">The journaling configuration
-        /// element.</param>
-        /// <returns>Returns a task whose result is an initialized
-        /// <see cref="IMessageJournalingService"/>.</returns>
-        Task<IMessageJournalingService> CreateMessageJournalingService(JournalingElement configuration);
+        /// <param name="connectionStringSettings">The connection string settings</param>
+        /// <returns>Returns the subscription tracking service commands that are most appropriate
+        /// for use with connections based on the supplied <paramref name="connectionStringSettings"/>
+        /// </returns>
+        /// <exception cref="System.ArgumentNullException">Thrown if 
+        /// <paramref name="connectionStringSettings"/> is <c>null</c></exception>
+        ISubscriptionTrackingCommandBuilders GetSubscriptionTrackingCommandBuilders(ConnectionStringSettings connectionStringSettings);
     }
 }

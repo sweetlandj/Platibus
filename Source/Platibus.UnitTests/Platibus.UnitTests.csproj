@@ -136,8 +136,6 @@
     <Compile Include="EndpointAddressEqualityComparerTests.cs" />
     <Compile Include="Filesystem\FilesystemCollection.cs" />
     <Compile Include="Filesystem\FilesystemFixture.cs" />
-    <Compile Include="Filesystem\FilesystemMessageJournalInspector.cs" />
-    <Compile Include="Filesystem\FilesystemMessageJournalingServiceTests.cs" />
     <Compile Include="Filesystem\FileSystemMessageQueueingServiceTests.cs" />
     <Compile Include="Filesystem\FilesystemSubscriptionTrackingServiceTests.cs" />
     <Compile Include="Filesystem\LegacyMessageFileWriter.cs" />
@@ -152,10 +150,7 @@
     <Compile Include="MessageJournalReadTests.cs" />
     <Compile Include="MessageJournalTests.cs" />
     <Compile Include="MessageQueueingServiceTests.cs" />
-    <Compile Include="Mocks\FilteredMessageJournalingServiceTests.cs" />
     <Compile Include="LocalDB\LocalDBFixture.cs" />
-    <Compile Include="LocalDB\LocalDBMessageJournalingServiceTests.cs" />
-    <Compile Include="MessageJournalingServiceTests.cs" />
     <Compile Include="Multicast\MulticastSubscriptionTrackingServiceTests.cs" />
     <Compile Include="Config\PlatibusConfigurationExtensionsTests.cs" />
     <Compile Include="RabbitMQ\RabbitMQCollection.cs" />
@@ -167,10 +162,7 @@
     <Compile Include="SQLite\SQLiteMessageJournalReadTests.cs" />
     <Compile Include="SQLite\SQLiteMessageJournalTests.cs" />
     <Compile Include="SQLite\SQLiteMessageQueueingServiceTests.cs" />
-    <Compile Include="SQLite\SQLiteMessageJournalInspector.cs" />
     <Compile Include="SQLite\SQLiteFixture.cs" />
-    <Compile Include="SQLite\SQLiteMessageJournalingServiceTests.cs" />
-    <Compile Include="LocalDB\SQLMessageJournalInspector.cs" />
     <Compile Include="Http\HttpTransportServiceTests.cs" />
     <Compile Include="Http\MessageControllerTests.cs" />
     <Compile Include="Config\PlatibusConfigurationManagerTests.cs" />
@@ -212,7 +204,9 @@
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Mocks\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

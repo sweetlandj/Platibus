@@ -12,17 +12,17 @@ namespace Platibus.UnitTests.SQLite
     [Collection(SQLiteCollection.Name)]
     public class SQLiteMessageQueueingServiceTests : MessageQueueingServiceTests<SQLiteMessageQueueingService>
     {
-        private readonly DirectoryInfo _baseDirectory;
+        private readonly DirectoryInfo _queueDirectory;
         
         public SQLiteMessageQueueingServiceTests(SQLiteFixture fixture)
             : base(fixture.MessageQueueingService)
         {
-            _baseDirectory = fixture.BaseDirectory;
+            _queueDirectory = fixture.QueueDirectory;
         }
 
         protected override async Task GivenExistingQueuedMessage(QueueName queueName, Message message, IPrincipal principal)
         {
-            using (var queueInspector = new SQLiteMessageQueueInspector(_baseDirectory, queueName, SecurityTokenService))
+            using (var queueInspector = new SQLiteMessageQueueInspector(_queueDirectory, queueName, SecurityTokenService))
             {
                 await queueInspector.InsertMessage(message, principal);
             }
@@ -31,7 +31,7 @@ namespace Platibus.UnitTests.SQLite
         protected override async Task<bool> MessageQueued(QueueName queueName, Message message)
         {
             var messageId = message.Headers.MessageId;
-            using (var queueInspector = new SQLiteMessageQueueInspector(_baseDirectory, queueName, SecurityTokenService))
+            using (var queueInspector = new SQLiteMessageQueueInspector(_queueDirectory, queueName, SecurityTokenService))
             {
                 var messagesInQueue = await queueInspector.EnumerateMessages();
                 return messagesInQueue.Any(m => m.Message.Headers.MessageId == messageId);
@@ -43,7 +43,7 @@ namespace Platibus.UnitTests.SQLite
             var messageId = message.Headers.MessageId;
             var endDate = DateTime.UtcNow;
             var startDate = endDate.AddSeconds(-5);
-            using (var queueInspector = new SQLiteMessageQueueInspector(_baseDirectory, queueName, SecurityTokenService))
+            using (var queueInspector = new SQLiteMessageQueueInspector(_queueDirectory, queueName, SecurityTokenService))
             {
                 var messagesInQueue = await queueInspector.EnumerateAbandonedMessages(startDate, endDate);
                 return messagesInQueue.Any(m => m.Message.Headers.MessageId == messageId);

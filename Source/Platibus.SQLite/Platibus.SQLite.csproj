@@ -79,7 +79,6 @@
     <Compile Include="SQLiteLoggingCategories.cs" />
     <Compile Include="SQLiteMessageJournal.cs" />
     <Compile Include="Commands\SQLiteMessageJournalingCommandBuilders.cs" />
-    <Compile Include="SQLiteMessageJournalingService.cs" />
     <Compile Include="SQLiteMessageQueue.cs" />
     <Compile Include="Commands\SQLiteMessageQueueingCommandBuilders.cs" />
     <Compile Include="SQLiteMessageQueueingService.cs" />

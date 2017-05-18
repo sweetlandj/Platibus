@@ -33,7 +33,7 @@ namespace Platibus.SQLite.Commands
     [Provider("System.Data.SQLite")]
     public class SQLiteCommandBuildersProvider : 
         IMessageJournalingCommandBuildersProvider,
-        IMessageQueueingServiceCommandBuildersProvider,
+        IMessageQueueingCommandBuildersProvider,
         ISubscriptionTrackingCommandBuildersProvider
     {
         /// <inheritdoc />
@@ -43,7 +43,7 @@ namespace Platibus.SQLite.Commands
         }
 
         /// <inheritdoc />
-        public IMessageQueueingCommandBuilders GetMessageQueueingServiceCommandBuilders(ConnectionStringSettings connectionStringSettings)
+        public IMessageQueueingCommandBuilders GetMessageQueueingCommandBuilders(ConnectionStringSettings connectionStringSettings)
         {
             return new SQLiteMessageQueueingCommandBuilders();
         }

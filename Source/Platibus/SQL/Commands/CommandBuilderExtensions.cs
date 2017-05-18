@@ -49,7 +49,7 @@ namespace Platibus.SQL.Commands
         /// <see cref="MSSQLMessageQueueingCommandBuilders"/> will be returned by default.
         /// </remarks>
         /// <seealso cref="ProviderHelper"/>
-        public static IMessageJournalingCommandBuilders GetMessageJournalCommands(this ConnectionStringSettings connectionStringSettings)
+        public static IMessageJournalingCommandBuilders GetMessageJournalingCommandBuilders(this ConnectionStringSettings connectionStringSettings)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
             var providerName = connectionStringSettings.ProviderName;
@@ -82,11 +82,11 @@ namespace Platibus.SQL.Commands
         /// <see cref="MSSQLMessageQueueingCommandBuilders"/> will be returned by default.
         /// </remarks>
         /// <seealso cref="ProviderHelper"/>
-        public static IMessageQueueingCommandBuilders GetMessageQueueingServiceCommands(this ConnectionStringSettings connectionStringSettings)
+        public static IMessageQueueingCommandBuilders GetMessageQueueingCommandBuilders(this ConnectionStringSettings connectionStringSettings)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
             var providerName = connectionStringSettings.ProviderName;
-            IMessageQueueingServiceCommandBuildersProvider provider;
+            IMessageQueueingCommandBuildersProvider provider;
             if (string.IsNullOrWhiteSpace(providerName))
             {
                 Log.Debug("No connection string provider specified; using default provider...");
@@ -94,11 +94,44 @@ namespace Platibus.SQL.Commands
             }
             else
             {
-                provider = ProviderHelper.GetProvider<IMessageQueueingServiceCommandBuildersProvider>(providerName);
+                provider = ProviderHelper.GetProvider<IMessageQueueingCommandBuildersProvider>(providerName);
             }
 
             Log.Debug("Getting message queueing service  commands...");
-            return provider.GetMessageQueueingServiceCommandBuilders(connectionStringSettings);
+            return provider.GetMessageQueueingCommandBuilders(connectionStringSettings);
+        }
+
+        /// <summary>
+        /// Returns the message queueing service  commands that are most appropriate for the 
+        /// specified <paramref name="connectionStringSettings"/>
+        /// </summary>
+        /// <param name="connectionStringSettings">The connection string settings</param>
+        /// <exception cref="ArgumentNullException">Thrown if
+        /// <paramref name="connectionStringSettings"/> is <c>null</c></exception>
+        /// <returns>Returns the message queueing service  commands that are most appropriate for 
+        /// the specified connection string settings</returns>
+        /// <remarks>
+        /// If no provider name is specified in the connection string settings, the 
+        /// <see cref="MSSQLSubscriptionTrackingCommandBuilders"/> will be returned by default.
+        /// </remarks>
+        /// <seealso cref="ProviderHelper"/>
+        public static ISubscriptionTrackingCommandBuilders GetSubscriptionTrackingCommandBuilders(this ConnectionStringSettings connectionStringSettings)
+        {
+            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
+            var providerName = connectionStringSettings.ProviderName;
+            ISubscriptionTrackingCommandBuildersProvider provider;
+            if (string.IsNullOrWhiteSpace(providerName))
+            {
+                Log.Debug("No connection string provider specified; using default provider...");
+                provider = new MSSQLCommandBuildersProvider();
+            }
+            else
+            {
+                provider = ProviderHelper.GetProvider<ISubscriptionTrackingCommandBuildersProvider>(providerName);
+            }
+
+            Log.Debug("Getting message queueing service  commands...");
+            return provider.GetSubscriptionTrackingCommandBuilders(connectionStringSettings);
         }
     }
 }

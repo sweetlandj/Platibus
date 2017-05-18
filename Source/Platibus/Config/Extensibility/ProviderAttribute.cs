@@ -21,7 +21,6 @@
 // THE SOFTWARE.
 
 using System;
-using Platibus.SQL;
 
 namespace Platibus.Config.Extensibility
 {
@@ -39,9 +38,9 @@ namespace Platibus.Config.Extensibility
     /// <description>Description</description>
     /// </listheader>
     /// <item>
-    /// <term><see cref="IMessageJournalingServiceProvider"/></term>
+    /// <term><see cref="IMessageJournalProvider"/></term>
     /// <description>Indicates that the decorated type provides a
-    /// <see cref="IMessageJournalingService"/>.  The <see cref="Name"/> 
+    /// <see cref="Journaling.IMessageJournal"/>.  The <see cref="Name"/> 
     /// specified in <see cref="ProviderAttribute"/> corresponds to the value of 
     /// the <see cref="JournalingElement.Provider"/> property in a
     /// <see cref="JournalingElement"/>.</description>
@@ -71,9 +70,28 @@ namespace Platibus.Config.Extensibility
     /// <see cref="QueueingElement"/>.</description>
     /// </item>
     /// <item>
-    /// <term><see cref="ISQLDialectProvider"/></term>
-    /// <description>Indicates that the decorated type provides a
-    /// <see cref="ISQLDialect"/>.  The <see cref="Name"/> 
+    /// <term><see cref="IMessageQueueingCommandBuildersProvider"/></term>
+    /// <description>Indicates that the decorated type provides a set of
+    /// <see cref="SQL.Commands.IMessageQueueingCommandBuilders"/> for use with the 
+    /// <see cref="SQL.SQLMessageQueueingService"/> and its derivatives.  The <see cref="Name"/> 
+    /// specified in <see cref="ProviderAttribute"/> corresponds to the name of
+    /// the ADO.NET provider specified in the connection string settings.
+    /// </description>
+    /// </item>
+    /// <item>
+    /// <term><see cref="IMessageJournalingCommandBuildersProvider"/></term>
+    /// <description>Indicates that the decorated type provides a set of
+    /// <see cref="SQL.Commands.IMessageJournalingCommandBuilders"/> for use with the 
+    /// <see cref="SQL.SQLMessageJournal"/> and its derivatives.  The <see cref="Name"/> 
+    /// specified in <see cref="ProviderAttribute"/> corresponds to the name of
+    /// the ADO.NET provider specified in the connection string settings.
+    /// </description>
+    /// </item>
+    /// <item>
+    /// <term><see cref="ISubscriptionTrackingCommandBuildersProvider"/></term>
+    /// <description>Indicates that the decorated type provides a set of
+    /// <see cref="SQL.Commands.ISubscriptionTrackingCommandBuilders"/> for use with the 
+    /// <see cref="SQL.SQLSubscriptionTrackingService"/> and its derivatives.  The <see cref="Name"/> 
     /// specified in <see cref="ProviderAttribute"/> corresponds to the name of
     /// the ADO.NET provider specified in the connection string settings.
     /// </description>

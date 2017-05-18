@@ -29,6 +29,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
 using Platibus.Config;
+using Platibus.Journaling;
 using Platibus.Serialization;
 
 namespace Platibus
@@ -46,7 +47,7 @@ namespace Platibus
         private readonly IList<Task> _subscriptionTasks = new List<Task>();
         private readonly IList<IHandlingRule> _handlingRules;
         private readonly IMessageNamingService _messageNamingService;
-        private readonly IMessageJournalingService _messageJournalingService;
+        private readonly IMessageJournal _messageJournal;
         private readonly IMessageQueueingService _messageQueueingService;
 	    private readonly string _defaultContentType;
         
@@ -85,7 +86,7 @@ namespace Platibus
 		        ? "application/json"
 		        : configuration.DefaultContentType;
 
-            _messageJournalingService = configuration.MessageJournalingService;
+            _messageJournal = configuration.MessageJournal;
             _messageNamingService = configuration.MessageNamingService;
             _serializationService = configuration.SerializationService;
 
@@ -302,9 +303,9 @@ namespace Platibus
             };
 
             var message = BuildMessage(content, prototypicalHeaders, sendOptions);
-            if (_messageJournalingService != null)
+            if (_messageJournal != null)
             {
-                await _messageJournalingService.MessagePublished(message, cancellationToken);
+                await _messageJournal.Append(message, JournaledMessageCategory.Published, cancellationToken);
             }
 
             await _transportService.PublishMessage(message, topic, cancellationToken);
@@ -392,9 +393,9 @@ namespace Platibus
         /// <returns>Returns a task that completes when message handling is complete</returns>
         public async Task HandleMessage(Message message, IPrincipal principal)
         {
-            if (_messageJournalingService != null)
+            if (_messageJournal != null)
             {
-                await _messageJournalingService.MessageReceived(message);
+                await _messageJournal.Append(message, JournaledMessageCategory.Received);
             }
 
             var tasks = new List<Task>();

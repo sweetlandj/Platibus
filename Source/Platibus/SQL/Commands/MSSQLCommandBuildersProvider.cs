@@ -32,7 +32,7 @@ namespace Platibus.SQL.Commands
     [Provider("System.Data.SQLClient")]
     public class MSSQLCommandBuildersProvider : 
         IMessageJournalingCommandBuildersProvider, 
-        IMessageQueueingServiceCommandBuildersProvider, 
+        IMessageQueueingCommandBuildersProvider, 
         ISubscriptionTrackingCommandBuildersProvider
     {
         /// <inheritdoc />
@@ -42,7 +42,7 @@ namespace Platibus.SQL.Commands
         }
 
         /// <inheritdoc />
-        public IMessageQueueingCommandBuilders GetMessageQueueingServiceCommandBuilders(ConnectionStringSettings connectionStringSettings)
+        public IMessageQueueingCommandBuilders GetMessageQueueingCommandBuilders(ConnectionStringSettings connectionStringSettings)
         {
             return new MSSQLMessageQueueingCommandBuilders();
         }

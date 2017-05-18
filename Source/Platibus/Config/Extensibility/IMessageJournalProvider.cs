@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2017 Jesse Sweetland
+// Copyright (c) 2016 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,25 +20,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Configuration;
+using System.Threading.Tasks;
+using Platibus.Journaling;
 
-namespace Platibus.SQL.Commands
+namespace Platibus.Config.Extensibility
 {
     /// <summary>
-    /// An interface describing a class that provides message journal commands that 
-    /// conform the the SQL syntax appropriate for a given ADO.NET connection provider
+    /// A factory for initializing a <see cref="IMessageJournal"/> during bus initialization.
     /// </summary>
-    public interface IMessageJournalingCommandBuildersProvider
+    public interface IMessageJournalProvider
     {
         /// <summary>
-        /// Returns the message journal commands that are most appropriate given the specified 
-        /// <paramref name="connectionStringSettings"/>
+        /// Creates an initializes a <see cref="IMessageJournal"/>
+        /// based on the provided <paramref name="configuration"/>.
         /// </summary>
-        /// <param name="connectionStringSettings">The connection string settings</param>
-        /// <returns>Returns the message journal commands that are most appropriate for use with 
-        /// connections based on the supplied <paramref name="connectionStringSettings"/></returns>
-        /// <exception cref="System.ArgumentNullException">Thrown if 
-        /// <paramref name="connectionStringSettings"/> is <c>null</c></exception>
-        IMessageJournalingCommandBuilders GetMessageJournalingCommandBuilders(ConnectionStringSettings connectionStringSettings);
+        /// <param name="configuration">The journaling configuration
+        /// element.</param>
+        /// <returns>Returns a task whose result is an initialized
+        /// <see cref="IMessageJournal"/>.</returns>
+        Task<IMessageJournal> CreateMessageJournal(JournalingElement configuration);
     }
 }

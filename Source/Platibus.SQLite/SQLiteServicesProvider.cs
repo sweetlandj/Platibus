@@ -25,6 +25,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
+using Platibus.Journaling;
 using Platibus.Multicast;
 
 namespace Platibus.SQLite
@@ -33,7 +34,7 @@ namespace Platibus.SQLite
     /// A provider for SQLite-based message queueing and subscription tracking services
     /// </summary>
     [Provider("SQLite")]
-    public class SQLiteServicesProvider : IMessageQueueingServiceProvider, IMessageJournalingServiceProvider, ISubscriptionTrackingServiceProvider
+    public class SQLiteServicesProvider : IMessageQueueingServiceProvider, IMessageJournalProvider, ISubscriptionTrackingServiceProvider
     {
         /// <inheritdoc />
         public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
@@ -47,13 +48,13 @@ namespace Platibus.SQLite
         }
 
         /// <inheritdoc />
-        public Task<IMessageJournalingService> CreateMessageJournalingService(JournalingElement configuration)
+        public Task<IMessageJournal> CreateMessageJournal(JournalingElement configuration)
         {
             var path = configuration.GetString("path");
             var sqliteBaseDir = new DirectoryInfo(GetRootedPath(path));
-            var sqliteMessageQueueingService = new SQLiteMessageJournalingService(sqliteBaseDir);
+            var sqliteMessageQueueingService = new SQLiteMessageJournal(sqliteBaseDir);
             sqliteMessageQueueingService.Init();
-            return Task.FromResult<IMessageJournalingService>(sqliteMessageQueueingService);
+            return Task.FromResult<IMessageJournal>(sqliteMessageQueueingService);
         }
 
         /// <inheritdoc />

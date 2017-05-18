@@ -21,25 +21,26 @@
 // THE SOFTWARE.
 
 using System.Configuration;
+using Platibus.SQL.Commands;
 
-namespace Platibus.SQL.Commands
+namespace Platibus.Config.Extensibility
 {
     /// <summary>
-    /// An interface describing a class that provides subscription tracking service commands that 
+    /// An interface describing a class that provides message queueing service commands that 
     /// conform the the SQL syntax appropriate for a given ADO.NET connection provider
     /// </summary>
-    public interface ISubscriptionTrackingCommandBuildersProvider
+    public interface IMessageQueueingCommandBuildersProvider
     {
         /// <summary>
-        /// Returns the subscription tracking service commands that are most appropriate given the 
+        /// Returns the message queueing service commands that are most appropriate given the 
         /// specified <paramref name="connectionStringSettings"/>
         /// </summary>
         /// <param name="connectionStringSettings">The connection string settings</param>
-        /// <returns>Returns the subscription tracking service commands that are most appropriate
-        /// for use with connections based on the supplied <paramref name="connectionStringSettings"/>
+        /// <returns>Returns the message queueing service commands that are most appropriate for
+        /// use with connections based on the supplied <paramref name="connectionStringSettings"/>
         /// </returns>
         /// <exception cref="System.ArgumentNullException">Thrown if 
         /// <paramref name="connectionStringSettings"/> is <c>null</c></exception>
-        ISubscriptionTrackingCommandBuilders GetSubscriptionTrackingCommandBuilders(ConnectionStringSettings connectionStringSettings);
+        IMessageQueueingCommandBuilders GetMessageQueueingCommandBuilders(ConnectionStringSettings connectionStringSettings);
     }
 }

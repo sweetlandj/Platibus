@@ -34,7 +34,7 @@ namespace Platibus.Filesystem
     /// subscription trakcing services
     /// </summary>
     [Provider("Filesystem")]
-    public class FilesystemServicesProvider : IMessageQueueingServiceProvider, IMessageJournalingServiceProvider,
+    public class FilesystemServicesProvider : IMessageQueueingServiceProvider,
         ISubscriptionTrackingServiceProvider
     {
         /// <summary>
@@ -55,23 +55,6 @@ namespace Platibus.Filesystem
             return fsQueueingService;
         }
         
-        /// <summary>
-        /// Creates an initializes a <see cref="IMessageJournalingService"/>
-        /// based on the provided <paramref name="configuration"/>.
-        /// </summary>
-        /// <param name="configuration">The journaling configuration
-        /// element.</param>
-        /// <returns>Returns a task whose result is an initialized
-        /// <see cref="IMessageJournalingService"/>.</returns>
-        public Task<IMessageJournalingService> CreateMessageJournalingService(JournalingElement configuration)
-        {
-            var path = configuration.GetString("path");
-            var fsJournalingBaseDir = new DirectoryInfo(GetRootedPath(path));
-            var fsJournalingService = new FilesystemMessageJournalingService(fsJournalingBaseDir);
-            fsJournalingService.Init();
-            return Task.FromResult<IMessageJournalingService>(fsJournalingService);
-        }
-
         /// <summary>
         /// Creates an initializes a <see cref="ISubscriptionTrackingService"/>
         /// based on the provided <paramref name="configuration"/>.

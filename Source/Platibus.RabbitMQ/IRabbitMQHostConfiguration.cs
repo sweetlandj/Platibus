@@ -23,6 +23,7 @@
 using System;
 using System.Text;
 using Platibus.Config;
+using Platibus.Security;
 
 namespace Platibus.RabbitMQ
 {
@@ -72,5 +73,11 @@ namespace Platibus.RabbitMQ
         /// Whether queues should be transient by default
         /// </summary>
         bool IsDurable { get; }
+
+        /// <summary>
+        /// A service that issues and validates security tokens to capture principal claims
+        /// with queued messages
+        /// </summary>
+        ISecurityTokenService SecurityTokenService { get; }
     }
 }

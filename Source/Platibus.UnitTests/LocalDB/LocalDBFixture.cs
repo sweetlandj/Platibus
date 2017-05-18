@@ -9,10 +9,8 @@ namespace Platibus.UnitTests.LocalDB
     {
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly ISQLDialect _dialect;
-        private readonly SQLMessageJournalingService _messageJournalingService;
         private readonly SQLMessageQueueingService _messageQueueingService;
         private readonly SQLSubscriptionTrackingService _subscriptionTrackingService;
-
         private readonly SQLMessageJournal _messageJournal;
 
         private bool _disposed;
@@ -26,12 +24,7 @@ namespace Platibus.UnitTests.LocalDB
         {
             get { return _dialect; }
         }
-
-        public SQLMessageJournalingService MessageJournalingService
-        {
-            get { return _messageJournalingService; }
-        }
-
+        
         public SQLMessageJournal MessageJournal
         {
             get { return _messageJournal; }
@@ -53,11 +46,8 @@ namespace Platibus.UnitTests.LocalDB
             _connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
             _dialect = new MSSQLDialect();
             
-            _messageJournalingService = new SQLMessageJournalingService(_connectionProvider, _dialect);
-            _messageJournalingService.Init();
-            
             _messageJournal = new SQLMessageJournal(_connectionProvider, new MSSQLMessageJournalingCommandBuilders());
-            _messageJournalingService.Init();
+            _messageJournal.Init();
 
             _messageQueueingService = new SQLMessageQueueingService(_connectionProvider, _dialect);
             _messageQueueingService.Init();
@@ -84,7 +74,6 @@ namespace Platibus.UnitTests.LocalDB
         {
             _messageQueueingService.TryDispose();
             _subscriptionTrackingService.TryDispose();
-            _messageJournalingService.TryDispose();
             _messageJournal.TryDispose();
         }
 

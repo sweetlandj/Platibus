@@ -8,14 +8,10 @@ namespace Platibus.UnitTests.SQLite
     public class SQLiteFixture : IDisposable
     {
         private readonly DirectoryInfo _baseDirectory;
-        private readonly DirectoryInfo _journalDirectory;
         private readonly DirectoryInfo _queueDirectory;
-        private readonly DirectoryInfo _subscriptionDirectory;
 
-        private readonly SQLiteMessageJournalingService _messageJournalingService;
         private readonly SQLiteMessageQueueingService _messageQueueingService;
         private readonly SQLiteSubscriptionTrackingService _subscriptionTrackingService;
-
         private readonly SQLiteMessageJournal _messageJournal;
 
         private bool _disposed;
@@ -25,9 +21,9 @@ namespace Platibus.UnitTests.SQLite
             get { return _baseDirectory; }
         }
 
-        public SQLiteMessageJournalingService MessageJournalingService
+        public DirectoryInfo QueueDirectory
         {
-            get { return _messageJournalingService; }
+            get { return _queueDirectory; }
         }
 
         public SQLiteMessageQueueingService MessageQueueingService
@@ -48,20 +44,17 @@ namespace Platibus.UnitTests.SQLite
         public SQLiteFixture()
         {
             _baseDirectory = GetTempDirectory();
-
-            _journalDirectory = CreateSubdirectory(_baseDirectory, "journal");
-            _messageJournalingService = new SQLiteMessageJournalingService(_journalDirectory);
-            _messageJournalingService.Init();
-
+            
             _queueDirectory = CreateSubdirectory(_baseDirectory, "queues");
             _messageQueueingService = new SQLiteMessageQueueingService(_queueDirectory);
             _messageQueueingService.Init();
 
-            _subscriptionDirectory = CreateSubdirectory(_baseDirectory, "subscriptions");
-            _subscriptionTrackingService = new SQLiteSubscriptionTrackingService(_subscriptionDirectory);
+            var subscriptionDirectory = CreateSubdirectory(_baseDirectory, "subscriptions");
+            _subscriptionTrackingService = new SQLiteSubscriptionTrackingService(subscriptionDirectory);
             _subscriptionTrackingService.Init();
 
-            _messageJournal = new SQLiteMessageJournal(_journalDirectory);
+            var journalDirectory = CreateSubdirectory(_baseDirectory, "journal");
+            _messageJournal = new SQLiteMessageJournal(journalDirectory);
             _messageJournal.Init();
         }
 
@@ -115,7 +108,6 @@ namespace Platibus.UnitTests.SQLite
         {
             _messageQueueingService.TryDispose();
             _subscriptionTrackingService.TryDispose();
-            _messageJournalingService.TryDispose();
             _messageJournal.TryDispose();
         }
     }

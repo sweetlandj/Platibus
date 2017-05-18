@@ -28,6 +28,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
+using Platibus.Config.Extensibility;
 using Platibus.Journaling;
 using Platibus.SQL.Commands;
 
@@ -93,13 +94,13 @@ namespace Platibus.SQL
         /// If a SQL dialect is not specified, then one will be selected based on the supplied
         /// connection string settings
         /// </remarks>
-        /// <seealso cref="CommandBuilderExtensions.GetMessageJournalCommands"/>
+        /// <seealso cref="CommandBuilderExtensions.GetMessageJournalingCommandBuilders"/>
         /// <seealso cref="IMessageJournalingCommandBuildersProvider"/>
         public SQLMessageJournal(ConnectionStringSettings connectionStringSettings, IMessageJournalingCommandBuilders commandBuilders = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
             _connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
-            _commandBuilders = commandBuilders ?? connectionStringSettings.GetMessageJournalCommands();
+            _commandBuilders = commandBuilders ?? connectionStringSettings.GetMessageJournalingCommandBuilders();
         }
 
         /// <summary>

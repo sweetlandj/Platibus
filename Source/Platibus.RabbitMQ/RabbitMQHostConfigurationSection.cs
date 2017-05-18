@@ -45,6 +45,8 @@ namespace Platibus.RabbitMQ
         private const string RetryDelayPropertyName = "retryDelay";
         private const string DurablePropertyName = "durable";
 
+        private const string SecurityTokensPropertyName = "securityTokens";
+
         /// <summary>
         /// The base URI for the RabbitMQ hosted bus instance
         /// </summary>
@@ -123,6 +125,16 @@ namespace Platibus.RabbitMQ
         {
             get { return (bool)base[DurablePropertyName]; }
             set { base[DurablePropertyName] = value; }
+        }
+
+        /// <summary>
+        /// Security token configuration
+        /// </summary>
+        [ConfigurationProperty(SecurityTokensPropertyName)]
+        public SecurityTokensElement SecurityTokens
+        {
+            get { return (SecurityTokensElement)base[SecurityTokensPropertyName]; }
+            set { base[SecurityTokensPropertyName] = value; }
         }
     }
 }

@@ -30,6 +30,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using Platibus.Journaling;
 
 namespace Platibus.Http
 {
@@ -44,7 +45,7 @@ namespace Platibus.Http
         private readonly Uri _baseUri;
         private readonly IEndpointCollection _endpoints;
         private readonly IMessageQueueingService _messageQueueingService;
-        private readonly IMessageJournalingService _messageJournalingService;
+        private readonly IMessageJournal _messageJournal;
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
         private readonly bool _bypassTransportLocalDestination;
         private readonly Func<Message, CancellationToken, Task> _handleMessage;
@@ -60,7 +61,7 @@ namespace Platibus.Http
         /// <param name="baseUri">The base URI of the local Platibus instance</param>
         /// <param name="endpoints">The configured endpoints for the local Platibus instance</param>
         /// <param name="messageQueueingService">The service used to queue outbound messages</param>
-        /// <param name="messageJournalingService">The service used to record when messages are
+        /// <param name="messageJournal">A log of events service used to track when messages are
         /// sent</param>
         /// <param name="subscriptionTrackingService">The service used to track subscriptions to
         /// local topics</param>
@@ -73,7 +74,7 @@ namespace Platibus.Http
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="baseUri"/>, 
         /// <paramref name="messageQueueingService"/>, or <paramref name="subscriptionTrackingService"/>
         /// are <c>null</c></exception>
-        public HttpTransportService(Uri baseUri, IEndpointCollection endpoints, IMessageQueueingService messageQueueingService, IMessageJournalingService messageJournalingService, ISubscriptionTrackingService subscriptionTrackingService, bool bypassTransportLocalDestination = false, Func<Message, CancellationToken, Task> handleMessage = null)
+        public HttpTransportService(Uri baseUri, IEndpointCollection endpoints, IMessageQueueingService messageQueueingService, IMessageJournal messageJournal, ISubscriptionTrackingService subscriptionTrackingService, bool bypassTransportLocalDestination = false, Func<Message, CancellationToken, Task> handleMessage = null)
         {
             if (baseUri == null) throw new ArgumentNullException("baseUri");
             if (messageQueueingService == null) throw new ArgumentNullException("messageQueueingService");
@@ -89,7 +90,7 @@ namespace Platibus.Http
                 : new ReadOnlyEndpointCollection(endpoints);
 
             _messageQueueingService = messageQueueingService;
-            _messageJournalingService = messageJournalingService;
+            _messageJournal = messageJournal;
             _subscriptionTrackingService = subscriptionTrackingService;
             _bypassTransportLocalDestination = bypassTransportLocalDestination;
             _handleMessage = handleMessage;
@@ -208,9 +209,9 @@ namespace Platibus.Http
             HttpClient httpClient = null;
             try
             {
-                if (_messageJournalingService != null)
+                if (_messageJournal != null)
                 {
-                    await _messageJournalingService.MessageSent(message, cancellationToken);
+                    await _messageJournal.Append(message, JournaledMessageCategory.Sent, cancellationToken);
                 }
 
                 var endpointBaseUri = message.Headers.Destination.WithTrailingSlash();

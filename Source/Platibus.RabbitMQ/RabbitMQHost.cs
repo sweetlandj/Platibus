@@ -28,6 +28,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
+using Platibus.Journaling;
 using Platibus.Security;
 
 namespace Platibus.RabbitMQ
@@ -81,7 +82,7 @@ namespace Platibus.RabbitMQ
         private readonly QueueOptions _defaultQueueOptions;
         private readonly RabbitMQQueue _inboundQueue;
         private readonly IMessageQueueingService _messageQueueingService;
-        private readonly IMessageJournalingService _messageJournalingService;
+        private readonly IMessageJournal _messageJournal;
         private readonly ISecurityTokenService _securityTokenService;
         private readonly Bus _bus;
         private readonly ConcurrentDictionary<SubscriptionKey, RabbitMQQueue> _subscriptions = new ConcurrentDictionary<SubscriptionKey, RabbitMQQueue>(); 
@@ -114,8 +115,8 @@ namespace Platibus.RabbitMQ
             };
 
             _messageQueueingService = new RabbitMQMessageQueueingService(_baseUri, _defaultQueueOptions, _connectionManager, _encoding);
-            _messageJournalingService = configuration.MessageJournalingService;
-            _securityTokenService = new JwtSecurityTokenService();
+            _messageJournal = configuration.MessageJournal;
+            _securityTokenService = configuration.SecurityTokenService;
             
             var connection = _connectionManager.GetConnection(_baseUri);
             using (var channel = connection.CreateModel())
@@ -305,7 +306,7 @@ namespace Platibus.RabbitMQ
                 }
                 _inboundQueue.TryDispose();
                 _messageQueueingService.TryDispose();
-                _messageJournalingService.TryDispose();
+                _messageJournal.TryDispose();
                 _connectionManager.TryDispose();
                 _bus.TryDispose();
             }

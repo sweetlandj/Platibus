@@ -38,7 +38,7 @@ namespace Platibus.Config.Extensibility
         /// <param name="configuration">The journaling configuration
         /// element.</param>
         /// <returns>Returns a task whose result is an initialized
-        /// <see cref="IMessageJournalingService"/>.</returns>
+        /// <see cref="ISecurityTokenService"/>.</returns>
         Task<ISecurityTokenService> CreateSecurityTokenService(SecurityTokensElement configuration);
     }
 }

@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using Common.Logging;
 using Microsoft.Owin;
 using Platibus.Http;
+using Platibus.Journaling;
 
 namespace Platibus.Owin
 {
@@ -40,7 +41,7 @@ namespace Platibus.Owin
         private HttpTransportService _transportService;
         private ISubscriptionTrackingService _subscriptionTrackingService;
         private IMessageQueueingService _messageQueueingService;
-        private IMessageJournalingService _messageJournalingService;
+        private IMessageJournal _messageJournal;
 
         private bool _disposed;
 
@@ -117,11 +118,11 @@ namespace Platibus.Owin
             var baseUri = configuration.BaseUri;
             _subscriptionTrackingService = configuration.SubscriptionTrackingService;
             _messageQueueingService = configuration.MessageQueueingService;
-            _messageJournalingService = configuration.MessageJournalingService;
+            _messageJournal = configuration.MessageJournal;
 
             var endpoints = configuration.Endpoints;
             _transportService = new HttpTransportService(baseUri, endpoints, _messageQueueingService,
-                _messageJournalingService, _subscriptionTrackingService,
+                _messageJournal, _subscriptionTrackingService,
                 configuration.BypassTransportLocalDestination, HandleMessage);
 
             var bus = new Bus(configuration, baseUri, _transportService, _messageQueueingService);
@@ -195,7 +196,7 @@ namespace Platibus.Owin
                 _bus.TryDispose();
                 _transportService.TryDispose();
                 _messageQueueingService.TryDispose();
-                _messageJournalingService.TryDispose();
+                _messageJournal.TryDispose();
                 _subscriptionTrackingService.TryDispose();
             }
         }

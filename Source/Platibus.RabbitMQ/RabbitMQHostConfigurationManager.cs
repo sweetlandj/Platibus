@@ -25,7 +25,10 @@ using System;
 using System.Configuration;
 using System.Text;
 using System.Threading.Tasks;
+using Common.Logging;
 using Platibus.Config;
+using Platibus.Config.Extensibility;
+using Platibus.Security;
 
 namespace Platibus.RabbitMQ
 {
@@ -35,6 +38,8 @@ namespace Platibus.RabbitMQ
     /// </summary>
     public class RabbitMQHostConfigurationManager
     {
+        private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
+
         /// <summary>
         /// Initializes and returns a <see cref="RabbitMQHostConfiguration"/> instance based on
         /// the <see cref="RabbitMQHostConfigurationSection"/> with the specified 
@@ -70,8 +75,35 @@ namespace Platibus.RabbitMQ
             configuration.MaxAttempts = configSection.MaxAttempts;
             configuration.RetryDelay = configSection.RetryDelay;
             configuration.IsDurable = configSection.IsDurable;
+            configuration.SecurityTokenService = await InitSecurityTokenService(configSection.SecurityTokens);
             
             return configuration;
+        }
+
+        /// <summary>
+        /// Helper method to initialize security token services based on the
+        /// supplied configuration element
+        /// </summary>
+        /// <param name="config">The security tokens configuration element</param>
+        /// <returns>Returns a task whose result is an initialized security token service</returns>
+        public static Task<ISecurityTokenService> InitSecurityTokenService(SecurityTokensElement config)
+        {
+            var myConfig = config ?? new SecurityTokensElement();
+
+            var providerName = myConfig.Provider;
+            ISecurityTokenServiceProvider provider;
+            if (string.IsNullOrWhiteSpace(providerName))
+            {
+                Log.Debug("No security token service provider specified; using default provider...");
+                provider = new JwtSecurityTokenServiceProvider();
+            }
+            else
+            {
+                provider = ProviderHelper.GetProvider<ISecurityTokenServiceProvider>(providerName);
+            }
+
+            Log.Debug("Initializing security token service...");
+            return provider.CreateSecurityTokenService(myConfig);
         }
     }
 }

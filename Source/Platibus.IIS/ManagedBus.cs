@@ -24,6 +24,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Http;
+using Platibus.Journaling;
 
 namespace Platibus.IIS
 {
@@ -39,7 +40,7 @@ namespace Platibus.IIS
         private Uri _baseUri;
         private ISubscriptionTrackingService _subscriptionTrackingService;
         private IMessageQueueingService _messageQueueingService;
-        private IMessageJournalingService _messageJournalingService;
+        private IMessageJournal _messageJournal;
         private HttpTransportService _transportService;
         private Bus _bus;
         private bool _disposed;
@@ -71,11 +72,11 @@ namespace Platibus.IIS
             _baseUri = _configuration.BaseUri;
             _subscriptionTrackingService = _configuration.SubscriptionTrackingService;
             _messageQueueingService = _configuration.MessageQueueingService;
-            _messageJournalingService = _configuration.MessageJournalingService;
+            _messageJournal = _configuration.MessageJournal;
 
             var endpoints = _configuration.Endpoints;
             _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, 
-                _messageJournalingService, _subscriptionTrackingService,
+                _messageJournal, _subscriptionTrackingService,
                 _configuration.BypassTransportLocalDestination, HandleMessage);
 
             _bus = new Bus(_configuration, _baseUri, _transportService, _messageQueueingService);
@@ -126,7 +127,7 @@ namespace Platibus.IIS
                 _bus.TryDispose();
                 _transportService.TryDispose();
                 _messageQueueingService.TryDispose();
-                _messageJournalingService.TryDispose();
+                _messageJournal.TryDispose();
                 _subscriptionTrackingService.TryDispose();
             }
         }
