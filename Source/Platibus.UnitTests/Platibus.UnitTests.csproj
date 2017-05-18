@@ -164,6 +164,7 @@
     <Compile Include="Security\HexEncodingTests.cs" />
     <Compile Include="Security\JwtMessageSecurityTokenServiceTests.cs" />
     <Compile Include="SQLite\SQLiteCollection.cs" />
+    <Compile Include="SQLite\SQLiteMessageJournalReadTests.cs" />
     <Compile Include="SQLite\SQLiteMessageJournalTests.cs" />
     <Compile Include="SQLite\SQLiteMessageQueueingServiceTests.cs" />
     <Compile Include="SQLite\SQLiteMessageJournalInspector.cs" />

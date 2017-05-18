@@ -10,6 +10,7 @@ namespace Platibus.UnitTests.LocalDB
         public LocalDBMessageJournalReadTests(LocalDBFixture fixture)
             : base(fixture.MessageJournal)
         {
+            fixture.DeleteJournaledMessages();
         }
     }
 }

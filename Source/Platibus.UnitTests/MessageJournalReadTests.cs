@@ -29,20 +29,95 @@ namespace Platibus.UnitTests
             await GivenAtBeginningOfJournal();
             GivenPageSize(10);
             await WhenReadingToEndOfJournal();
+
+            // Expect all 32 messages to be read in 4 pages
             Assert.Equal(4, Pages.Count);
-            Assert.Equal(10, Pages[0].JournaledMessages.Count());
-            Assert.Equal(10, Pages[1].JournaledMessages.Count());
-            Assert.Equal(10, Pages[2].JournaledMessages.Count());
+            Assert.Equal(Count, Pages[0].JournaledMessages.Count());
+            Assert.Equal(Count, Pages[1].JournaledMessages.Count());
+            Assert.Equal(Count, Pages[2].JournaledMessages.Count());
             Assert.Equal(2, Pages[3].JournaledMessages.Count());
         }
-        
+
+        [Fact]
+        protected async Task ReadsAreRepeatable()
+        {
+            await GivenSampleSet();
+            await GivenAtBeginningOfJournal();
+            GivenPageSize(10);
+            await WhenReadingToEndOfJournal();
+
+            var firstRun = new List<MessageJournalReadResult>(Pages);
+            Pages.Clear();
+
+            await GivenAtBeginningOfJournal();
+            await WhenReadingToEndOfJournal();
+
+            var secondRun = new List<MessageJournalReadResult>(Pages);
+
+            AssertSameResults(firstRun, secondRun);
+        }
+
+        [Theory]
+        [InlineData("Sent", 8)]
+        [InlineData("Received", 16)]
+        [InlineData("Published", 8)]
+        protected async Task ReadResultsCanBeFilteredByCategory(string category, int expectedCount)
+        {
+            await GivenSampleSet();
+            await GivenAtBeginningOfJournal();
+            GivenPageSize(10);
+            GivenCategoryFilter(category);
+            await WhenReadingToEndOfJournal();
+
+            var actual = Pages.SelectMany(p => p.JournaledMessages).ToList();
+            Assert.Equal(expectedCount, actual.Count);
+           
+            AssertCategory(actual, category);
+        }
+
+        [Theory]
+        [InlineData("FooEvents", 4)]
+        [InlineData("BarEvents", 4)]
+        [InlineData("BazEvents", 8)]
+        protected async Task ReadResultsCanBeFilteredByTopic(string topic, int expectedCount)
+        {
+            await GivenSampleSet();
+            await GivenAtBeginningOfJournal();
+            GivenPageSize(10);
+            GivenTopicFilter(topic);
+            await WhenReadingToEndOfJournal();
+
+            var actual = Pages.SelectMany(p => p.JournaledMessages).ToList();
+            Assert.Equal(expectedCount, actual.Count);
+
+            AssertTopic(actual, topic);
+        }
+
+        [Theory]
+        [InlineData("Received", "FooEvents", 2)]
+        [InlineData("Published", "BazEvents", 4)]
+        protected async Task ReadResultsCanBeFilteredByCategoryAndTopic(string category, string topic, int expectedCount)
+        {
+            await GivenSampleSet();
+            await GivenAtBeginningOfJournal();
+            GivenPageSize(10);
+            GivenCategoryFilter(category);
+            GivenTopicFilter(topic);
+            await WhenReadingToEndOfJournal();
+
+            var actual = Pages.SelectMany(p => p.JournaledMessages).ToList();
+            Assert.Equal(expectedCount, actual.Count);
+
+            AssertTopic(actual, topic);
+        }
+
         protected async Task GivenSampleSet()
         {
             // Sample Set
             // ----------
             // 32 Messages
             //  8 Sent
-            // 24 Received (16 direct, 8 publications)
+            // 16 Received (16 direct, 8 publications)
             //  8 Published
             //  4 Messages with topic "FooEvents"
             //  4 Messages with topic "BarEvents"
@@ -157,6 +232,24 @@ namespace Platibus.UnitTests
             await MessageJournal.Append(message, JournaledMessageCategory.Published);
         }
 
+        protected void GivenCategoryFilter(JournaledMessageCategory category)
+        {
+            if (Filter == null)
+            {
+                Filter = new MessageJournalFilter();
+            }
+            Filter.Categories = new[] {category};
+        }
+
+        protected void GivenTopicFilter(TopicName topic)
+        {
+            if (Filter == null)
+            {
+                Filter = new MessageJournalFilter();
+            }
+            Filter.Topics = new[] { topic };
+        }
+
         protected async Task WhenReadingToEndOfJournal()
         {
             MessageJournalReadResult result;
@@ -166,6 +259,53 @@ namespace Platibus.UnitTests
                 Pages.Add(result);
                 Start = result.Next;
             } while (!result.EndOfJournal);
+        }
+
+        protected void AssertCategory(IEnumerable<JournaledMessage> journaledMessages,
+            JournaledMessageCategory expectedCategory)
+        {
+            foreach (var journaledMessage in journaledMessages)
+            {
+                Assert.Equal(expectedCategory, journaledMessage.Category);
+            }
+        }
+
+        protected void AssertTopic(IEnumerable<JournaledMessage> journaledMessages,
+            TopicName expectedTopic)
+        {
+            foreach (var journaledMessage in journaledMessages)
+            {
+                Assert.Equal(expectedTopic, journaledMessage.Message.Headers.Topic);
+            }
+        }
+
+        protected void AssertSameResults(IList<MessageJournalReadResult> firstRun, IList<MessageJournalReadResult> secondRun)
+        {
+            Assert.Equal(firstRun.Count, secondRun.Count);
+            for (var page = 0; page < firstRun.Count; page++)
+            {
+                var firstRunPage = firstRun[page];
+                var secondRunPage = secondRun[page];
+
+                Assert.Equal(firstRunPage.Start, secondRunPage.Start);
+                Assert.Equal(firstRunPage.Next, secondRunPage.Next);
+                Assert.Equal(firstRunPage.EndOfJournal, secondRunPage.EndOfJournal);
+                Assert.Equal(firstRunPage.JournaledMessages.Count(), secondRunPage.JournaledMessages.Count());
+
+                using (var firstRunMessages = firstRunPage.JournaledMessages.GetEnumerator())
+                using (var secondRunMessages = secondRunPage.JournaledMessages.GetEnumerator())
+                {
+                    while (firstRunMessages.MoveNext() && secondRunMessages.MoveNext())
+                    {
+                        var firstRunMessage = firstRunMessages.Current;
+                        var secondRunMessage = secondRunMessages.Current;
+
+                        Assert.Equal(firstRunMessage.Offset, secondRunMessage.Offset);
+                        Assert.Equal(firstRunMessage.Category, secondRunMessage.Category);
+                        Assert.Equal(firstRunMessage.Message, secondRunMessage.Message, new MessageEqualityComparer());
+                    }
+                }
+            }
         }
     }
 }
