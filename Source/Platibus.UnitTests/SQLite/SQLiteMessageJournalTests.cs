@@ -3,6 +3,7 @@
 namespace Platibus.UnitTests.SQLite
 {
     [Trait("Category", "UnitTests")]
+    [Trait("Dependency", "SQLite")]
     [Collection(SQLiteCollection.Name)]
     public class SQLiteMessageJournalTests : MessageJournalTests
     {

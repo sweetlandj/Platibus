@@ -34,7 +34,7 @@ namespace Platibus.SQLite
         /// directory.  If the base directory does not exist it will be created.
         /// </remarks>
         public SQLiteMessageJournal(DirectoryInfo baseDirectory)
-            : base(InitDb(baseDirectory), new SQLiteMessageJournalingCommandBuilders())
+            : base(InitConnectionProvider(baseDirectory), new SQLiteMessageJournalingCommandBuilders())
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _operationQueue = new ActionBlock<ISQLiteOperation>(
@@ -46,8 +46,7 @@ namespace Platibus.SQLite
                 });
         }
 
-        [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        private static IDbConnectionProvider InitDb(DirectoryInfo directory)
+        private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory)
         {
             if (directory == null)
             {
@@ -63,22 +62,7 @@ namespace Platibus.SQLite
                 ProviderName = "System.Data.SQLite"
             };
 
-            var connectionProvider = new SingletonConnectionProvider(connectionStringSettings);
-            var connection = connectionProvider.GetConnection();
-            try
-            {
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandType = CommandType.Text;
-                    command.CommandText = new SQLiteDialect().CreateMessageJournalingServiceObjectsCommand;
-                    command.ExecuteNonQuery();
-                }
-            }
-            finally
-            {
-                connectionProvider.ReleaseConnection(connection);
-            }
-            return connectionProvider;
+            return new SingletonConnectionProvider(connectionStringSettings);
         }
 
         /// <inheritdoc />

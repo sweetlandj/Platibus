@@ -22,13 +22,13 @@
 
 using System;
 using System.Configuration;
-using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Platibus.SQL;
+using Platibus.SQLite.Commands;
 
 namespace Platibus.SQLite
 {
@@ -52,7 +52,7 @@ namespace Platibus.SQLite
         /// directory.  If the base directory does not exist it will be created.
         /// </remarks>
         public SQLiteSubscriptionTrackingService(DirectoryInfo baseDirectory)
-            : base(InitDb(baseDirectory), new SQLiteDialect())
+            : base(InitConnectionProvider(baseDirectory), new SQLiteSubscriptionTrackingCommandBuilders())
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _operationQueue = new ActionBlock<ISQLiteOperation>(
@@ -64,8 +64,7 @@ namespace Platibus.SQLite
                 });
         }
 
-        [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        private static IDbConnectionProvider InitDb(DirectoryInfo baseDirectory)
+        private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo baseDirectory)
         {
             if (baseDirectory == null)
             {
@@ -80,22 +79,7 @@ namespace Platibus.SQLite
                 ProviderName = "System.Data.SQLite"
             };
 
-            var connectionProvider = new SingletonConnectionProvider(connectionStringSettings);
-            var connection = connectionProvider.GetConnection();
-            try
-            {
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandType = CommandType.Text;
-                    command.CommandText = new SQLiteDialect().CreateSubscriptionTrackingServiceObjectsCommand;
-                    command.ExecuteNonQuery();
-                }
-            }
-            finally
-            {
-                connectionProvider.ReleaseConnection(connection);
-            }
-            return connectionProvider;
+            return new SingletonConnectionProvider(connectionStringSettings);
         }
 
         /// <summary>

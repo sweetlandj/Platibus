@@ -22,7 +22,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -34,6 +33,7 @@ using System.Threading.Tasks.Dataflow;
 using System.Transactions;
 using Common.Logging;
 using Platibus.Security;
+using Platibus.SQL.Commands;
 
 namespace Platibus.SQL
 {
@@ -45,7 +45,7 @@ namespace Platibus.SQL
         private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.SQL);
 
         private readonly IDbConnectionProvider _connectionProvider;
-        private readonly ISQLDialect _dialect;
+        private readonly IMessageQueueingCommandBuilders _commandBuilders;
         private readonly QueueName _queueName;
         private readonly IQueueListener _listener;
         private readonly ISecurityTokenService _securityTokenService;
@@ -60,29 +60,49 @@ namespace Platibus.SQL
         private int _initialized;
 
         /// <summary>
+        /// The connection provider
+        /// </summary>
+        public IDbConnectionProvider ConnectionProvider
+        {
+            get { return _connectionProvider; }
+        }
+
+        /// <summary>
+        /// A collection of factories capable of  generating database commands for manipulating 
+        /// queued messages that conform to the SQL syntax required by the underlying connection 
+        /// provider
+        /// </summary>
+        public IMessageQueueingCommandBuilders CommandBuilders
+        {
+            get { return _commandBuilders; }
+        }
+
+        /// <summary>
         /// Initializes a new <see cref="SQLMessageQueue"/> with the specified values
         /// </summary>
         /// <param name="connectionProvider">The database connection provider</param>
-        /// <param name="dialect">The SQL dialect</param>
+        /// <param name="commandBuilders">A collection of factories capable of 
+        /// generating database commands for manipulating queued messages that conform to the SQL
+        /// syntax required by the underlying connection provider</param>
         /// <param name="queueName">The name of the queue</param>
         /// <param name="listener">The object that will be notified when messages are
         /// added to the queue</param>
         /// <param name="securityTokenService"></param>
         /// <param name="options">(Optional) Settings that influence how the queue behaves</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>,
-        /// <paramref name="dialect"/>, <paramref name="queueName"/>, or <paramref name="listener"/>
+        /// <paramref name="commandBuilders"/>, <paramref name="queueName"/>, or <paramref name="listener"/>
         /// are <c>null</c></exception>
-        public SQLMessageQueue(IDbConnectionProvider connectionProvider, ISQLDialect dialect, QueueName queueName,
+        public SQLMessageQueue(IDbConnectionProvider connectionProvider, IMessageQueueingCommandBuilders commandBuilders, QueueName queueName,
             IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null)
         {
             if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
-            if (dialect == null) throw new ArgumentNullException("dialect");
+            if (commandBuilders == null) throw new ArgumentNullException("commandBuilders");
             if (queueName == null) throw new ArgumentNullException("queueName");
             if (listener == null) throw new ArgumentNullException("listener");
             if (securityTokenService == null) throw new ArgumentNullException("securityTokenService");
 
             _connectionProvider = connectionProvider;
-            _dialect = dialect;
+            _commandBuilders = commandBuilders;
             _queueName = queueName;
             _listener = listener;
             _securityTokenService = securityTokenService;
@@ -108,7 +128,7 @@ namespace Platibus.SQL
         /// Reads previously queued messages from the database and initiates message processing
         /// </summary>
         /// <returns>Returns a task that completes when initialization is complete</returns>
-        public async Task Init()
+        public virtual async Task Init()
         {
             if (Interlocked.Exchange(ref _initialized, 1) == 0)
             {
@@ -221,29 +241,23 @@ namespace Platibus.SQL
             var messageWithSecurityToken = message.WithSecurityToken(securityToken);
             try
             {
+                var headers = messageWithSecurityToken.Headers;
+                var commandBuilder = _commandBuilders.NewInsertQueuedMessageCommandBuilder();
+                commandBuilder.MessageId = headers.MessageId;
+                commandBuilder.QueueName = _queueName;
+                commandBuilder.MessageId = headers.MessageId;
+                commandBuilder.Origination = headers.Origination == null ? null : headers.Origination.ToString();
+                commandBuilder.Destination = headers.Destination == null ? null : headers.Destination.ToString();
+                commandBuilder.ReplyTo = headers.ReplyTo == null ? null : headers.ReplyTo.ToString();
+                commandBuilder.Expires = headers.Expires;
+                commandBuilder.ContentType = headers.ContentType;
+                commandBuilder.Headers = SerializeHeaders(headers);
+                commandBuilder.Content = messageWithSecurityToken.Content;
+
                 using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    using (var command = connection.CreateCommand())
+                    using (var command = commandBuilder.BuildDbCommand(connection))
                     {
-                        command.CommandType = CommandType.Text;
-                        command.CommandText = _dialect.InsertQueuedMessageCommand;
-
-                        var headers = messageWithSecurityToken.Headers;
-
-                        command.SetParameter(_dialect.MessageIdParameterName, (Guid)headers.MessageId);
-                        command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
-                        command.SetParameter(_dialect.MessageNameParameterName, (string)headers.MessageName);
-                        command.SetParameter(_dialect.OriginationParameterName,
-                            headers.Origination == null ? null : headers.Origination.ToString());
-                        command.SetParameter(_dialect.DestinationParameterName,
-                            headers.Destination == null ? null : headers.Destination.ToString());
-                        command.SetParameter(_dialect.ReplyToParameterName,
-                            headers.ReplyTo == null ? null : headers.ReplyTo.ToString());
-                        command.SetParameter(_dialect.ExpiresParameterName, headers.Expires);
-                        command.SetParameter(_dialect.ContentTypeParameterName, headers.ContentType);
-                        command.SetParameter(_dialect.HeadersParameterName, SerializeHeaders(headers));
-                        command.SetParameter(_dialect.MessageContentParameterName, messageWithSecurityToken.Content);
-
                         await command.ExecuteNonQueryAsync();
                     }
                     scope.Complete();
@@ -270,23 +284,25 @@ namespace Platibus.SQL
             var connection = _connectionProvider.GetConnection();
             try
             {
+                var commandBuilder = _commandBuilders.NewSelectQueuedMessagesCommandBuilder();
+                commandBuilder.QueueName = _queueName;
+                
                 using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    using (var command = connection.CreateCommand())
+                    using (var command = commandBuilder.BuildDbCommand(connection))
                     {
-                        command.CommandType = CommandType.Text;
-                        command.CommandText = _dialect.SelectQueuedMessagesCommand;
-                        command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
-
                         using (var reader = await command.ExecuteReaderAsync())
                         {
                             while (await reader.ReadAsync())
                             {
-                                var messageContent = reader.GetString("MessageContent");
-                                var headers = DeserializeHeaders(reader.GetString("Headers"));
+                                var record = commandBuilder.BuildQueuedMessageRecord(reader);
+                                var messageContent = record.Content;
+                                var headers = DeserializeHeaders(record.Headers);
                                 var message = new Message(headers, messageContent);
-                                var principal = await ResolvePrincipal(headers, reader);
-                                var attempts = reader.GetInt("Attempts").GetValueOrDefault(0);
+#pragma warning disable 612
+                                var principal = await ResolvePrincipal(headers, record.SenderPrincipal);
+#pragma warning restore 612
+                                var attempts = record.Attempts;
                                 var queuedMessage = new SQLQueuedMessage(message, principal, attempts);
                                 queuedMessages.Add(queuedMessage);
                             }
@@ -317,25 +333,27 @@ namespace Platibus.SQL
             var connection = _connectionProvider.GetConnection();
             try
             {
+                var commandBuilder = _commandBuilders.NewSelectAbandonedMessagesCommandBuilder();
+                commandBuilder.QueueName = _queueName;
+                commandBuilder.StartDate = startDate;
+                commandBuilder.EndDate = endDate;
+
                 using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    using (var command = connection.CreateCommand())
+                    using (var command = commandBuilder.BuildDbCommand(connection))
                     {
-                        command.CommandType = CommandType.Text;
-                        command.CommandText = _dialect.SelectAbandonedMessagesCommand;
-                        command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
-                        command.SetParameter(_dialect.StartDateParameterName, startDate);
-                        command.SetParameter(_dialect.EndDateParameterName, endDate);
-
                         using (var reader = await command.ExecuteReaderAsync())
                         {
                             while (await reader.ReadAsync())
                             {
-                                var messageContent = reader.GetString("MessageContent");
-                                var headers = DeserializeHeaders(reader.GetString("Headers"));
+                                var record = commandBuilder.BuildQueuedMessageRecord(reader);
+                                var messageContent = record.Content;
+                                var headers = DeserializeHeaders(record.Headers);
                                 var message = new Message(headers, messageContent);
-                                var principal = await ResolvePrincipal(headers, reader);
-                                var attempts = reader.GetInt("Attempts").GetValueOrDefault(0);
+#pragma warning disable 612
+                                var principal = await ResolvePrincipal(headers, record.SenderPrincipal);
+#pragma warning restore 612
+                                var attempts = record.Attempts;
                                 var queuedMessage = new SQLQueuedMessage(message, principal, attempts);
                                 queuedMessages.Add(queuedMessage);
                             }
@@ -366,19 +384,19 @@ namespace Platibus.SQL
             var connection = _connectionProvider.GetConnection();
             try
             {
+                var message = queuedMessage.Message;
+                var headers = message.Headers;
+                var commandBuilder = _commandBuilders.NewUpdateQueuedMessageCommandBuilder();
+                commandBuilder.MessageId = headers.MessageId;
+                commandBuilder.QueueName = _queueName;
+                commandBuilder.Acknowledged = acknowledged;
+                commandBuilder.Abandoned = abandoned;
+                commandBuilder.Attempts = attempts;
+
                 using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    using (var command = connection.CreateCommand())
+                    using (var command = commandBuilder.BuildDbCommand(connection))
                     {
-                        command.CommandType = CommandType.Text;
-                        command.CommandText = _dialect.UpdateQueuedMessageCommand;
-                        command.SetParameter(_dialect.MessageIdParameterName,
-                            (Guid)queuedMessage.Message.Headers.MessageId);
-                        command.SetParameter(_dialect.QueueNameParameterName, (string)_queueName);
-                        command.SetParameter(_dialect.AcknowledgedParameterName, acknowledged);
-                        command.SetParameter(_dialect.AbandonedParameterName, abandoned);
-                        command.SetParameter(_dialect.AttemptsParameterName, attempts);
-
                         await command.ExecuteNonQueryAsync();
                     }
                     scope.Complete();
@@ -442,8 +460,8 @@ namespace Platibus.SQL
         /// <summary>
         /// Determines the principal stored with the queued message
         /// </summary>
-        /// <param name="headers"></param>
-        /// <param name="record"></param>
+        /// <param name="headers">The message headers</param>
+        /// <param name="senderPrincipal">The serialized sender principal</param>
         /// <returns></returns>
         /// <remarks>
         /// <para>This method first looks for a security token stored in the 
@@ -455,7 +473,7 @@ namespace Platibus.SQL
         /// then it will be deserialized into a <see cref="SenderPrincipal"/>.
         /// </para>
         /// </remarks>
-        protected async Task<IPrincipal> ResolvePrincipal(IMessageHeaders headers, IDataRecord record)
+        protected async Task<IPrincipal> ResolvePrincipal(IMessageHeaders headers, string senderPrincipal)
         {
             if (!string.IsNullOrWhiteSpace(headers.SecurityToken))
             {
@@ -464,10 +482,9 @@ namespace Platibus.SQL
 
             try
             {
-                var columnIndex = record.GetOrdinal("SenderPrincipal");
-                return record.IsDBNull(columnIndex) 
+                return string.IsNullOrWhiteSpace(senderPrincipal)
                     ? null 
-                    : DeserializePrincipal(record.GetString(columnIndex));
+                    : DeserializePrincipal(senderPrincipal);
             }
             catch (IndexOutOfRangeException)
             {

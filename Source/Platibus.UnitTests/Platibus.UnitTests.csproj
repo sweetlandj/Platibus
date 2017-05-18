@@ -157,7 +157,7 @@
     <Compile Include="RabbitMQ\RabbitMQFixture.cs" />
     <Compile Include="RabbitMQ\RabbitMQMessageQueueingServiceTests.cs" />
     <Compile Include="Security\HexEncodingTests.cs" />
-    <Compile Include="Security\JwtMessageSecurityTokenServiceTests.cs" />
+    <Compile Include="Security\JwtSecurityTokenServiceTests.cs" />
     <Compile Include="SQLite\SQLiteCollection.cs" />
     <Compile Include="SQLite\SQLiteMessageJournalReadTests.cs" />
     <Compile Include="SQLite\SQLiteMessageJournalTests.cs" />

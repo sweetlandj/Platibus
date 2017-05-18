@@ -43,11 +43,6 @@ namespace Platibus.SQL.Commands
         public string Subscriber { get; set; }
 
         /// <summary>
-        /// The date/time the subscription lapses
-        /// </summary>
-        public DateTime Expires { get; set; }
-
-        /// <summary>
         /// Initializes and returns a new non-query <see cref="DbCommand"/> with the configured
         /// parameters
         /// </summary>

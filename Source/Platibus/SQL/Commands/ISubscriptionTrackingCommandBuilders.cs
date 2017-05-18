@@ -59,6 +59,16 @@ namespace Platibus.SQL.Commands
         UpdateSubscriptionCommandBuilder NewUpdateSubscriptionCommandBuilder();
 
         /// <summary>
+        /// Returns a new builder for constructing commands needed to select existing topic
+        /// subscription information from the database
+        /// </summary>
+        /// <returns>
+        /// Returns a new builder for constructing commands needed to select existing topic
+        /// subscription information from the database
+        /// </returns>
+        SelectSubscriptionsCommandBuilder NewSelectSubscriptionsCommandBuilder();
+
+        /// <summary>
         /// Returns a new builder for constructing commands needed to deleting existing topic
         /// subscription information from the database
         /// </summary>

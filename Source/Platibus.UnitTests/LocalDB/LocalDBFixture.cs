@@ -8,7 +8,6 @@ namespace Platibus.UnitTests.LocalDB
     public class LocalDBFixture : IDisposable
     {
         private readonly IDbConnectionProvider _connectionProvider;
-        private readonly ISQLDialect _dialect;
         private readonly SQLMessageQueueingService _messageQueueingService;
         private readonly SQLSubscriptionTrackingService _subscriptionTrackingService;
         private readonly SQLMessageJournal _messageJournal;
@@ -19,12 +18,7 @@ namespace Platibus.UnitTests.LocalDB
         {
             get { return _connectionProvider; }
         }
-
-        public ISQLDialect Dialect
-        {
-            get { return _dialect; }
-        }
-        
+       
         public SQLMessageJournal MessageJournal
         {
             get { return _messageJournal; }
@@ -44,15 +38,14 @@ namespace Platibus.UnitTests.LocalDB
         {
             var connectionStringSettings = ConfigurationManager.ConnectionStrings["PlatibusUnitTests.LocalDB"];
             _connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
-            _dialect = new MSSQLDialect();
             
             _messageJournal = new SQLMessageJournal(_connectionProvider, new MSSQLMessageJournalingCommandBuilders());
             _messageJournal.Init();
 
-            _messageQueueingService = new SQLMessageQueueingService(_connectionProvider, _dialect);
+            _messageQueueingService = new SQLMessageQueueingService(_connectionProvider, new MSSQLMessageQueueingCommandBuilders());
             _messageQueueingService.Init();
 
-            _subscriptionTrackingService = new SQLSubscriptionTrackingService(_connectionProvider, _dialect);
+            _subscriptionTrackingService = new SQLSubscriptionTrackingService(_connectionProvider, new MSSQLSubscriptionTrackingCommandBuilders());
             _subscriptionTrackingService.Init();
 
             DeleteJournaledMessages();

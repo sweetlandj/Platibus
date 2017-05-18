@@ -8,6 +8,7 @@ using Xunit;
 namespace Platibus.UnitTests.LocalDB
 {
     [Trait("Category", "UnitTests")]
+    [Trait("Dependency", "LocalDB")]
     [Collection(LocalDBCollection.Name)]
     public class LocalDBMessageQueueingServiceTests : MessageQueueingServiceTests<SQLMessageQueueingService>
     {
@@ -20,6 +21,7 @@ namespace Platibus.UnitTests.LocalDB
         {
             using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, SecurityTokenService))
             {
+                await queueInspector.Init();
                 await queueInspector.InsertMessage(message, principal);
             }
         }
@@ -29,6 +31,7 @@ namespace Platibus.UnitTests.LocalDB
             var messageId = message.Headers.MessageId;
             using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, SecurityTokenService))
             {
+                await queueInspector.Init();
                 var messagesInQueue = await queueInspector.EnumerateMessages();
                 return messagesInQueue.Any(m => m.Message.Headers.MessageId == messageId);
             }
@@ -41,6 +44,7 @@ namespace Platibus.UnitTests.LocalDB
             var startDate = endDate.AddSeconds(-5);
             using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, SecurityTokenService))
             {
+                await queueInspector.Init();
                 var messagesInQueue = await queueInspector.EnumerateAbandonedMessages(startDate, endDate);
                 return messagesInQueue.Any(m => m.Message.Headers.MessageId == messageId);
             }

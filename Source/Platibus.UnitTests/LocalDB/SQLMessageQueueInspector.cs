@@ -12,7 +12,7 @@ namespace Platibus.UnitTests.LocalDB
     {
         public SQLMessageQueueInspector(SQLMessageQueueingService messageQueueingService, QueueName queueName, ISecurityTokenService securityTokenService)
             : base(
-                messageQueueingService.ConnectionProvider, messageQueueingService.Dialect, queueName,
+                messageQueueingService.ConnectionProvider, messageQueueingService.CommandBuilders, queueName,
                 new NoopQueueListener(), securityTokenService)
         {
         }

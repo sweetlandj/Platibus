@@ -32,7 +32,7 @@ using Platibus.Security;
 namespace Platibus.UnitTests.Security
 {
     [Trait("Category", "UnitTests")]
-    public class JwtMessageSecurityTokenServiceTests
+    public class JwtSecurityTokenServiceTests
     {
         private static readonly RNGCryptoServiceProvider RNG = new RNGCryptoServiceProvider();
 

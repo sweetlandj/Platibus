@@ -24,12 +24,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
+using Platibus.Config.Extensibility;
+using Platibus.SQL.Commands;
 
 namespace Platibus.SQL
 {
@@ -40,7 +41,7 @@ namespace Platibus.SQL
     public class SQLSubscriptionTrackingService : ISubscriptionTrackingService, IDisposable
     {
         private readonly IDbConnectionProvider _connectionProvider;
-        private readonly ISQLDialect _dialect;
+        private readonly ISubscriptionTrackingCommandBuilders _commandBuilders;
 
         private readonly ConcurrentDictionary<TopicName, IEnumerable<SQLSubscription>> _subscriptions =
             new ConcurrentDictionary<TopicName, IEnumerable<SQLSubscription>>();
@@ -56,34 +57,28 @@ namespace Platibus.SQL
         }
 
         /// <summary>
-        /// The SQL dialect
-        /// </summary>
-        public ISQLDialect Dialect
-        {
-            get { return _dialect; }
-        }
-
-        /// <summary>
         /// Initializes a new <see cref="SQLSubscriptionTrackingService"/> with the specified connection
         /// string settings and dialect
         /// </summary>
         /// <param name="connectionStringSettings">The connection string settings to use to connect to
         /// the SQL database</param>
-        /// <param name="dialect">(Optional) The SQL dialect to use</param>
+        /// <param name="commandBuilders">(Optional) A collection of factories capable of 
+        /// generating database commands for manipulating subscriptions that conform to the SQL
+        /// syntax required by the underlying connection provider (if needed)</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionStringSettings"/>
         /// is <c>null</c></exception>
         /// <remarks>
         /// If a SQL dialect is not specified, then one will be selected based on the supplied
         /// connection string settings
         /// </remarks>
-        /// <seealso cref="DbExtensions.GetSQLDialect"/>
-        /// <seealso cref="ISQLDialectProvider"/>
+        /// <seealso cref="CommandBuilderExtensions.GetSubscriptionTrackingCommandBuilders"/>
+        /// <seealso cref="ISubscriptionTrackingCommandBuildersProvider"/>
         public SQLSubscriptionTrackingService(ConnectionStringSettings connectionStringSettings,
-            ISQLDialect dialect = null)
+            ISubscriptionTrackingCommandBuilders commandBuilders = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
             _connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
-            _dialect = dialect ?? connectionStringSettings.GetSQLDialect();
+            _commandBuilders = commandBuilders ?? connectionStringSettings.GetSubscriptionTrackingCommandBuilders();
         }
 
         /// <summary>
@@ -92,15 +87,17 @@ namespace Platibus.SQL
         /// </summary>
         /// <param name="connectionProvider">The connection provider to use to connect to
         /// the SQL database</param>
-        /// <param name="dialect">The SQL dialect to use</param>
+        /// <param name="commandBuilders">A collection of factories capable of 
+        /// generating database commands for manipulating subscriptions that conform to the SQL
+        /// syntax required by the underlying connection provider</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>
-        /// or <paramref name="dialect"/> is <c>null</c></exception>
-        public SQLSubscriptionTrackingService(IDbConnectionProvider connectionProvider, ISQLDialect dialect)
+        /// or <paramref name="commandBuilders"/> is <c>null</c></exception>
+        public SQLSubscriptionTrackingService(IDbConnectionProvider connectionProvider, ISubscriptionTrackingCommandBuilders commandBuilders)
         {
             if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
-            if (dialect == null) throw new ArgumentNullException("dialect");
+            if (commandBuilders == null) throw new ArgumentNullException("commandBuilders");
             _connectionProvider = connectionProvider;
-            _dialect = dialect;
+            _commandBuilders = commandBuilders;
         }
 
         /// <summary>
@@ -113,10 +110,9 @@ namespace Platibus.SQL
             var connection = _connectionProvider.GetConnection();
             try
             {
-                using (var command = connection.CreateCommand())
+                var commandBuilder = _commandBuilders.NewCreateObjectsCommandBuilder();
+                using (var command = commandBuilder.BuildDbCommand(connection))
                 {
-                    command.CommandType = CommandType.Text;
-                    command.CommandText = _dialect.CreateSubscriptionTrackingServiceObjectsCommand;
                     command.ExecuteNonQuery();
                 }
             }
@@ -232,22 +228,27 @@ namespace Platibus.SQL
             var connection = _connectionProvider.GetConnection();
             try
             {
+                var insertBuilder = _commandBuilders.NewInsertSubscriptionCommandBuilder();
+                insertBuilder.TopicName = topic;
+                insertBuilder.Subscriber = subscriber.ToString();
+                insertBuilder.Expires = expires;
+
                 using (var scope = new TransactionScope(TransactionScopeOption.Required))
                 {
-                    using (var command = connection.CreateCommand())
+                    using (var insertCommand = insertBuilder.BuildDbCommand(connection))
                     {
-                        command.CommandType = CommandType.Text;
-                        command.CommandText = _dialect.InsertSubscriptionCommand;
-
-                        command.SetParameter(_dialect.TopicNameParameterName, (string) topic);
-                        command.SetParameter(_dialect.SubscriberParameterName, subscriber.ToString());
-                        command.SetParameter(_dialect.ExpiresParameterName, expires);
-
-                        var rowsAffected = command.ExecuteNonQuery();
+                        var rowsAffected = insertCommand.ExecuteNonQuery();
                         if (rowsAffected == 0)
                         {
-                            command.CommandText = _dialect.UpdateSubscriptionCommand;
-                            command.ExecuteNonQuery();
+                            var updateBuilder = _commandBuilders.NewUpdateSubscriptionCommandBuilder();
+                            updateBuilder.TopicName = topic;
+                            updateBuilder.Subscriber = subscriber.ToString();
+                            updateBuilder.Expires = expires;
+
+                            using (var updateCommand = updateBuilder.BuildDbCommand(connection))
+                            {
+                                updateCommand.ExecuteNonQuery();
+                            }
                         }
                     }
                     subscription = new SQLSubscription(topic, subscriber, expires);
@@ -273,14 +274,13 @@ namespace Platibus.SQL
             var connection = _connectionProvider.GetConnection();
             try
             {
-                using (var scope = new TransactionScope(TransactionScopeOption.Required))
-                {
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandType = CommandType.Text;
-                        command.CommandText = _dialect.SelectSubscriptionsCommand;
-                        command.SetParameter(_dialect.CurrentDateParameterName, DateTime.UtcNow);
+                var commandBuilder = _commandBuilders.NewSelectSubscriptionsCommandBuilder();
+                commandBuilder.CutoffDate = DateTime.UtcNow;
 
+                using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    using (var command = commandBuilder.BuildDbCommand(connection))
+                    {
                         using (var reader = command.ExecuteReader())
                         {
                             while (reader.Read())
@@ -311,24 +311,20 @@ namespace Platibus.SQL
         /// <returns>Returns a task that will complete when the subscription record
         /// has been deleted</returns>
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual Task DeleteSubscription(TopicName topic, Uri subscriber)
+        protected virtual async Task DeleteSubscription(TopicName topic, Uri subscriber)
         {
-            bool deleted;
             var connection = _connectionProvider.GetConnection();
             try
             {
-                using (var scope = new TransactionScope(TransactionScopeOption.Required))
+                var commandBuilder = _commandBuilders.NewDeleteSubscriptionCommandBuilder();
+                commandBuilder.TopicName = topic;
+                commandBuilder.Subscriber = subscriber.ToString();
+
+                using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    using (var command = connection.CreateCommand())
+                    using (var command = commandBuilder.BuildDbCommand(connection))
                     {
-                        command.CommandType = CommandType.Text;
-                        command.CommandText = _dialect.DeleteSubscriptionCommand;
-
-                        command.SetParameter(_dialect.TopicNameParameterName, (string) topic);
-                        command.SetParameter(_dialect.SubscriberParameterName, subscriber.ToString());
-
-                        var rowsAffected = command.ExecuteNonQuery();
-                        deleted = rowsAffected > 0;
+                        await command.ExecuteNonQueryAsync();
                     }
                     scope.Complete();
                 }
@@ -337,7 +333,6 @@ namespace Platibus.SQL
             {
                 _connectionProvider.ReleaseConnection(connection);
             }
-            return Task.FromResult(deleted);
         }
 
         /// <summary>

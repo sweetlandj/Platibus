@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS [PB_MessageJournal]
     [MessageId] TEXT NOT NULL,
     [Timestamp] INTEGER,
     [Category] TEXT NOT NULL,
-    [TopicName] TEXT NOT NULL,
+    [TopicName] TEXT NULL,
     [MessageName] TEXT NULL,
     [Origination] TEXT NULL,
     [Destination] TEXT NULL,

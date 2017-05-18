@@ -54,7 +54,7 @@ namespace Platibus.SQL.Commands
         /// <param name="connection">An open database connection</param>
         /// <returns>Returns a new non-query <see cref="DbCommand"/> with the configured
         /// parameters</returns>
-        public virtual DbCommand CreateDbCommand(DbConnection connection)
+        public virtual DbCommand BuildDbCommand(DbConnection connection)
         {
             if (connection == null) throw new ArgumentNullException("connection");
 

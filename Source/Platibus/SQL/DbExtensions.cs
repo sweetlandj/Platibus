@@ -24,8 +24,6 @@ using System;
 using System.Configuration;
 using System.Data;
 using System.Data.Common;
-using Common.Logging;
-using Platibus.Config.Extensibility;
 
 namespace Platibus.SQL
 {
@@ -34,8 +32,6 @@ namespace Platibus.SQL
     /// </summary>
     public static class DbExtensions
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.SQL);
-
         /// <summary>
         /// Opens a connection using the specified <paramref name="connectionStringSettings"/>
         /// </summary>
@@ -232,39 +228,6 @@ namespace Platibus.SQL
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
             var milliseconds = record.GetLong(name);
             return milliseconds == null ? null : (TimeSpan?) TimeSpan.FromMilliseconds(milliseconds.Value);
-        }
-
-        /// <summary>
-        /// Returns the SQL dialect that is most appropriate for the specified 
-        /// <paramref name="connectionStringSettings"/>
-        /// </summary>
-        /// <param name="connectionStringSettings">The connection string settings</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionStringSettings"/>
-        /// is <c>null</c></exception>
-        /// <returns>Returns the dialect most appropriate for the specified connection string 
-        /// settings</returns>
-        /// <remarks>
-        /// If no provider name is specified in the connection string settings, the 
-        /// <see cref="MSSQLDialect"/> will be returned by default.
-        /// </remarks>
-        /// <seealso cref="ProviderHelper"/>
-        public static ISQLDialect GetSQLDialect(this ConnectionStringSettings connectionStringSettings)
-        {
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-            var providerName = connectionStringSettings.ProviderName;
-            ISQLDialectProvider provider;
-            if (string.IsNullOrWhiteSpace(providerName))
-            {
-                Log.Debug("No connection string provider specified; using default provider...");
-                provider = new MSSQLDialectProvider();
-            }
-            else
-            {
-                provider = ProviderHelper.GetProvider<ISQLDialectProvider>(providerName);
-            }
-
-            Log.Debug("Getting SQL dialect...");
-            return provider.GetSQLDialect(connectionStringSettings);
         }
     }
 }

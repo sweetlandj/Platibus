@@ -44,6 +44,12 @@ namespace Platibus.SQL.Commands
         }
 
         /// <inheritdoc />
+        public SelectSubscriptionsCommandBuilder NewSelectSubscriptionsCommandBuilder()
+        {
+            return new SelectSubscriptionsCommandBuilder();
+        }
+
+        /// <inheritdoc />
         public virtual DeleteSubscriptionCommandBuilder NewDeleteSubscriptionCommandBuilder()
         {
             return new DeleteSubscriptionCommandBuilder();

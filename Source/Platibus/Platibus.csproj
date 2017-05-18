@@ -175,6 +175,7 @@
     <Compile Include="SQL\Commands\SelectAbandonedMessagesCommandBuilder.cs" />
     <Compile Include="SQL\Commands\SelectJournaledMessagesCommandBuilder.cs" />
     <Compile Include="SQL\Commands\SelectQueuedMessagesCommandBuilder.cs" />
+    <Compile Include="SQL\Commands\SelectSubscriptionsCommandBuilder.cs" />
     <Compile Include="SQL\Commands\UpdateQueuedMessageCommandBuilder.cs" />
     <Compile Include="SQL\Commands\MSSQLCreateMessageJournalingObjectsCommandBuilder.cs" />
     <Compile Include="SQL\Commands\MSSQLCreateMessageQueueingObjectsCommandBuilder.cs" />
@@ -297,15 +298,10 @@
     <Compile Include="Serialization\DataContractSerializerAdapter.cs" />
     <Compile Include="Serialization\StringSerializer.cs" />
     <Compile Include="Serialization\XmlSerializerAdapter.cs" />
-    <Compile Include="SQL\CommonSQLDialect.cs" />
     <Compile Include="SQL\DbExtensions.cs" />
     <Compile Include="SQL\DefaultConnectionProvider.cs" />
     <Compile Include="SQL\IDbConnectionProvider.cs" />
-    <Compile Include="SQL\ISQLDialectProvider.cs" />
-    <Compile Include="SQL\MSSQLDialectProvider.cs" />
     <Compile Include="SQL\SQLQueuedMessageContext.cs" />
-    <Compile Include="SQL\ISQLDialect.cs" />
-    <Compile Include="SQL\MSSQLDialect.cs" />
     <Compile Include="SQL\SQLMessageQueue.cs" />
     <Compile Include="SQL\SQLMessageQueueingService.cs" />
     <Compile Include="SQL\SQLQueuedMessage.cs" />

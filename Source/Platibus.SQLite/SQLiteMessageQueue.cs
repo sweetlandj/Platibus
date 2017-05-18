@@ -23,7 +23,6 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Security.Principal;
@@ -32,6 +31,7 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Platibus.Security;
 using Platibus.SQL;
+using Platibus.SQLite.Commands;
 
 namespace Platibus.SQLite
 {
@@ -41,7 +41,7 @@ namespace Platibus.SQLite
         private readonly ActionBlock<ISQLiteOperation> _operationQueue;
 
         public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null)
-            : base(InitDb(baseDirectory, queueName), new SQLiteDialect(), queueName, listener, securityTokenService, options)
+            : base(InitConnectionProvider(baseDirectory, queueName), new SQLiteMessageQueueingCommandBuilders(), queueName, listener, securityTokenService, options)
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _operationQueue = new ActionBlock<ISQLiteOperation>(
@@ -53,8 +53,7 @@ namespace Platibus.SQLite
                 });
         }
 
-        [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        private static IDbConnectionProvider InitDb(DirectoryInfo directory, QueueName queueName)
+        private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory, QueueName queueName)
         {
             var dbPath = Path.Combine(directory.FullName, queueName + ".db");
             var connectionStringSettings = new ConnectionStringSettings
@@ -64,22 +63,28 @@ namespace Platibus.SQLite
                 ProviderName = "System.Data.SQLite"
             };
 
-            var connectionProvider = new SingletonConnectionProvider(connectionStringSettings);
-            var connection = connectionProvider.GetConnection();
+            return new SingletonConnectionProvider(connectionStringSettings);
+        }
+
+        public override Task Init()
+        {
+            // A separate database file is created for each queue, so the object initialization
+            // commands must be done once for each queue.
+
+            var conection = ConnectionProvider.GetConnection();
             try
             {
-                using (var command = connection.CreateCommand())
+                var commandBuilder = CommandBuilders.NewCreateObjectsCommandBuilder();
+                using (var command = commandBuilder.BuildDbCommand(conection))
                 {
-                    command.CommandType = CommandType.Text;
-                    command.CommandText = new SQLiteDialect().CreateMessageQueueingServiceObjectsCommand;
                     command.ExecuteNonQuery();
                 }
             }
             finally
             {
-                connectionProvider.ReleaseConnection(connection);
+                ConnectionProvider.ReleaseConnection(conection);
             }
-            return connectionProvider;
+            return base.Init();
         }
 
         protected override Task<SQLQueuedMessage> InsertQueuedMessage(Message message, IPrincipal principal)

@@ -86,8 +86,9 @@ namespace Platibus.SQL
         /// </summary>
         /// <param name="connectionStringSettings">The connection string settings to use to connect to
         /// the SQL database</param>
-        /// <param name="commandBuilders">(Optional) A set of commands that conform to the SQL syntax
-        /// required by the underlying connection provider (if needed)</param>
+        /// <param name="commandBuilders">(Optional) A collection of factories capable of 
+        /// generating database commands for manipulating queued messages that conform to the SQL
+        /// syntax required by the underlying connection provider (if needed)</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionStringSettings"/>
         /// is <c>null</c></exception>
         /// <remarks>

@@ -9,6 +9,7 @@ using Xunit;
 namespace Platibus.UnitTests.SQLite
 {
     [Trait("Category", "UnitTests")]
+    [Trait("Dependency", "SQLite")]
     [Collection(SQLiteCollection.Name)]
     public class SQLiteMessageQueueingServiceTests : MessageQueueingServiceTests<SQLiteMessageQueueingService>
     {
@@ -24,6 +25,7 @@ namespace Platibus.UnitTests.SQLite
         {
             using (var queueInspector = new SQLiteMessageQueueInspector(_queueDirectory, queueName, SecurityTokenService))
             {
+                await queueInspector.Init();
                 await queueInspector.InsertMessage(message, principal);
             }
         }
@@ -33,6 +35,7 @@ namespace Platibus.UnitTests.SQLite
             var messageId = message.Headers.MessageId;
             using (var queueInspector = new SQLiteMessageQueueInspector(_queueDirectory, queueName, SecurityTokenService))
             {
+                await queueInspector.Init();
                 var messagesInQueue = await queueInspector.EnumerateMessages();
                 return messagesInQueue.Any(m => m.Message.Headers.MessageId == messageId);
             }
@@ -45,6 +48,7 @@ namespace Platibus.UnitTests.SQLite
             var startDate = endDate.AddSeconds(-5);
             using (var queueInspector = new SQLiteMessageQueueInspector(_queueDirectory, queueName, SecurityTokenService))
             {
+                await queueInspector.Init();
                 var messagesInQueue = await queueInspector.EnumerateAbandonedMessages(startDate, endDate);
                 return messagesInQueue.Any(m => m.Message.Headers.MessageId == messageId);
             }
