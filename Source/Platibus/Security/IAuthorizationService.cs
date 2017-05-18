@@ -20,7 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-
 using System.Security.Principal;
 using System.Threading.Tasks;
 
@@ -48,5 +47,13 @@ namespace Platibus.Security
         /// <returns>Returns <c>true</c> if the principal is authorized to subscribe to the
         /// topic; <c>false</c> otherwise</returns>
         Task<bool> IsAuthorizedToSubscribe(IPrincipal principal, TopicName topic);
+
+        /// <summary>
+        /// Indicates whether the requestor is authorized to query the message journal
+        /// </summary>
+        /// <param name="principal">The principal</param>
+        /// <returns>Returns <c>true</c> if the principal is authorized to query the message 
+        /// journal; <c>false</c> otherwise</returns>
+        Task<bool> IsAuthorizedToQueryJournal(IPrincipal principal);
     }
 }

@@ -110,6 +110,9 @@
     <Compile Include="Http\HttpClientPool.cs" />
     <Compile Include="Config\InvalidSendRuleException.cs" />
     <Compile Include="Config\InvalidSubscriptionException.cs" />
+    <Compile Include="Http\JournalController.cs" />
+    <Compile Include="Http\GetJournalResponse.cs" />
+    <Compile Include="Http\JournaledMessageResource.cs" />
     <Compile Include="Journaling\FilteredMessageJournal.cs" />
     <Compile Include="Journaling\IMessageJournal.cs" />
     <Compile Include="Journaling\JournaledMessage.cs" />

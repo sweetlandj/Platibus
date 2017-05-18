@@ -75,11 +75,12 @@ namespace Platibus.Http
             if (response == null) throw new ArgumentNullException("response");
 
             var topicSegments = subPath.ToList();
-            if (!topicSegments.Any() && "get".Equals(request.HttpMethod, StringComparison.OrdinalIgnoreCase))
+            if (!topicSegments.Any() && request.IsGet())
             {
                 await GetTopics(response);
                 return;
             }
+
             if (topicSegments.Any())
             {
                 var topic = topicSegments.First();

@@ -42,6 +42,16 @@ namespace Platibus.Http
         }
 
         /// <summary>
+        /// Indicates whether a <paramref name="request"/> is a GET method request
+        /// </summary>
+        /// <param name="request">The request</param>
+        /// <returns>Returns <c>true</c> if the request is a GET method request</returns>
+        public static bool IsGet(this IHttpResourceRequest request)
+        {
+            return request != null && "GET".Equals(request.HttpMethod, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// Reads the entire content of an HTTP resource request as a string
         /// </summary>
         /// <param name="request">The request</param>

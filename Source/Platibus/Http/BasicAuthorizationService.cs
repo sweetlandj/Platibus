@@ -68,6 +68,22 @@ namespace Platibus.Http
             return Authenticate(principal);
         }
 
+        /// <summary>
+        /// Indicates whether the requestor is authorized to query the message journal
+        /// </summary>
+        /// <param name="principal">The principal</param>
+        /// <returns>Returns <c>true</c> if the principal is authorized to query the message
+        /// journal; <c>false</c> otherwise</returns>
+        /// <remarks>
+        /// Extracts the basic HTTP credentials from the principal and returns the result
+        /// of <see cref="Authenticate(string, string)"/>.  Implementors can override this
+        /// method to provide additional authorization checks if required.
+        /// </remarks>
+        public virtual Task<bool> IsAuthorizedToQueryJournal(IPrincipal principal)
+        {
+            return Authenticate(principal);
+        }
+
         private Task<bool> Authenticate(IPrincipal principal)
         {
             var identity = principal == null ? null : principal.Identity;
