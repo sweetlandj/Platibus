@@ -55,11 +55,11 @@ IF OBJECT_ID('[PB_MessageJournal]') IS NULL
 BEGIN
     CREATE TABLE [PB_MessageJournal]
     (
-        [Id] BIGINT IDENTITY(1,1),
+        [Id] INT IDENTITY(1,1),
         [MessageId] UNIQUEIDENTIFIER NOT NULL,
         [Timestamp] DATETIME NOT NULL,
         [Category] VARCHAR(20) NOT NULL,
-        [TopicName] VARCHAR(100) NOT NULL,
+        [TopicName] VARCHAR(100) NULL,
         [MessageName] VARCHAR(500) NULL,
         [Origination] VARCHAR(500) NULL,
         [Destination] VARCHAR(500) NULL,                            
@@ -102,7 +102,6 @@ BEGIN
     CREATE INDEX [PB_MessageJournal_IX_TopicName] 
         ON [PB_MessageJournal]([TopicName])
 END
-
 ";
             }
         }

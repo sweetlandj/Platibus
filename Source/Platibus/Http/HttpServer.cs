@@ -120,7 +120,8 @@ namespace Platibus.Http
             _resourceRouter = new ResourceTypeDictionaryRouter
             {
                 {"message", new MessageController(_bus.HandleMessage, authorizationService)},
-                {"topic", new TopicController(_subscriptionTrackingService, configuration.Topics, authorizationService)}
+                {"topic", new TopicController(_subscriptionTrackingService, configuration.Topics, authorizationService)},
+                {"journal", new JournalController(configuration.MessageJournal, configuration.AuthorizationService)}
             };
             _httpListener = InitHttpListener(_baseUri, configuration.AuthenticationSchemes);
 

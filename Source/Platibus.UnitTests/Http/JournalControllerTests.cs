@@ -2,6 +2,7 @@
 using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
@@ -36,6 +37,17 @@ namespace Platibus.UnitTests.Http
         public void Dispose()
         {
             ResponseContent.Dispose();
+        }
+
+        [Fact]
+        public async Task NotImplementedWhenJournalingNotEnabled()
+        {
+            GivenMessageJournalingDisabled();
+            GivenRequest("GET", new NameValueCollection
+            {
+                {"count", "10"}
+            });
+            await WhenProcessingGetRequest();
         }
 
         [Fact]
@@ -199,6 +211,11 @@ namespace Platibus.UnitTests.Http
             return mockMessageJournal;
         }
 
+        protected void GivenMessageJournalingDisabled()
+        {
+            MessageJournal = null;
+        }
+
         protected void GivenNotAuthorizedToQueryJournal()
         {
             var mockAuthorizationService = new Mock<IAuthorizationService>();
@@ -232,23 +249,28 @@ namespace Platibus.UnitTests.Http
 
         protected void AssertBadRequest()
         {
-            Response.VerifySet(r => r.StatusCode = 400);
+            Response.VerifySet(r => r.StatusCode = (int)HttpStatusCode.BadRequest);
         }
 
         protected void AssertMethodNotAllowed()
         {
-            Response.VerifySet(r => r.StatusCode = 405);
+            Response.VerifySet(r => r.StatusCode = (int)HttpStatusCode.MethodNotAllowed);
             Response.Verify(r => r.AddHeader("Allow", "GET"));
         }
 
         protected void AssertUnauthorized()
         {
-            Response.VerifySet(r => r.StatusCode = 401);
+            Response.VerifySet(r => r.StatusCode = (int)HttpStatusCode.Unauthorized);
+        }
+
+        protected void AssertNotImplemented()
+        {
+            Response.VerifySet(r => r.StatusCode = (int)HttpStatusCode.NotImplemented);
         }
 
         protected void AssertSuccess()
         {
-            Response.VerifySet(r => r.StatusCode = 200);
+            Response.VerifySet(r => r.StatusCode = (int)HttpStatusCode.OK);
         }
 
         protected void AssertParameterErrorInResponse(string parameter)

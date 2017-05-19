@@ -122,7 +122,8 @@ namespace Platibus.IIS
             return new ResourceTypeDictionaryRouter
             {
                 {"message", new MessageController(bus.HandleMessage, authorizationService)},
-                {"topic", new TopicController(subscriptionTrackingService, configuration.Topics, authorizationService)}
+                {"topic", new TopicController(subscriptionTrackingService, configuration.Topics, authorizationService)},
+                {"journal", new JournalController(configuration.MessageJournal, configuration.AuthorizationService)}
             };
         }
 

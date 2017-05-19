@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Platibus.Http.Models;
 using Platibus.Journaling;
@@ -27,7 +28,6 @@ namespace Platibus.Http.Controllers
         /// authorized to query the message journal</param>
         public JournalController(IMessageJournal messageJournal, IAuthorizationService authorizationService = null)
         {
-            if (messageJournal == null) throw new ArgumentNullException("messageJournal");
             _messageJournal = messageJournal;
             _authorizationService = authorizationService;
         }
@@ -40,8 +40,15 @@ namespace Platibus.Http.Controllers
 
             if (!request.IsGet())
             {
-                response.StatusCode = 405;
+                response.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
                 response.AddHeader("Allow", "GET");
+                return;
+            }
+
+            if (_messageJournal == null)
+            {
+                // Message journaling is not enabled
+                response.StatusCode = (int)HttpStatusCode.NotImplemented;
                 return;
             }
 
@@ -58,7 +65,7 @@ namespace Platibus.Http.Controllers
 
             if (!authorized)
             {
-                response.StatusCode = 401;
+                response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 response.StatusDescription = "Unauthorized";
                 return;
             }
@@ -70,7 +77,7 @@ namespace Platibus.Http.Controllers
             
             if (responseModel.Errors.Any())
             {
-                response.StatusCode = 400;
+                response.StatusCode = (int)HttpStatusCode.BadRequest;
             }
             else
             {
@@ -89,7 +96,7 @@ namespace Platibus.Http.Controllers
                         Content = jm.Data.Content
                     }
                 }).ToList();
-                response.StatusCode = 200;
+                response.StatusCode = (int)HttpStatusCode.OK;
             }
             
             response.ContentType = "application/json";
