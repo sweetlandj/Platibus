@@ -14,9 +14,9 @@ namespace Platibus.SampleApi.Controllers
     {
         private static readonly ILog Log = LogManager.GetLogger(SampleApiCategories.SampleApi);
 
-        public Task Init()
+        public void Init()
         {
-            return ExecuteUpdate(connection =>
+            ExecuteUpdate(connection =>
             {
                 using (var command = connection.CreateCommand())
                 {
@@ -36,7 +36,7 @@ namespace Platibus.SampleApi.Controllers
                             Content TEXT NOT NULL
                         )";
 
-                    return command.ExecuteNonQueryAsync();
+                    return command.ExecuteNonQuery();
                 }
             });
         }
@@ -44,7 +44,7 @@ namespace Platibus.SampleApi.Controllers
         public async Task<IEnumerable<ReceivedMessage>> GetMessages()
         {
             Log.Debug("Retrieving received messages...");
-            return await ExecuteQuery(async connection =>
+            return await ExecuteQueryAsync(async connection =>
             {
                 var receivedMessages = new List<ReceivedMessage>();
                 using (var command = connection.CreateCommand())
@@ -66,7 +66,7 @@ namespace Platibus.SampleApi.Controllers
         public async Task<ReceivedMessage> Get(string messageId)
         {
             Log.Debug("Retrieving received messages...");
-            return await ExecuteQuery(async connection =>
+            return await ExecuteQueryAsync(async connection =>
             {
                 using (var command = connection.CreateCommand())
                 {
@@ -123,7 +123,7 @@ namespace Platibus.SampleApi.Controllers
         public Task Add(ReceivedMessage message)
         {
             Log.DebugFormat("Adding message ID {0} to received message repository...", message.MessageId);
-            return ExecuteUpdate(connection =>
+            return ExecuteUpdateAsync(connection =>
             {
                 using (var command = connection.CreateCommand())
                 {
@@ -174,7 +174,7 @@ namespace Platibus.SampleApi.Controllers
         public Task Remove(string messageId)
         {
             Log.DebugFormat("Removing message ID {0} from received message repository...", messageId);
-            return ExecuteUpdate(connection =>
+            return ExecuteUpdateAsync(connection =>
             {
                 using (var command = connection.CreateCommand())
                 {
@@ -188,7 +188,7 @@ namespace Platibus.SampleApi.Controllers
         public async Task RemoveAll()
         {
             Log.Debug("Removing all messages from received message repository...");
-            await ExecuteUpdate(connection =>
+            await ExecuteUpdateAsync(connection =>
             {
                 using (var command = connection.CreateCommand())
                 {
@@ -198,14 +198,14 @@ namespace Platibus.SampleApi.Controllers
             });
         }
 
-        private static async Task<TResult> ExecuteQuery<TResult>(Func<DbConnection, Task<TResult>> query)
+        private static async Task<TResult> ExecuteQueryAsync<TResult>(Func<DbConnection, Task<TResult>> query)
         {
             TResult result;
             using (
                 var scope = new TransactionScope(TransactionScopeOption.Suppress,
                     TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await CreateConnection())
+                using (var connection = await CreateConnectionAsync())
                 {
                     result = await query(connection);
                 }
@@ -214,14 +214,14 @@ namespace Platibus.SampleApi.Controllers
             return result;
         }
 
-        private static async Task<TResult> ExecuteUpdate<TResult>(Func<DbConnection, Task<TResult>> update)
+        private static async Task<TResult> ExecuteUpdateAsync<TResult>(Func<DbConnection, Task<TResult>> update)
         {
             TResult result;
             using (
                 var scope = new TransactionScope(TransactionScopeOption.Required,
                     TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await CreateConnection())
+                using (var connection = await CreateConnectionAsync())
                 {
                     result = await update(connection);
                 }
@@ -230,7 +230,34 @@ namespace Platibus.SampleApi.Controllers
             return result;
         }
 
-        private static async Task<DbConnection> CreateConnection()
+        private static TResult ExecuteUpdate<TResult>(Func<DbConnection, TResult> update)
+        {
+            TResult result;
+            using (
+                var scope = new TransactionScope(TransactionScopeOption.Required,
+                    TransactionScopeAsyncFlowOption.Enabled))
+            {
+                using (var connection = CreateConnection())
+                {
+                    result = update(connection);
+                }
+                scope.Complete();
+            }
+            return result;
+        }
+
+        private static DbConnection CreateConnection()
+        {
+            var connetionStringSettings = ConfigurationManager.ConnectionStrings["Platibus"];
+            var dbProviderFactory = DbProviderFactories.GetFactory(connetionStringSettings.ProviderName);
+            var connection = dbProviderFactory.CreateConnection();
+            if (connection == null) throw new Exception("Database provider returned null connection");
+            connection.ConnectionString = connetionStringSettings.ConnectionString;
+            connection.Open();
+            return connection;
+        }
+
+        private static async Task<DbConnection> CreateConnectionAsync()
         {
             var connetionStringSettings = ConfigurationManager.ConnectionStrings["Platibus"];
             var dbProviderFactory = DbProviderFactories.GetFactory(connetionStringSettings.ProviderName);

@@ -8,21 +8,19 @@ using Platibus.SampleMessages;
 
 namespace Platibus.SampleApi.Controllers
 {
-    public class ReceivedMessageHandler : IMessageHandler
+    public class TestMessageHandler : IMessageHandler<TestMessage>
     {
         private static readonly ILog Log = LogManager.GetLogger(SampleApiCategories.SampleApi);
 
         private readonly ReceivedMessageRepository _repository;
 
-        public ReceivedMessageHandler(ReceivedMessageRepository repository)
+        public TestMessageHandler(ReceivedMessageRepository repository)
         {
             _repository = repository;
         }
 
-        public async Task HandleMessage(object content, IMessageContext context, CancellationToken cancellationToken)
+        public async Task HandleMessage(TestMessage content, IMessageContext context, CancellationToken cancellationToken)
         {
-            var testMessage = (TestMessage) content;
-
             Log.DebugFormat("[Process {0}, Thread {1}, AppDomain {2}]",
                 Process.GetCurrentProcess().Id,
                 Thread.CurrentThread.ManagedThreadId,
@@ -49,14 +47,14 @@ namespace Platibus.SampleApi.Controllers
                 Received = headers.Received,
                 Expires = headers.Expires,
                 ContentType = headers.ContentType,
-                Content = testMessage == null ? "" : testMessage.Text
+                Content = content == null ? "" : content.Text
             };
 
             await _repository.Add(receivedMessage);
 
             await context.Bus.Publish(new TestPublication
                 {
-                    Text = testMessage == null ? "" : testMessage.Text
+                    Text = content == null ? "" : content.Text
                 }, "Topic0",
                 cancellationToken);
 

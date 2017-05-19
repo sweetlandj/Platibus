@@ -147,7 +147,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\Startup.cs" />
-    <Compile Include="Controllers\ReceivedMessageHandler.cs" />
+    <Compile Include="Controllers\TestMessageHandler.cs" />
     <Compile Include="Controllers\ReceivedMessageRepository.cs" />
     <Compile Include="Models\ReceivedMessage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
