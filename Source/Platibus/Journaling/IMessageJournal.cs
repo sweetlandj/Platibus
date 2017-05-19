@@ -15,7 +15,7 @@ namespace Platibus.Journaling
         /// the caller to request cancellation of the operation</param>
         /// <returns>Returns a task whose result is the offset representing the beginning of the
         /// message journal</returns>
-        Task<MessageJournalOffset> GetBeginningOfJournal(CancellationToken cancellationToken = default(CancellationToken));
+        Task<MessageJournalPosition> GetBeginningOfJournal(CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Appends a message to the end of the journal
@@ -37,14 +37,14 @@ namespace Platibus.Journaling
         ///     the caller to request cancellation of the read operation</param>
         /// <returns>Returns a task whose result contains the messages that were read and a pointer
         /// to the next offset</returns>
-        Task<MessageJournalReadResult> Read(MessageJournalOffset start, int count, MessageJournalFilter filter = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<MessageJournalReadResult> Read(MessageJournalPosition start, int count, MessageJournalFilter filter = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
-        /// Reconstructs a <see cref="MessageJournalOffset"/> from its string representation
+        /// Reconstructs a <see cref="MessageJournalPosition"/> from its string representation
         /// </summary>
         /// <param name="str">The string representation of the offset</param>
-        /// <returns>Returns the <see cref="MessageJournalOffset"/> corresponding to the specified
+        /// <returns>Returns the <see cref="MessageJournalPosition"/> corresponding to the specified
         /// string representation</returns>
-        MessageJournalOffset ParseOffset(string str);
+        MessageJournalPosition ParsePosition(string str);
     }
 }

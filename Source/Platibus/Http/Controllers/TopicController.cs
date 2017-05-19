@@ -27,7 +27,7 @@ using System.Threading.Tasks;
 using Platibus.Security;
 using Platibus.Serialization;
 
-namespace Platibus.Http
+namespace Platibus.Http.Controllers
 {
     /// <summary>
     /// An HTTP resource controller for topics and related resources

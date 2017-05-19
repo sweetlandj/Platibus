@@ -110,14 +110,16 @@
     <Compile Include="Http\HttpClientPool.cs" />
     <Compile Include="Config\InvalidSendRuleException.cs" />
     <Compile Include="Config\InvalidSubscriptionException.cs" />
-    <Compile Include="Http\JournalController.cs" />
-    <Compile Include="Http\GetJournalResponse.cs" />
-    <Compile Include="Http\JournaledMessageResource.cs" />
+    <Compile Include="Http\Controllers\JournalController.cs" />
+    <Compile Include="Http\Models\ErrorModel.cs" />
+    <Compile Include="Http\Models\MessageJournalEntryDataModel.cs" />
+    <Compile Include="Http\Models\JournalGetResponseModel.cs" />
+    <Compile Include="Http\Models\MessageJournalEntryModel.cs" />
     <Compile Include="Journaling\FilteredMessageJournal.cs" />
     <Compile Include="Journaling\IMessageJournal.cs" />
-    <Compile Include="Journaling\JournaledMessage.cs" />
+    <Compile Include="Journaling\MessageJournalEntry.cs" />
     <Compile Include="Journaling\MessageJournalingExtensions.cs" />
-    <Compile Include="Journaling\MessageJournalOffset.cs" />
+    <Compile Include="Journaling\MessageJournalPosition.cs" />
     <Compile Include="Journaling\JournaledMessageCategory.cs" />
     <Compile Include="Journaling\MessageJournalFilter.cs" />
     <Compile Include="Journaling\MessageJournalReadResult.cs" />
@@ -161,33 +163,33 @@
     <Compile Include="SQL\Commands\DeleteSubscriptionCommandBuilder.cs" />
     <Compile Include="Config\Extensibility\IMessageJournalingCommandBuildersProvider.cs" />
     <Compile Include="Config\Extensibility\IMessageQueueingCommandBuildersProvider.cs" />
-    <Compile Include="SQL\Commands\InsertJournaledMessageCommandBuilder.cs" />
+    <Compile Include="SQL\Commands\InsertMessageJournalEntryCommandBuilder.cs" />
     <Compile Include="SQL\Commands\CommonMessageQueueingCommandBuilders.cs" />
-    <Compile Include="SQL\Commands\CreateMessageJournalingObjectsCommandBuilder.cs" />
+    <Compile Include="SQL\Commands\CreateMessageJournalObjectsCommandBuilder.cs" />
     <Compile Include="SQL\Commands\CreateMessageQueueingObjectsCommandBuilder.cs" />
     <Compile Include="SQL\Commands\IMessageQueueingCommandBuilders.cs" />
     <Compile Include="SQL\Commands\InsertSubscriptionCommandBuilder.cs" />
     <Compile Include="SQL\Commands\ISubscriptionTrackingCommandBuilders.cs" />
     <Compile Include="Config\Extensibility\ISubscriptionTrackingCommandBuildersProvider.cs" />
-    <Compile Include="SQL\Commands\JournaledMessageRecord.cs" />
+    <Compile Include="SQL\Commands\MessageJournalEntryRecord.cs" />
     <Compile Include="SQL\Commands\MSSQLCommandBuildersProvider.cs" />
     <Compile Include="SQL\Commands\MSSQLCreateSubscriptionTrackingObjectsCommandBuilder.cs" />
     <Compile Include="SQL\Commands\MSSQLMessageJournalingCommandBuilders.cs" />
     <Compile Include="SQL\Commands\MSSQLSubscriptionTrackingCommandBuilders.cs" />
     <Compile Include="SQL\Commands\QueuedMessageRecord.cs" />
     <Compile Include="SQL\Commands\SelectAbandonedMessagesCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\SelectJournaledMessagesCommandBuilder.cs" />
+    <Compile Include="SQL\Commands\SelectMessageJournalEntriesCommandBuilder.cs" />
     <Compile Include="SQL\Commands\SelectQueuedMessagesCommandBuilder.cs" />
     <Compile Include="SQL\Commands\SelectSubscriptionsCommandBuilder.cs" />
     <Compile Include="SQL\Commands\UpdateQueuedMessageCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\MSSQLCreateMessageJournalingObjectsCommandBuilder.cs" />
+    <Compile Include="SQL\Commands\MSSQLCreateMessageJournalObjectsCommandBuilder.cs" />
     <Compile Include="SQL\Commands\MSSQLCreateMessageQueueingObjectsCommandBuilder.cs" />
     <Compile Include="SQL\Commands\InsertQueuedMessageCommandBuilder.cs" />
     <Compile Include="SQL\Commands\IMessageJournalingCommandBuilders.cs" />
     <Compile Include="SQL\Commands\MSSQLMessageQueueingCommandBuilders.cs" />
     <Compile Include="SQL\Commands\UpdateSubscriptionCommandBuilder.cs" />
     <Compile Include="SQL\SQLMessageJournal.cs" />
-    <Compile Include="SQL\SQLMessageJournalOffset.cs" />
+    <Compile Include="SQL\SQLMessageJournalPosition.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="ObservableExtensions.cs" />
     <Compile Include="Security\BasicAuthCredentials.cs" />
@@ -232,8 +234,8 @@
     <Compile Include="Http\IHttpResourceController.cs" />
     <Compile Include="Http\IHttpResourceRouter.cs" />
     <Compile Include="Http\IHttpResourceResponse.cs" />
-    <Compile Include="Http\MessageController.cs" />
-    <Compile Include="Http\TopicController.cs" />
+    <Compile Include="Http\Controllers\MessageController.cs" />
+    <Compile Include="Http\Controllers\TopicController.cs" />
     <Compile Include="IEndpointCredentials.cs" />
     <Compile Include="IEndpointCredentialsVisitor.cs" />
     <Compile Include="InMemory\InMemoryQueuedMessageContext.cs" />
@@ -331,6 +333,7 @@
     <None Include="Platibus.nuspec" />
     <None Include="Platibus.snk" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

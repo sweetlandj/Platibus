@@ -9,12 +9,13 @@ using System.Web;
 using Moq;
 using Xunit;
 using Platibus.Http;
+using Platibus.Http.Controllers;
 using Platibus.Serialization;
 
 namespace Platibus.UnitTests.Http
 {
     [Trait("Category", "UnitTests")]
-    internal class TopicControllerTests
+    public class TopicControllerTests
     {
         [Fact]
         public async Task GetRequestToTopicResourceReturnsListOfTopics()

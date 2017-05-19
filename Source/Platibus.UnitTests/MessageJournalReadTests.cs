@@ -11,7 +11,7 @@ namespace Platibus.UnitTests
     public abstract class MessageJournalReadTests
     {
         protected IMessageJournal MessageJournal;
-        protected MessageJournalOffset Start;
+        protected MessageJournalPosition Start;
         protected int Count;
         protected MessageJournalFilter Filter;
 
@@ -32,10 +32,10 @@ namespace Platibus.UnitTests
 
             // Expect all 32 messages to be read in 4 pages
             Assert.Equal(4, Pages.Count);
-            Assert.Equal(Count, Pages[0].JournaledMessages.Count());
-            Assert.Equal(Count, Pages[1].JournaledMessages.Count());
-            Assert.Equal(Count, Pages[2].JournaledMessages.Count());
-            Assert.Equal(2, Pages[3].JournaledMessages.Count());
+            Assert.Equal(Count, Pages[0].Entries.Count());
+            Assert.Equal(Count, Pages[1].Entries.Count());
+            Assert.Equal(Count, Pages[2].Entries.Count());
+            Assert.Equal(2, Pages[3].Entries.Count());
         }
 
         [Fact]
@@ -69,7 +69,7 @@ namespace Platibus.UnitTests
             GivenCategoryFilter(category);
             await WhenReadingToEndOfJournal();
 
-            var actual = Pages.SelectMany(p => p.JournaledMessages).ToList();
+            var actual = Pages.SelectMany(p => p.Entries).ToList();
             Assert.Equal(expectedCount, actual.Count);
            
             AssertCategory(actual, category);
@@ -87,7 +87,7 @@ namespace Platibus.UnitTests
             GivenTopicFilter(topic);
             await WhenReadingToEndOfJournal();
 
-            var actual = Pages.SelectMany(p => p.JournaledMessages).ToList();
+            var actual = Pages.SelectMany(p => p.Entries).ToList();
             Assert.Equal(expectedCount, actual.Count);
 
             AssertTopic(actual, topic);
@@ -105,7 +105,7 @@ namespace Platibus.UnitTests
             GivenTopicFilter(topic);
             await WhenReadingToEndOfJournal();
 
-            var actual = Pages.SelectMany(p => p.JournaledMessages).ToList();
+            var actual = Pages.SelectMany(p => p.Entries).ToList();
             Assert.Equal(expectedCount, actual.Count);
 
             AssertTopic(actual, topic);
@@ -261,7 +261,7 @@ namespace Platibus.UnitTests
             } while (!result.EndOfJournal);
         }
 
-        protected void AssertCategory(IEnumerable<JournaledMessage> journaledMessages,
+        protected void AssertCategory(IEnumerable<MessageJournalEntry> journaledMessages,
             JournaledMessageCategory expectedCategory)
         {
             foreach (var journaledMessage in journaledMessages)
@@ -270,12 +270,12 @@ namespace Platibus.UnitTests
             }
         }
 
-        protected void AssertTopic(IEnumerable<JournaledMessage> journaledMessages,
+        protected void AssertTopic(IEnumerable<MessageJournalEntry> journaledMessages,
             TopicName expectedTopic)
         {
             foreach (var journaledMessage in journaledMessages)
             {
-                Assert.Equal(expectedTopic, journaledMessage.Message.Headers.Topic);
+                Assert.Equal(expectedTopic, journaledMessage.Data.Headers.Topic);
             }
         }
 
@@ -290,19 +290,19 @@ namespace Platibus.UnitTests
                 Assert.Equal(firstRunPage.Start, secondRunPage.Start);
                 Assert.Equal(firstRunPage.Next, secondRunPage.Next);
                 Assert.Equal(firstRunPage.EndOfJournal, secondRunPage.EndOfJournal);
-                Assert.Equal(firstRunPage.JournaledMessages.Count(), secondRunPage.JournaledMessages.Count());
+                Assert.Equal(firstRunPage.Entries.Count(), secondRunPage.Entries.Count());
 
-                using (var firstRunMessages = firstRunPage.JournaledMessages.GetEnumerator())
-                using (var secondRunMessages = secondRunPage.JournaledMessages.GetEnumerator())
+                using (var firstRunMessages = firstRunPage.Entries.GetEnumerator())
+                using (var secondRunMessages = secondRunPage.Entries.GetEnumerator())
                 {
                     while (firstRunMessages.MoveNext() && secondRunMessages.MoveNext())
                     {
                         var firstRunMessage = firstRunMessages.Current;
                         var secondRunMessage = secondRunMessages.Current;
 
-                        Assert.Equal(firstRunMessage.Offset, secondRunMessage.Offset);
+                        Assert.Equal(firstRunMessage.Position, secondRunMessage.Position);
                         Assert.Equal(firstRunMessage.Category, secondRunMessage.Category);
-                        Assert.Equal(firstRunMessage.Message, secondRunMessage.Message, new MessageEqualityComparer());
+                        Assert.Equal(firstRunMessage.Data, secondRunMessage.Data, new MessageEqualityComparer());
                     }
                 }
             }

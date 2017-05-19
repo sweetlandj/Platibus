@@ -3,13 +3,13 @@ using Platibus.Journaling;
 
 namespace Platibus.SQL
 {
-    internal class SQLMessageJournalOffset : MessageJournalOffset, IEquatable<SQLMessageJournalOffset>
+    internal class SQLMessageJournalPosition : MessageJournalPosition, IEquatable<SQLMessageJournalPosition>
     {
         private readonly long _id;
 
         public long Id { get { return _id; } }
 
-        public SQLMessageJournalOffset(long id)
+        public SQLMessageJournalPosition(long id)
         {
             _id = id;
         }
@@ -19,7 +19,7 @@ namespace Platibus.SQL
             return _id.ToString("D");
         }
 
-        public bool Equals(SQLMessageJournalOffset other)
+        public bool Equals(SQLMessageJournalPosition other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
@@ -30,7 +30,7 @@ namespace Platibus.SQL
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            return obj.GetType() == GetType() && Equals((SQLMessageJournalOffset) obj);
+            return obj.GetType() == GetType() && Equals((SQLMessageJournalPosition) obj);
         }
 
         public override int GetHashCode()
@@ -38,12 +38,12 @@ namespace Platibus.SQL
             return _id.GetHashCode();
         }
 
-        public static bool operator ==(SQLMessageJournalOffset left, SQLMessageJournalOffset right)
+        public static bool operator ==(SQLMessageJournalPosition left, SQLMessageJournalPosition right)
         {
             return Equals(left, right);
         }
 
-        public static bool operator !=(SQLMessageJournalOffset left, SQLMessageJournalOffset right)
+        public static bool operator !=(SQLMessageJournalPosition left, SQLMessageJournalPosition right)
         {
             return !Equals(left, right);
         }

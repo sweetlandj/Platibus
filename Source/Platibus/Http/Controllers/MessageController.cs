@@ -29,7 +29,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Security;
 
-namespace Platibus.Http
+namespace Platibus.Http.Controllers
 {
     /// <summary>
     /// An HTTP resource controller for messages and related resources

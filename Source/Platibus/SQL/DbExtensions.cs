@@ -207,7 +207,7 @@ namespace Platibus.SQL
             var ordinal = record.GetOrdinal(name);
             return record.IsDBNull(ordinal) ? null : (DateTime?) record.GetDateTime(ordinal);
         }
-
+        
         /// <summary>
         /// Returns the value of the column with the specified <paramref name="name"/> as a 
         /// <see cref="TimeSpan"/>

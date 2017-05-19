@@ -31,7 +31,7 @@ namespace Platibus.SQL.Commands
     /// Default command builder for creating commands to insert new journaled messages into the
     /// database.
     /// </summary>
-    public class InsertJournaledMessageCommandBuilder
+    public class InsertMessageJournalEntryCommandBuilder
     {
         /// <summary>
         /// The message ID

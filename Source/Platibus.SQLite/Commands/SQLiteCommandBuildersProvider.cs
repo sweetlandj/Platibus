@@ -39,7 +39,7 @@ namespace Platibus.SQLite.Commands
         /// <inheritdoc />
         public IMessageJournalingCommandBuilders GetMessageJournalingCommandBuilders(ConnectionStringSettings connectionStringSettings)
         {
-            return new SQLiteMessageJournalingCommandBuilders();
+            return new SQLiteMessageJournalCommandBuilders();
         }
 
         /// <inheritdoc />

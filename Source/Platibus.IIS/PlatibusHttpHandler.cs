@@ -25,6 +25,7 @@ using System.Threading.Tasks;
 using System.Web;
 using Common.Logging;
 using Platibus.Http;
+using Platibus.Http.Controllers;
 
 namespace Platibus.IIS
 {

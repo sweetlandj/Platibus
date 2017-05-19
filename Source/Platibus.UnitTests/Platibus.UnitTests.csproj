@@ -141,6 +141,8 @@
     <Compile Include="Filesystem\LegacyMessageFileWriter.cs" />
     <Compile Include="Filesystem\MessageFileTests.cs" />
     <Compile Include="Http\HttpClientPoolTests.cs" />
+    <Compile Include="Http\JournalControllerTests.cs" />
+    <Compile Include="Http\MessageJournalStub.cs" />
     <Compile Include="InMemory\InMemorySubscriptionTrackingServiceTests.cs" />
     <Compile Include="LocalDB\LocalDBCollection.cs" />
     <Compile Include="LocalDB\LocalDBMessageJournalReadTests.cs" />

@@ -31,20 +31,20 @@ namespace Platibus.Journaling
     /// </summary>
     public class MessageJournalReadResult
     {
-        private readonly MessageJournalOffset _start;
-        private readonly MessageJournalOffset _next;
+        private readonly MessageJournalPosition _start;
+        private readonly MessageJournalPosition _next;
         private readonly bool _endOfJournal;
-        private readonly IList<JournaledMessage> _journaledMessages;
+        private readonly IList<MessageJournalEntry> _entries;
 
         /// <summary>
         /// The position at which the read started
         /// </summary>
-        public MessageJournalOffset Start { get { return _start; } }
+        public MessageJournalPosition Start { get { return _start; } }
 
         /// <summary>
         /// The next position to read from
         /// </summary>
-        public MessageJournalOffset Next { get { return _next; } }
+        public MessageJournalPosition Next { get { return _next; } }
 
         /// <summary>
         /// Whether the end of the journal was reached during the read operation
@@ -54,7 +54,7 @@ namespace Platibus.Journaling
         /// <summary>
         /// The journaled messages that were read
         /// </summary>
-        public IEnumerable<JournaledMessage> JournaledMessages { get { return _journaledMessages; } }
+        public IEnumerable<MessageJournalEntry> Entries { get { return _entries; } }
 
         /// <summary>
         /// Initializes a new <see cref="MessageJournalReadResult"/>
@@ -63,14 +63,14 @@ namespace Platibus.Journaling
         /// <param name="next">The next position to read from</param>
         /// <param name="endOfJournal">Whether the end of the journal was reached during the read operation</param>
         /// <param name="messages">The journaled messages that were read</param>
-        public MessageJournalReadResult(MessageJournalOffset start, MessageJournalOffset next, bool endOfJournal, IEnumerable<JournaledMessage> messages)
+        public MessageJournalReadResult(MessageJournalPosition start, MessageJournalPosition next, bool endOfJournal, IEnumerable<MessageJournalEntry> messages)
         {
             if (start == null) throw new ArgumentNullException("start");
             if (next == null) throw new ArgumentNullException("next");
             _start = start;
             _next = next;
             _endOfJournal = endOfJournal;
-            _journaledMessages = (messages ?? Enumerable.Empty<JournaledMessage>()).ToList();
+            _entries = (messages ?? Enumerable.Empty<MessageJournalEntry>()).ToList();
         }
     }
 }

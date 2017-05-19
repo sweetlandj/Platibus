@@ -27,11 +27,11 @@ using System.Data.Common;
 namespace Platibus.SQL.Commands
 {
     /// <summary>
-    /// A subclass of <see cref="CreateMessageJournalingObjectsCommandBuilder"/> that produces
+    /// A subclass of <see cref="CreateMessageJournalObjectsCommandBuilder"/> that produces
     /// commands for creating message journal objects in a SQL Server database using Transact-SQL
     /// syntax.
     /// </summary>
-    public class MSSQLCreateMessageJournalingObjectsCommandBuilder : CreateMessageJournalingObjectsCommandBuilder
+    public class MSSQLCreateMessageJournalObjectsCommandBuilder : CreateMessageJournalObjectsCommandBuilder
     {
         /// <inheritdoc />
         public override DbCommand BuildDbCommand(DbConnection connection)
@@ -57,7 +57,7 @@ BEGIN
     (
         [Id] BIGINT IDENTITY(1,1),
         [MessageId] UNIQUEIDENTIFIER NOT NULL,
-        [Timestamp] DATETIMEOFFSET NOT NULL,
+        [Timestamp] DATETIME NOT NULL,
         [Category] VARCHAR(20) NOT NULL,
         [TopicName] VARCHAR(100) NOT NULL,
         [MessageName] VARCHAR(500) NULL,

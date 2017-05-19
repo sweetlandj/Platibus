@@ -32,7 +32,7 @@ namespace Platibus.SQL.Commands
     /// Default command builder for creating commands to select journaled messages from the 
     /// database 
     /// </summary>
-    public class SelectJournaledMessagesCommandBuilder
+    public class SelectMessageJournalEntriesCommandBuilder
     {
         private IList<string> _categories;
         private IList<string> _topics;
@@ -66,6 +66,17 @@ namespace Platibus.SQL.Commands
         public int Count { get; set; }
 
         /// <summary>
+        /// Constrains results to entries whose timestamp is greater than or equal to the
+        /// specified date/time.
+        /// </summary>
+        public DateTime From { get; set; }
+
+        /// <summary>
+        /// Constrains results to entries whose timestamp is less than the specified date/time.
+        /// </summary>
+        public DateTime To { get; set; }
+
+        /// <summary>
         /// Initializes and returns a new query <see cref="DbCommand"/> with the configured
         /// parameters
         /// </summary>
@@ -83,8 +94,9 @@ namespace Platibus.SQL.Commands
             command.SetParameter("@Count", Count);
             command.SetParameter("@Start", Start);
 
-            AppendTopicFilterConditions(command, Topics);
-            AppendCategoryFilterConditions(command, Categories);
+            ApppendTimestampFilterConditions(command);
+            AppendTopicFilterConditions(command);
+            AppendCategoryFilterConditions(command);
             AppendSort(command);
 
             return command;
@@ -92,18 +104,19 @@ namespace Platibus.SQL.Commands
 
         /// <summary>
         /// Reads and parses the raw values from a <see cref="IDataRecord"/> into a 
-        /// <see cref="JournaledMessageRecord"/>
+        /// <see cref="MessageJournalEntryRecord"/>
         /// </summary>
         /// <param name="dataRecord">A data record read from the query command produced by the
         /// <see cref="BuildDbCommand"/> method.</param>
-        /// <returns>Returns a new <see cref="JournaledMessageRecord"/> whose properties are 
+        /// <returns>Returns a new <see cref="MessageJournalEntryRecord"/> whose properties are 
         /// initialized according to the data in the supplied <paramref name="dataRecord"/></returns>
-        public virtual JournaledMessageRecord BuildJournaledMessageRecord(IDataRecord dataRecord)
+        public virtual MessageJournalEntryRecord BuildJournaledMessageRecord(IDataRecord dataRecord)
         {
-            return new JournaledMessageRecord
+            return new MessageJournalEntryRecord
             {
                 Id = dataRecord.GetInt("Id").GetValueOrDefault(),
                 Category = dataRecord.GetString("Category"),
+                Timestamp = dataRecord.GetDateTime("Timestamp").GetValueOrDefault(),
                 Headers = dataRecord.GetString("Headers"),
                 Content = dataRecord.GetString("MessageContent")
             };
@@ -118,6 +131,7 @@ namespace Platibus.SQL.Commands
 SELECT TOP (@Count)
     [Id],
     [Category],
+    CAST([Timestamp] AS [DateTime]) AS [Timestamp],
     [Headers], 
     [MessageContent]
 FROM [PB_MessageJournal]
@@ -125,19 +139,38 @@ WHERE [Id] >= @Start"; }
         }
 
         /// <summary>
-        /// Appends topic filter criteria to the command 
+        /// Appends timestamp based filter criteria to a command 
         /// </summary>
         /// <param name="command">The command</param>
-        /// <param name="topics">The topics to which the results should be constrained</param>
         /// <exception cref="ArgumentNullException">Thrown if <c>command</c> is <c>null</c></exception>
-        public virtual void AppendTopicFilterConditions(DbCommand command, IList<string> topics)
+        public virtual void ApppendTimestampFilterConditions(DbCommand command)
+        {
+            if (From != default(DateTime))
+            {
+                command.CommandText += " AND [Timestamp] >= @From";
+                command.SetParameter("@From", From);
+            }
+
+            if (To != default(DateTime))
+            {
+                command.CommandText += " AND [Timestamp] < @To";
+                command.SetParameter("@To", To);
+            }
+        }
+
+        /// <summary>
+        /// Appends topic filter criteria to a command 
+        /// </summary>
+        /// <param name="command">The command</param>
+        /// <exception cref="ArgumentNullException">Thrown if <c>command</c> is <c>null</c></exception>
+        public virtual void AppendTopicFilterConditions(DbCommand command)
         {
             if (command == null) throw new ArgumentNullException("command");
-            if (topics == null) return;
+            if (Topics == null) return;
 
-            if (topics.Any())
+            if (Topics.Any())
             {
-                var topicParameters = topics
+                var topicParameters = Topics
                     .Select((topic, i) => new {Name = "@TopicName" + i, Value = topic})
                     .ToList();
 
@@ -154,16 +187,15 @@ WHERE [Id] >= @Start"; }
         /// Appends category filter criteria to the command 
         /// </summary>
         /// <param name="command">The command</param>
-        /// <param name="categories">The categories to which the results should be constrained</param>
         /// <exception cref="ArgumentNullException">Thrown if <c>command</c> is <c>null</c></exception>
-        public virtual void AppendCategoryFilterConditions(DbCommand command, IList<string> categories)
+        public virtual void AppendCategoryFilterConditions(DbCommand command)
         {
             if (command == null) throw new ArgumentNullException("command");
-            if (categories == null) return;
+            if (Categories == null) return;
             
-            if (categories.Any())
+            if (Categories.Any())
             {
-                var categoryParameters = categories
+                var categoryParameters = Categories
                     .Select((topic, i) => new { Name = "@Category" + i, Value = topic })
                     .ToList();
 

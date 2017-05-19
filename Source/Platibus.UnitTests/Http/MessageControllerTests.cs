@@ -9,11 +9,12 @@ using System.Threading.Tasks;
 using Moq;
 using Xunit;
 using Platibus.Http;
+using Platibus.Http.Controllers;
 
 namespace Platibus.UnitTests.Http
 {
     [Trait("Category", "UnitTests")]
-    internal class MessageControllerTests
+    public class MessageControllerTests
     {
         [Fact]
         public async Task ValidPostRequestToMessageResourceAccepted()

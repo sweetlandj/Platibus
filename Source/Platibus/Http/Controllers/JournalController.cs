@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Platibus.Http.Models;
 using Platibus.Journaling;
 using Platibus.Security;
 using Platibus.Serialization;
 
-namespace Platibus.Http
+namespace Platibus.Http.Controllers
 {
     /// <summary>
     /// An HTTP resource controller for querying the message journal
@@ -61,30 +62,80 @@ namespace Platibus.Http
                 response.StatusDescription = "Unauthorized";
                 return;
             }
-            
-            var startStr = request.QueryString["start"];
-            var start = string.IsNullOrWhiteSpace(startStr)
-                ? await _messageJournal.GetBeginningOfJournal()
-                : _messageJournal.ParseOffset(startStr);
 
+            var responseModel = new JournalGetResponseModel();
+            var start = await GetStartPosition(request, responseModel.Errors);
+            var count = GetCount(request, responseModel.Errors);
+            var filter = ConfigureFilter(request, responseModel.Errors);
+            
+            if (responseModel.Errors.Any())
+            {
+                response.StatusCode = 400;
+            }
+            else
+            {
+                var result = await _messageJournal.Read(start, count, filter);
+                responseModel.Start = start.ToString();
+                responseModel.Next = result.Next.ToString();
+                responseModel.EndOfJournal = result.EndOfJournal;
+                responseModel.Entries = result.Entries.Select(jm => new MessageJournalEntryModel
+                {
+                    Position = jm.Position.ToString(),
+                    Category = jm.Category,
+                    Timestamp = jm.Timestamp,
+                    Data = new MessageJournalEntryDataModel
+                    {
+                        Headers = jm.Data.Headers.ToDictionary(h => (string) h.Key, h => h.Value),
+                        Content = jm.Data.Content
+                    }
+                }).ToList();
+                response.StatusCode = 200;
+            }
+            
+            response.ContentType = "application/json";
+            var serializedContent = _serializer.Serialize(responseModel);
+            var encoding = response.ContentEncoding;
+            var encodedContent = encoding.GetBytes(serializedContent);
+            await response.OutputStream.WriteAsync(encodedContent, 0, encodedContent.Length);
+        }
+
+        private async Task<MessageJournalPosition> GetStartPosition(IHttpResourceRequest request, ICollection<ErrorModel> errors)
+        {
+            var startStr = request.QueryString["start"];
+            try
+            {
+                return string.IsNullOrWhiteSpace(startStr)
+                    ? await _messageJournal.GetBeginningOfJournal()
+                    : _messageJournal.ParsePosition(startStr);
+            }
+            catch (Exception)
+            {
+                errors.Add(new ErrorModel("Invalid start position", "start"));
+                return null;
+            }
+        }
+
+        private static int GetCount(IHttpResourceRequest request, ICollection<ErrorModel> errors)
+        {
             var countStr = request.QueryString["count"];
             if (string.IsNullOrWhiteSpace(countStr))
             {
-                response.StatusCode = 400;
-                response.StatusDescription = "Invalid Request - Query parameter 'count' is required";
-                response.ContentType = "text/plain";
-                return;
+                errors.Add(new ErrorModel("Count is required", "count"));
+                return 0;
             }
 
             int count;
             if (!int.TryParse(countStr, out count) || count <= 0)
             {
-                response.StatusCode = 400;
-                response.StatusDescription = "Invalid Request - Query parameter 'count' must be a positive integer value";
-                response.ContentType = "text/plain";
-                return;
+                errors.Add(new ErrorModel("Count must be a positive integer value", "count"));
+                return 0;
             }
 
+            return count;
+        }
+
+        private static MessageJournalFilter ConfigureFilter(IHttpResourceRequest request, ICollection<ErrorModel> errors)
+        {
             var filter = new MessageJournalFilter();
             var topic = request.QueryString["topic"];
             if (!string.IsNullOrWhiteSpace(topic))
@@ -102,28 +153,7 @@ namespace Platibus.Http
                     .ToList();
             }
 
-            var result = await _messageJournal.Read(start, count, filter);
-            var responseContent = new GetJournalResponse
-            {
-                Start = start.ToString(),
-                Next = result.Next.ToString(),
-                EndOfJournal = result.EndOfJournal,
-                Data = result.JournaledMessages.Select(jm => new JournaledMessageResource
-                {
-                    Offset = jm.Offset.ToString(),
-                    Category = jm.Category,
-                    Headers = jm.Message.Headers.ToDictionary(h => (string) h.Key, h => h.Value),
-                    Content = jm.Message.Content
-                }).ToList()
-            };
-
-            response.ContentType = "application/json";
-            var serializedContent = _serializer.Serialize(responseContent);
-            var encoding = response.ContentEncoding;
-            var encodedContent = encoding.GetBytes(serializedContent);
-            await response.OutputStream.WriteAsync(encodedContent, 0, encodedContent.Length);
-            response.StatusCode = 200;
+            return filter;
         }
-        
     }
 }

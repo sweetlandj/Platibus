@@ -91,7 +91,7 @@ namespace Platibus.UnitTests
             };
             var readResult = await MessageJournal.Read(beginningOfJournal, 100, filter);
             Assert.NotNull(readResult);
-            var messages = readResult.JournaledMessages.Select(jm => jm.Message);
+            var messages = readResult.Entries.Select(jm => jm.Data);
             Assert.Contains(Message, messages, new MessageEqualityComparer());
         }
 
@@ -124,7 +124,7 @@ namespace Platibus.UnitTests
             };
             var readResult = await MessageJournal.Read(beginningOfJournal, 100, filter);
             Assert.NotNull(readResult);
-            var messages = readResult.JournaledMessages.Select(jm => jm.Message);
+            var messages = readResult.Entries.Select(jm => jm.Data);
             Assert.Contains(Message, messages, new MessageEqualityComparer());
         }
 
@@ -157,7 +157,7 @@ namespace Platibus.UnitTests
             };
             var readResult = await MessageJournal.Read(beginningOfJournal, 100, filter);
             Assert.NotNull(readResult);
-            var messages = readResult.JournaledMessages.Select(jm => jm.Message);
+            var messages = readResult.Entries.Select(jm => jm.Data);
             Assert.Contains(Message, messages, new MessageEqualityComparer());
         }
     }

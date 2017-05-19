@@ -34,7 +34,7 @@ namespace Platibus.SQLite
         /// directory.  If the base directory does not exist it will be created.
         /// </remarks>
         public SQLiteMessageJournal(DirectoryInfo baseDirectory)
-            : base(InitConnectionProvider(baseDirectory), new SQLiteMessageJournalingCommandBuilders())
+            : base(InitConnectionProvider(baseDirectory), new SQLiteMessageJournalCommandBuilders())
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _operationQueue = new ActionBlock<ISQLiteOperation>(
@@ -76,7 +76,7 @@ namespace Platibus.SQLite
         }
 
         /// <inheritdoc />
-        public override async Task<MessageJournalReadResult> Read(MessageJournalOffset start, int count, MessageJournalFilter filter = null,
+        public override async Task<MessageJournalReadResult> Read(MessageJournalPosition start, int count, MessageJournalFilter filter = null,
             CancellationToken cancellationToken = new CancellationToken())
         {
             CheckDisposed();

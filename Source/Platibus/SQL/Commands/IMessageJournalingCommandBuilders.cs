@@ -36,7 +36,7 @@ namespace Platibus.SQL.Commands
         /// Returns a new builder for constructing commands needed to initialize database objects
         /// for storing journaled messages.
         /// </returns>
-        CreateMessageJournalingObjectsCommandBuilder NewCreateObjectsCommandBuilder();
+        CreateMessageJournalObjectsCommandBuilder NewCreateObjectsCommandBuilder();
 
         /// <summary>
         /// Returns a new builder for constructing commands needed to insert journaled messages
@@ -46,7 +46,7 @@ namespace Platibus.SQL.Commands
         /// Returns a new builder for constructing commands needed to insert journaled messages
         /// into the database.
         /// </returns>
-        InsertJournaledMessageCommandBuilder NewInsertJournaledMessageCommandBuilder();
+        InsertMessageJournalEntryCommandBuilder NewInsertJournaledMessageCommandBuilder();
 
         /// <summary>
         /// Returns a new builder for constructing commands needed to select journaled messages
@@ -56,6 +56,6 @@ namespace Platibus.SQL.Commands
         /// Returns a new builder for constructing commands needed to select journaled messages
         /// from the database.
         /// </returns>
-        SelectJournaledMessagesCommandBuilder NewSelectJournaledMessagesCommandBuilder();
+        SelectMessageJournalEntriesCommandBuilder NewSelectJournaledMessagesCommandBuilder();
     }
 }

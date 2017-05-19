@@ -9,7 +9,7 @@ using Platibus.InMemory;
 namespace Platibus.UnitTests.Http
 {
     [Trait("Category", "UnitTests")]
-    internal class HttpTransportServiceTests
+    public class HttpTransportServiceTests
     {
         [Fact]
         public async Task MessageCanBePostedToRemote()

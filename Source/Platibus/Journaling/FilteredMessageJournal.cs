@@ -18,7 +18,7 @@ namespace Platibus.Journaling
             _categories = (categories ?? Enumerable.Empty<JournaledMessageCategory>()).ToList();
         }
 
-        public Task<MessageJournalOffset> GetBeginningOfJournal(CancellationToken cancellationToken = new CancellationToken())
+        public Task<MessageJournalPosition> GetBeginningOfJournal(CancellationToken cancellationToken = new CancellationToken())
         {
             return _inner.GetBeginningOfJournal(cancellationToken);
         }
@@ -31,15 +31,15 @@ namespace Platibus.Journaling
                 : Task.FromResult(0);
         }
 
-        public Task<MessageJournalReadResult> Read(MessageJournalOffset start, int count, MessageJournalFilter filter = null,
+        public Task<MessageJournalReadResult> Read(MessageJournalPosition start, int count, MessageJournalFilter filter = null,
             CancellationToken cancellationToken = new CancellationToken())
         {
             return _inner.Read(start, count, filter, cancellationToken);
         }
 
-        public MessageJournalOffset ParseOffset(string str)
+        public MessageJournalPosition ParsePosition(string str)
         {
-            return _inner.ParseOffset(str);
+            return _inner.ParsePosition(str);
         }
     }
 }

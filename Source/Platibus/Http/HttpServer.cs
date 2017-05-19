@@ -26,6 +26,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Common.Logging;
+using Platibus.Http.Controllers;
 using Platibus.Journaling;
 
 namespace Platibus.Http

@@ -27,11 +27,12 @@ namespace Platibus.Journaling
     /// <summary>
     /// A message stored in a <see cref="IMessageJournal"/>
     /// </summary>
-    public class JournaledMessage
+    public class MessageJournalEntry
     {
         private readonly JournaledMessageCategory _category;
-        private readonly MessageJournalOffset _offset;
-        private readonly Message _message;
+        private readonly MessageJournalPosition _position;
+        private readonly DateTime _timestamp;
+        private readonly Message _data;
 
         /// <summary>
         /// The category of journaled message (e.g. sent, received, published)
@@ -41,26 +42,33 @@ namespace Platibus.Journaling
         /// <summary>
         /// The position of the message in the journal
         /// </summary>
-        public MessageJournalOffset Offset { get { return _offset; } }
+        public MessageJournalPosition Position { get { return _position; } }
+
+        /// <summary>
+        /// The timestamp for the journaled message
+        /// </summary>
+        public DateTime Timestamp { get { return _timestamp; } }
 
         /// <summary>
         /// The message
         /// </summary>
-        public Message Message { get { return _message; } }
+        public Message Data { get { return _data; } }
 
         /// <summary>
-        /// Initializes a new <see cref="JournaledMessage"/>
+        /// Initializes a new <see cref="MessageJournalEntry"/>
         /// </summary>
         /// <param name="category">The category of journaled message (e.g. sent, received, published)</param>
-        /// <param name="offset">The position of the message in the journal</param>
-        /// <param name="message">The message</param>
-        public JournaledMessage(JournaledMessageCategory category, MessageJournalOffset offset, Message message)
+        /// <param name="position">The position of the message in the journal</param>
+        /// <param name="timestamp">The timestamp associated with the journal entry</param>
+        /// <param name="data">The message</param>
+        public MessageJournalEntry(JournaledMessageCategory category, MessageJournalPosition position, DateTime timestamp, Message data)
         {
-            if (offset == null) throw new ArgumentNullException("offset");
-            if (message == null) throw new ArgumentNullException("message");
+            if (position == null) throw new ArgumentNullException("position");
+            if (data == null) throw new ArgumentNullException("data");
             _category = category;
-            _offset = offset;
-            _message = message;
+            _position = position;
+            _timestamp = timestamp;
+            _data = data;
         }
     }
 }

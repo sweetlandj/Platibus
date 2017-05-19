@@ -28,10 +28,10 @@ using Platibus.SQL.Commands;
 namespace Platibus.SQLite.Commands
 {
     /// <summary>
-    /// A subclass of <see cref="CreateMessageJournalingObjectsCommandBuilder"/> that produces
+    /// A subclass of <see cref="CreateMessageJournalObjectsCommandBuilder"/> that produces
     /// commands for creating message journal objects in a SQLite database using SQLite syntax.
     /// </summary>
-    public class SQLiteCreateMessageJournalingObjectsCommandBuilder : CreateMessageJournalingObjectsCommandBuilder
+    public class SQLiteCreateMessageJournalObjectsCommandBuilder : CreateMessageJournalObjectsCommandBuilder
     {
         /// <inheritdoc />
         public override DbCommand BuildDbCommand(DbConnection connection)

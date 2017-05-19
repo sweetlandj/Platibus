@@ -4,7 +4,7 @@
     /// An representation of an absolute position within a message journal used for polling and
     /// paging read operations
     /// </summary>
-    public abstract class MessageJournalOffset
+    public abstract class MessageJournalPosition
     {
         /// <summary>
         /// Returns a string representation of the message journal offset suitable for

@@ -29,18 +29,18 @@ namespace Platibus.SQLite.Commands
     /// command builder overrides for creating message journal objects in SQLite databases
     /// using SQLite syntax.
     /// </summary>
-    public class SQLiteMessageJournalingCommandBuilders : CommonMessageJournalingCommandBuilders
+    public class SQLiteMessageJournalCommandBuilders : CommonMessageJournalingCommandBuilders
     {
         /// <inheritdoc />
-        public override CreateMessageJournalingObjectsCommandBuilder NewCreateObjectsCommandBuilder()
+        public override CreateMessageJournalObjectsCommandBuilder NewCreateObjectsCommandBuilder()
         {
-            return new SQLiteCreateMessageJournalingObjectsCommandBuilder();
+            return new SQLiteCreateMessageJournalObjectsCommandBuilder();
         }
 
         /// <inheritdoc />
-        public override SelectJournaledMessagesCommandBuilder NewSelectJournaledMessagesCommandBuilder()
+        public override SelectMessageJournalEntriesCommandBuilder NewSelectJournaledMessagesCommandBuilder()
         {
-            return new SQLiteSelectJournaledMessagesCommandBuilder();
+            return new SQLiteSelectMessageJournalEntriesCommandBuilder();
         }
     }
 }

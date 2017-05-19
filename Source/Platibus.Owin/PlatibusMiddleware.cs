@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using Common.Logging;
 using Microsoft.Owin;
 using Platibus.Http;
+using Platibus.Http.Controllers;
 using Platibus.Journaling;
 
 namespace Platibus.Owin

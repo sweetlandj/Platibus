@@ -20,36 +20,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Data.Common;
-using Platibus.SQL.Commands;
+using System;
 
-namespace Platibus.SQLite.Commands
+namespace Platibus.SQL.Commands
 {
     /// <summary>
-    /// A subclass of <see cref="SelectJournaledMessagesCommandBuilder"/> that produces
-    /// commands for selecting journaled messages in a SQLite database using SQLite syntax.
+    /// A representation of the data stored in a message journal record
     /// </summary>
-    public class SQLiteSelectJournaledMessagesCommandBuilder : SelectJournaledMessagesCommandBuilder
+    public class MessageJournalEntryRecord
     {
-        /// <inheritdoc />
-        public override DbCommand BuildDbCommand(DbConnection connection)
-        {
-            var command = base.BuildDbCommand(connection);
-            command.CommandText += " LIMIT @Count";
-            return command;
-        }
+        /// <summary>
+        /// The auto-incrementing record ID
+        /// </summary>
+        public long Id { get; set; }
 
-        /// <inheritdoc />
-        public override string CommandText
-        {
-            get { return @"
-SELECT
-    [Id],
-    [Category],
-    [Headers], 
-    [MessageContent]
-FROM [PB_MessageJournal]
-WHERE [Id] >= @Start"; }
-        }
+        /// <summary>
+        /// The message journal category (e.g. Sent, Received, Published)
+        /// </summary>
+        public string Category { get; set; }
+
+        /// <summary>
+        /// The timestamp associated with the entry
+        /// </summary>
+        public DateTime Timestamp { get; set; }
+
+        /// <summary>
+        /// Message headers concatenated and formatted as a single string value
+        /// </summary>
+        public string Headers { get; set; }
+
+        /// <summary>
+        /// The message content
+        /// </summary>
+        public string Content { get; set; }
     }
 }

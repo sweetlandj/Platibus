@@ -123,9 +123,9 @@ namespace Platibus.SQL
         }
 
         /// <inheritdoc />
-        public virtual Task<MessageJournalOffset> GetBeginningOfJournal(CancellationToken cancellationToken = new CancellationToken())
+        public virtual Task<MessageJournalPosition> GetBeginningOfJournal(CancellationToken cancellationToken = new CancellationToken())
         {
-            return Task.FromResult<MessageJournalOffset>(new SQLMessageJournalOffset(0));
+            return Task.FromResult<MessageJournalPosition>(new SQLMessageJournalPosition(0));
         }
 
         /// <inheritdoc />
@@ -175,11 +175,11 @@ namespace Platibus.SQL
         }
 
         /// <inheritdoc />
-        public virtual async Task<MessageJournalReadResult> Read(MessageJournalOffset start, int count, MessageJournalFilter filter = null, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual async Task<MessageJournalReadResult> Read(MessageJournalPosition start, int count, MessageJournalFilter filter = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             var myFilter = filter ?? new MessageJournalFilter();
             var next = start;
-            var journaledMessages = new List<JournaledMessage>();
+            var journaledMessages = new List<MessageJournalEntry>();
             var endOfJournal = true;
             var connection = _connectionProvider.GetConnection();
             try
@@ -187,7 +187,7 @@ namespace Platibus.SQL
                 var commandBuilder = _commandBuilders.NewSelectJournaledMessagesCommandBuilder();
                 commandBuilder.Categories = myFilter.Categories.Select(c => (string) c).ToList();
                 commandBuilder.Topics = myFilter.Topics.Select(t => (string) t).ToList();
-                commandBuilder.Start = ((SQLMessageJournalOffset) start).Id;
+                commandBuilder.Start = ((SQLMessageJournalPosition) start).Id;
                 commandBuilder.Count = count + 1;
 
                 using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
@@ -199,18 +199,19 @@ namespace Platibus.SQL
                             while (await reader.ReadAsync(cancellationToken))
                             {
                                 var record = commandBuilder.BuildJournaledMessageRecord(reader);
-                                next = new SQLMessageJournalOffset(record.Id);
+                                next = new SQLMessageJournalPosition(record.Id);
                                 if (journaledMessages.Count < count)
                                 {
                                     var category = record.Category;
+                                    var timestamp = record.Timestamp;
                                     var headers = DeserializeHeaders(record.Headers);
                                     var messageContent = record.Content;
-                                    var offset = new SQLMessageJournalOffset(record.Id);
+                                    var offset = new SQLMessageJournalPosition(record.Id);
                                     var message = new Message(headers, messageContent);
-                                    var journaledMessage = new JournaledMessage(category, offset, message);
+                                    var journaledMessage = new MessageJournalEntry(category, offset, timestamp, message);
                                     journaledMessages.Add(journaledMessage);
 
-                                    next = new SQLMessageJournalOffset(record.Id + 1);
+                                    next = new SQLMessageJournalPosition(record.Id + 1);
                                 }
                                 else
                                 {
@@ -231,10 +232,10 @@ namespace Platibus.SQL
         }
 
         /// <inheritdoc />
-        public virtual MessageJournalOffset ParseOffset(string str)
+        public virtual MessageJournalPosition ParsePosition(string str)
         {
             if (string.IsNullOrWhiteSpace(str)) throw new ArgumentNullException("str");
-            return new SQLMessageJournalOffset(long.Parse(str));
+            return new SQLMessageJournalPosition(long.Parse(str));
         }
         
         /// <summary>

@@ -29,7 +29,7 @@ namespace Platibus.SQL.Commands
     /// database objects needed to store journaled messages according to commands, syntax, and
     /// features of the underlying database.
     /// </summary>
-    public abstract class CreateMessageJournalingObjectsCommandBuilder
+    public abstract class CreateMessageJournalObjectsCommandBuilder
     {
         /// <summary>
         /// Produces a non-query command that can be used to create database objects necessary

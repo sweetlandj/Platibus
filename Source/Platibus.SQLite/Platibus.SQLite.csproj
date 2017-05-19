@@ -67,16 +67,16 @@
       <Link>Properties\Copyright.cs</Link>
     </Compile>
     <Compile Include="Commands\SQLiteCommandBuildersProvider.cs" />
-    <Compile Include="Commands\SQLiteSelectJournaledMessagesCommandBuilder.cs" />
+    <Compile Include="Commands\SQLiteSelectMessageJournalEntriesCommandBuilder.cs" />
     <Compile Include="ISQLiteOperation.cs" />
-    <Compile Include="Commands\SQLiteCreateMessageJournalingObjectsCommandBuilder.cs" />
+    <Compile Include="Commands\SQLiteCreateMessageJournalObjectsCommandBuilder.cs" />
     <Compile Include="Commands\SQLiteCreateMessageQueueingObjectsCommandBuilder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SingletonConnectionProvider.cs" />
     <Compile Include="Commands\SQLiteCreateSubscriptionTrackingObjectsCommandBuilder.cs" />
     <Compile Include="SQLiteLoggingCategories.cs" />
     <Compile Include="SQLiteMessageJournal.cs" />
-    <Compile Include="Commands\SQLiteMessageJournalingCommandBuilders.cs" />
+    <Compile Include="Commands\SQLiteMessageJournalCommandBuilders.cs" />
     <Compile Include="SQLiteMessageQueue.cs" />
     <Compile Include="Commands\SQLiteMessageQueueingCommandBuilders.cs" />
     <Compile Include="SQLiteMessageQueueingService.cs" />

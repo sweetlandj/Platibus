@@ -30,9 +30,9 @@ namespace Platibus.SQL.Commands
     public class MSSQLMessageJournalingCommandBuilders : CommonMessageJournalingCommandBuilders
     {
         /// <inheritdoc />
-        public override CreateMessageJournalingObjectsCommandBuilder NewCreateObjectsCommandBuilder()
+        public override CreateMessageJournalObjectsCommandBuilder NewCreateObjectsCommandBuilder()
         {
-            return new MSSQLCreateMessageJournalingObjectsCommandBuilder();
+            return new MSSQLCreateMessageJournalObjectsCommandBuilder();
         }
     }
 }

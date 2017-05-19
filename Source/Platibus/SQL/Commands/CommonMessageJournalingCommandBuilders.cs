@@ -29,18 +29,18 @@ namespace Platibus.SQL.Commands
     public abstract class CommonMessageJournalingCommandBuilders : IMessageJournalingCommandBuilders
     {
         /// <inheritdoc />
-        public abstract CreateMessageJournalingObjectsCommandBuilder NewCreateObjectsCommandBuilder();
+        public abstract CreateMessageJournalObjectsCommandBuilder NewCreateObjectsCommandBuilder();
 
         /// <inheritdoc/>
-        public virtual InsertJournaledMessageCommandBuilder NewInsertJournaledMessageCommandBuilder()
+        public virtual InsertMessageJournalEntryCommandBuilder NewInsertJournaledMessageCommandBuilder()
         {
-            return new InsertJournaledMessageCommandBuilder();
+            return new InsertMessageJournalEntryCommandBuilder();
         }
 
         /// <inheritdoc/>
-        public virtual SelectJournaledMessagesCommandBuilder NewSelectJournaledMessagesCommandBuilder()
+        public virtual SelectMessageJournalEntriesCommandBuilder NewSelectJournaledMessagesCommandBuilder()
         {
-            return new SelectJournaledMessagesCommandBuilder();
+            return new SelectMessageJournalEntriesCommandBuilder();
         }
     }
 }
