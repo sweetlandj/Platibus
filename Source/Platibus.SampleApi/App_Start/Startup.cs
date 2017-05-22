@@ -1,12 +1,15 @@
-﻿using System.Threading.Tasks;
+﻿using System.Reflection;
+using System.Threading.Tasks;
+using System.Web.Http;
 using Autofac;
+using Autofac.Integration.WebApi;
 using IdentityServer3.AccessTokenValidation;
 using Microsoft.Owin;
 using Owin;
 using Platibus.Config;
 using Platibus.Owin;
 using Platibus.SampleApi;
-using Platibus.SampleApi.Controllers;
+using Platibus.SampleApi.Widgets;
 
 [assembly: OwinStartup(typeof(Startup))]
 
@@ -24,24 +27,33 @@ namespace Platibus.SampleApi
             });
             
             var containerBuilder = new ContainerBuilder();
+            containerBuilder.RegisterApiControllers(Assembly.GetExecutingAssembly());
+            
             RegisterServices(containerBuilder);
 
             var container = containerBuilder.Build();
             app.UsePlatibusMiddleware(ConfigurePlatibus(container));
+
+            var httpConfiguration = new HttpConfiguration();
+            httpConfiguration.MapHttpAttributeRoutes();
+            httpConfiguration.DependencyResolver = new AutofacWebApiDependencyResolver(container);
+
+            app.UseAutofacMiddleware(container);
+            app.UseAutofacWebApi(httpConfiguration);
+            app.UseWebApi(httpConfiguration);
         }
 
         private static void RegisterServices(ContainerBuilder containerBuilder)
         {
-            var receivedMessageRepository = new ReceivedMessageRepository();
-            receivedMessageRepository.Init();
-            containerBuilder.RegisterInstance(receivedMessageRepository);
-            containerBuilder.RegisterType<TestMessageHandler>();
+            var widgetRepository = new InMemoryWidgetRepository();
+            containerBuilder.RegisterInstance(widgetRepository);
+            containerBuilder.RegisterType<WidgetCreationRequestHandler>();
         }
 
         private static async Task<IOwinConfiguration> ConfigurePlatibus(IContainer container)
         {
             var configuration = await OwinConfigurationManager.LoadConfiguration();
-            configuration.AddHandlingRules(container.Resolve<TestMessageHandler>);
+            configuration.AddHandlingRules(container.Resolve<WidgetCreationRequestHandler>);
             return configuration;
         }
     }
