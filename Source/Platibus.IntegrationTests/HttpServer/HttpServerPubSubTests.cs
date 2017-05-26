@@ -20,6 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Platibus.Http.Clients;
+using Platibus.Serialization;
 using Xunit;
 
 namespace Platibus.IntegrationTests.HttpServer
@@ -32,5 +37,38 @@ namespace Platibus.IntegrationTests.HttpServer
             : base(fixture.Sender, fixture.Receiver)
         {
         }
+
+
+        [Fact]
+        public async Task JournaledMessagesCanBeQueriedOverHttp()
+        {
+            GivenTestPublication();
+            await WhenPublished();
+            await AssertMessageRetrievedByMessageJournalClient();
+        }
+
+        protected async Task AssertMessageRetrievedByMessageJournalClient()
+        {
+            // From the platibus.http0 configuration section of app.config
+            var publisherBaseUri = new Uri("http://localhost:52180/platibus0/");
+            var messageJournalClient = new HttpMessageJournalClient(publisherBaseUri);
+            var result = await messageJournalClient.Read(null, 100);
+            Assert.NotNull(result);
+
+            var messages = result.Entries.Select(e => e.Data);
+            var messageContent = messages.Select(DeserializeMessageContent);
+            Assert.Contains(Publication, messageContent);
+        }
+
+        private static object DeserializeMessageContent(Message message)
+        {
+            var messageNamingService = new DefaultMessageNamingService();
+            var serializationService = new DefaultSerializationService();
+
+            var messageType = messageNamingService.GetTypeForName(message.Headers.MessageName);
+            var serializer = serializationService.GetSerializer(message.Headers.ContentType);
+            return serializer.Deserialize(message.Content, messageType);
+        }
+
     }
 }

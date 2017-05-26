@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Configuration;
-using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
@@ -52,6 +51,12 @@ namespace Platibus.SQLite
             {
                 var appdomainDirectory = AppDomain.CurrentDomain.BaseDirectory;
                 directory = new DirectoryInfo(Path.Combine(appdomainDirectory, "platibus", "journal"));
+            }
+
+            directory.Refresh();
+            if (!directory.Exists)
+            {
+                directory.Create();
             }
 
             var dbPath = Path.Combine(directory.FullName, "journal.db");
