@@ -107,6 +107,7 @@
     <Compile Include="Http\AuthenticationSchemeElement.cs" />
     <Compile Include="Http\AuthenticationSchemesElementCollection.cs" />
     <Compile Include="Http\BasicAuthorizationService.cs" />
+    <Compile Include="Http\Clients\HttpMessageJournalClient.cs" />
     <Compile Include="Http\HttpClientPool.cs" />
     <Compile Include="Config\InvalidSendRuleException.cs" />
     <Compile Include="Config\InvalidSubscriptionException.cs" />
