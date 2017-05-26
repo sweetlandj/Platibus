@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Description;
 using Newtonsoft.Json;
+using Platibus.Owin;
 using Platibus.SampleMessages;
 using Platibus.SampleMessages.Widgets;
 
@@ -17,12 +18,15 @@ namespace Platibus.SampleApi.Widgets
     public class WidgetApiController : ApiController
     {
         private readonly IWidgetRepository _widgetRepository;
-        private readonly IBus _bus;
 
-        public WidgetApiController(IWidgetRepository widgetRepository, IBus bus)
+        private IBus Bus
+        {
+            get { return Request.GetOwinContext().GetBus(); }
+        }
+        
+        public WidgetApiController(IWidgetRepository widgetRepository)
         {
             _widgetRepository = widgetRepository;
-            _bus = bus;
         }
 
         [HttpPost]
@@ -34,7 +38,7 @@ namespace Platibus.SampleApi.Widgets
                 var widget = MapToEntity(request.Data ?? new WidgetResource());
                 await _widgetRepository.Add(widget);
                 var createdResource = MapToResource(widget);
-                await _bus.Publish(new WidgetEvent("WidgetCreated", createdResource, GetRequestor()), "WidgetEvents");
+                await Bus.Publish(new WidgetEvent("WidgetCreated", createdResource, GetRequestor()), "WidgetEvents");
                 return ResourceCreated(createdResource);
             }
             catch (WidgetAlreadyExistsException)
@@ -59,7 +63,7 @@ namespace Platibus.SampleApi.Widgets
                 ApplyUpdates(widget, resource);
                 await _widgetRepository.Update(widget);
                 var updatedResource = MapToResource(widget);
-                await _bus.Publish(new WidgetEvent("WidgetUpdated", updatedResource, GetRequestor()), "WidgetEvents");
+                await Bus.Publish(new WidgetEvent("WidgetUpdated", updatedResource, GetRequestor()), "WidgetEvents");
                 return Ok(Response.Containing(resource));
             }
             catch (WidgetNotFoundException)
@@ -75,7 +79,7 @@ namespace Platibus.SampleApi.Widgets
             try
             {
                 await _widgetRepository.Remove(id);
-                await _bus.Publish(new WidgetEvent("WidgetDeleted", null, GetRequestor()), "WidgetEvents");
+                await Bus.Publish(new WidgetEvent("WidgetDeleted", null, GetRequestor()), "WidgetEvents");
                 return StatusCode(HttpStatusCode.NoContent);
             }
             catch (WidgetNotFoundException)

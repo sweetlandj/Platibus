@@ -32,7 +32,7 @@ namespace Platibus.IntegrationTests.HttpServer
         private readonly Task<Http.HttpServer> _receivingHttpServer;
 
         private bool _disposed;
-
+        
         public Task<IBus> Sender
         {
             get { return _sendingHttpServer.ContinueWith(serverTask => serverTask.Result.Bus); }

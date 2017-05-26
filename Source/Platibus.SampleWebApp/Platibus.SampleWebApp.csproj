@@ -254,7 +254,6 @@
     <Compile Include="App_Start\PlatibusConfigurationHook.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\Startup.cs" />
-    <Compile Include="Controllers\ControllerFactory.cs" />
     <Compile Include="Controllers\ReceivedMessageRepository.cs" />
     <Compile Include="Controllers\ReceivedMessagesController.cs" />
     <Compile Include="Controllers\TestPublication.cs" />
@@ -282,6 +281,7 @@
     <Content Include="packages.config" />
     <Content Include="Scripts\jquery-3.1.1.slim.min.map" />
     <Content Include="Scripts\jquery-3.1.1.min.map" />
+    <Content Include="Views\Widget\Index.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -297,10 +297,6 @@
     <ProjectReference Include="..\Platibus.IIS\Platibus.IIS.csproj">
       <Project>{bf2c4b39-5e10-4115-beff-8340982cda72}</Project>
       <Name>Platibus.IIS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Platibus.Owin\Platibus.Owin.csproj">
-      <Project>{4070b7da-dfef-4fa7-bb44-72c084ca9e80}</Project>
-      <Name>Platibus.Owin</Name>
     </ProjectReference>
     <ProjectReference Include="..\Platibus.SQLite\Platibus.SQLite.csproj">
       <Project>{a23be958-6524-4c9c-8957-1c3debb0780c}</Project>

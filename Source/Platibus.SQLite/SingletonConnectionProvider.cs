@@ -74,10 +74,13 @@ namespace Platibus.SQLite
                 if (myConnection == null)
                 {
                     myConnection = _dbProviderFactory.CreateConnection();
-                    myConnection.ConnectionString = _connectionString;
+                    if (myConnection != null)
+                    {
+                        myConnection.ConnectionString = _connectionString;
+                    }
                 }
 
-                if (myConnection.State == ConnectionState.Closed)
+                if (myConnection != null && myConnection.State == ConnectionState.Closed)
                 {
                     myConnection.Open();
                 }

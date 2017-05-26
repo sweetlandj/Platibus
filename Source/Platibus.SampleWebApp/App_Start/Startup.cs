@@ -12,7 +12,6 @@ using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security.Notifications;
 using Microsoft.Owin.Security.OpenIdConnect;
 using Owin;
-using Platibus.Owin;
 using Platibus.SampleWebApp;
 using Platibus.SampleWebApp.IdentityServer;
 using AuthenticationOptions = IdentityServer3.Core.Configuration.AuthenticationOptions;
@@ -26,10 +25,6 @@ namespace Platibus.SampleWebApp
         public void Configuration(IAppBuilder app)
         {
             ConfigureIdentityServer3(app);
-            if (AppSettings.PlatibusMiddleware.IsEnabled())
-            {
-                app.UsePlatibusMiddleware();
-            }
         }
 
         public void ConfigureIdentityServer3(IAppBuilder app)

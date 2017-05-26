@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
-using System.Web;
 using System.Web.Mvc;
 using Platibus.IIS;
-using Platibus.Owin;
 using Platibus.Security;
 
 namespace Platibus.SampleWebApp.Controllers
@@ -41,8 +39,7 @@ namespace Platibus.SampleWebApp.Controllers
                     Text = testMessage.MessageText
                 };
 
-                // Try to get the bus from the HttpContext (if we are using HttrpModule)
-                var bus = HttpContext.GetBus() ?? HttpContext.GetOwinContext().GetBus();
+                var bus = HttpContext.GetBus();
                 var sentMessage = await bus.Send(message, sendOptions);
                 return View("Index", new Models.TestMessage
                 {
