@@ -71,7 +71,7 @@ namespace Platibus.SQLite
         }
 
         /// <inheritdoc />
-        public override async Task Append(Message message, JournaledMessageCategory category,
+        public override async Task Append(Message message, MessageJournalCategory category,
             CancellationToken cancellationToken = new CancellationToken())
         {
             CheckDisposed();

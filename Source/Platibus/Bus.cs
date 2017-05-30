@@ -305,7 +305,7 @@ namespace Platibus
             var message = BuildMessage(content, prototypicalHeaders, sendOptions);
             if (_messageJournal != null)
             {
-                await _messageJournal.Append(message, JournaledMessageCategory.Published, cancellationToken);
+                await _messageJournal.Append(message, MessageJournalCategory.Published, cancellationToken);
             }
 
             await _transportService.PublishMessage(message, topic, cancellationToken);
@@ -395,7 +395,7 @@ namespace Platibus
         {
             if (_messageJournal != null)
             {
-                await _messageJournal.Append(message, JournaledMessageCategory.Received);
+                await _messageJournal.Append(message, MessageJournalCategory.Received);
             }
 
             var tasks = new List<Task>();

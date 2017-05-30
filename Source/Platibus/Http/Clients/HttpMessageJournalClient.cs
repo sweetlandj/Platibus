@@ -55,7 +55,7 @@ namespace Platibus.Http.Clients
         /// request cancelation of the read operation</param>
         /// <returns>Returns a task whose result is the journal messages and meta data returned
         /// by the server</returns>
-        public async Task<MessageJournalReadResult> Read(MessageJournalPosition start, int count, MessageJournalFilter filter = null,
+        public async Task<MessageJournalReadResult> Read(string start, int count, MessageJournalFilter filter = null,
             CancellationToken cancellationToken = default(CancellationToken))
         {
             var relativeUri = new Uri("journal?" + BuildQuery(start, count, filter), UriKind.Relative);
@@ -64,12 +64,12 @@ namespace Platibus.Http.Clients
             return await ParseResponseContent(responseMessage);
         }
 
-        private static string BuildQuery(MessageJournalPosition start, int count, MessageJournalFilter filter)
+        private static string BuildQuery(string start, int count, MessageJournalFilter filter)
         {
             var queryParameters = new Dictionary<string, string>();
             if (start != null)
             {
-                queryParameters["start"] = start.ToString();
+                queryParameters["start"] = start;
             }
             queryParameters["count"] = count.ToString();
 

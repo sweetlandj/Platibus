@@ -29,7 +29,7 @@ namespace Platibus.Journaling
     /// </summary>
     public class MessageJournalEntry
     {
-        private readonly JournaledMessageCategory _category;
+        private readonly MessageJournalCategory _category;
         private readonly MessageJournalPosition _position;
         private readonly DateTime _timestamp;
         private readonly Message _data;
@@ -37,7 +37,7 @@ namespace Platibus.Journaling
         /// <summary>
         /// The category of journaled message (e.g. sent, received, published)
         /// </summary>
-        public JournaledMessageCategory Category { get { return _category; } }
+        public MessageJournalCategory Category { get { return _category; } }
         
         /// <summary>
         /// The position of the message in the journal
@@ -61,7 +61,7 @@ namespace Platibus.Journaling
         /// <param name="position">The position of the message in the journal</param>
         /// <param name="timestamp">The timestamp associated with the journal entry</param>
         /// <param name="data">The message</param>
-        public MessageJournalEntry(JournaledMessageCategory category, MessageJournalPosition position, DateTime timestamp, Message data)
+        public MessageJournalEntry(MessageJournalCategory category, MessageJournalPosition position, DateTime timestamp, Message data)
         {
             if (position == null) throw new ArgumentNullException("position");
             if (data == null) throw new ArgumentNullException("data");

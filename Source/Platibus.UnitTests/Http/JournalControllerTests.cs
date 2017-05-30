@@ -113,7 +113,7 @@ namespace Platibus.UnitTests.Http
                 Topic = "FooEvents"
             };
             var message = new Message(messageHeaders, "FooStarted:1");
-            await MessageJournal.Append(message, JournaledMessageCategory.Published);
+            await MessageJournal.Append(message, MessageJournalCategory.Published);
             GivenRequest("GET", new NameValueCollection
             {
                 {"count", "10"}

@@ -1,0 +1,33 @@
+﻿@model Platibus.Journaling.MessageJournalEntry
+
+@{
+    ViewBag.Title = "Platibus Sample Web App - Journal Entry Details";
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Details</title>
+</head>
+<body>
+    <div>
+        <h4>MessageJournalEntry</h4>
+        <hr />
+        <dl class="dl-horizontal">
+            <dt>
+                @Html.DisplayNameFor(model => model.Timestamp)
+            </dt>
+    
+            <dd>
+                @Html.DisplayFor(model => model.Timestamp)
+            </dd>
+    
+        </dl>
+    </div>
+    <p>
+        @Html.ActionLink("Back to List", "Index")
+    </p>
+</body>
+</html>

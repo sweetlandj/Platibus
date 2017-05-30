@@ -179,7 +179,7 @@ namespace Platibus.UnitTests
                 ContentType = "text/plain"
             };
             var message = new Message(messageHeaders, content);
-            await MessageJournal.Append(message, JournaledMessageCategory.Sent);
+            await MessageJournal.Append(message, MessageJournalCategory.Sent);
         }
 
         protected async Task GivenJournaledReceivedMessage(string content)
@@ -195,7 +195,7 @@ namespace Platibus.UnitTests
                 ContentType = "text/plain"
             };
             var message = new Message(messageHeaders, content);
-            await MessageJournal.Append(message, JournaledMessageCategory.Received);
+            await MessageJournal.Append(message, MessageJournalCategory.Received);
         }
 
         protected async Task GivenJournaledReceivedPublication(string content, TopicName topic)
@@ -214,7 +214,7 @@ namespace Platibus.UnitTests
                 ContentType = "text/plain"
             };
             var message = new Message(messageHeaders, content);
-            await MessageJournal.Append(message, JournaledMessageCategory.Received);
+            await MessageJournal.Append(message, MessageJournalCategory.Received);
         }
 
         protected async Task GivenJournaledPublication(string content, TopicName topic)
@@ -229,10 +229,10 @@ namespace Platibus.UnitTests
                 Topic = topic
             };
             var message = new Message(messageHeaders, content);
-            await MessageJournal.Append(message, JournaledMessageCategory.Published);
+            await MessageJournal.Append(message, MessageJournalCategory.Published);
         }
 
-        protected void GivenCategoryFilter(JournaledMessageCategory category)
+        protected void GivenCategoryFilter(MessageJournalCategory category)
         {
             if (Filter == null)
             {
@@ -262,7 +262,7 @@ namespace Platibus.UnitTests
         }
 
         protected void AssertCategory(IEnumerable<MessageJournalEntry> journaledMessages,
-            JournaledMessageCategory expectedCategory)
+            MessageJournalCategory expectedCategory)
         {
             foreach (var journaledMessage in journaledMessages)
             {

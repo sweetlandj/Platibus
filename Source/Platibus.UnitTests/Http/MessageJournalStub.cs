@@ -17,7 +17,7 @@ namespace Platibus.UnitTests.Http
             return Task.FromResult<MessageJournalPosition>(new Position(0));
         }
 
-        public virtual Task Append(Message message, JournaledMessageCategory category,
+        public virtual Task Append(Message message, MessageJournalCategory category,
             CancellationToken cancellationToken = new CancellationToken())
         {
             lock (_syncRoot)

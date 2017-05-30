@@ -79,7 +79,7 @@ namespace Platibus.UnitTests
 
         protected virtual Task WhenAppendingSentMessage()
         {
-            return MessageJournal.Append(Message, JournaledMessageCategory.Sent);
+            return MessageJournal.Append(Message, MessageJournalCategory.Sent);
         }
 
         protected virtual async Task AssertSentMessageIsWrittenToJournal()
@@ -87,7 +87,7 @@ namespace Platibus.UnitTests
             var beginningOfJournal = await MessageJournal.GetBeginningOfJournal();
             var filter = new MessageJournalFilter
             {
-                Categories = {JournaledMessageCategory.Sent}
+                Categories = {MessageJournalCategory.Sent}
             };
             var readResult = await MessageJournal.Read(beginningOfJournal, 100, filter);
             Assert.NotNull(readResult);
@@ -112,7 +112,7 @@ namespace Platibus.UnitTests
 
         protected virtual Task WhenAppendingReceivedMessage()
         {
-            return MessageJournal.Append(Message, JournaledMessageCategory.Received);
+            return MessageJournal.Append(Message, MessageJournalCategory.Received);
         }
 
         protected virtual async Task AssertReceivedMessageIsWrittenToJournal()
@@ -120,7 +120,7 @@ namespace Platibus.UnitTests
             var beginningOfJournal = await MessageJournal.GetBeginningOfJournal();
             var filter = new MessageJournalFilter
             {
-                Categories = {JournaledMessageCategory.Received}
+                Categories = {MessageJournalCategory.Received}
             };
             var readResult = await MessageJournal.Read(beginningOfJournal, 100, filter);
             Assert.NotNull(readResult);
@@ -144,7 +144,7 @@ namespace Platibus.UnitTests
 
         protected virtual Task WhenAppendingPublishedMessage()
         {
-            return MessageJournal.Append(Message, JournaledMessageCategory.Published);
+            return MessageJournal.Append(Message, MessageJournalCategory.Published);
         }
 
         protected virtual async Task AssertPublishedMessageIsWrittenToJournal()
@@ -152,7 +152,7 @@ namespace Platibus.UnitTests
             var beginningOfJournal = await MessageJournal.GetBeginningOfJournal();
             var filter = new MessageJournalFilter
             {
-                Categories = {JournaledMessageCategory.Published},
+                Categories = {MessageJournalCategory.Published},
                 Topics = {Message.Headers.Topic}
             };
             var readResult = await MessageJournal.Read(beginningOfJournal, 100, filter);

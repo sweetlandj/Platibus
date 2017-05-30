@@ -1,0 +1,40 @@
+﻿@using System.Web.Optimization
+@using Platibus.SampleWebApp.Controllers
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewBag.Title</title>
+    @RenderSection("head", false)
+
+    @Styles.Render("~/Content/bootstrap")
+    @Scripts.Render("~/bundles/bootstrap")
+</head>
+<body>
+<div>
+    <nav class="navbar navbar-inverse">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">Platibus</a>
+            </div>
+
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    @Html.NavItemFor("Widgets", "Index", "Widgets")
+                    @Html.NavItemFor("Journal", "Index", "MessageJournal")
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container">
+        @RenderBody()
+    </div>
+</div>
+</body>
+</html>

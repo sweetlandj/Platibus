@@ -9,13 +9,13 @@ namespace Platibus.Journaling
     internal class FilteredMessageJournal : IMessageJournal
     {
         private readonly IMessageJournal _inner;
-        private readonly IList<JournaledMessageCategory> _categories;
+        private readonly IList<MessageJournalCategory> _categories;
 
-        public FilteredMessageJournal(IMessageJournal inner, IEnumerable<JournaledMessageCategory> categories = null)
+        public FilteredMessageJournal(IMessageJournal inner, IEnumerable<MessageJournalCategory> categories = null)
         {
             if (inner == null) throw new ArgumentNullException("inner");
             _inner = inner;
-            _categories = (categories ?? Enumerable.Empty<JournaledMessageCategory>()).ToList();
+            _categories = (categories ?? Enumerable.Empty<MessageJournalCategory>()).ToList();
         }
 
         public Task<MessageJournalPosition> GetBeginningOfJournal(CancellationToken cancellationToken = new CancellationToken())
@@ -23,7 +23,7 @@ namespace Platibus.Journaling
             return _inner.GetBeginningOfJournal(cancellationToken);
         }
 
-        public Task Append(Message message, JournaledMessageCategory category,
+        public Task Append(Message message, MessageJournalCategory category,
             CancellationToken cancellationToken = new CancellationToken())
         {
             return _categories.Contains(category) 

@@ -7,15 +7,15 @@ namespace Platibus.Journaling
     /// </summary>
     public class MessageJournalFilter
     {
-        private IList<JournaledMessageCategory> _categories;
+        private IList<MessageJournalCategory> _categories;
         private IList<TopicName> _topics;
 
         /// <summary>
         /// Specifies the categories to which results should be constrained
         /// </summary>
-        public IList<JournaledMessageCategory> Categories
+        public IList<MessageJournalCategory> Categories
         {
-            get { return _categories ?? (_categories = new List<JournaledMessageCategory>()); }
+            get { return _categories ?? (_categories = new List<MessageJournalCategory>()); }
             set { _categories = value; }
         }
 

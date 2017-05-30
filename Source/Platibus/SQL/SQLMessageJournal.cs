@@ -129,7 +129,7 @@ namespace Platibus.SQL
         }
 
         /// <inheritdoc />
-        public virtual async Task Append(Message message, JournaledMessageCategory category, CancellationToken cancellationToken = new CancellationToken())
+        public virtual async Task Append(Message message, MessageJournalCategory category, CancellationToken cancellationToken = new CancellationToken())
         {
             if (message == null) throw new ArgumentNullException("message");
             if (category == null) throw new ArgumentNullException("category");

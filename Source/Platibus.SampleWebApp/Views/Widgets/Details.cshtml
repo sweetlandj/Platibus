@@ -1,0 +1,46 @@
+﻿@model Platibus.SampleMessages.Widgets.WidgetResource
+
+@{
+    ViewBag.Title = "Platibus Sample Web App - Widget Details";
+}
+
+<div>
+    <h4>Widget #@Model.Id</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.Attributes.PartNumber)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Attributes.PartNumber)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.Attributes.Description)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Attributes.Description)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.Attributes.Length)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Attributes.Length) cm
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.Attributes.Width)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Attributes.Width) cm
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.Attributes.Height)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Attributes.Height) cm
+        </dd>
+    </dl>
+</div>
+<p>
+    @Html.ActionLink("Edit", "Edit", new { id = Model.Id }) |
+    @Html.ActionLink("Back to List", "Index")
+</p>

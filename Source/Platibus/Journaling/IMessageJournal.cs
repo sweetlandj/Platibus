@@ -25,7 +25,7 @@ namespace Platibus.Journaling
         /// <param name="cancellationToken">(Optional) A cancellation token that may be used by
         /// the caller to request cancellation of the journaling operation</param>
         /// <returns>Returns a task that will complete when the journaling operation is finished</returns>
-        Task Append(Message message, JournaledMessageCategory category, CancellationToken cancellationToken = default(CancellationToken));
+        Task Append(Message message, MessageJournalCategory category, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Reads messages from the journal

@@ -1,0 +1,100 @@
+﻿@model Platibus.SampleWebApp.Models.MessageJournalIndexModel
+
+@{
+    ViewBag.Title = "Platibus Sample Web App - Message Journal";
+}
+
+<div>
+    <h4>Message Journal</h4>
+    @using (Html.BeginForm())
+    {
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Start)
+                    @Html.EditorFor(model => model.Start, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Start, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Count)
+                    @Html.EditorFor(model => model.Count, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Count, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.FilterCategories)
+                    @Html.ListBoxFor(model => model.FilterCategories, Model.AllCategories, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.FilterCategories, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.FilterTopics)
+                    @Html.ListBoxFor(model => model.FilterTopics, Model.AllTopics, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.FilterTopics, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <input type="submit" value="Read" class="btn btn-default" />
+        </div>
+    }
+</div>
+
+@if (Model.ReadAttempted)
+{
+    <hr/>
+    <h4>Results</h4>
+    if (Model.Result == null || !Model.Result.Entries.Any())
+    {
+        <div class="text-center text-muted">No results</div>
+    }
+    else
+    {
+        <table class="table">
+            <tr>
+                <th>
+                    Position
+                </th>
+                <th>
+                    Timestamp
+                </th>
+                <th>
+                    Category
+                </th>
+                <th>
+                    Message ID
+                </th>
+                <th>
+                    Message Name
+                </th>
+            </tr>
+
+            @foreach (var item in Model.Result.Entries)
+            {
+                <tr>
+                    <td>
+                        @item.Position
+                    </td>
+                    <td>
+                        @item.Timestamp.ToString("O")
+                    </td>
+                    <td>
+                        @item.Category
+                    </td>
+                    <td>
+                        @item.Data.Headers.MessageId
+                    </td>
+                    <td>
+                        @item.Data.Headers.MessageName
+                    </td>
+                </tr>
+            }
+        </table>
+    }
+}

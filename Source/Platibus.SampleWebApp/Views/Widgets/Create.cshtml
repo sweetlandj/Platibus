@@ -1,0 +1,61 @@
+﻿@model Platibus.SampleMessages.Widgets.WidgetResource
+
+@{
+    ViewBag.Title = "Platibus Sample Web App - New Widget";
+}
+
+<h4>New Widget</h4>
+<hr />
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                @Html.LabelFor(model => model.Attributes.PartNumber)
+                @Html.EditorFor(model => model.Attributes.PartNumber, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Attributes.PartNumber, "", new { @class = "text-danger" })
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="form-group">
+                @Html.LabelFor(model => model.Attributes.Description)
+                @Html.EditorFor(model => model.Attributes.Description, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Attributes.Description, "", new { @class = "text-danger" })
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                @Html.LabelFor(model => model.Attributes.Length)
+                @Html.EditorFor(model => model.Attributes.Length, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Attributes.Length, "", new { @class = "text-danger" })
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                @Html.LabelFor(model => model.Attributes.Width)
+                @Html.EditorFor(model => model.Attributes.Width, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Attributes.Width, "", new { @class = "text-danger" })
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                @Html.LabelFor(model => model.Attributes.Height)
+                @Html.EditorFor(model => model.Attributes.Height, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Attributes.Height, "", new { @class = "text-danger" })
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <input type="submit" value="Create" class="btn btn-default" />
+    </div>
+}
+
+<div>
+    @Html.ActionLink("Back to List", "Index")
+</div>

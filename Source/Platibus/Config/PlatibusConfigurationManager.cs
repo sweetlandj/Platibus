@@ -308,10 +308,10 @@ namespace Platibus.Config
             Log.Debug("Initializing message journaling service...");
             var messageJournal = await provider.CreateMessageJournal(config);
 
-            var categories = new List<JournaledMessageCategory>();
-            if (config.JournalSentMessages) categories.Add(JournaledMessageCategory.Sent);
-            if (config.JournalReceivedMessages) categories.Add(JournaledMessageCategory.Received);
-            if (config.JournalPublishedMessages) categories.Add(JournaledMessageCategory.Published);
+            var categories = new List<MessageJournalCategory>();
+            if (config.JournalSentMessages) categories.Add(MessageJournalCategory.Sent);
+            if (config.JournalReceivedMessages) categories.Add(MessageJournalCategory.Received);
+            if (config.JournalPublishedMessages) categories.Add(MessageJournalCategory.Published);
 
             var filteredMessageJournalingService = new FilteredMessageJournal(messageJournal, categories);
             return filteredMessageJournalingService;

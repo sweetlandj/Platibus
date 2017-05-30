@@ -119,9 +119,9 @@
     <Compile Include="Journaling\FilteredMessageJournal.cs" />
     <Compile Include="Journaling\IMessageJournal.cs" />
     <Compile Include="Journaling\MessageJournalEntry.cs" />
-    <Compile Include="Journaling\MessageJournalingExtensions.cs" />
+    <Compile Include="Journaling\MessageJournalExtensions.cs" />
     <Compile Include="Journaling\MessageJournalPosition.cs" />
-    <Compile Include="Journaling\JournaledMessageCategory.cs" />
+    <Compile Include="Journaling\MessageJournalCategory.cs" />
     <Compile Include="Journaling\MessageJournalFilter.cs" />
     <Compile Include="Journaling\MessageJournalReadResult.cs" />
     <Compile Include="Multicast\ByteUtils.cs" />

@@ -5,7 +5,7 @@ namespace Platibus.Journaling
     /// <summary>
     /// Extension methods for working with message journals
     /// </summary>
-    public static class MessageJournalingExtensions
+    public static class MessageJournalExtensions
     {
         /// <summary>
         /// Determines the timestamp for the journaled message based on the journal category and
@@ -17,19 +17,19 @@ namespace Platibus.Journaling
         /// <remarks>
         /// Falls back to the current UTC date/time if the expected headers are not set
         /// </remarks>
-        public static DateTime GetJournalTimestamp(this Message message, JournaledMessageCategory category)
+        public static DateTime GetJournalTimestamp(this Message message, MessageJournalCategory category)
         {
             var headers = message.Headers;
             var timestamp = DateTime.UtcNow;
-            if (Equals(category, JournaledMessageCategory.Sent) && headers.Sent != default(DateTime))
+            if (Equals(category, MessageJournalCategory.Sent) && headers.Sent != default(DateTime))
             {
                 timestamp = headers.Sent;
             }
-            else if (Equals(category, JournaledMessageCategory.Received) && headers.Received != default(DateTime))
+            else if (Equals(category, MessageJournalCategory.Received) && headers.Received != default(DateTime))
             {
                 timestamp = headers.Received;
             }
-            else if (Equals(category, JournaledMessageCategory.Received) && headers.Published != default(DateTime))
+            else if (Equals(category, MessageJournalCategory.Received) && headers.Published != default(DateTime))
             {
                 timestamp = headers.Published;
             }

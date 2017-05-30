@@ -46,7 +46,7 @@ namespace Platibus.SampleApi
         private static void RegisterServices(ContainerBuilder containerBuilder)
         {
             var widgetRepository = new InMemoryWidgetRepository();
-            containerBuilder.RegisterInstance(widgetRepository);
+            containerBuilder.RegisterInstance(widgetRepository).As<IWidgetRepository>();
             containerBuilder.RegisterType<WidgetCreationRequestHandler>();
         }
 

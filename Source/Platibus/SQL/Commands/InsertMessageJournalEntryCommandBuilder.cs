@@ -46,7 +46,7 @@ namespace Platibus.SQL.Commands
         /// <summary>
         /// The journal category
         /// </summary>
-        /// <see cref="JournaledMessageCategory"/>
+        /// <see cref="MessageJournalCategory"/>
         public string Category { get; set; }
 
         /// <summary>

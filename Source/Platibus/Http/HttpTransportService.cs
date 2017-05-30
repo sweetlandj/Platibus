@@ -211,7 +211,7 @@ namespace Platibus.Http
             {
                 if (_messageJournal != null)
                 {
-                    await _messageJournal.Append(message, JournaledMessageCategory.Sent, cancellationToken);
+                    await _messageJournal.Append(message, MessageJournalCategory.Sent, cancellationToken);
                 }
 
                 var endpointBaseUri = message.Headers.Destination.WithTrailingSlash();

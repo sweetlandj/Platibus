@@ -162,7 +162,7 @@ namespace Platibus.Http.Controllers
             if (!string.IsNullOrWhiteSpace(category))
             {
                 filter.Categories = category.Split(',')
-                    .Select(t => (JournaledMessageCategory)t.Trim())
+                    .Select(t => (MessageJournalCategory)t.Trim())
                     .ToList();
             }
 
