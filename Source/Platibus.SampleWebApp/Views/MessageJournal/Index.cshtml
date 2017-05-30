@@ -41,7 +41,7 @@
             </div>
         </div>
         <div class="form-group">
-            <input type="submit" value="Read" class="btn btn-default" />
+            <input type="submit" value="Get Entries" class="btn btn-primary" />
         </div>
     }
 </div>
@@ -49,7 +49,7 @@
 @if (Model.ReadAttempted)
 {
     <hr/>
-    <h4>Results</h4>
+    <h4>Journal Entries</h4>
     if (Model.Result == null || !Model.Result.Entries.Any())
     {
         <div class="text-center text-muted">No results</div>

@@ -3,29 +3,29 @@ using System.Runtime.Serialization;
 
 namespace Platibus.SampleMessages
 {
-    public class Response
+    public class ResponseDocument
     {
         [DataMember(Name = "errors", EmitDefaultValue = false)]
         public IList<Error> Errors { get; set; }
 
-        public static Response<TData> Containing<TData>(TData data)
+        public static ResponseDocument<TData> Containing<TData>(TData data)
         {
-            return new Response<TData>(data);
+            return new ResponseDocument<TData>(data);
         }
     }
 
     [DataContract]
-    public class Response<TData>
+    public class ResponseDocument<TData>
     {
         [DataMember(Name = "data", EmitDefaultValue = false)]
         public TData Data { get; set; }
 
-        public Response(TData data)
+        public ResponseDocument(TData data)
         {
             Data = data;
         }
 
-        public Response()
+        public ResponseDocument()
         {
         }
     }

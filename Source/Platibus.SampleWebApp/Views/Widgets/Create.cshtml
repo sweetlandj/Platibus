@@ -52,10 +52,7 @@
         </div>
     </div>
     <div class="form-group">
-        <input type="submit" value="Create" class="btn btn-default" />
+        <input type="submit" value="Create" class="btn btn-primary" />
+        @Html.ActionLink("Cancel", "Index", null, new {@class = "btn btn-danger"})
     </div>
 }
-
-<div>
-    @Html.ActionLink("Back to List", "Index")
-</div>

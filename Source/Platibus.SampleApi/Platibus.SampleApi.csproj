@@ -169,7 +169,7 @@
     <Compile Include="Widgets\IWidgetRepository.cs" />
     <Compile Include="Widgets\Widget.cs" />
     <Compile Include="Widgets\WidgetAlreadyExistsException.cs" />
-    <Compile Include="Widgets\WidgetApiController.cs" />
+    <Compile Include="Widgets\WidgetsApiController.cs" />
     <Compile Include="Widgets\WidgetCreationRequestHandler.cs" />
     <Compile Include="Widgets\WidgetNotFoundException.cs" />
   </ItemGroup>

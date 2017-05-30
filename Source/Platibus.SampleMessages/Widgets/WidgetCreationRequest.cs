@@ -3,7 +3,7 @@
 namespace Platibus.SampleMessages.Widgets
 {
     [DataContract]
-    public class WidgetCreationRequest : Request<WidgetResource>
+    public class WidgetCreationRequest : RequestDocument<WidgetResource>
     {
     }
 }

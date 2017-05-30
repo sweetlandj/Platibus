@@ -4,8 +4,13 @@
     ViewBag.Title = "Platibus Sample Web App - Widgets";
 }
 
+<h4>Widgets</h4>
+
 <p>
-    @Html.ActionLink("Create", "Create")
+    <a href="@Url.Action("Create")" class="btn btn-primary">
+        <span class="glyphicon glyphicon-plus"></span>
+        New Widget
+    </a>
 </p>
 @if (Model != null && Model.Any())
 {

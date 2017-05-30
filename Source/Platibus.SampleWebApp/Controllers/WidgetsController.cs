@@ -1,15 +1,38 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
 using System.Web.Mvc;
+using Newtonsoft.Json;
+using Platibus.SampleMessages;
 using Platibus.SampleMessages.Widgets;
+using Platibus.Security;
 
 namespace Platibus.SampleWebApp.Controllers
 {
     public class WidgetsController : Controller
     {
-        [HttpGet]
-        public ActionResult Index()
+        private static readonly Uri ApiBaseUri = new Uri("https://localhost:44313/api/");
+        private static readonly HttpClientHandler ApiClientHandler;
+
+        static WidgetsController()
         {
-            var model = new List<WidgetResource>();
+            ApiClientHandler = new HttpClientHandler();
+        }
+
+        [HttpGet]
+        public async Task<ActionResult> Index()
+        {
+            IList<WidgetResource> model;
+            using (var apiClient = NewApiClient())
+            {
+                var response = await apiClient.GetAsync("widgets");
+                response.EnsureSuccessStatusCode();
+                var widgetsJson = await response.Content.ReadAsStringAsync();
+                var responseDocument = JsonConvert.DeserializeObject<ResponseDocument<IList<WidgetResource>>>(widgetsJson);
+                model = responseDocument.Data;
+            }
             return View(model);
         }
 
@@ -30,12 +53,16 @@ namespace Platibus.SampleWebApp.Controllers
         }
 
         [HttpPost]
-        public ActionResult Create(FormCollection collection)
+        public async Task<ActionResult> Create(WidgetResource model)
         {
             try
             {
-                // TODO: Add insert logic here
-
+                using (var apiClient = NewApiClient())
+                {
+                    var requestDocument = RequestDocument.Containing(model);
+                    var response = await apiClient.PostAsJsonAsync("widgets", requestDocument);
+                    response.EnsureSuccessStatusCode();
+                }
                 return RedirectToAction("Index");
             }
             catch
@@ -84,6 +111,28 @@ namespace Platibus.SampleWebApp.Controllers
             {
                 return View();
             }
+        }
+
+        private HttpClient NewApiClient()
+        {
+            var accessToken = GetAccessToken();
+            return new HttpClient(ApiClientHandler, false)
+            {
+                BaseAddress = ApiBaseUri,
+                DefaultRequestHeaders =
+                {
+                    Authorization = new AuthenticationHeaderValue("Bearer", accessToken)
+                }
+            };
+        }
+
+        private string GetAccessToken()
+        {
+            // The name of the claim containing the access token may vary depending on the
+            // callback registered with the SecurityTokenValidated notification in the
+            // OpenIdConnectAuthentication middleware.  See the OnSecurityTokenValidated
+            // callback method the Startup class.
+            return HttpContext.User.GetClaimValue("access_token");
         }
     }
 }

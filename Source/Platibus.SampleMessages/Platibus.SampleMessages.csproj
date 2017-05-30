@@ -36,8 +36,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Error.cs" />
-    <Compile Include="Request.cs" />
-    <Compile Include="Response.cs" />
+    <Compile Include="RequestDocument.cs" />
+    <Compile Include="ResponseDocument.cs" />
     <Compile Include="Widgets\WidgetAttributes.cs" />
     <Compile Include="Widgets\WidgetCreationRequest.cs" />
     <Compile Include="Widgets\WidgetEvent.cs" />

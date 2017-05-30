@@ -14,8 +14,8 @@ using Platibus.SampleMessages.Widgets;
 namespace Platibus.SampleApi.Widgets
 {
     [Authorize]
-    [Route("api/widgets")]
-    public class WidgetApiController : ApiController
+    [RoutePrefix("api/widgets")]
+    public class WidgetsApiController : ApiController
     {
         private readonly IWidgetRepository _widgetRepository;
 
@@ -24,14 +24,15 @@ namespace Platibus.SampleApi.Widgets
             get { return Request.GetOwinContext().GetBus(); }
         }
         
-        public WidgetApiController(IWidgetRepository widgetRepository)
+        public WidgetsApiController(IWidgetRepository widgetRepository)
         {
             _widgetRepository = widgetRepository;
         }
 
         [HttpPost]
-        [ResponseType(typeof(Response<WidgetResource>))]
-        public async Task<IHttpActionResult> Post(Request<WidgetResource> request)
+        [Route("")]
+        [ResponseType(typeof(ResponseDocument<WidgetResource>))]
+        public async Task<IHttpActionResult> Post(RequestDocument<WidgetResource> request)
         {
             try
             {
@@ -48,8 +49,9 @@ namespace Platibus.SampleApi.Widgets
         }
 
         [HttpPatch]
-        [ResponseType(typeof(Response<WidgetResource>))]
-        public async Task<IHttpActionResult> Patch(Request<WidgetResource> request)
+        [Route("{id}")]
+        [ResponseType(typeof(ResponseDocument<WidgetResource>))]
+        public async Task<IHttpActionResult> Patch(string id, [FromBody] RequestDocument<WidgetResource> request)
         {
             try
             {
@@ -64,7 +66,7 @@ namespace Platibus.SampleApi.Widgets
                 await _widgetRepository.Update(widget);
                 var updatedResource = MapToResource(widget);
                 await Bus.Publish(new WidgetEvent("WidgetUpdated", updatedResource, GetRequestor()), "WidgetEvents");
-                return Ok(Response.Containing(resource));
+                return Ok(ResponseDocument.Containing(resource));
             }
             catch (WidgetNotFoundException)
             {
@@ -73,7 +75,8 @@ namespace Platibus.SampleApi.Widgets
         }
 
         [HttpDelete]
-        [ResponseType(typeof(Response<WidgetResource>))]
+        [Route("{id}")]
+        [ResponseType(typeof(ResponseDocument<WidgetResource>))]
         public async Task<IHttpActionResult> Delete(string id)
         {
             try
@@ -87,17 +90,17 @@ namespace Platibus.SampleApi.Widgets
                 return NotFound();
             }
         }
-
+        
         [HttpGet]
         [Route("{id}")]
-        [ResponseType(typeof(Response<WidgetResource>))]
+        [ResponseType(typeof(ResponseDocument<WidgetResource>))]
         public async Task<IHttpActionResult> Get(string id)
         {
             try
             {
                 var widget = await _widgetRepository.Get(id);
                 var resource = MapToResource(widget);
-                return Ok(Response.Containing(resource));
+                return Ok(ResponseDocument.Containing(resource));
             }
             catch (WidgetNotFoundException)
             {
@@ -107,17 +110,17 @@ namespace Platibus.SampleApi.Widgets
 
         [HttpGet]
         [Route("")]
-        [ResponseType(typeof(Response<IList<WidgetResource>>))]
+        [ResponseType(typeof(ResponseDocument<IList<WidgetResource>>))]
         public async Task<IHttpActionResult> Get()
         {
             var widgets = await _widgetRepository.List();
             var resources = widgets.Select(MapToResource);
-            return Ok(Response.Containing(resources));
+            return Ok(ResponseDocument.Containing(resources));
         }
 
         private IHttpActionResult ResourceCreated(WidgetResource resource)
         {
-            var responseContent = Response.Containing(resource);
+            var responseContent = ResponseDocument.Containing(resource);
             var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(JsonConvert.SerializeObject(responseContent))

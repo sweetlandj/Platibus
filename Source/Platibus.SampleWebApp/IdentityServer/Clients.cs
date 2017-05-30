@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+﻿using System.Collections.Generic;
 using IdentityServer3.Core.Models;
 
 namespace Platibus.SampleWebApp.IdentityServer
@@ -17,6 +14,7 @@ namespace Platibus.SampleWebApp.IdentityServer
                     ClientName = "Platibus.SampleWebApp",
                     ClientId = "sample",
                     Flow = Flows.Implicit,
+                    AccessTokenLifetime = 86400,
                     RequireConsent = false,
                     RedirectUris = new List<string>
                     {
@@ -39,7 +37,7 @@ namespace Platibus.SampleWebApp.IdentityServer
                     ClientName = "Platibus",
                     ClientId = "platibus",
                     Flow = Flows.ClientCredentials,
-
+                    AccessTokenLifetime = 86400,
                     ClientSecrets = new List<Secret>
                     {
                         new Secret("secret".Sha256())
