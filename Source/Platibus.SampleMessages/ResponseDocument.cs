@@ -3,6 +3,7 @@ using System.Runtime.Serialization;
 
 namespace Platibus.SampleMessages
 {
+    [DataContract]
     public class ResponseDocument
     {
         [DataMember(Name = "errors", EmitDefaultValue = false)]

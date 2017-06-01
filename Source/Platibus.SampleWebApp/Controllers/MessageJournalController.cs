@@ -76,9 +76,21 @@ namespace Platibus.SampleWebApp.Controllers
                     Topics = model.FilterTopics.Select(t => (TopicName)t).ToList(),
                     Categories = model.FilterCategories.Select(c => (MessageJournalCategory)c).ToList(),
                 };
-                updatedModel.Result = await journalClient.Read(model.Start, model.Count, filter);
+                var readResult = await journalClient.Read(model.Start, model.Count, filter);
+                updatedModel.Result = readResult;
             }
             return View(updatedModel);
+        }
+
+        public async Task<ActionResult> Details(string position)
+        {
+            var accessToken = GetAccessToken();
+            var credentials = new BearerCredentials(accessToken);
+            using (var journalClient = new HttpMessageJournalClient(ApiBaseUri, credentials))
+            {
+                var readResult = await journalClient.Read(position, 1);
+                return View(readResult.Entries.FirstOrDefault());
+            }
         }
 
         private HttpClient NewApiClient()

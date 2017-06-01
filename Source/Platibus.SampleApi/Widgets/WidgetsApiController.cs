@@ -36,9 +36,9 @@ namespace Platibus.SampleApi.Widgets
         {
             try
             {
-                var widget = MapToEntity(request.Data ?? new WidgetResource());
+                var widget = WidgetMap.ToEntity(request.Data ?? new WidgetResource());
                 await _widgetRepository.Add(widget);
-                var createdResource = MapToResource(widget);
+                var createdResource = WidgetMap.ToResource(widget);
                 await Bus.Publish(new WidgetEvent("WidgetCreated", createdResource, GetRequestor()), "WidgetEvents");
                 return ResourceCreated(createdResource);
             }
@@ -62,9 +62,9 @@ namespace Platibus.SampleApi.Widgets
                 }
 
                 var widget = await _widgetRepository.Get(resource.Id);
-                ApplyUpdates(widget, resource);
+                WidgetMap.ApplyUpdates(widget, resource);
                 await _widgetRepository.Update(widget);
-                var updatedResource = MapToResource(widget);
+                var updatedResource = WidgetMap.ToResource(widget);
                 await Bus.Publish(new WidgetEvent("WidgetUpdated", updatedResource, GetRequestor()), "WidgetEvents");
                 return Ok(ResponseDocument.Containing(resource));
             }
@@ -99,7 +99,7 @@ namespace Platibus.SampleApi.Widgets
             try
             {
                 var widget = await _widgetRepository.Get(id);
-                var resource = MapToResource(widget);
+                var resource = WidgetMap.ToResource(widget);
                 return Ok(ResponseDocument.Containing(resource));
             }
             catch (WidgetNotFoundException)
@@ -114,7 +114,7 @@ namespace Platibus.SampleApi.Widgets
         public async Task<IHttpActionResult> Get()
         {
             var widgets = await _widgetRepository.List();
-            var resources = widgets.Select(MapToResource);
+            var resources = widgets.Select(WidgetMap.ToResource);
             return Ok(ResponseDocument.Containing(resources));
         }
 
@@ -143,52 +143,6 @@ namespace Platibus.SampleApi.Widgets
             return identity.Name;
         }
         
-        private static Widget MapToEntity(WidgetResource resource)
-        {
-            if (resource == null) throw new ArgumentNullException("resource");
-            var attributes = resource.Attributes ?? new WidgetAttributes();
-            return new Widget
-            {
-                Id = resource.Id,
-                PartNumber = attributes.PartNumber,
-                Description = attributes.Description,
-                Length = attributes.Length.GetValueOrDefault(),
-                Width = attributes.Width.GetValueOrDefault(),
-                Height = attributes.Height.GetValueOrDefault()
-            };
-        }
-
-        private static void ApplyUpdates(Widget widget, WidgetResource updates)
-        {
-            if (updates == null) return;
-            var attributeUpdates = updates.Attributes ?? new WidgetAttributes();
-            ApplyUpdate(attributeUpdates.PartNumber, v => widget.PartNumber = v);
-            ApplyUpdate(attributeUpdates.Description, v => widget.Description = v);
-            ApplyUpdate(attributeUpdates.Length, v => widget.Length = v.GetValueOrDefault());
-            ApplyUpdate(attributeUpdates.Width, v => widget.Width = v.GetValueOrDefault());
-            ApplyUpdate(attributeUpdates.Height, v => widget.Height = v.GetValueOrDefault());
-        }
-
-        private static void ApplyUpdate<TValue>(TValue value, Action<TValue> applyUpdate)
-        {
-            if (value == null) return;
-            applyUpdate(value);
-        }
-
-        private static WidgetResource MapToResource(Widget entity)
-        {
-            return new WidgetResource
-            {
-                Id = entity.Id,
-                Attributes = new WidgetAttributes
-                {
-                    PartNumber = entity.PartNumber,
-                    Description = entity.Description,
-                    Length = entity.Length,
-                    Width = entity.Width,
-                    Height = entity.Height
-                }
-            };
-        }
+        
     }
 }

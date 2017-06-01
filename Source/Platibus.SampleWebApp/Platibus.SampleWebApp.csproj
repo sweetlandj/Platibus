@@ -258,6 +258,7 @@
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\MessageJournalController.cs" />
     <Compile Include="Controllers\HtmlHelperExtensions.cs" />
+    <Compile Include="Controllers\SubmitActionAttribute.cs" />
     <Compile Include="Controllers\WidgetsClient.cs" />
     <Compile Include="Controllers\WidgetsController.cs" />
     <Compile Include="IdentityServer\Clients.cs" />

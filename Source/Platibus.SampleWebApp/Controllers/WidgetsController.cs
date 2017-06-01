@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using System.Web.Mvc;
+using Platibus.IIS;
 using Platibus.SampleMessages.Widgets;
 using Platibus.Security;
 
@@ -9,7 +10,11 @@ namespace Platibus.SampleWebApp.Controllers
     {
         private WidgetsClient WidgetClient
         {
-            get { return new WidgetsClient(GetAccessToken()); }
+            get
+            {
+                var bus = HttpContext.GetBus();
+                return new WidgetsClient(GetAccessToken(), bus);
+            }
         }
 
         [HttpGet]
@@ -37,6 +42,7 @@ namespace Platibus.SampleWebApp.Controllers
         }
 
         [HttpPost]
+        [SubmitAction("action", "Create")]
         public async Task<ActionResult> Create(WidgetResource model)
         {
             try
@@ -47,6 +53,21 @@ namespace Platibus.SampleWebApp.Controllers
             catch
             {
                 return View();
+            }
+        }
+
+        [HttpPost]
+        [SubmitAction("action", "Create (Async)")]
+        public async Task<ActionResult> CreateAsync(WidgetResource model)
+        {
+            try
+            {
+                await WidgetClient.CreateWidgetAsync(model);
+                return RedirectToAction("Index");
+            }
+            catch
+            {
+                return View("Create");
             }
         }
 

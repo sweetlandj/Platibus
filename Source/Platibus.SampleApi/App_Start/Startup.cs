@@ -47,13 +47,13 @@ namespace Platibus.SampleApi
         {
             var widgetRepository = new InMemoryWidgetRepository();
             containerBuilder.RegisterInstance(widgetRepository).As<IWidgetRepository>();
-            containerBuilder.RegisterType<WidgetCreationRequestHandler>();
+            containerBuilder.RegisterType<WidgetCreationCommandHandler>();
         }
 
         private static async Task<IOwinConfiguration> ConfigurePlatibus(IContainer container)
         {
             var configuration = await OwinConfigurationManager.LoadConfiguration();
-            configuration.AddHandlingRules(container.Resolve<WidgetCreationRequestHandler>);
+            configuration.AddHandlingRules(container.Resolve<WidgetCreationCommandHandler>);
             return configuration;
         }
     }

@@ -4,30 +4,44 @@
     ViewBag.Title = "Platibus Sample Web App - Journal Entry Details";
 }
 
-<!DOCTYPE html>
+<h4>Journal Entry Metadata</h4>
+<hr />
+<dl class="dl-horizontal">
+    <dt>
+        @Html.DisplayNameFor(model => model.Position)
+    </dt>
+    <dd>
+        @Model.Position
+    </dd>
+    <dt>
+        @Html.DisplayNameFor(model => model.Timestamp)
+    </dt>
+    <dd>
+        @Model.Timestamp.ToString("O")
+    </dd>
+    <dt>
+        @Html.DisplayNameFor(model => model.Category)
+    </dt>
+    <dd>
+        @Model.Category
+    </dd>
+</dl>
 
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Details</title>
-</head>
-<body>
-    <div>
-        <h4>MessageJournalEntry</h4>
-        <hr />
-        <dl class="dl-horizontal">
-            <dt>
-                @Html.DisplayNameFor(model => model.Timestamp)
-            </dt>
-    
-            <dd>
-                @Html.DisplayFor(model => model.Timestamp)
-            </dd>
-    
-        </dl>
-    </div>
-    <p>
-        @Html.ActionLink("Back to List", "Index")
-    </p>
-</body>
-</html>
+<h4>Message Headers</h4>
+<hr />
+<dl class="dl-horizontal">
+    @foreach (var messageHeader in Model.Data.Headers)
+    {
+        <dt>
+            @messageHeader.Key
+        </dt>
+        <dd>
+            @messageHeader.Value
+        </dd>
+    }
+</dl>
+
+<h4>Message Content</h4>
+<pre>@Model.Data.Content</pre>
+
+@Html.ActionLink("Back", "Index", null, new { @class = "btn btn-default" })

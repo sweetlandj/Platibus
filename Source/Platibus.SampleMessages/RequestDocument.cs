@@ -2,6 +2,7 @@
 
 namespace Platibus.SampleMessages
 {
+    [DataContract]
     public class RequestDocument
     {
         public static RequestDocument<TData> Containing<TData>(TData data)

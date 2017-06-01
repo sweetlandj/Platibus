@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Platibus.SampleMessages;
 using Platibus.SampleMessages.Widgets;
+using Platibus.Security;
 
 namespace Platibus.SampleWebApp.Controllers
 {
@@ -15,10 +16,12 @@ namespace Platibus.SampleWebApp.Controllers
         private static readonly HttpClientHandler ClientHandler  = new HttpClientHandler();
         private readonly Uri _baseAddress = new Uri("https://localhost:44313/api/");
         private readonly string _accessToken;
+        private readonly IBus _bus;
 
-        public WidgetsClient(string accessToken)
+        public WidgetsClient(string accessToken, IBus bus)
         {
             _accessToken = accessToken;
+            _bus = bus;
         }
 
         public WidgetsClient(string accessToken, Uri baseAddress)
@@ -62,6 +65,13 @@ namespace Platibus.SampleWebApp.Controllers
                 var responseDocument = JsonConvert.DeserializeObject<ResponseDocument<WidgetResource>>(responseContent);
                 return responseDocument.Data;
             }
+        }
+
+        public async Task CreateWidgetAsync(WidgetResource widget)
+        {
+            var command = new WidgetCreationCommand(widget);
+            var sendOptions = new SendOptions {Credentials = new BearerCredentials(_accessToken)};
+            await _bus.Send(command, sendOptions);
         }
 
         public async Task<WidgetResource> UpdateWidget(string id, WidgetResource updates)
