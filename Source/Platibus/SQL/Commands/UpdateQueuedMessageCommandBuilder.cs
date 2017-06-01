@@ -64,6 +64,7 @@ namespace Platibus.SQL.Commands
         /// <param name="connection">An open database connection</param>
         /// <returns>Returns a new non-query <see cref="DbCommand"/> with the configured
         /// parameters</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public virtual DbCommand BuildDbCommand(DbConnection connection)
         {
             if (connection == null) throw new ArgumentNullException("connection");

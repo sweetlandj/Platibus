@@ -83,6 +83,7 @@ namespace Platibus.SQL.Commands
         /// <param name="connection">An open database connection</param>
         /// <returns>Returns a new query <see cref="DbCommand"/> with the configured
         /// parameters</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public virtual DbCommand BuildDbCommand(DbConnection connection)
         {
             if (connection == null) throw new ArgumentNullException("connection");
@@ -143,6 +144,7 @@ WHERE [Id] >= @Start"; }
         /// </summary>
         /// <param name="command">The command</param>
         /// <exception cref="ArgumentNullException">Thrown if <c>command</c> is <c>null</c></exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public virtual void ApppendTimestampFilterConditions(DbCommand command)
         {
             if (From != default(DateTime))
@@ -163,6 +165,7 @@ WHERE [Id] >= @Start"; }
         /// </summary>
         /// <param name="command">The command</param>
         /// <exception cref="ArgumentNullException">Thrown if <c>command</c> is <c>null</c></exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public virtual void AppendTopicFilterConditions(DbCommand command)
         {
             if (command == null) throw new ArgumentNullException("command");
@@ -188,6 +191,7 @@ WHERE [Id] >= @Start"; }
         /// </summary>
         /// <param name="command">The command</param>
         /// <exception cref="ArgumentNullException">Thrown if <c>command</c> is <c>null</c></exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public virtual void AppendCategoryFilterConditions(DbCommand command)
         {
             if (command == null) throw new ArgumentNullException("command");
@@ -213,6 +217,7 @@ WHERE [Id] >= @Start"; }
         /// </summary>
         /// <param name="command">The command</param>
         /// <exception cref="ArgumentNullException">Thrown if <c>command</c> is <c>null</c></exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public virtual void AppendSort(DbCommand command)
         {
             if (command == null) throw new ArgumentNullException("command");

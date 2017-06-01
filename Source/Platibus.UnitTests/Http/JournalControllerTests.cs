@@ -36,7 +36,16 @@ namespace Platibus.UnitTests.Http
 
         public void Dispose()
         {
-            ResponseContent.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                ResponseContent.Dispose();
+            }
         }
 
         [Fact]

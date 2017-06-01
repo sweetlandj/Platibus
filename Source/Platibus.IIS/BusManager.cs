@@ -55,7 +55,8 @@ namespace Platibus.IIS
             HostingEnvironment.RegisterObject(this);
         }
 
-        void IRegisteredObject.Stop(bool immediate)
+        /// <inheritdoc />
+        public virtual void Stop(bool immediate)
         {
             Log.Info("Stopping bus manager...");
             Dispose(true);

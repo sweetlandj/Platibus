@@ -30,7 +30,8 @@ namespace Platibus.SampleWebApp
 	        _platibusHttpModule.Init(this);
         }
 
-	    public override void Dispose()
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1063:ImplementIDisposableCorrectly")]
+        public sealed override void Dispose()
         {
             if (_platibusHttpModule != null)
             {

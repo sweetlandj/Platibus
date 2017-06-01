@@ -34,6 +34,7 @@ namespace Platibus.SQLite.Commands
     public class SQLiteCreateMessageJournalObjectsCommandBuilder : CreateMessageJournalObjectsCommandBuilder
     {
         /// <inheritdoc />
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public override DbCommand BuildDbCommand(DbConnection connection)
         {
             if (connection == null) throw new ArgumentNullException("connection");
