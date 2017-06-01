@@ -93,6 +93,12 @@ namespace Platibus.UnitTests
             Assert.NotNull(readResult);
             var messages = readResult.Entries.Select(jm => jm.Data);
             Assert.Contains(Message, messages, new MessageEqualityComparer());
+
+            foreach (var entry in readResult.Entries)
+            {
+                Assert.Equal(entry.Category, MessageJournalCategory.Sent);
+                Assert.Equal(entry.Data.Headers.Sent, entry.Timestamp, new SqlDateTimeEqualityComparer());
+            }
         }
 
         protected Message GivenReceivedMessage()
@@ -126,6 +132,12 @@ namespace Platibus.UnitTests
             Assert.NotNull(readResult);
             var messages = readResult.Entries.Select(jm => jm.Data);
             Assert.Contains(Message, messages, new MessageEqualityComparer());
+
+            foreach (var entry in readResult.Entries)
+            {
+                Assert.Equal(entry.Category, MessageJournalCategory.Received);
+                Assert.Equal(entry.Data.Headers.Received, entry.Timestamp, new SqlDateTimeEqualityComparer());
+            }
         }
 
         protected Message GivenPublishedMessage()
@@ -159,6 +171,12 @@ namespace Platibus.UnitTests
             Assert.NotNull(readResult);
             var messages = readResult.Entries.Select(jm => jm.Data);
             Assert.Contains(Message, messages, new MessageEqualityComparer());
+
+            foreach (var entry in readResult.Entries)
+            {
+                Assert.Equal(entry.Category, MessageJournalCategory.Published);
+                Assert.Equal(entry.Data.Headers.Published, entry.Timestamp, new SqlDateTimeEqualityComparer());
+            }
         }
     }
 }

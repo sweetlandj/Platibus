@@ -147,7 +147,7 @@ namespace Platibus
         /// <inheritdoc/>
         public DateTime Published
         {
-            get { return GetDateTime(HeaderName.Published).GetValueOrDefault(DateTime.UtcNow); }
+            get { return GetDateTime(HeaderName.Published).GetValueOrDefault(); }
             set { SetDateTime(HeaderName.Published, value); }
         }
 
@@ -161,14 +161,14 @@ namespace Platibus
         /// <inheritdoc/>
         public DateTime Sent
         {
-            get { return GetDateTime(HeaderName.Sent).GetValueOrDefault(DateTime.UtcNow); }
+            get { return GetDateTime(HeaderName.Sent).GetValueOrDefault(); }
             set { SetDateTime(HeaderName.Sent, value); }
         }
 
         /// <inheritdoc/>
         public DateTime Received
         {
-            get { return GetDateTime(HeaderName.Received).GetValueOrDefault(DateTime.UtcNow); }
+            get { return GetDateTime(HeaderName.Received).GetValueOrDefault(); }
             set { SetDateTime(HeaderName.Received, value); }
         }
 
@@ -277,7 +277,7 @@ namespace Platibus
         /// <param name="dateTime">The header value</param>
         public void SetDateTime(HeaderName headerName, DateTime? dateTime)
         {
-            this[HeaderName.Sent] = dateTime == null
+            this[headerName] = dateTime == null
                 ? null
                 : dateTime.Value.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
         }

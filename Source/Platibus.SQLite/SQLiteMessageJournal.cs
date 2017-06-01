@@ -49,8 +49,8 @@ namespace Platibus.SQLite
         {
             if (directory == null)
             {
-                var appdomainDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                directory = new DirectoryInfo(Path.Combine(appdomainDirectory, "platibus", "journal"));
+                var appDomainDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                directory = new DirectoryInfo(Path.Combine(appDomainDirectory, "platibus", "journal"));
             }
 
             directory.Refresh();
@@ -63,7 +63,7 @@ namespace Platibus.SQLite
             var connectionStringSettings = new ConnectionStringSettings
             {
                 Name = dbPath,
-                ConnectionString = "Data Source=" + dbPath + "; Version=3; BinaryGUID=False",
+                ConnectionString = "Data Source=" + dbPath + "; Version=3; BinaryGUID=False; DateTimeKind=Utc",
                 ProviderName = "System.Data.SQLite"
             };
 

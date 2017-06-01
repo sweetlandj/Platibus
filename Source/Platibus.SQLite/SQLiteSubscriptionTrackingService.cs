@@ -64,18 +64,25 @@ namespace Platibus.SQLite
                 });
         }
 
-        private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo baseDirectory)
+        private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory)
         {
-            if (baseDirectory == null)
+            if (directory == null)
             {
-                var appdomainDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                baseDirectory = new DirectoryInfo(Path.Combine(appdomainDirectory, "platibus", "subscriptions"));
+                var appDomainDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                directory = new DirectoryInfo(Path.Combine(appDomainDirectory, "platibus", "subscriptions"));
             }
-            var dbPath = Path.Combine(baseDirectory.FullName, "subscriptions.db");
+
+            directory.Refresh();
+            if (!directory.Exists)
+            {
+                directory.Create();
+            }
+
+            var dbPath = Path.Combine(directory.FullName, "subscriptions.db");
             var connectionStringSettings = new ConnectionStringSettings
             {
                 Name = dbPath,
-                ConnectionString = "Data Source=" + dbPath + "; Version=3; BinaryGUID=False",
+                ConnectionString = "Data Source=" + dbPath + "; Version=3; BinaryGUID=False; DateTimeKind=Utc",
                 ProviderName = "System.Data.SQLite"
             };
 

@@ -86,15 +86,15 @@ namespace Platibus.Http.Controllers
                 responseModel.Start = start.ToString();
                 responseModel.Next = result.Next.ToString();
                 responseModel.EndOfJournal = result.EndOfJournal;
-                responseModel.Entries = result.Entries.Select(jm => new MessageJournalEntryModel
+                responseModel.Entries = result.Entries.Select(entry => new MessageJournalEntryModel
                 {
-                    Position = jm.Position.ToString(),
-                    Category = jm.Category,
-                    Timestamp = jm.Timestamp,
+                    Position = entry.Position.ToString(),
+                    Category = entry.Category,
+                    Timestamp = entry.Timestamp,
                     Data = new MessageJournalEntryDataModel
                     {
-                        Headers = jm.Data.Headers.ToDictionary(h => (string) h.Key, h => h.Value),
-                        Content = jm.Data.Content
+                        Headers = entry.Data.Headers.ToDictionary(h => (string) h.Key, h => h.Value),
+                        Content = entry.Data.Content
                     }
                 }).ToList();
                 response.StatusCode = (int)HttpStatusCode.OK;

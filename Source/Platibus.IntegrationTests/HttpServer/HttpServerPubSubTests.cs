@@ -40,7 +40,7 @@ namespace Platibus.IntegrationTests.HttpServer
 
 
         [Fact]
-        public async Task JournaledMessagesCanBeQueriedOverHttp()
+        public async Task MessageJournalCanBeQueriedOverHttp()
         {
             GivenTestPublication();
             await WhenPublished();

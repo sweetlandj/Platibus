@@ -51,7 +51,7 @@ namespace Platibus.SampleApi.Widgets
         [HttpPatch]
         [Route("{id}")]
         [ResponseType(typeof(ResponseDocument<WidgetResource>))]
-        public async Task<IHttpActionResult> Patch(string id, [FromBody] RequestDocument<WidgetResource> request)
+        public async Task<IHttpActionResult> Patch(string id, RequestDocument<WidgetResource> request)
         {
             try
             {
@@ -153,7 +153,7 @@ namespace Platibus.SampleApi.Widgets
                 PartNumber = attributes.PartNumber,
                 Description = attributes.Description,
                 Length = attributes.Length.GetValueOrDefault(),
-                Width = attributes.Length.GetValueOrDefault(),
+                Width = attributes.Width.GetValueOrDefault(),
                 Height = attributes.Height.GetValueOrDefault()
             };
         }

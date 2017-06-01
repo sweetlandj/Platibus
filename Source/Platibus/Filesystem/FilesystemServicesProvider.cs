@@ -48,7 +48,7 @@ namespace Platibus.Filesystem
         public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
             var path = configuration.GetString("path");
-            var fsQueueingBaseDir = new DirectoryInfo(GetRootedPath(path));
+            var fsQueueingBaseDir = GetRootedDirectory(path);
             var securityTokenService = await PlatibusConfigurationManager.InitSecurityTokenService(configuration.SecurityTokens);
             var fsQueueingService = new FilesystemMessageQueueingService(fsQueueingBaseDir, securityTokenService);
             fsQueueingService.Init();
@@ -67,7 +67,7 @@ namespace Platibus.Filesystem
             SubscriptionTrackingElement configuration)
         {
             var path = configuration.GetString("path");
-            var fsTrackingBaseDir = new DirectoryInfo(GetRootedPath(path));
+            var fsTrackingBaseDir = GetRootedDirectory(path);
             var fsTrackingService = new FilesystemSubscriptionTrackingService(fsTrackingBaseDir);
             fsTrackingService.Init();
 
@@ -81,6 +81,12 @@ namespace Platibus.Filesystem
                 fsTrackingService, multicast.Address, multicast.Port);
 
             return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
+        }
+
+        private static DirectoryInfo GetRootedDirectory(string path)
+        {
+            var rootedPath = GetRootedPath(path);
+            return rootedPath == null ? null : new DirectoryInfo(rootedPath);
         }
 
         private static string GetRootedPath(string path)

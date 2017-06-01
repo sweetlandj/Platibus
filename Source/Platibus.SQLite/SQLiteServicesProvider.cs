@@ -40,7 +40,7 @@ namespace Platibus.SQLite
         public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
             var path = configuration.GetString("path");
-            var sqliteBaseDir = new DirectoryInfo(GetRootedPath(path));
+            var sqliteBaseDir = GetRootedDirectory(path);
             var securityTokenService = await PlatibusConfigurationManager.InitSecurityTokenService(configuration.SecurityTokens);
             var sqliteMessageQueueingService = new SQLiteMessageQueueingService(sqliteBaseDir, securityTokenService);
             sqliteMessageQueueingService.Init();
@@ -51,7 +51,7 @@ namespace Platibus.SQLite
         public Task<IMessageJournal> CreateMessageJournal(JournalingElement configuration)
         {
             var path = configuration.GetString("path");
-            var sqliteBaseDir = new DirectoryInfo(GetRootedPath(path));
+            var sqliteBaseDir = GetRootedDirectory(path);
             var sqliteMessageQueueingService = new SQLiteMessageJournal(sqliteBaseDir);
             sqliteMessageQueueingService.Init();
             return Task.FromResult<IMessageJournal>(sqliteMessageQueueingService);
@@ -62,7 +62,7 @@ namespace Platibus.SQLite
             SubscriptionTrackingElement configuration)
         {
             var path = configuration.GetString("path");
-            var sqliteBaseDir = new DirectoryInfo(GetRootedPath(path));
+            var sqliteBaseDir = GetRootedDirectory(path);
             var sqliteSubscriptionTrackingService = new SQLiteSubscriptionTrackingService(sqliteBaseDir);
             sqliteSubscriptionTrackingService.Init();
 
@@ -78,8 +78,16 @@ namespace Platibus.SQLite
             return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
         }
 
+        private static DirectoryInfo GetRootedDirectory(string path)
+        {
+            var rootedPath = GetRootedPath(path);
+            return rootedPath == null ? null : new DirectoryInfo(rootedPath);
+        }
+
         private static string GetRootedPath(string path)
         {
+            if (string.IsNullOrWhiteSpace(path)) return null;
+
             var defaultRootedPath = AppDomain.CurrentDomain.BaseDirectory;
             if (string.IsNullOrWhiteSpace(path))
             {

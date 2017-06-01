@@ -46,6 +46,7 @@ namespace Platibus.SQLite.Commands
 SELECT
     [Id],
     [Category],
+    [Timestamp],
     [Headers], 
     [MessageContent]
 FROM [PB_MessageJournal]

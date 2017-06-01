@@ -194,6 +194,10 @@
       <Project>{09395808-ad45-4d5a-bb77-d09d156f7bda}</Project>
       <Name>Platibus.SampleMessages</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Platibus.SQLite\Platibus.SQLite.csproj">
+      <Project>{a23be958-6524-4c9c-8957-1c3debb0780c}</Project>
+      <Name>Platibus.SQLite</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Platibus\Platibus.csproj">
       <Project>{73863b52-5751-4f75-8436-1cd3e6ac0d50}</Project>
       <Name>Platibus</Name>

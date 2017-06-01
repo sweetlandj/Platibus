@@ -132,6 +132,7 @@
     <Compile Include="Config\SendRuleValidationTests.cs" />
     <Compile Include="Config\SubscriptionRuleValidationTests.cs" />
     <Compile Include="DataContractMessageNamingServiceTests.cs" />
+    <Compile Include="SqlDateTimeEqualityComparer.cs" />
     <Compile Include="DefaultMessageNamingServiceTests.cs" />
     <Compile Include="EndpointAddressEqualityComparerTests.cs" />
     <Compile Include="Filesystem\FilesystemCollection.cs" />
@@ -149,6 +150,7 @@
     <Compile Include="LocalDB\LocalDBMessageJournalTests.cs" />
     <Compile Include="LocalDB\LocalDBMessageQueueingServiceTests.cs" />
     <Compile Include="LocalDB\LocalDBSubscriptionTrackingServiceTests.cs" />
+    <Compile Include="MessageHeadersTests.cs" />
     <Compile Include="MessageJournalReadTests.cs" />
     <Compile Include="MessageJournalTests.cs" />
     <Compile Include="MessageQueueingServiceTests.cs" />

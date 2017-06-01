@@ -11,9 +11,10 @@ namespace Platibus.Journaling
         /// Determines the timestamp for the journaled message based on the journal category and
         /// correlating dates in the message headers.
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="category"></param>
-        /// <returns></returns>
+        /// <param name="message">The message</param>
+        /// <param name="category">The journal category</param>
+        /// <returns>Returns the timestamp for the journaled message based on the journal category and
+        /// correlating dates in the message headers.</returns>
         /// <remarks>
         /// Falls back to the current UTC date/time if the expected headers are not set
         /// </remarks>
@@ -29,7 +30,7 @@ namespace Platibus.Journaling
             {
                 timestamp = headers.Received;
             }
-            else if (Equals(category, MessageJournalCategory.Received) && headers.Published != default(DateTime))
+            else if (Equals(category, MessageJournalCategory.Published) && headers.Published != default(DateTime))
             {
                 timestamp = headers.Published;
             }

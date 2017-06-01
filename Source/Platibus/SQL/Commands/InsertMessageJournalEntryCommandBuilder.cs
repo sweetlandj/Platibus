@@ -41,7 +41,7 @@ namespace Platibus.SQL.Commands
         /// <summary>
         /// The timestamp
         /// </summary>
-        public DateTimeOffset Timestamp { get; set; }
+        public DateTime Timestamp { get; set; }
 
         /// <summary>
         /// The journal category
