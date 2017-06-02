@@ -8,7 +8,7 @@ namespace Platibus.UnitTests.MongoDB
     [Collection(MongoDBCollection.Name)]
     public class MongoDBSubscriptionTrackingServiceTests : SubscriptionTrackingServiceTests<MongoDBSubscriptionTrackingService>
     {
-        public MongoDBSubscriptionTrackingServiceTests(MonogDBFixture fixture) 
+        public MongoDBSubscriptionTrackingServiceTests(MongoDBFixture fixture) 
             : base(fixture.SubscriptionTrackingService)
         {
         }

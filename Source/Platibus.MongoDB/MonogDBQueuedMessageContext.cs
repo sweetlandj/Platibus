@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2017 Jesse Sweetland
+// Copyright (c) 2016 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,24 +20,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
+using System.Security.Principal;
+using System.Threading.Tasks;
 
 namespace Platibus.MongoDB
 {
-    internal class SubscriptionDocument
+    internal class MonogDBQueuedMessageContext : IQueuedMessageContext
     {
-        [BsonId]
-        public ObjectId Id { get; set; }
+        private readonly IMessageHeaders _headers;
+        private readonly IPrincipal _principal;
 
-        [BsonElement("topic")]
-        public string Topic { get; set; }
+        public MonogDBQueuedMessageContext(IMessageHeaders headers, IPrincipal principal)
+        {
+            _headers = headers;
+            _principal = principal;
+        }
+        
+        public bool Acknowledged { get; private set; }
 
-        [BsonElement("subscriber")]
-        public string Subscriber { get; set; }
+        public IMessageHeaders Headers
+        {
+            get { return _headers; }
+        }
 
-        [BsonElement("expires")]
-        public DateTime Expires { get; set; }
+        public IPrincipal Principal
+        {
+            get { return _principal; }
+        }
+
+        public Task Acknowledge()
+        {
+            Acknowledged = true;
+            return Task.FromResult(true);
+        }
     }
 }

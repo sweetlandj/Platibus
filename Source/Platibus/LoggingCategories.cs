@@ -71,5 +71,10 @@ namespace Platibus
         /// Category for log events related to UDP and multicast services
         /// </summary>
         public const string UDP = "Platibus.UDP";
+
+        /// <summary>
+        /// Category for log events related to message queueing
+        /// </summary>
+        public const string Queueing = "Platibus.Queueing";
     }
 }

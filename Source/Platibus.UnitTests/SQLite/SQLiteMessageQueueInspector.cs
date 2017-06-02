@@ -4,8 +4,8 @@ using System.IO;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
+using Platibus.Queueing;
 using Platibus.Security;
-using Platibus.SQL;
 using Platibus.SQLite;
 
 namespace Platibus.UnitTests.SQLite
@@ -17,19 +17,19 @@ namespace Platibus.UnitTests.SQLite
         {
         }
 
-        public Task<SQLQueuedMessage> InsertMessage(Message testMessage, IPrincipal senderPrincipal)
+        public Task<QueuedMessage> InsertMessage(Message testMessage, IPrincipal senderPrincipal)
         {
             return InsertQueuedMessage(testMessage, senderPrincipal);
         }
 
-        public Task<IEnumerable<SQLQueuedMessage>> EnumerateMessages()
+        public Task<IEnumerable<QueuedMessage>> EnumerateMessages()
         {
-            return SelectQueuedMessages();
+            return SelectPendingMessages();
         }
 
-        public Task<IEnumerable<SQLQueuedMessage>> EnumerateAbandonedMessages(DateTime startDate, DateTime endDate)
+        public Task<IEnumerable<QueuedMessage>> EnumerateAbandonedMessages(DateTime startDate, DateTime endDate)
         {
-            return SelectAbandonedMessages(startDate, endDate);
+            return SelectDeadMessages(startDate, endDate);
         }
 
         private class NoopQueueListener : IQueueListener

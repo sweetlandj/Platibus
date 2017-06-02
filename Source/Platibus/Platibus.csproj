@@ -14,7 +14,7 @@
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
     <TargetFrameworkProfile />
-	<UseFullSemVerForNuGet>false</UseFullSemVerForNuGet>
+    <UseFullSemVerForNuGet>false</UseFullSemVerForNuGet>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
@@ -130,6 +130,11 @@
     <Compile Include="Multicast\NodeId.cs" />
     <Compile Include="Multicast\SubscriptionTrackingDatagram.cs" />
     <Compile Include="NoMatchingSendRulesException.cs" />
+    <Compile Include="Queueing\AbstractMessageQueue.cs" />
+    <Compile Include="Queueing\AbstractMessageQueueingService.cs" />
+    <Compile Include="Queueing\IMessageQueueFactory.cs" />
+    <Compile Include="Queueing\QueuedMessage.cs" />
+    <Compile Include="Queueing\QueuedMessageContext.cs" />
     <Compile Include="ResourceNotFoundException.cs" />
     <Compile Include="Security\BearerCredentials.cs" />
     <Compile Include="Security\HexEncoding.cs" />
@@ -240,9 +245,8 @@
     <Compile Include="Http\Controllers\TopicController.cs" />
     <Compile Include="IEndpointCredentials.cs" />
     <Compile Include="IEndpointCredentialsVisitor.cs" />
-    <Compile Include="InMemory\InMemoryQueuedMessageContext.cs" />
     <Compile Include="InMemory\InMemoryMessageQueueingService.cs" />
-    <Compile Include="InMemory\InMemoryQueue.cs" />
+    <Compile Include="InMemory\InMemoryMessageQueue.cs" />
     <Compile Include="InvalidRequestException.cs" />
     <Compile Include="ISubscriptionTrackingService.cs" />
     <Compile Include="LoopbackTransportService.cs" />
@@ -311,7 +315,6 @@
     <Compile Include="SQL\SQLQueuedMessageContext.cs" />
     <Compile Include="SQL\SQLMessageQueue.cs" />
     <Compile Include="SQL\SQLMessageQueueingService.cs" />
-    <Compile Include="SQL\SQLQueuedMessage.cs" />
     <Compile Include="SQL\SQLServicesProvider.cs" />
     <Compile Include="SQL\SQLSubscription.cs" />
     <Compile Include="SQL\SQLSubscriptionTrackingService.cs" />

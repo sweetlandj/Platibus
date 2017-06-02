@@ -3,7 +3,7 @@
 namespace Platibus.UnitTests.MongoDB
 {
     [CollectionDefinition(Name)]
-    public class MongoDBCollection : ICollectionFixture<MonogDBFixture>
+    public class MongoDBCollection : ICollectionFixture<MongoDBFixture>
     {
         public const string Name = "UnitTests.MongoDB";
     }

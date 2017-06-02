@@ -29,9 +29,8 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using System.Transactions;
-using Common.Logging;
+using Platibus.Queueing;
 using Platibus.Security;
 using Platibus.SQL.Commands;
 
@@ -40,25 +39,12 @@ namespace Platibus.SQL
     /// <summary>
     /// A message queue based on a SQL database
     /// </summary>
-    public class SQLMessageQueue : IDisposable
+    public class SQLMessageQueue : AbstractMessageQueue
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.SQL);
-
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly IMessageQueueingCommandBuilders _commandBuilders;
-        private readonly QueueName _queueName;
-        private readonly IQueueListener _listener;
         private readonly ISecurityTokenService _securityTokenService;
-
-        private readonly CancellationTokenSource _cancellationTokenSource;
-        private readonly bool _autoAcknowledge;
-        private readonly int _maxAttempts;
-        private readonly ActionBlock<SQLQueuedMessage> _queuedMessages;
-        private readonly TimeSpan _retryDelay;
-
-        private bool _disposed;
-        private int _initialized;
-
+        
         /// <summary>
         /// The connection provider
         /// </summary>
@@ -87,13 +73,15 @@ namespace Platibus.SQL
         /// <param name="queueName">The name of the queue</param>
         /// <param name="listener">The object that will be notified when messages are
         /// added to the queue</param>
-        /// <param name="securityTokenService"></param>
+        /// <param name="securityTokenService">(Optional) The message security token
+        /// service to use to issue and validate security tokens for persisted messages.</param>
         /// <param name="options">(Optional) Settings that influence how the queue behaves</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>,
         /// <paramref name="commandBuilders"/>, <paramref name="queueName"/>, or <paramref name="listener"/>
         /// are <c>null</c></exception>
-        public SQLMessageQueue(IDbConnectionProvider connectionProvider, IMessageQueueingCommandBuilders commandBuilders, QueueName queueName,
-            IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null)
+        public SQLMessageQueue(IDbConnectionProvider connectionProvider, IMessageQueueingCommandBuilders commandBuilders, 
+            QueueName queueName, IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null)
+            : base(queueName, listener, options)
         {
             if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
             if (commandBuilders == null) throw new ArgumentNullException("commandBuilders");
@@ -103,138 +91,14 @@ namespace Platibus.SQL
 
             _connectionProvider = connectionProvider;
             _commandBuilders = commandBuilders;
-            _queueName = queueName;
-            _listener = listener;
             _securityTokenService = securityTokenService;
-
-            var myOptions = options ?? new QueueOptions();
-
-            _autoAcknowledge = myOptions.AutoAcknowledge;
-            _maxAttempts = myOptions.MaxAttempts;
-            _retryDelay = myOptions.RetryDelay;
-
-            var concurrencyLimit = myOptions.ConcurrencyLimit;
-            _cancellationTokenSource = new CancellationTokenSource();
-            _queuedMessages = new ActionBlock<SQLQueuedMessage>(async msg =>
-                await ProcessQueuedMessage(msg, _cancellationTokenSource.Token),
-                new ExecutionDataflowBlockOptions
-                {
-                    CancellationToken = _cancellationTokenSource.Token,
-                    MaxDegreeOfParallelism = concurrencyLimit
-                });
         }
-
-        /// <summary>
-        /// Reads previously queued messages from the database and initiates message processing
-        /// </summary>
-        /// <returns>Returns a task that completes when initialization is complete</returns>
-        public virtual async Task Init()
-        {
-            if (Interlocked.Exchange(ref _initialized, 1) == 0)
-            {
-                await EnqueueExistingMessages();
-            }
-        }
-
-        /// <summary>
-        /// Adds a message to the queue
-        /// </summary>
-        /// <param name="message">The message to add</param>
-        /// <param name="senderPrincipal">The principal that sent the message or from whom
-        /// the message was received</param>
-        /// <returns>Returns a task that completes when the message has been added to the queue</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="message"/> is
-        /// <c>null</c></exception>
-        /// <exception cref="ObjectDisposedException">Thrown if this SQL message queue instance
-        /// has already been disposed</exception>
-        public async Task Enqueue(Message message, IPrincipal senderPrincipal)
-        {
-            if (message == null) throw new ArgumentNullException("message");
-            CheckDisposed();
-
-            var queuedMessage = await InsertQueuedMessage(message, senderPrincipal);
-
-            await _queuedMessages.SendAsync(queuedMessage);
-            // TODO: handle accepted == false
-        }
-
-        /// <summary>
-        /// Called by the message processing loop to process an individual message
-        /// </summary>
-        /// <param name="queuedMessage">The queued message to process</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by the caller
-        /// to cancel message processing</param>
-        /// <returns>Returns a task that completes when the queued message is processed</returns>
-        protected async Task ProcessQueuedMessage(SQLQueuedMessage queuedMessage, CancellationToken cancellationToken)
-        {
-            var messageId = queuedMessage.Message.Headers.MessageId;
-            var attemptCount = queuedMessage.Attempts;
-            var abandoned = false;
-            var message = queuedMessage.Message;
-            var principal = queuedMessage.Principal;
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            while (!abandoned && attemptCount < _maxAttempts)
-            {
-                attemptCount++;
-
-                Log.DebugFormat("Processing queued message {0} (attempt {1} of {2})...", messageId, attemptCount,
-                    _maxAttempts);
-
-                var context = new SQLQueuedMessageContext(message.Headers, principal);
-                Thread.CurrentPrincipal = context.Principal;
-                cancellationToken.ThrowIfCancellationRequested();
-                try
-                {
-                    await _listener.MessageReceived(message, context, cancellationToken);
-                    if (_autoAcknowledge && !context.Acknowledged)
-                    {
-                        await context.Acknowledge();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.WarnFormat("Unhandled exception handling queued message {0}", ex, messageId);
-                }
-
-                if (context.Acknowledged)
-                {
-                    Log.DebugFormat("Message acknowledged.  Marking message {0} as acknowledged...", messageId);
-                    await UpdateQueuedMessage(queuedMessage, DateTime.UtcNow, null, attemptCount);
-                    Log.DebugFormat("Message {0} acknowledged successfully", messageId);
-                    return;
-                }
-
-                if (attemptCount >= _maxAttempts)
-                {
-                    Log.WarnFormat("Maximum attempts to process message {0} exceeded", messageId);
-                    abandoned = true;
-                }
-
-                if (abandoned)
-                {
-                    await UpdateQueuedMessage(queuedMessage, null, DateTime.UtcNow, attemptCount);
-                    return;
-                }
-
-                await UpdateQueuedMessage(queuedMessage, null, null, attemptCount);
-
-                Log.DebugFormat("Message not acknowledged.  Retrying in {0}...", _retryDelay);
-                await Task.Delay(_retryDelay, cancellationToken);
-            }
-        }
-
-        /// <summary>
-        /// Inserts a message into the SQL database
-        /// </summary>
-        /// <param name="message">The message to enqueue</param>
-        /// <param name="principal">The principal that sent the message or from whom the
-        /// message was received</param>
-        /// <returns>Returns a task that completes when the message has been inserted into the SQL
-        /// database and whose result is a copy of the inserted record</returns>
+        
+        /// <inheritdoc />
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual async Task<SQLQueuedMessage> InsertQueuedMessage(Message message, IPrincipal principal)
+        protected override async Task<QueuedMessage> InsertQueuedMessage(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
         {
-            SQLQueuedMessage queuedMessage;
+            QueuedMessage queuedMessage;
             var expires = message.Headers.Expires;
             var connection = _connectionProvider.GetConnection();
             var securityToken = await _securityTokenService.NullSafeIssue(principal, expires);
@@ -244,7 +108,7 @@ namespace Platibus.SQL
                 var headers = messageWithSecurityToken.Headers;
                 var commandBuilder = _commandBuilders.NewInsertQueuedMessageCommandBuilder();
                 commandBuilder.MessageId = headers.MessageId;
-                commandBuilder.QueueName = _queueName;
+                commandBuilder.QueueName = QueueName;
                 commandBuilder.MessageId = headers.MessageId;
                 commandBuilder.Origination = headers.Origination == null ? null : headers.Origination.ToString();
                 commandBuilder.Destination = headers.Destination == null ? null : headers.Destination.ToString();
@@ -258,11 +122,11 @@ namespace Platibus.SQL
                 {
                     using (var command = commandBuilder.BuildDbCommand(connection))
                     {
-                        await command.ExecuteNonQueryAsync();
+                        await command.ExecuteNonQueryAsync(cancellationToken);
                     }
                     scope.Complete();
                 }
-                queuedMessage = new SQLQueuedMessage(messageWithSecurityToken, principal);
+                queuedMessage = new QueuedMessage(messageWithSecurityToken, principal, 0);
             }
             finally
             {
@@ -272,28 +136,24 @@ namespace Platibus.SQL
             return queuedMessage;
         }
         
-        /// <summary>
-        /// Selects all queued messages from the SQL database
-        /// </summary>
-        /// <returns>Returns a task that completes when all records have been selected and whose
-        /// result is the enumerable sequence of the selected records</returns>
+        /// <inheritdoc />
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual async Task<IEnumerable<SQLQueuedMessage>> SelectQueuedMessages()
+        protected override async Task<IEnumerable<QueuedMessage>> SelectPendingMessages(CancellationToken cancellationToken = default(CancellationToken))
         {
-            var queuedMessages = new List<SQLQueuedMessage>();
+            var queuedMessages = new List<QueuedMessage>();
             var connection = _connectionProvider.GetConnection();
             try
             {
                 var commandBuilder = _commandBuilders.NewSelectQueuedMessagesCommandBuilder();
-                commandBuilder.QueueName = _queueName;
+                commandBuilder.QueueName = QueueName;
                 
                 using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
                 {
                     using (var command = commandBuilder.BuildDbCommand(connection))
                     {
-                        using (var reader = await command.ExecuteReaderAsync())
+                        using (var reader = await command.ExecuteReaderAsync(cancellationToken))
                         {
-                            while (await reader.ReadAsync())
+                            while (await reader.ReadAsync(cancellationToken))
                             {
                                 var record = commandBuilder.BuildQueuedMessageRecord(reader);
                                 var messageContent = record.Content;
@@ -303,7 +163,7 @@ namespace Platibus.SQL
                                 var principal = await ResolvePrincipal(headers, record.SenderPrincipal);
 #pragma warning restore 612
                                 var attempts = record.Attempts;
-                                var queuedMessage = new SQLQueuedMessage(message, principal, attempts);
+                                var queuedMessage = new QueuedMessage(message, principal, attempts);
                                 queuedMessages.Add(queuedMessage);
                             }
                         }
@@ -327,14 +187,14 @@ namespace Platibus.SQL
         /// <returns>Returns a task that completes when all records have been selected and whose
         /// result is the enumerable sequence of the selected records</returns>
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual async Task<IEnumerable<SQLQueuedMessage>> SelectAbandonedMessages(DateTime startDate, DateTime endDate)
+        protected virtual async Task<IEnumerable<QueuedMessage>> SelectDeadMessages(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = new CancellationToken())
         {
-            var queuedMessages = new List<SQLQueuedMessage>();
+            var queuedMessages = new List<QueuedMessage>();
             var connection = _connectionProvider.GetConnection();
             try
             {
                 var commandBuilder = _commandBuilders.NewSelectAbandonedMessagesCommandBuilder();
-                commandBuilder.QueueName = _queueName;
+                commandBuilder.QueueName = QueueName;
                 commandBuilder.StartDate = startDate;
                 commandBuilder.EndDate = endDate;
 
@@ -342,9 +202,9 @@ namespace Platibus.SQL
                 {
                     using (var command = commandBuilder.BuildDbCommand(connection))
                     {
-                        using (var reader = await command.ExecuteReaderAsync())
+                        using (var reader = await command.ExecuteReaderAsync(cancellationToken))
                         {
-                            while (await reader.ReadAsync())
+                            while (await reader.ReadAsync(cancellationToken))
                             {
                                 var record = commandBuilder.BuildQueuedMessageRecord(reader);
                                 var messageContent = record.Content;
@@ -354,7 +214,7 @@ namespace Platibus.SQL
                                 var principal = await ResolvePrincipal(headers, record.SenderPrincipal);
 #pragma warning restore 612
                                 var attempts = record.Attempts;
-                                var queuedMessage = new SQLQueuedMessage(message, principal, attempts);
+                                var queuedMessage = new QueuedMessage(message, principal, attempts);
                                 queuedMessages.Add(queuedMessage);
                             }
                         }
@@ -368,18 +228,11 @@ namespace Platibus.SQL
             }
             return queuedMessages.AsEnumerable();
         }
-
-        /// <summary>
-        /// Updates an existing queued message in the SQL database
-        /// </summary>
-        /// <param name="queuedMessage">The queued message to update</param>
-        /// <param name="acknowledged">The date and time the message was acknowledged, if applicable</param>
-        /// <param name="abandoned">The date and time the message was abandoned, if applicable</param>
-        /// <param name="attempts">The number of attempts to process the message so far</param>
-        /// <returns>Returns a task that completes when the record has been updated</returns>
+        
+        /// <inheritdoc />
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual async Task UpdateQueuedMessage(SQLQueuedMessage queuedMessage, DateTime? acknowledged,
-            DateTime? abandoned, int attempts)
+        protected override async Task UpdateQueuedMessage(QueuedMessage queuedMessage, DateTime? acknowledged,
+            DateTime? abandoned, int attempts, CancellationToken cancellationToken = default(CancellationToken))
         {
             var connection = _connectionProvider.GetConnection();
             try
@@ -388,7 +241,7 @@ namespace Platibus.SQL
                 var headers = message.Headers;
                 var commandBuilder = _commandBuilders.NewUpdateQueuedMessageCommandBuilder();
                 commandBuilder.MessageId = headers.MessageId;
-                commandBuilder.QueueName = _queueName;
+                commandBuilder.QueueName = QueueName;
                 commandBuilder.Acknowledged = acknowledged;
                 commandBuilder.Abandoned = abandoned;
                 commandBuilder.Attempts = attempts;
@@ -397,7 +250,7 @@ namespace Platibus.SQL
                 {
                     using (var command = commandBuilder.BuildDbCommand(connection))
                     {
-                        await command.ExecuteNonQueryAsync();
+                        await command.ExecuteNonQueryAsync(cancellationToken);
                     }
                     scope.Complete();
                 }
@@ -405,16 +258,6 @@ namespace Platibus.SQL
             finally
             {
                 _connectionProvider.ReleaseConnection(connection);
-            }
-        }
-
-        private async Task EnqueueExistingMessages()
-        {
-            var queuedMessages = await SelectQueuedMessages();
-            foreach (var queuedMessage in queuedMessages)
-            {
-                Log.DebugFormat("Enqueueing existing message ID {0}...", queuedMessage.Message.Headers.MessageId);
-                await _queuedMessages.SendAsync(queuedMessage);
             }
         }
         
@@ -596,50 +439,6 @@ namespace Platibus.SQL
             }
 
             return headers;
-        }
-
-        /// <summary>
-        /// Throws <see cref="ObjectDisposedException"/> if this object has been disposed
-        /// </summary>
-        /// <exception cref="ObjectDisposedException">Thrown if this object has been disposed</exception>
-        protected virtual void CheckDisposed()
-        {
-            if (_disposed) throw new ObjectDisposedException(GetType().FullName);
-        }
-
-        /// <summary>
-        /// Finalizer to ensure that all resources are released
-        /// </summary>
-        ~SQLMessageQueue()
-        {
-            Dispose(false);
-        }
-
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        /// <filterpriority>2</filterpriority>
-        public void Dispose()
-        {
-            if (_disposed) return;
-            Dispose(true);
-            _disposed = true;
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        /// Called by the <see cref="Dispose()"/> method or by the finalizer to free held resources
-        /// </summary>
-        /// <param name="disposing">Indicates whether this method is called from the 
-        /// <see cref="Dispose()"/> method (<c>true</c>) or from the finalizer (<c>false</c>)</param>
-        [SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
-        protected virtual void Dispose(bool disposing)
-        {
-            _cancellationTokenSource.Cancel();
-            if (disposing)
-            {
-                _cancellationTokenSource.TryDispose();
-            }
         }
     }
 }

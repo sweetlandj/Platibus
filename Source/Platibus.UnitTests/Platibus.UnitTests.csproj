@@ -152,9 +152,11 @@
     <Compile Include="Config\SendRuleValidationTests.cs" />
     <Compile Include="Config\SubscriptionRuleValidationTests.cs" />
     <Compile Include="DataContractMessageNamingServiceTests.cs" />
+    <Compile Include="MongoDB\MongoDBMessageQueueingServiceTests.cs" />
+    <Compile Include="MongoDB\MongoDBMessageQueueInspector.cs" />
     <Compile Include="MongoDB\MongoDBSubscriptionTrackingServiceTests.cs" />
     <Compile Include="MongoDB\MongoDBCollection.cs" />
-    <Compile Include="MongoDB\MonogDBFixture.cs" />
+    <Compile Include="MongoDB\MongoDBFixture.cs" />
     <Compile Include="FileUtil.cs" />
     <Compile Include="SqlDateTimeEqualityComparer.cs" />
     <Compile Include="DefaultMessageNamingServiceTests.cs" />

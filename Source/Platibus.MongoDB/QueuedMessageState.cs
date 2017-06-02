@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2017 Jesse Sweetland
+// Copyright (c) 2016 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,24 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
 namespace Platibus.MongoDB
 {
-    internal class SubscriptionDocument
+    internal enum QueuedMessageState
     {
-        [BsonId]
-        public ObjectId Id { get; set; }
-
-        [BsonElement("topic")]
-        public string Topic { get; set; }
-
-        [BsonElement("subscriber")]
-        public string Subscriber { get; set; }
-
-        [BsonElement("expires")]
-        public DateTime Expires { get; set; }
+        Pending,
+        Acknowledged,
+        Dead
     }
 }

@@ -5,14 +5,15 @@ using Platibus.MongoDB;
 
 namespace Platibus.UnitTests.MongoDB
 {
-    public class MonogDBFixture : IDisposable
+    public class MongoDBFixture : IDisposable
     {
-        private const string DatabaseName = "platibus_UnitTests";
+        public const string DatabaseName = "platibus_UnitTests";
 
         private readonly MongoDbRunner _mongoDbRunner;
         private readonly ConnectionStringSettings _connectionStringSettings;
         
         private readonly MongoDBSubscriptionTrackingService _subscriptionTrackingService;
+        private readonly MongoDBMessageQueueingService _messageQueueingService;
 
         private bool _disposed;
 
@@ -26,7 +27,12 @@ namespace Platibus.UnitTests.MongoDB
             get { return _subscriptionTrackingService; }
         }
 
-        public MonogDBFixture()
+        public MongoDBMessageQueueingService MessageQueueingService
+        {
+            get { return _messageQueueingService; }
+        }
+
+        public MongoDBFixture()
         {
             var dbPath = FileUtil.NewTempTestPath();
             _mongoDbRunner = MongoDbRunner.Start(dbPath);
@@ -37,6 +43,7 @@ namespace Platibus.UnitTests.MongoDB
             };
             
             _subscriptionTrackingService = new MongoDBSubscriptionTrackingService(_connectionStringSettings, DatabaseName);
+            _messageQueueingService = new MongoDBMessageQueueingService(_connectionStringSettings, databaseName: DatabaseName);
         }
 
         public void Dispose()
@@ -52,6 +59,7 @@ namespace Platibus.UnitTests.MongoDB
         protected virtual void Dispose(bool disposing)
         {
             _subscriptionTrackingService.TryDispose();
+            _messageQueueingService.TryDispose();
             _mongoDbRunner.TryDispose();
         }
     }

@@ -21,14 +21,12 @@
 // THE SOFTWARE.
 
 using System;
-using System.Collections.Concurrent;
 using System.Configuration;
 using System.Diagnostics.CodeAnalysis;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
-using Common.Logging;
 using Platibus.Config.Extensibility;
+using Platibus.Queueing;
 using Platibus.Security;
 using Platibus.SQL.Commands;
 
@@ -38,18 +36,11 @@ namespace Platibus.SQL
     /// A <see cref="IMessageQueueingService"/> implementation that uses a SQL database to store
     /// queued messages
     /// </summary>
-    public class SQLMessageQueueingService : IMessageQueueingService, IDisposable
+    public class SQLMessageQueueingService : AbstractMessageQueueingService<SQLMessageQueue>
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.SQL);
-
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly IMessageQueueingCommandBuilders _commandBuilders;
         private readonly ISecurityTokenService _securityTokenService;
-
-        private readonly ConcurrentDictionary<QueueName, SQLMessageQueue> _queues =
-            new ConcurrentDictionary<QueueName, SQLMessageQueue>();
-
-        private bool _disposed;
 
         /// <summary>
         /// The connection provider used to obtain connections to the SQL database
@@ -144,107 +135,22 @@ namespace Platibus.SQL
             }
         }
 
-        /// <summary>
-        /// Establishes a named queue
-        /// </summary>
-        /// <param name="queueName">The name of the queue</param>
-        /// <param name="listener">An object that will receive messages off of the queue for processing</param>
-        /// <param name="options">(Optional) Options that govern how the queue behaves</param>
-        /// <param name="cancellationToken">(Optional) A cancellation token that can be used
-        /// by the caller to cancel queue creation if necessary</param>
-        /// <returns>Returns a task that will complete when the queue has been created</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/> or
-        /// <paramref name="listener"/> is <c>null</c></exception>
-        /// <exception cref="QueueAlreadyExistsException">Thrown if a queue with the specified
-        /// name already exists</exception>
-        /// <exception cref="ObjectDisposedException">Thrown if the object is already disposed</exception>
-        public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
+        /// <inheritdoc />
+        protected override Task<SQLMessageQueue> InternalCreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null,
+            CancellationToken cancellationToken = new CancellationToken())
         {
-            CheckDisposed();
             var queue = new SQLMessageQueue(_connectionProvider, _commandBuilders, queueName, listener, _securityTokenService, options);
-            if (!_queues.TryAdd(queueName, queue))
+            return Task.FromResult(queue);
+        }
+
+        /// <inheritdoc />
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if(disposing)
             {
-                throw new QueueAlreadyExistsException(queueName);
-            }
-
-            Log.DebugFormat("Initializing SQL queue named \"{0}\"...", queueName);
-            await queue.Init();
-            Log.DebugFormat("SQL queue \"{0}\" created successfully", queueName);
-        }
-
-        /// <summary>
-        /// Enqueues a message on a queue
-        /// </summary>
-        /// <param name="queueName">The name of the queue</param>
-        /// <param name="message">The message to enqueue</param>
-        /// <param name="senderPrincipal">(Optional) The sender principal, if applicable</param>
-        /// <param name="cancellationToken">(Optional) A cancellation token that can be
-        /// used be the caller to cancel the enqueue operation if necessary</param>
-        /// <returns>Returns a task that will complete when the message has been enqueued</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/>
-        /// or <paramref name="message"/> is <c>null</c></exception>
-        /// <exception cref="ObjectDisposedException">Thrown if the object is already disposed</exception>
-        public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            CheckDisposed();
-
-            SQLMessageQueue queue;
-            if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
-
-            Log.DebugFormat("Enqueueing message ID {0} in SQL queue \"{1}\"...", message.Headers.MessageId, queueName);
-            await queue.Enqueue(message, senderPrincipal);
-            Log.DebugFormat("Message ID {0} enqueued successfully in SQL queue \"{1}\"", message.Headers.MessageId,
-                queueName);
-        }
-
-        /// <summary>
-        /// Finalizer that ensures that all resources are released
-        /// </summary>
-        ~SQLMessageQueueingService()
-        {
-            Dispose(false);
-        }
-
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting 
-        /// unmanaged resources
-        /// </summary>
-        /// <filterpriority>2</filterpriority>
-        public void Dispose()
-        {
-            if (_disposed) return;
-            Dispose(true);
-            GC.SuppressFinalize(this);
-            _disposed = true;
-        }
-
-        /// <summary>
-        /// Called by the <see cref="Dispose()"/> method or by the finalizer to free held resources
-        /// </summary>
-        /// <param name="disposing">Indicates whether this method is called from the 
-        /// <see cref="Dispose()"/> method (<c>true</c>) or from the finalizer (<c>false</c>)</param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (_disposed) return;
-            if (disposing)
-            {
-                foreach (var queue in _queues.Values)
-                {
-                    queue.TryDispose();
-                }
-
                 _connectionProvider.TryDispose();
             }
-        }
-
-        /// <summary>
-        /// Throws an <see cref="ObjectDisposedException"/> if the message queueing service has
-        /// been disposed
-        /// </summary>
-        /// <exception cref="ObjectDisposedException">Thrown if the object is already disposed</exception>
-        protected void CheckDisposed()
-        {
-            if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }
     }
 }

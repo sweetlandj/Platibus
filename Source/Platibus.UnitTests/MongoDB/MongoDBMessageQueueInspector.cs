@@ -3,21 +3,25 @@ using System.Collections.Generic;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
+using MongoDB.Driver;
+using Platibus.MongoDB;
 using Platibus.Queueing;
 using Platibus.Security;
-using Platibus.SQL;
 
-namespace Platibus.UnitTests.LocalDB
+namespace Platibus.UnitTests.MongoDB
 {
-    internal class SQLMessageQueueInspector : SQLMessageQueue
+    internal class MongoDBMessageQueueInspector : MongoDBMessageQueue
     {
-        public SQLMessageQueueInspector(SQLMessageQueueingService messageQueueingService, QueueName queueName, ISecurityTokenService securityTokenService)
-            : base(
-                messageQueueingService.ConnectionProvider, messageQueueingService.CommandBuilders, queueName,
-                new NoopQueueListener(), securityTokenService)
+        public MongoDBMessageQueueInspector(IMongoDatabase database, QueueName queueName, ISecurityTokenService securityTokenService, QueueOptions options = null, string collectionName = null) 
+            : base(database, queueName, new NoopQueueListener(), securityTokenService, options, collectionName)
         {
         }
-        
+
+        public override Task Init(CancellationToken cancellationToken = new CancellationToken())
+        {
+            return Task.FromResult(0);
+        }
+
         public Task<QueuedMessage> InsertMessage(Message testMessage, IPrincipal principal)
         {
             return InsertQueuedMessage(testMessage, principal);
