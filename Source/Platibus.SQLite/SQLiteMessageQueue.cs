@@ -35,11 +35,24 @@ using Platibus.SQLite.Commands;
 
 namespace Platibus.SQLite
 {
-    internal class SQLiteMessageQueue : SQLMessageQueue
+    /// <summary>
+    /// A message queue based on a SQLite database
+    /// </summary>
+    public class SQLiteMessageQueue : SQLMessageQueue
     {
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly ActionBlock<ISQLiteOperation> _operationQueue;
 
+        /// <summary>
+        /// Initializes a new <see cref="SQLiteMessageQueue"/>
+        /// </summary>
+        /// <param name="baseDirectory">The directory in which the SQLite database will be created</param>
+        /// <param name="queueName">The name of the queue</param>
+        /// <param name="listener">The object that will process messages off of the queue</param>
+        /// <param name="securityTokenService">(Optional) A service for issuing security tokens
+        /// that can be stored with queued messages to preserve the security context in which
+        /// they were enqueued</param>
+        /// <param name="options">(Optional) Options for concurrency and retry limits</param>
         public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null)
             : base(InitConnectionProvider(baseDirectory, queueName), new SQLiteMessageQueueingCommandBuilders(), queueName, listener, securityTokenService, options)
         {
@@ -66,6 +79,7 @@ namespace Platibus.SQLite
             return new SingletonConnectionProvider(connectionStringSettings);
         }
 
+        /// <inheritdoc />
         public override Task Init()
         {
             // A separate database file is created for each queue, so the object initialization
@@ -87,6 +101,7 @@ namespace Platibus.SQLite
             return base.Init();
         }
 
+        /// <inheritdoc />
         protected override Task<SQLQueuedMessage> InsertQueuedMessage(Message message, IPrincipal principal)
         {
             CheckDisposed();
@@ -95,6 +110,7 @@ namespace Platibus.SQLite
             return op.Task;
         }
 
+        /// <inheritdoc />
         protected override Task UpdateQueuedMessage(SQLQueuedMessage queuedMessage, DateTime? acknowledged,
             DateTime? abandoned, int attempts)
         {
@@ -105,6 +121,7 @@ namespace Platibus.SQLite
             return op.Task;
         }
 
+        /// <inheritdoc />
         protected override Task<IEnumerable<SQLQueuedMessage>> SelectQueuedMessages()
         {
             CheckDisposed();
@@ -113,6 +130,7 @@ namespace Platibus.SQLite
             return op.Task;
         }
 
+        /// <inheritdoc />
         [SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
         protected override void Dispose(bool disposing)
         {

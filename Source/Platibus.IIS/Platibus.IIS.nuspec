@@ -11,8 +11,7 @@
     <iconUrl>https://raw.githubusercontent.com/sweetlandj/Platibus/master/Icon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>IIS hosting support for the Platibus decentralized asynchronous messaging framework</description>
-	<releaseNotes>Bug fixes for using Windows authentication over HTTP transport with local transport bypass enabled</releaseNotes>
-    <copyright>Copyright 2016</copyright>
+    <copyright>Copyright 2017</copyright>
     <tags>bus message service rest async iis</tags>
   </metadata>
 </package>

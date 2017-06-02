@@ -29,18 +29,35 @@ using System.Threading.Tasks;
 
 namespace Platibus.Http
 {
-    internal class HttpClientPool : IDisposable
+    /// <summary>
+    /// A collection of long-lived HTTP clients pooled according to endpoint URI and credentials
+    /// </summary>
+    public class HttpClientPool : IDisposable
     {
         private readonly SemaphoreSlim _poolSync = new SemaphoreSlim(1);
         private readonly IDictionary<PoolKey, HttpClientHandler> _pool = new Dictionary<PoolKey, HttpClientHandler>();
 
         private bool _disposed;
 
+        /// <summary>
+        /// Indicates the number of HTTP clients currently in the pool
+        /// </summary>
         public int Size
         {
             get { return _pool.Count; }
         }
 
+        /// <summary>
+        /// Gets an HTTP client from the pool, creating a new HTTP client if necessary
+        /// </summary>
+        /// <param name="uri">The URI for the connection</param>
+        /// <param name="credentials">(Optional) The credentials needed to make the connection</param>
+        /// <param name="cancellationToken">(Optional) A token the can be used byy the caller
+        /// to request cancellation of the aquisition attempt</param>
+        /// <returns>
+        /// Returns a task whose result is an HTTP client that can be used to connect to the
+        /// specified <paramref name="uri"/> with the supplied <paramref name="credentials"/>
+        /// </returns>
         public async Task<HttpClient> GetClient(Uri uri, IEndpointCredentials credentials, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
@@ -101,6 +118,12 @@ namespace Platibus.Http
             if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }
 
+        /// <summary>
+        /// Disposes the pool and any open HTTP clients
+        /// </summary>
+        /// <param name="disposing">
+        /// Whether this method was called from <see cref="Dispose()"/>
+        /// </param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_poolSync")]
         protected virtual void Dispose(bool disposing)
         {
@@ -114,6 +137,7 @@ namespace Platibus.Http
             }
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (_disposed) return;
