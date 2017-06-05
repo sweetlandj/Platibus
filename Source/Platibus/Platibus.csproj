@@ -132,7 +132,6 @@
     <Compile Include="NoMatchingSendRulesException.cs" />
     <Compile Include="Queueing\AbstractMessageQueue.cs" />
     <Compile Include="Queueing\AbstractMessageQueueingService.cs" />
-    <Compile Include="Queueing\IMessageQueueFactory.cs" />
     <Compile Include="Queueing\QueuedMessage.cs" />
     <Compile Include="Queueing\QueuedMessageContext.cs" />
     <Compile Include="ResourceNotFoundException.cs" />

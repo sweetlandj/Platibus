@@ -66,6 +66,7 @@
 			<SourcePackage Include="$(SolutionDir)Platibus.Owin\bin\$(Configuration)\*.nupkg"/>
 			<SourcePackage Include="$(SolutionDir)Platibus.SQLite\bin\$(Configuration)\*.nupkg"/>
 			<SourcePackage Include="$(SolutionDir)Platibus.RabbitMQ\bin\$(Configuration)\*.nupkg"/>
+			<SourcePackage Include="$(SolutionDir)Platibus.MongoDB\bin\$(Configuration)\*.nupkg"/>
 		</ItemGroup>
 		<MakeDir Directories="$(DistDir)" />
 		<Copy SourceFiles="@(SourcePackage)" DestinationFolder="$(DistDir)" SkipUnchangedFiles="true"/>

@@ -20,9 +20,41 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
+using System.Collections.Generic;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
 namespace Platibus.MongoDB
 {
     internal class MessageJournalEntryDocument
     {
+        [BsonId]
+        [BsonIgnoreIfDefault]
+        public ObjectId Id { get; set; }
+
+        [BsonElement("ts")]
+        public BsonTimestamp Position { get; set; }
+
+        [BsonElement("timestmap")]
+        public DateTime Timestamp { get; set; }
+
+        [BsonElement("category")]
+        public string Category { get; set; }
+
+        [BsonElement("topic")]
+        public string Topic { get; set; }
+
+        [BsonElement("messageId")]
+        public string MessageId { get; set; }
+
+        [BsonElement("messageName")]
+        public string MessageName { get; set; }
+
+        [BsonElement("headers")]
+        public IDictionary<string, string> Headers { get; set; }
+
+        [BsonElement("content")]
+        public string Content { get; set; }
     }
 }

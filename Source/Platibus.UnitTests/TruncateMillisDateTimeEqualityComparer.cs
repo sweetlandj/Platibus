@@ -21,39 +21,29 @@
 // THE SOFTWARE.
 
 using System;
-using System.Security.Principal;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 
-namespace Platibus.Queueing
+namespace Platibus.UnitTests
 {
-    internal class QueuedMessageContext : IQueuedMessageContext
+    /// <summary>
+    /// Rounds date time to precision supported by SQL server to ensure equality assertions
+    /// pass where expected
+    /// </summary>
+    internal class TruncateMillisDateTimeEqualityComparer : IEqualityComparer<DateTime>
     {
-        private readonly Message _message;
-        private readonly IPrincipal _senderPrincipal;
-
-        public QueuedMessageContext(Message message, IPrincipal senderPrincipal)
+        public bool Equals(DateTime x, DateTime y)
         {
-            if (message == null) throw new ArgumentNullException("message");
-            _message = message;
-            _senderPrincipal = senderPrincipal;
+            return TruncateMillis(x).Equals(TruncateMillis(y));
         }
 
-        public bool Acknowledged { get; private set; }
-
-        public IMessageHeaders Headers
+        public int GetHashCode(DateTime obj)
         {
-            get { return _message.Headers; }
+            return TruncateMillis(obj).GetHashCode();
         }
 
-        public IPrincipal Principal
+        protected virtual DateTime TruncateMillis(DateTime dt)
         {
-            get { return _senderPrincipal; }
-        }
-
-        public Task Acknowledge()
-        {
-            Acknowledged = true;
-            return Task.FromResult(true);
+            return new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, dt.Kind);
         }
     }
 }

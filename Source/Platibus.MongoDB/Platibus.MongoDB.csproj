@@ -85,8 +85,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MessageJournalEntryDocument.cs" />
+    <Compile Include="MongoDatabaseExtensions.cs" />
     <Compile Include="MongoDBLoggingCategories.cs" />
+    <Compile Include="MongoDBMessageJournal.cs" />
+    <Compile Include="MongoDBMessageJournalPosition.cs" />
     <Compile Include="MongoDBMessageQueueingService.cs" />
+    <Compile Include="MongoDBServicesProvider.cs" />
     <Compile Include="MongoDBSubscriptionTrackingService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueuedMessageDocument.cs" />

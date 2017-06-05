@@ -152,13 +152,14 @@
     <Compile Include="Config\SendRuleValidationTests.cs" />
     <Compile Include="Config\SubscriptionRuleValidationTests.cs" />
     <Compile Include="DataContractMessageNamingServiceTests.cs" />
+    <Compile Include="MongoDB\MongoDBMessageJournalTests.cs" />
     <Compile Include="MongoDB\MongoDBMessageQueueingServiceTests.cs" />
     <Compile Include="MongoDB\MongoDBMessageQueueInspector.cs" />
     <Compile Include="MongoDB\MongoDBSubscriptionTrackingServiceTests.cs" />
     <Compile Include="MongoDB\MongoDBCollection.cs" />
     <Compile Include="MongoDB\MongoDBFixture.cs" />
     <Compile Include="FileUtil.cs" />
-    <Compile Include="SqlDateTimeEqualityComparer.cs" />
+    <Compile Include="TruncateMillisDateTimeEqualityComparer.cs" />
     <Compile Include="DefaultMessageNamingServiceTests.cs" />
     <Compile Include="EndpointAddressEqualityComparerTests.cs" />
     <Compile Include="Filesystem\FilesystemCollection.cs" />
@@ -238,9 +239,7 @@
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Mocks\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

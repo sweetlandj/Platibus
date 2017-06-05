@@ -1,4 +1,26 @@
-﻿using System;
+﻿// The MIT License (MIT)
+// 
+// Copyright (c) 2017 Jesse Sweetland
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+using System;
 using System.Configuration;
 using Mongo2Go;
 using Platibus.MongoDB;
@@ -14,6 +36,7 @@ namespace Platibus.UnitTests.MongoDB
         
         private readonly MongoDBSubscriptionTrackingService _subscriptionTrackingService;
         private readonly MongoDBMessageQueueingService _messageQueueingService;
+        private readonly MongoDBMessageJournal _messageJournal;
 
         private bool _disposed;
 
@@ -32,6 +55,11 @@ namespace Platibus.UnitTests.MongoDB
             get { return _messageQueueingService; }
         }
 
+        public MongoDBMessageJournal MessageJournal
+        {
+            get { return _messageJournal; }
+        }
+
         public MongoDBFixture()
         {
             var dbPath = FileUtil.NewTempTestPath();
@@ -44,6 +72,7 @@ namespace Platibus.UnitTests.MongoDB
             
             _subscriptionTrackingService = new MongoDBSubscriptionTrackingService(_connectionStringSettings, DatabaseName);
             _messageQueueingService = new MongoDBMessageQueueingService(_connectionStringSettings, databaseName: DatabaseName);
+            _messageJournal = new MongoDBMessageJournal(_connectionStringSettings, DatabaseName);
         }
 
         public void Dispose()
@@ -55,12 +84,16 @@ namespace Platibus.UnitTests.MongoDB
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_subscriptionTrackingService")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_runner")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_messageQueueingService")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_messageJournal")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_mongoDbRunner")]
         protected virtual void Dispose(bool disposing)
         {
             _subscriptionTrackingService.TryDispose();
             _messageQueueingService.TryDispose();
+            _messageJournal.TryDispose();
             _mongoDbRunner.TryDispose();
+            
         }
     }
 }
