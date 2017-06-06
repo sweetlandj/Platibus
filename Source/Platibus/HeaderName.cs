@@ -31,6 +31,12 @@ namespace Platibus
     [DebuggerDisplay("{_value,nq}")]
     public class HeaderName : IEquatable<HeaderName>
     {
+        private static readonly char[] InvalidChars =
+        {
+            '$', '.', '(', ')', '<', '>', '@', ',', ';', ':', '\\', '<', '>', '/', '[', ']',
+            '?', '=', '{', '}', ' ', (char) 9
+        };
+
         /// <summary>
         ///     The unique ID used to identify a received message.
         /// </summary>
@@ -125,7 +131,10 @@ namespace Platibus
         public HeaderName(string value)
         {
             if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException("value");
-            if (value.IndexOf(':') >= 0) throw new FormatException("Header name may not contain ':'");
+            foreach(var c in InvalidChars)
+            {
+                if (value.IndexOf(c) >= 0) throw new FormatException("Invalid character '" + c + "'");
+            }
             _value = value.Trim();
         }
 
@@ -137,8 +146,8 @@ namespace Platibus
         /// to this one; <c>fale</c> otherwise</returns>
         public bool Equals(HeaderName headerName)
         {
-            if (ReferenceEquals(null, headerName)) return false;
-            return string.Equals(_value, headerName._value, StringComparison.InvariantCultureIgnoreCase);
+            return !ReferenceEquals(null, headerName) && 
+                string.Equals(_value, headerName._value, StringComparison.InvariantCultureIgnoreCase);
         }
 
         /// <summary>
