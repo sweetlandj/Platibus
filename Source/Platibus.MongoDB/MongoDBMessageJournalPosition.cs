@@ -6,22 +6,22 @@ namespace Platibus.MongoDB
 {
     internal class MongoDBMessageJournalPosition : MessageJournalPosition
     {
-        private readonly BsonTimestamp _timestamp;
+        private readonly ObjectId _id;
 
-        public BsonTimestamp Timestamp
+        public ObjectId Id
         {
-            get { return _timestamp; }
+            get { return _id; }
         }
 
-        public MongoDBMessageJournalPosition(BsonTimestamp timestamp)
+        public MongoDBMessageJournalPosition(ObjectId id)
         {
-            if (timestamp == null) throw new ArgumentNullException("timestamp");
-            _timestamp = timestamp;
+            if (id == null) throw new ArgumentNullException("id");
+            _id = id;
         }
 
         public override string ToString()
         {
-            return _timestamp.Value.ToString("D");
+            return _id.ToString();
         }
 
         public override bool Equals(object obj)
@@ -29,20 +29,19 @@ namespace Platibus.MongoDB
             if (ReferenceEquals(this, obj)) return true;
             if (ReferenceEquals(obj, null)) return false;
             var other = obj as MongoDBMessageJournalPosition;
-            return other != null && _timestamp.Equals(other._timestamp);
+            return other != null && _id.Equals(other._id);
         }
 
         public override int GetHashCode()
         {
-            return _timestamp.GetHashCode();
+            return _id.GetHashCode();
         }
 
         public static MongoDBMessageJournalPosition Parse(string str)
         {
             if (string.IsNullOrWhiteSpace(str)) return null;
-            var value = long.Parse(str);
-            var ts = new BsonTimestamp(value);
-            return new MongoDBMessageJournalPosition(ts);
+            var id = ObjectId.Parse(str);
+            return new MongoDBMessageJournalPosition(id);
         }
     }
 }

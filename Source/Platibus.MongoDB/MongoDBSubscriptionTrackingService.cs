@@ -58,17 +58,11 @@ namespace Platibus.MongoDB
         public MongoDBSubscriptionTrackingService(ConnectionStringSettings connectionStringSettings, string databaseName = null, string collectionName = DefaultCollectionName)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-            var mongoUrl = new MongoUrl(connectionStringSettings.ConnectionString);
-            var myDatabaseName = string.IsNullOrWhiteSpace(databaseName)
-                ? mongoUrl.DatabaseName
-                : databaseName;
-
             var myCollectionName = string.IsNullOrWhiteSpace(collectionName)
                 ? DefaultCollectionName
                 : collectionName;
 
-            var client = new MongoClient(mongoUrl);
-            var database = client.GetDatabase(myDatabaseName);
+            var database = MongoDBHelper.Connect(connectionStringSettings, databaseName);
             _subscriptions = database.GetCollection<SubscriptionDocument>(myCollectionName);
         }
 

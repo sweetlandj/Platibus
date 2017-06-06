@@ -60,17 +60,11 @@ namespace Platibus.MongoDB
         public MongoDBMessageJournal(ConnectionStringSettings connectionStringSettings, string databaseName = null, string collectionName = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-            var mongoUrl = new MongoUrl(connectionStringSettings.ConnectionString);
-            var myDatabaseName = string.IsNullOrWhiteSpace(databaseName)
-                ? mongoUrl.DatabaseName
-                : databaseName;
-
             var myCollectionName = string.IsNullOrWhiteSpace(collectionName)
                 ? DefaultCollectionName
                 : collectionName;
 
-            var client = new MongoClient(mongoUrl);
-            var database = client.GetDatabase(myDatabaseName);
+            var database = MongoDBHelper.Connect(connectionStringSettings, databaseName);
             _messageJournalEntries = database.GetCollection<MessageJournalEntryDocument>(
                 myCollectionName,
                 new MongoCollectionSettings
@@ -82,8 +76,8 @@ namespace Platibus.MongoDB
         /// <inheritdoc />
         public Task<MessageJournalPosition> GetBeginningOfJournal(CancellationToken cancellationToken = new CancellationToken())
         {
-            var ts = new BsonTimestamp(0);
-            var pos = new MongoDBMessageJournalPosition(ts);
+            var id = new ObjectId(0, 0, 0, 0);
+            var pos = new MongoDBMessageJournalPosition(id);
             return Task.FromResult<MessageJournalPosition>(pos);
         }
 
@@ -93,7 +87,6 @@ namespace Platibus.MongoDB
         {
             var entry = new MessageJournalEntryDocument
             {
-                Position = new BsonTimestamp(0),
                 Timestamp = message.GetJournalTimestamp(category),
                 Category = category,
                 Topic = message.Headers.Topic,
@@ -111,7 +104,7 @@ namespace Platibus.MongoDB
             CancellationToken cancellationToken = new CancellationToken())
         {
             var fb = Builders<MessageJournalEntryDocument>.Filter;
-            var filterDef = fb.Gt(mje => mje.Position, ((MongoDBMessageJournalPosition) start).Timestamp);
+            var filterDef = fb.Gte(mje => mje.Id, ((MongoDBMessageJournalPosition) start).Id);
             if (filter != null && filter.Topics.Any())
             {
                 filterDef = filterDef & fb.In(e => e.Topic, filter.Topics.Select(t => (string) t));
@@ -127,17 +120,17 @@ namespace Platibus.MongoDB
                 .ToListAsync(cancellationToken);
 
             var endOfJournal = entryDocuments.Count <= count;
-            var nextTimestampValue = endOfJournal
-                ? entryDocuments.Select(e => e.Position.Value + 1).LastOrDefault()
-                : entryDocuments.Select(e => e.Position.Value).LastOrDefault();
+            var nextId = entryDocuments.Select(e => e.Id).LastOrDefault();
+            if (endOfJournal)
+            {
+                nextId = new ObjectId(nextId.Timestamp, nextId.Machine, nextId.Pid, nextId.Increment + 1);
+            }
 
-            var nextTimestamp = new BsonTimestamp(nextTimestampValue);
-            var nextPosition = new MongoDBMessageJournalPosition(nextTimestamp);
-
+            var nextPosition = new MongoDBMessageJournalPosition(nextId);
             var entries = new List<MessageJournalEntry>();
             foreach (var entryDocument in entryDocuments.Take(count))
             {
-                var position = new MongoDBMessageJournalPosition(entryDocument.Position);
+                var position = new MongoDBMessageJournalPosition(entryDocument.Id);
                 var timestamp = entryDocument.Timestamp;
                 var category = entryDocument.Category;
                 var headers = new MessageHeaders(entryDocument.Headers);

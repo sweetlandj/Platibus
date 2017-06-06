@@ -86,6 +86,7 @@
   <ItemGroup>
     <Compile Include="MessageJournalEntryDocument.cs" />
     <Compile Include="MongoDatabaseExtensions.cs" />
+    <Compile Include="MongoDBHelper.cs" />
     <Compile Include="MongoDBLoggingCategories.cs" />
     <Compile Include="MongoDBMessageJournal.cs" />
     <Compile Include="MongoDBMessageJournalPosition.cs" />

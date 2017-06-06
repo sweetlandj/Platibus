@@ -59,14 +59,7 @@ namespace Platibus.MongoDB
         public MongoDBMessageQueueingService(ConnectionStringSettings connectionStringSettings, ISecurityTokenService securityTokenService = null, string databaseName = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-
-            var mongoUrl = new MongoUrl(connectionStringSettings.ConnectionString);
-            var myDatabaseName = string.IsNullOrWhiteSpace(databaseName)
-                ? mongoUrl.DatabaseName
-                : databaseName;
-            
-            var client = new MongoClient(mongoUrl);
-            _database = client.GetDatabase(myDatabaseName);
+            _database = MongoDBHelper.Connect(connectionStringSettings, databaseName);
             _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
         }
 

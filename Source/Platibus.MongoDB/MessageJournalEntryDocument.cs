@@ -33,9 +33,6 @@ namespace Platibus.MongoDB
         [BsonIgnoreIfDefault]
         public ObjectId Id { get; set; }
 
-        [BsonElement("ts")]
-        public BsonTimestamp Position { get; set; }
-
         [BsonElement("timestmap")]
         public DateTime Timestamp { get; set; }
 
