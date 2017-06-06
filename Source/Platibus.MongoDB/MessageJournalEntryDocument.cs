@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson.Serialization.Options;
 
 namespace Platibus.MongoDB
 {
@@ -49,6 +50,7 @@ namespace Platibus.MongoDB
         public string MessageName { get; set; }
 
         [BsonElement("headers")]
+        [BsonDictionaryOptions(Representation = DictionaryRepresentation.Document)]
         public IDictionary<string, string> Headers { get; set; }
 
         [BsonElement("content")]
