@@ -38,21 +38,27 @@ namespace Platibus.SQL.Commands
         }
 
         /// <inheritdoc />
-        public virtual SelectQueuedMessagesCommandBuilder NewSelectQueuedMessagesCommandBuilder()
+        public virtual SelectPendingMessagesCommandBuilder NewSelectPendingMessagesCommandBuilder()
         {
-            return new SelectQueuedMessagesCommandBuilder();
+            return new SelectPendingMessagesCommandBuilder();
         }
 
         /// <inheritdoc />
-        public virtual SelectAbandonedMessagesCommandBuilder NewSelectAbandonedMessagesCommandBuilder()
+        public virtual SelectDeadMessagesCommandBuilder NewSelectDeadMessagesCommandBuilder()
         {
-            return new SelectAbandonedMessagesCommandBuilder();
+            return new SelectDeadMessagesCommandBuilder();
         }
 
         /// <inheritdoc />
         public virtual UpdateQueuedMessageCommandBuilder NewUpdateQueuedMessageCommandBuilder()
         {
             return new UpdateQueuedMessageCommandBuilder();
+        }
+
+        /// <inheritdoc />
+        public DeleteQueuedMessageCommandBuilder NewDeleteQueuedMessageCommandBuilder()
+        {
+            return new DeleteQueuedMessageCommandBuilder();
         }
     }
 }

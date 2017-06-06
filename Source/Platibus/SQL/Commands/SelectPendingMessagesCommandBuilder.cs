@@ -27,31 +27,15 @@ using System.Data.Common;
 namespace Platibus.SQL.Commands
 {
     /// <summary>
-    /// Default command builder for creating commands to select abandoned messages for a queue
+    /// Default command builder for creating commands to select queued messages for a queue
     /// from the database 
     /// </summary>
-    public class SelectAbandonedMessagesCommandBuilder
+    public class SelectPendingMessagesCommandBuilder
     {
         /// <summary>
         /// The name of the queue
         /// </summary>
         public string QueueName { get; set; }
-
-        /// <summary>
-        /// The beginning of the date range to select from
-        /// </summary>
-        /// <remarks>
-        /// This date is compared with the date as of which the message was marked as abandoned.
-        /// </remarks>
-        public DateTime StartDate { get; set; }
-
-        /// <summary>
-        /// The end of the date range to select from
-        /// </summary>
-        /// <remarks>
-        /// This date is compared with the date as of which the message was marked as abandoned.
-        /// </remarks>
-        public DateTime EndDate { get; set; }
 
         /// <summary>
         /// Initializes and returns a new query <see cref="DbCommand"/> with the configured
@@ -70,8 +54,7 @@ namespace Platibus.SQL.Commands
             command.CommandText = CommandText;
 
             command.SetParameter("@QueueName", QueueName);
-            command.SetParameter("@StartDate", StartDate);
-            command.SetParameter("@EndDate", EndDate);
+
             return command;
         }
 
@@ -112,9 +95,9 @@ SELECT
 FROM [PB_QueuedMessages]
 WHERE [QueueName]=@QueueName 
 AND [Acknowledged] IS NULL
-AND [Abandoned] >= @StartDate
-AND [Abandoned] < @EndDate";
+AND [Abandoned] IS NULL";
             }
         }
+
     }
 }

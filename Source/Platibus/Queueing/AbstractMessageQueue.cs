@@ -54,6 +54,26 @@ namespace Platibus.Queueing
         private int _initialized;
 
         /// <summary>
+        /// Event raised when a new message is enqueued
+        /// </summary>
+        protected MessageQueueEventHandler MessageEnqueued;
+
+        /// <summary>
+        /// Event raised when a message is acknowledged by the listener
+        /// </summary>
+        protected MessageQueueEventHandler MessageAcknowledged;
+
+        /// <summary>
+        /// Event raised whenever the listener fails to acknowledge the message
+        /// </summary>
+        protected MessageQueueEventHandler AcknowledgementFailure;
+
+        /// <summary>
+        /// Event raised when the maximum number of attempts is exceeded
+        /// </summary>
+        protected MessageQueueEventHandler MaximumAttemptsExceeded;
+
+        /// <summary>
         /// Initializes a new <see cref="AbstractMessageQueue"/> with the specified values
         /// </summary>
         /// <param name="queueName">The name of the queue</param>
@@ -109,7 +129,7 @@ namespace Platibus.Queueing
         /// <returns></returns>
         protected async Task EnqueueExistingMessages(CancellationToken cancellationToken = default(CancellationToken))
         {
-            var pendingMessages = await SelectPendingMessages(cancellationToken);
+            var pendingMessages = await GetPendingMessages(cancellationToken);
             foreach (var pendingMessage in pendingMessages)
             {
                 Log.DebugFormat("Enqueueing existing message ID {0}...", pendingMessage.Message.Headers.MessageId);
@@ -124,37 +144,13 @@ namespace Platibus.Queueing
         /// to cancel the fetch operation</param>
         /// <returns>Returns a task whose result is the set of pending messages from the
         /// persistent store</returns>
-        protected abstract Task<IEnumerable<QueuedMessage>> SelectPendingMessages(CancellationToken cancellationToken = default(CancellationToken));
-
-        /// <summary>
-        /// Inserts a message into the persistent store
-        /// </summary>
-        /// <param name="message">The message to enqueue</param>
-        /// <param name="principal">The principal that sent the message or from whom the
-        ///     message was received</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by the caller
-        /// to cancel the message insertion</param>
-        /// <returns>Returns a task that completes when the message has been inserted into the
-        /// persistent store and whose result is a copy of the inserted record</returns>
-        protected abstract Task<QueuedMessage> InsertQueuedMessage(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken));
-
-        /// <summary>
-        /// Updates an existing queued message in the persistent store database
-        /// </summary>
-        /// <param name="queuedMessage">The queued message to update</param>
-        /// <param name="acknowledged">The date and time the message was acknowledged, if applicable</param>
-        /// <param name="abandoned">The date and time the message was abandoned, if applicable</param>
-        /// <param name="attempts">The number of attempts to process the message so far</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by the caller
-        /// to cancel the message update</param>
-        /// <returns>Returns a task that completes when the record has been updated</returns>
-        protected abstract Task UpdateQueuedMessage(QueuedMessage queuedMessage, DateTime? acknowledged, DateTime? abandoned, int attempts, CancellationToken cancellationToken = default(CancellationToken));
-
+        protected abstract Task<IEnumerable<QueuedMessage>> GetPendingMessages(CancellationToken cancellationToken = default(CancellationToken));
+        
         /// <summary>
         /// Adds a message to the queue
         /// </summary>
         /// <param name="message">The message to add</param>
-        /// <param name="senderPrincipal">The principal that sent the message or from whom
+        /// <param name="principal">The principal that sent the message or from whom
         ///     the message was received</param>
         /// <param name="cancellationToken">A cancellation token that can be used by the caller
         /// to cancel the enqueueing operation</param>
@@ -163,13 +159,14 @@ namespace Platibus.Queueing
         /// <c>null</c></exception>
         /// <exception cref="ObjectDisposedException">Thrown if this SQL message queue instance
         /// has already been disposed</exception>
-        public virtual async Task Enqueue(Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual async Task Enqueue(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (message == null) throw new ArgumentNullException("message");
             CheckDisposed();
 
-            var queuedMessage = await InsertQueuedMessage(message, senderPrincipal, cancellationToken);
-
+            var queuedMessage = new QueuedMessage(message, principal, 0);
+            var args = new MessageQueueEventArgs(QueueName, queuedMessage);
+            await MessageEnqueued(this, args);
             await _queuedMessages.SendAsync(queuedMessage, cancellationToken);
             // TODO: handle accepted == false
         }
@@ -183,18 +180,16 @@ namespace Platibus.Queueing
         /// <returns>Returns a task that completes when the queued message is processed</returns>
         protected virtual async Task ProcessQueuedMessage(QueuedMessage queuedMessage, CancellationToken cancellationToken)
         {
+            Exception exception = null;
             var messageId = queuedMessage.Message.Headers.MessageId;
-            var attemptCount = queuedMessage.Attempts;
-            var abandoned = false;
             var message = queuedMessage.Message;
             var principal = queuedMessage.Principal;
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            while (!abandoned && attemptCount < _maxAttempts)
+            while (queuedMessage.Attempts < _maxAttempts)
             {
-                attemptCount++;
+                queuedMessage = queuedMessage.NextAttempt();
 
-                Log.DebugFormat("Processing queued message {0} (attempt {1} of {2})...", messageId, attemptCount,
-                    _maxAttempts);
+                Log.DebugFormat("Processing queued message {0} (attempt {1} of {2})...", messageId, queuedMessage.Attempts,  _maxAttempts);
 
                 var context = new QueuedMessageContext(message, principal);
                 Thread.CurrentPrincipal = context.Principal;
@@ -209,30 +204,27 @@ namespace Platibus.Queueing
                 }
                 catch (Exception ex)
                 {
+                    exception = ex;
                     Log.WarnFormat("Unhandled exception handling queued message {0}", ex, messageId);
                 }
 
+                var eventArgs = new MessageQueueEventArgs(QueueName, queuedMessage, exception);
                 if (context.Acknowledged)
                 {
                     Log.DebugFormat("Message acknowledged.  Marking message {0} as acknowledged...", messageId);
-                    await UpdateQueuedMessage(queuedMessage, DateTime.UtcNow, null, attemptCount, cancellationToken);
+                    await MessageAcknowledged(this, eventArgs);
                     Log.DebugFormat("Message {0} acknowledged successfully", messageId);
                     return;
                 }
 
-                if (attemptCount >= _maxAttempts)
+                if (queuedMessage.Attempts >= _maxAttempts)
                 {
                     Log.WarnFormat("Maximum attempts to process message {0} exceeded", messageId);
-                    abandoned = true;
-                }
-
-                if (abandoned)
-                {
-                    await UpdateQueuedMessage(queuedMessage, null, DateTime.UtcNow, attemptCount, cancellationToken);
+                    await MaximumAttemptsExceeded(this, eventArgs);
                     return;
                 }
 
-                await UpdateQueuedMessage(queuedMessage, null, null, attemptCount, cancellationToken);
+                await AcknowledgementFailure(this, eventArgs);
 
                 Log.DebugFormat("Message not acknowledged.  Retrying in {0}...", _retryDelay);
                 await Task.Delay(_retryDelay, cancellationToken);

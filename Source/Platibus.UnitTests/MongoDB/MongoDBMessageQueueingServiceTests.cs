@@ -26,6 +26,7 @@ using System.Security.Principal;
 using System.Threading.Tasks;
 using MongoDB.Driver;
 using Platibus.MongoDB;
+using Platibus.Queueing;
 using Xunit;
 
 namespace Platibus.UnitTests.MongoDB
@@ -56,7 +57,7 @@ namespace Platibus.UnitTests.MongoDB
             using (var queueInspector = Inspect(queueName))
             {
                 await queueInspector.Init();
-                await queueInspector.InsertMessage(message, principal);
+                await queueInspector.InsertMessage(new QueuedMessage(message, principal));
             }
         }
 

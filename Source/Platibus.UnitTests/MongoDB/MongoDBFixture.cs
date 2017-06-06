@@ -67,7 +67,7 @@ namespace Platibus.UnitTests.MongoDB
 
             _connectionStringSettings = new ConnectionStringSettings
             {
-                ConnectionString = _mongoDbRunner.ConnectionString
+                ConnectionString = _mongoDbRunner.ConnectionString + "?maxpoolsize=1000"
             };
             
             _subscriptionTrackingService = new MongoDBSubscriptionTrackingService(_connectionStringSettings, DatabaseName);

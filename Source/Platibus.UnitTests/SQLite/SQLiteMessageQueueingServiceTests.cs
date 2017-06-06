@@ -25,6 +25,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Principal;
 using System.Threading.Tasks;
+using Platibus.Queueing;
 using Platibus.SQLite;
 using Xunit;
 
@@ -48,7 +49,7 @@ namespace Platibus.UnitTests.SQLite
             using (var queueInspector = new SQLiteMessageQueueInspector(_queueDirectory, queueName, SecurityTokenService))
             {
                 await queueInspector.Init();
-                await queueInspector.InsertMessage(message, principal);
+                await queueInspector.InsertMessage(new QueuedMessage(message, principal));
             }
         }
 

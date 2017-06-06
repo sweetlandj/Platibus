@@ -56,7 +56,7 @@ namespace Platibus.SQL.Commands
         /// Returns a new builder for constructing commands needed to selecting queued messages
         /// from the database
         /// </returns>
-        SelectQueuedMessagesCommandBuilder NewSelectQueuedMessagesCommandBuilder();
+        SelectPendingMessagesCommandBuilder NewSelectPendingMessagesCommandBuilder();
 
         /// <summary>
         /// Returns a new builder for constructing commands needed to selecting abandoned messages
@@ -66,7 +66,7 @@ namespace Platibus.SQL.Commands
         /// Returns a new builder for constructing commands needed to selecting abandoned messages
         /// from the database (i.e. "dead letters")
         /// </returns>
-        SelectAbandonedMessagesCommandBuilder NewSelectAbandonedMessagesCommandBuilder();
+        SelectDeadMessagesCommandBuilder NewSelectDeadMessagesCommandBuilder();
 
         /// <summary>
         /// Returns a new builder for constructing commands needed to update queued messages in
@@ -77,5 +77,15 @@ namespace Platibus.SQL.Commands
         /// the database
         /// </returns>
         UpdateQueuedMessageCommandBuilder NewUpdateQueuedMessageCommandBuilder();
+
+        /// <summary>
+        /// Returns a new builder for constructing commands needed to delete queued messages from
+        /// the database
+        /// </summary>
+        /// <returns>
+        /// Returns a new builder for constructing commands needed to delete queued messages from
+        /// the database
+        /// </returns>
+        DeleteQueuedMessageCommandBuilder NewDeleteQueuedMessageCommandBuilder();
     }
 }

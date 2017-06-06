@@ -43,11 +43,6 @@ namespace Platibus.SQL.Commands
         public string QueueName { get; set; }
 
         /// <summary>
-        /// The date/time the message was acknowledged
-        /// </summary>
-        public DateTime? Acknowledged { get; set; }
-
-        /// <summary>
         /// The date/time the message was abandoned (maximum attempts exhausted)
         /// </summary>
         public DateTime? Abandoned { get; set; }
@@ -75,7 +70,6 @@ namespace Platibus.SQL.Commands
 
             command.SetParameter("@MessageId", MessageId);
             command.SetParameter("@QueueName", QueueName);
-            command.SetParameter("@Acknowledged", Acknowledged);
             command.SetParameter("@Abandoned", Abandoned);
             command.SetParameter("@Attempts", Attempts);
 
@@ -91,7 +85,6 @@ namespace Platibus.SQL.Commands
             {
                 return @"
 UPDATE [PB_QueuedMessages] SET 
-    [Acknowledged]=@Acknowledged,
     [Abandoned]=@Abandoned,
     [Attempts]=@Attempts
 WHERE [MessageId]=@MessageId 

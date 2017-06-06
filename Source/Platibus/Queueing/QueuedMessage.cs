@@ -60,14 +60,37 @@ namespace Platibus.Queueing
         /// </summary>
         /// <param name="message">The queued message</param>
         /// <param name="principal">(Optional) The principal representing the message sender</param>
+        public QueuedMessage(Message message, IPrincipal principal)
+        {
+            if (message == null) throw new ArgumentNullException("message");
+            _message = message;
+            _principal = principal;
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="QueuedMessage"/>
+        /// </summary>
+        /// <param name="message">The queued message</param>
+        /// <param name="principal">(Optional) The principal representing the message sender</param>
         /// <param name="attempts">The number of attempts that have been made to process the
         ///     queued message</param>
         public QueuedMessage(Message message, IPrincipal principal, int attempts)
         {
             if (message == null) throw new ArgumentNullException("message");
             _message = message;
-            _attempts = attempts;
             _principal = principal;
+            _attempts = attempts;
+        }
+
+        /// <summary>
+        /// Returns a copy of this <see cref="QueuedMessage"/> object with an incremented
+        /// <see cref="Attempts"/> value
+        /// </summary>
+        /// <returns>Returns a copy of this <see cref="QueuedMessage"/> object with an incremented
+        /// <see cref="Attempts"/> value</returns>
+        public QueuedMessage NextAttempt()
+        {
+            return new QueuedMessage(_message, _principal, _attempts + 1);
         }
     }
 }

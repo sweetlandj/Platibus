@@ -22,7 +22,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Queueing;
@@ -40,19 +39,19 @@ namespace Platibus.UnitTests.LocalDB
         {
         }
         
-        public Task<QueuedMessage> InsertMessage(Message testMessage, IPrincipal principal)
+        public Task InsertMessage(QueuedMessage testMessage)
         {
-            return InsertQueuedMessage(testMessage, principal);
+            return InsertQueuedMessage(testMessage);
         }
 
         public Task<IEnumerable<QueuedMessage>> EnumerateMessages()
         {
-            return SelectPendingMessages();
+            return GetPendingMessages();
         }
 
         public Task<IEnumerable<QueuedMessage>> EnumerateAbandonedMessages(DateTime startDate, DateTime endDate)
         {
-            return SelectDeadMessages(startDate, endDate);
+            return GetDeadMessages(startDate, endDate);
         }
 
         private class NoopQueueListener : IQueueListener

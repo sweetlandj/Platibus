@@ -25,7 +25,6 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -103,29 +102,37 @@ namespace Platibus.SQLite
         }
 
         /// <inheritdoc />
-        protected override Task<QueuedMessage> InsertQueuedMessage(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
+        protected override Task InsertQueuedMessage(QueuedMessage queuedMessage, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
-            var op = new SQLiteOperation<QueuedMessage>(() => base.InsertQueuedMessage(message, principal, cancellationToken));
+            var op = new SQLiteOperation(() => base.InsertQueuedMessage(queuedMessage, cancellationToken));
             _operationQueue.Post(op);
             return op.Task;
         }
 
         /// <inheritdoc />
-        protected override Task UpdateQueuedMessage(QueuedMessage queuedMessage, DateTime? acknowledged,
-            DateTime? abandoned, int attempts, CancellationToken cancellationToken = default(CancellationToken))
+        protected override Task DeleteQueuedMessage(QueuedMessage queuedMessage, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
-            var op = new SQLiteOperation(() => base.UpdateQueuedMessage(queuedMessage, acknowledged, abandoned, attempts, cancellationToken));
+            var op = new SQLiteOperation(() => base.DeleteQueuedMessage(queuedMessage, cancellationToken));
             _operationQueue.Post(op);
             return op.Task;
         }
 
         /// <inheritdoc />
-        protected override Task<IEnumerable<QueuedMessage>> SelectPendingMessages(CancellationToken cancellationToken = default(CancellationToken))
+        protected override Task UpdateQueuedMessage(QueuedMessage queuedMessage, DateTime? abandoned, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
-            var op = new SQLiteOperation<IEnumerable<QueuedMessage>>(() => base.SelectPendingMessages(cancellationToken));
+            var op = new SQLiteOperation(() => base.UpdateQueuedMessage(queuedMessage, abandoned, cancellationToken));
+            _operationQueue.Post(op);
+            return op.Task;
+        }
+
+        /// <inheritdoc />
+        protected override Task<IEnumerable<QueuedMessage>> GetPendingMessages(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            CheckDisposed();
+            var op = new SQLiteOperation<IEnumerable<QueuedMessage>>(() => base.GetPendingMessages(cancellationToken));
             _operationQueue.Post(op);
             return op.Task;
         }

@@ -23,7 +23,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using MongoDB.Driver;
@@ -70,6 +69,30 @@ namespace Platibus.MongoDB
                 : collectionName;
 
             _queuedMessages = database.GetCollection<QueuedMessageDocument>(myCollectionName);
+            MessageEnqueued += OnMessageEnqueued;
+            MessageAcknowledged += OnMessageAcknowledged;
+            AcknowledgementFailure += OnAcknowledgementFailure;
+            MaximumAttemptsExceeded += OnMaximumAttemptsExceeded;
+        }
+
+        private Task OnMessageEnqueued(object source, MessageQueueEventArgs args)
+        {
+            return InsertQueuedMessage(args.QueuedMessage);
+        }
+
+        private Task OnMessageAcknowledged(object source, MessageQueueEventArgs args)
+        {
+            return DeleteQueuedMessage(args.QueuedMessage);
+        }
+
+        private Task OnAcknowledgementFailure(object source, MessageQueueEventArgs args)
+        {
+            return UpdateQueuedMessage(args.QueuedMessage, null);
+        }
+
+        private Task OnMaximumAttemptsExceeded(object source, MessageQueueEventArgs args)
+        {
+            return UpdateQueuedMessage(args.QueuedMessage, DateTime.UtcNow);
         }
 
         /// <inheritdoc />
@@ -100,10 +123,18 @@ namespace Platibus.MongoDB
             }
             return collectionName;
         }
-        
-        /// <inheritdoc />
-        protected override async Task<QueuedMessage> InsertQueuedMessage(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
+
+        /// <summary>
+        /// Inserts a new queued message into the database
+        /// </summary>
+        /// <param name="queuedMessage">The queued message to insert</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token through which the
+        /// caller can request cancellation of the insert operation</param>
+        /// <returns>Returns a task that completes when the insert operation completes</returns>
+        protected virtual async Task InsertQueuedMessage(QueuedMessage queuedMessage, CancellationToken cancellationToken = default(CancellationToken))
         {
+            var message = queuedMessage.Message;
+            var principal = queuedMessage.Principal;
             var messageId = message.Headers.MessageId;
             var expires = message.Headers.Expires;
             var securityToken = await _securityTokenService.NullSafeIssue(principal, expires);
@@ -117,22 +148,42 @@ namespace Platibus.MongoDB
             };
 
             await _queuedMessages.InsertOneAsync(queuedMessageDocument, cancellationToken: cancellationToken);
-            return new QueuedMessage(messageWithSecurityToken, principal, 0);
         }
 
-        /// <inheritdoc />
-        protected override async Task UpdateQueuedMessage(QueuedMessage queuedMessage, DateTime? acknowledged, DateTime? abandoned, int attempts, CancellationToken cancellationToken = default(CancellationToken))
+        /// <summary>
+        /// Deletes a queued message from the database
+        /// </summary>
+        /// <param name="queuedMessage">The queued message to delete</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token through which the
+        /// caller can request cancellation of the delete operation</param>
+        /// <returns>Returns a task that completes when the delete operation completes</returns>
+        protected virtual async Task DeleteQueuedMessage(QueuedMessage queuedMessage, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var message = queuedMessage.Message;
+            var messageHeaders = message.Headers;
+            var messageId = messageHeaders.MessageId;
+            var fb = Builders<QueuedMessageDocument>.Filter;
+            var filter = fb.Eq(qm => qm.Queue, (string)QueueName) &
+                         fb.Eq(qm => qm.MessageId, (string)messageId);
+            await _queuedMessages.DeleteOneAsync(filter, cancellationToken);
+        }
+
+        /// <summary>
+        /// Updates a queued message in the database i.e. in response to an acknowledgement failure
+        /// </summary>
+        /// <param name="queuedMessage">The queued message to delete</param>
+        /// <param name="abandoned">The date/time the message was abandoned (if applicable)</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token through which the
+        ///     caller can request cancellation of the update operation</param>
+        /// <returns>Returns a task that completes when the update operation completes</returns>
+        protected virtual Task UpdateQueuedMessage(QueuedMessage queuedMessage, DateTime? abandoned, CancellationToken cancellationToken = default(CancellationToken))
         {
             var message = queuedMessage.Message;
             var messageHeaders = message.Headers;
             var messageId = messageHeaders.MessageId;
 
             var state = QueuedMessageState.Pending;
-            if (acknowledged != null)
-            {
-                state = QueuedMessageState.Acknowledged;
-            }
-            else if (abandoned != null)
+            if (abandoned != null)
             {
                 state = QueuedMessageState.Dead;
             }
@@ -142,12 +193,11 @@ namespace Platibus.MongoDB
                          fb.Eq(qm => qm.MessageId, (string) messageId);
 
             var update = Builders<QueuedMessageDocument>.Update
-                .Set(qm => qm.Attempts, attempts)
+                .Set(qm => qm.Attempts, queuedMessage.Attempts)
                 .Set(qm => qm.State, state)
-                .Set(qm => qm.Acknowledged, acknowledged)
                 .Set(qm => qm.Abandoned, abandoned);
 
-            await _queuedMessages.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+            return _queuedMessages.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -156,7 +206,7 @@ namespace Platibus.MongoDB
         /// <param name="cancellationToken">(Optional) A token provided by the caller that can
         /// be used by the caller to request cancellation of the fetch operation</param>
         /// <returns>Returns the set of pending messages in the queue</returns>
-        protected override async Task<IEnumerable<QueuedMessage>> SelectPendingMessages(CancellationToken cancellationToken = default(CancellationToken))
+        protected override async Task<IEnumerable<QueuedMessage>> GetPendingMessages(CancellationToken cancellationToken = default(CancellationToken))
         {
             var fb = Builders<QueuedMessageDocument>.Filter;
             var filter = fb.Eq(qm => qm.Queue, (string)QueueName) &
@@ -182,7 +232,7 @@ namespace Platibus.MongoDB
         /// <param name="cancellationToken">(Optional) A token provided by the caller that can
         /// be used by the caller to request cancellation of the fetch operation</param>
         /// <returns>Returns the set of pending messages in the queue</returns>
-        protected async Task<IEnumerable<QueuedMessage>> SelectDeadMessages(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default(CancellationToken))
+        protected async Task<IEnumerable<QueuedMessage>> GetDeadMessages(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default(CancellationToken))
         {
             var fb = Builders<QueuedMessageDocument>.Filter;
             var filter = fb.Eq(qm => qm.Queue, (string)QueueName) &

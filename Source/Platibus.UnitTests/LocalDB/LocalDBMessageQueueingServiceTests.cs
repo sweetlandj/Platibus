@@ -24,6 +24,7 @@ using System;
 using System.Linq;
 using System.Security.Principal;
 using System.Threading.Tasks;
+using Platibus.Queueing;
 using Platibus.SQL;
 using Xunit;
 
@@ -44,7 +45,7 @@ namespace Platibus.UnitTests.LocalDB
             using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, SecurityTokenService))
             {
                 await queueInspector.Init();
-                await queueInspector.InsertMessage(message, principal);
+                await queueInspector.InsertMessage(new QueuedMessage(message, principal));
             }
         }
 

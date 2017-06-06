@@ -132,6 +132,8 @@
     <Compile Include="NoMatchingSendRulesException.cs" />
     <Compile Include="Queueing\AbstractMessageQueue.cs" />
     <Compile Include="Queueing\AbstractMessageQueueingService.cs" />
+    <Compile Include="Queueing\MessageQueueEventArgs.cs" />
+    <Compile Include="Queueing\MessageQueueEventHandler.cs" />
     <Compile Include="Queueing\QueuedMessage.cs" />
     <Compile Include="Queueing\QueuedMessageContext.cs" />
     <Compile Include="ResourceNotFoundException.cs" />
@@ -166,6 +168,7 @@
     <Compile Include="SQL\Commands\CommonMessageJournalingCommandBuilders.cs" />
     <Compile Include="SQL\Commands\CommonSubscriptionTrackingCommandBuilders.cs" />
     <Compile Include="SQL\Commands\CreateSubscriptionTrackingObjectsCommandBuilder.cs" />
+    <Compile Include="SQL\Commands\DeleteQueuedMessageCommandBuilder.cs" />
     <Compile Include="SQL\Commands\DeleteSubscriptionCommandBuilder.cs" />
     <Compile Include="Config\Extensibility\IMessageJournalingCommandBuildersProvider.cs" />
     <Compile Include="Config\Extensibility\IMessageQueueingCommandBuildersProvider.cs" />
@@ -183,9 +186,9 @@
     <Compile Include="SQL\Commands\MSSQLMessageJournalingCommandBuilders.cs" />
     <Compile Include="SQL\Commands\MSSQLSubscriptionTrackingCommandBuilders.cs" />
     <Compile Include="SQL\Commands\QueuedMessageRecord.cs" />
-    <Compile Include="SQL\Commands\SelectAbandonedMessagesCommandBuilder.cs" />
+    <Compile Include="SQL\Commands\SelectDeadMessagesCommandBuilder.cs" />
     <Compile Include="SQL\Commands\SelectMessageJournalEntriesCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\SelectQueuedMessagesCommandBuilder.cs" />
+    <Compile Include="SQL\Commands\SelectPendingMessagesCommandBuilder.cs" />
     <Compile Include="SQL\Commands\SelectSubscriptionsCommandBuilder.cs" />
     <Compile Include="SQL\Commands\UpdateQueuedMessageCommandBuilder.cs" />
     <Compile Include="SQL\Commands\MSSQLCreateMessageJournalObjectsCommandBuilder.cs" />

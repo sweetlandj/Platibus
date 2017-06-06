@@ -92,61 +92,44 @@ namespace Platibus.SQL
             _connectionProvider = connectionProvider;
             _commandBuilders = commandBuilders;
             _securityTokenService = securityTokenService;
+
+            MessageEnqueued += OnMessageEnqueued;
+            MessageAcknowledged += OnMessageAcknowledged;
+            AcknowledgementFailure += OnAcknowledgementFailure;
+            MaximumAttemptsExceeded += OnMaximumAttemptsExceeded;
         }
-        
-        /// <inheritdoc />
-        [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected override async Task<QueuedMessage> InsertQueuedMessage(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
+
+        private Task OnMessageEnqueued(object source, MessageQueueEventArgs args)
         {
-            QueuedMessage queuedMessage;
-            var expires = message.Headers.Expires;
-            var connection = _connectionProvider.GetConnection();
-            var securityToken = await _securityTokenService.NullSafeIssue(principal, expires);
-            var messageWithSecurityToken = message.WithSecurityToken(securityToken);
-            try
-            {
-                var headers = messageWithSecurityToken.Headers;
-                var commandBuilder = _commandBuilders.NewInsertQueuedMessageCommandBuilder();
-                commandBuilder.MessageId = headers.MessageId;
-                commandBuilder.QueueName = QueueName;
-                commandBuilder.MessageId = headers.MessageId;
-                commandBuilder.Origination = headers.Origination == null ? null : headers.Origination.ToString();
-                commandBuilder.Destination = headers.Destination == null ? null : headers.Destination.ToString();
-                commandBuilder.ReplyTo = headers.ReplyTo == null ? null : headers.ReplyTo.ToString();
-                commandBuilder.Expires = headers.Expires;
-                commandBuilder.ContentType = headers.ContentType;
-                commandBuilder.Headers = SerializeHeaders(headers);
-                commandBuilder.Content = messageWithSecurityToken.Content;
-
-                using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
-                {
-                    using (var command = commandBuilder.BuildDbCommand(connection))
-                    {
-                        await command.ExecuteNonQueryAsync(cancellationToken);
-                    }
-                    scope.Complete();
-                }
-                queuedMessage = new QueuedMessage(messageWithSecurityToken, principal, 0);
-            }
-            finally
-            {
-                _connectionProvider.ReleaseConnection(connection);
-            }
-
-            return queuedMessage;
+            return InsertQueuedMessage(args.QueuedMessage);
         }
-        
+
+        private Task OnMessageAcknowledged(object source, MessageQueueEventArgs args)
+        {
+            return DeleteQueuedMessage(args.QueuedMessage);
+        }
+
+        private Task OnAcknowledgementFailure(object source, MessageQueueEventArgs args)
+        {
+            return UpdateQueuedMessage(args.QueuedMessage, null);
+        }
+
+        private Task OnMaximumAttemptsExceeded(object source, MessageQueueEventArgs args)
+        {
+            return UpdateQueuedMessage(args.QueuedMessage, DateTime.UtcNow);
+        }
+
         /// <inheritdoc />
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected override async Task<IEnumerable<QueuedMessage>> SelectPendingMessages(CancellationToken cancellationToken = default(CancellationToken))
+        protected override async Task<IEnumerable<QueuedMessage>> GetPendingMessages(CancellationToken cancellationToken = default(CancellationToken))
         {
             var queuedMessages = new List<QueuedMessage>();
             var connection = _connectionProvider.GetConnection();
             try
             {
-                var commandBuilder = _commandBuilders.NewSelectQueuedMessagesCommandBuilder();
+                var commandBuilder = _commandBuilders.NewSelectPendingMessagesCommandBuilder();
                 commandBuilder.QueueName = QueueName;
-                
+
                 using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
                 {
                     using (var command = commandBuilder.BuildDbCommand(connection))
@@ -182,18 +165,94 @@ namespace Platibus.SQL
         }
 
         /// <summary>
-        /// Selects all abandoned messages from the SQL database
+        /// Inserts a new queued message into the database
+        /// </summary>
+        /// <param name="queuedMessage">The queued message to insert</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token through which the
+        /// caller can request cancellation of the insert operation</param>
+        /// <returns>Returns a task that completes when the insert operation completes</returns>
+        protected virtual async Task InsertQueuedMessage(QueuedMessage queuedMessage, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var message = queuedMessage.Message;
+            var principal = queuedMessage.Principal;
+            var expires = message.Headers.Expires;
+            var connection = _connectionProvider.GetConnection();
+            var securityToken = await _securityTokenService.NullSafeIssue(principal, expires);
+            var messageWithSecurityToken = message.WithSecurityToken(securityToken);
+            try
+            {
+                var headers = messageWithSecurityToken.Headers;
+                var commandBuilder = _commandBuilders.NewInsertQueuedMessageCommandBuilder();
+                commandBuilder.MessageId = headers.MessageId;
+                commandBuilder.QueueName = QueueName;
+                commandBuilder.Origination = headers.Origination == null ? null : headers.Origination.ToString();
+                commandBuilder.Destination = headers.Destination == null ? null : headers.Destination.ToString();
+                commandBuilder.ReplyTo = headers.ReplyTo == null ? null : headers.ReplyTo.ToString();
+                commandBuilder.Expires = headers.Expires;
+                commandBuilder.ContentType = headers.ContentType;
+                commandBuilder.Headers = SerializeHeaders(headers);
+                commandBuilder.Content = messageWithSecurityToken.Content;
+
+                using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    using (var command = commandBuilder.BuildDbCommand(connection))
+                    {
+                        await command.ExecuteNonQueryAsync(cancellationToken);
+                    }
+                    scope.Complete();
+                }
+            }
+            finally
+            {
+                _connectionProvider.ReleaseConnection(connection);
+            }
+        }
+
+        /// <summary>
+        /// Deletes a queued message from the database i.e. in response to message acknowledgement
+        /// </summary>
+        /// <param name="queuedMessage">The queued message to delete</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token through which the
+        /// caller can request cancellation of the delete operation</param>
+        /// <returns>Returns a task that completes when the delete operation completes</returns>
+        protected virtual async Task DeleteQueuedMessage(QueuedMessage queuedMessage, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var connection = _connectionProvider.GetConnection();
+            try
+            {
+                var message = queuedMessage.Message;
+                var headers = message.Headers;
+                var commandBuilder = _commandBuilders.NewDeleteQueuedMessageCommandBuilder();
+                commandBuilder.MessageId = headers.MessageId;
+                commandBuilder.QueueName = QueueName;
+
+                using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    using (var command = commandBuilder.BuildDbCommand(connection))
+                    {
+                        await command.ExecuteNonQueryAsync(cancellationToken);
+                    }
+                    scope.Complete();
+                }
+            }
+            finally
+            {
+                _connectionProvider.ReleaseConnection(connection);
+            }
+        }
+        
+        /// <summary>
+        /// Selects all dead messages from the SQL database
         /// </summary>
         /// <returns>Returns a task that completes when all records have been selected and whose
         /// result is the enumerable sequence of the selected records</returns>
-        [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected virtual async Task<IEnumerable<QueuedMessage>> SelectDeadMessages(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = new CancellationToken())
+        protected virtual async Task<IEnumerable<QueuedMessage>> GetDeadMessages(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = new CancellationToken())
         {
             var queuedMessages = new List<QueuedMessage>();
             var connection = _connectionProvider.GetConnection();
             try
             {
-                var commandBuilder = _commandBuilders.NewSelectAbandonedMessagesCommandBuilder();
+                var commandBuilder = _commandBuilders.NewSelectDeadMessagesCommandBuilder();
                 commandBuilder.QueueName = QueueName;
                 commandBuilder.StartDate = startDate;
                 commandBuilder.EndDate = endDate;
@@ -228,11 +287,16 @@ namespace Platibus.SQL
             }
             return queuedMessages.AsEnumerable();
         }
-        
-        /// <inheritdoc />
-        [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        protected override async Task UpdateQueuedMessage(QueuedMessage queuedMessage, DateTime? acknowledged,
-            DateTime? abandoned, int attempts, CancellationToken cancellationToken = default(CancellationToken))
+
+        /// <summary>
+        /// Updates a queued message in the database i.e. in response to an acknowledgement failure
+        /// </summary>
+        /// <param name="queuedMessage">The queued message to delete</param>
+        /// <param name="abandoned">The date/time the message was abandoned (if applicable)</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token through which the
+        ///     caller can request cancellation of the update operation</param>
+        /// <returns>Returns a task that completes when the update operation completes</returns>
+        protected virtual async Task UpdateQueuedMessage(QueuedMessage queuedMessage, DateTime? abandoned, CancellationToken cancellationToken = default(CancellationToken))
         {
             var connection = _connectionProvider.GetConnection();
             try
@@ -242,9 +306,8 @@ namespace Platibus.SQL
                 var commandBuilder = _commandBuilders.NewUpdateQueuedMessageCommandBuilder();
                 commandBuilder.MessageId = headers.MessageId;
                 commandBuilder.QueueName = QueueName;
-                commandBuilder.Acknowledged = acknowledged;
                 commandBuilder.Abandoned = abandoned;
-                commandBuilder.Attempts = attempts;
+                commandBuilder.Attempts = queuedMessage.Attempts;
 
                 using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
                 {

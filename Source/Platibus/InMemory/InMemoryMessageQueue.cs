@@ -23,7 +23,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Queueing;
@@ -49,23 +48,11 @@ namespace Platibus.InMemory
             : base(queueName, listener, options)
         {
         }
-
+        
         /// <inheritdoc />
-        protected override Task<IEnumerable<QueuedMessage>> SelectPendingMessages(CancellationToken cancellationToken = new CancellationToken())
+        protected override Task<IEnumerable<QueuedMessage>> GetPendingMessages(CancellationToken cancellationToken = new CancellationToken())
         {
             return Task.FromResult(Enumerable.Empty<QueuedMessage>());
-        }
-
-        /// <inheritdoc />
-        protected override Task<QueuedMessage> InsertQueuedMessage(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            return Task.FromResult(new QueuedMessage(message, principal, 0));
-        }
-
-        /// <inheritdoc />
-        protected override Task UpdateQueuedMessage(QueuedMessage queuedMessage, DateTime? acknowledged, DateTime? abandoned, int attempts, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            return Task.FromResult(0);
         }
     }
 }
