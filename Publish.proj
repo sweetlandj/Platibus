@@ -76,7 +76,7 @@
 		<ItemGroup>
 			<DistPackage Include="$(DistDir)*.nupkg" Exclude="$(DistDir)*.symbols.nupkg"/>
 		</ItemGroup>
-		<Message Text="&quot;$(NuGetExe)&quot; push %(DistPackage.FullPath) -ApiKey $(ApiKey)" Condition="'$(DryRun)' != ''" Importance="high"/>
-		<Exec Command="&quot;$(NuGetExe)&quot; push %(DistPackage.FullPath) -ApiKey $(ApiKey)" Condition="'$(DryRun)' == ''" />
+		<Message Text="&quot;$(NuGetExe)&quot; push %(DistPackage.FullPath) -ApiKey $(ApiKey) -Source https://www.nuget.org/api/v2/package" Condition="'$(DryRun)' != ''" Importance="high"/>
+		<Exec Command="&quot;$(NuGetExe)&quot; push %(DistPackage.FullPath) -ApiKey $(ApiKey) -Source https://www.nuget.org/api/v2/package" Condition="'$(DryRun)' == ''" />
 	</Target>
 </Project>
