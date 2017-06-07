@@ -165,8 +165,13 @@ namespace Platibus.Queueing
             CheckDisposed();
 
             var queuedMessage = new QueuedMessage(message, principal, 0);
-            var args = new MessageQueueEventArgs(QueueName, queuedMessage);
-            await MessageEnqueued(this, args);
+            var handler = MessageEnqueued;
+            if (handler != null)
+            {
+                var args = new MessageQueueEventArgs(QueueName, queuedMessage);
+                await MessageEnqueued(this, args);
+            }
+            
             await _queuedMessages.SendAsync(queuedMessage, cancellationToken);
             // TODO: handle accepted == false
         }
@@ -212,7 +217,11 @@ namespace Platibus.Queueing
                 if (context.Acknowledged)
                 {
                     Log.DebugFormat("Message acknowledged.  Marking message {0} as acknowledged...", messageId);
-                    await MessageAcknowledged(this, eventArgs);
+                    var messageAcknowledgedHandlers = MessageAcknowledged;
+                    if (messageAcknowledgedHandlers != null)
+                    {
+                        await messageAcknowledgedHandlers(this, eventArgs);
+                    }
                     Log.DebugFormat("Message {0} acknowledged successfully", messageId);
                     return;
                 }
@@ -220,12 +229,19 @@ namespace Platibus.Queueing
                 if (queuedMessage.Attempts >= _maxAttempts)
                 {
                     Log.WarnFormat("Maximum attempts to process message {0} exceeded", messageId);
-                    await MaximumAttemptsExceeded(this, eventArgs);
+                    var maxAttemptsExceededHandlers = MaximumAttemptsExceeded;
+                    if (maxAttemptsExceededHandlers != null)
+                    {
+                        await MaximumAttemptsExceeded(this, eventArgs);
+                    }
                     return;
                 }
 
-                await AcknowledgementFailure(this, eventArgs);
-
+                var acknowledgementFailureHandlers = AcknowledgementFailure;
+                if (acknowledgementFailureHandlers != null)
+                {
+                    await AcknowledgementFailure(this, eventArgs);
+                }
                 Log.DebugFormat("Message not acknowledged.  Retrying in {0}...", _retryDelay);
                 await Task.Delay(_retryDelay, cancellationToken);
             }
