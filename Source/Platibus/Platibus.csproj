@@ -113,6 +113,7 @@
     <Compile Include="Config\InvalidSendRuleException.cs" />
     <Compile Include="Config\InvalidSubscriptionException.cs" />
     <Compile Include="Http\Controllers\JournalController.cs" />
+    <Compile Include="Http\HttpSubscriptionMetadata.cs" />
     <Compile Include="Http\Models\ErrorModel.cs" />
     <Compile Include="Http\Models\MessageJournalEntryDataModel.cs" />
     <Compile Include="Http\Models\JournalGetResponseModel.cs" />

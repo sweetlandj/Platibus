@@ -287,27 +287,23 @@ namespace Platibus.Http
         {
             try
             {
+                var subscription = new HttpSubscriptionMetadata(endpoint, topicName, ttl);
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     TimeSpan retryOrRenewAfter;
                     try
                     {
                         Log.DebugFormat("Sending subscription request for topic {0} to {1}...", topicName, endpoint);
-
-                        await SendSubscriptionRequest(endpoint, topicName, ttl, cancellationToken);
-
-                        if (ttl <= TimeSpan.Zero)
+                        await SendSubscriptionRequest(subscription, cancellationToken);
+                        if (!subscription.Expires)
                         {
-                            // No TTL specified; subscription lives forever on the
-                            // remote server.  Since publications are pushed to the
-                            // subscribers, we don't need to keep this task running.
+                            // Subscription is not set to expire on the remote server.  Since
+                            // publications are pushed to the subscribers, we don't need to keep
+                            // this task running.
                             return;
                         }
-
-                        // Attempt to renew after half of the TTL to allow for
-                        // issues that may occur when attempting to renew the
-                        // subscription.
-                        retryOrRenewAfter = TimeSpan.FromTicks(ttl.Ticks / 2);
+                        
+                        retryOrRenewAfter = subscription.RenewalInterval;
                         Log.DebugFormat(
                             "Subscription request for topic {0} successfuly sent to {1}.  Subscription TTL is {2} and is scheduled to auto-renew in {3}",
                             topicName, endpoint, ttl, retryOrRenewAfter);
@@ -326,7 +322,7 @@ namespace Platibus.Http
                         // The transport was unable to resolve the hostname in the
                         // endpoint URI.  This may or may not be a temporary error.
                         // In either case, retry after 30 seconds.
-                        retryOrRenewAfter = TimeSpan.FromSeconds(30);
+                        retryOrRenewAfter = subscription.RetryInterval;
                         Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", nrfe,
                             topicName, endpoint, retryOrRenewAfter);
                     }
@@ -335,14 +331,14 @@ namespace Platibus.Http
                         // The transport was unable to resolve the hostname in the
                         // endpoint URI.  This may or may not be a temporary error.
                         // In either case, retry after 30 seconds.
-                        retryOrRenewAfter = TimeSpan.FromSeconds(30);
+                        retryOrRenewAfter = subscription.RetryInterval;
                         Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", cre,
                             topicName, endpoint, retryOrRenewAfter);
                     }
                     catch (ResourceNotFoundException ire)
                     {
                         // Topic is not found.  This may be temporary.
-                        retryOrRenewAfter = TimeSpan.FromSeconds(30);
+                        retryOrRenewAfter = subscription.RetryInterval;
                         Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", ire,
                             topicName, endpoint, retryOrRenewAfter);
                     }
@@ -360,7 +356,7 @@ namespace Platibus.Http
                         // Unspecified transport error.  This may or may not be
                         // due to temporary conditions that will resolve 
                         // themselves.  Retry in 30 seconds.
-                        retryOrRenewAfter = TimeSpan.FromSeconds(30);
+                        retryOrRenewAfter = subscription.RetryInterval;
                         Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", te,
                             topicName, endpoint, retryOrRenewAfter);
                     }
@@ -372,11 +368,13 @@ namespace Platibus.Http
             }
         }
 
-        private async Task SendSubscriptionRequest(IEndpoint endpoint, TopicName topic,
-            TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
+        private async Task SendSubscriptionRequest(HttpSubscriptionMetadata subscriptionMetadata, CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (endpoint == null) throw new ArgumentNullException("endpoint");
-            if (topic == null) throw new ArgumentNullException("topic");
+            if (subscriptionMetadata == null) throw new ArgumentNullException("subscriptionMetadata");
+
+            var endpoint = subscriptionMetadata.Endpoint;
+            var topic = subscriptionMetadata.Topic;
+            var ttl = subscriptionMetadata.TTL;
 
             HttpClient httpClient = null;
             try
@@ -391,8 +389,7 @@ namespace Platibus.Http
                     relativeUri += "&ttl=" + ttl.TotalSeconds;
                 }
 
-                var httpResponseMessage =
-                    await httpClient.PostAsync(relativeUri, new StringContent(""), cancellationToken);
+                var httpResponseMessage = await httpClient.PostAsync(relativeUri, new StringContent(""), cancellationToken);
                 HandleHttpErrorResponse(httpResponseMessage);
             }
             catch (TransportException)

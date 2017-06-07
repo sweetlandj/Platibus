@@ -152,6 +152,7 @@
     <Compile Include="Config\SendRuleValidationTests.cs" />
     <Compile Include="Config\SubscriptionRuleValidationTests.cs" />
     <Compile Include="DataContractMessageNamingServiceTests.cs" />
+    <Compile Include="Http\HttpSubscriptionMetadataTests.cs" />
     <Compile Include="MongoDB\MongoDBMessageJournalTests.cs" />
     <Compile Include="MongoDB\MongoDBMessageQueueingServiceTests.cs" />
     <Compile Include="MongoDB\MongoDBMessageQueueInspector.cs" />
