@@ -36,7 +36,8 @@ namespace Platibus.UnitTests.Security
     {
         private static readonly RNGCryptoServiceProvider RNG = new RNGCryptoServiceProvider();
 
-        protected JwtSecurityTokenService SecurityTokenService;
+        protected SecurityKey SigningKey;
+        protected SecurityKey FallbackSigningKey;
         protected ClaimsPrincipal Principal;
         protected DateTime? Expiration;
         protected string IssuedToken;
@@ -44,7 +45,7 @@ namespace Platibus.UnitTests.Security
         [Fact]
         public async Task SignedMessageSecurityTokenCanBeValidated()
         {
-            GivenJwtMessageSecurityTokenServiceWithSigningKey();
+            GivenSigningKey();
             GivenClaimsPrincipal();
             await WhenATokenIsIssued();
             // Output for testing/verification on jwt.io
@@ -55,9 +56,21 @@ namespace Platibus.UnitTests.Security
         [Fact]
         public async Task UnsignedMessageSecurityTokenCanBeValidated()
         {
-            GivenJwtMessageSecurityTokenServiceWithNoSigningKey();
+            GivenNoSigningKey();
             GivenClaimsPrincipal();
             await WhenATokenIsIssued();
+            // Output for testing/verification on jwt.io
+            Console.Out.WriteLine("Authorization: Bearer " + IssuedToken);
+            await AssertIssuedTokenIsValid();
+        }
+
+        [Fact]
+        public async Task MessageSecurityTokenSignedWithFallbackKeyCanBeValidated()
+        {
+            GivenSigningKey();
+            GivenClaimsPrincipal();
+            await WhenATokenIsIssued();
+            WhenSigningKeyIsUpdated();
             // Output for testing/verification on jwt.io
             Console.Out.WriteLine("Authorization: Bearer " + IssuedToken);
             await AssertIssuedTokenIsValid();
@@ -72,17 +85,23 @@ namespace Platibus.UnitTests.Security
             return new InMemorySymmetricSecurityKey(signingKeyBytes);
         }
 
-        protected void GivenJwtMessageSecurityTokenServiceWithSigningKey()
+        protected void GivenNoSigningKey()
         {
-            var signingKey = GenerateSecurityKey();
-            SecurityTokenService = new JwtSecurityTokenService(signingKey);
+            SigningKey = null;
+            FallbackSigningKey = null;
         }
 
-        protected void GivenJwtMessageSecurityTokenServiceWithNoSigningKey()
+        protected void GivenSigningKey()
         {
-            SecurityTokenService = new JwtSecurityTokenService();
+            SigningKey = GenerateSecurityKey();
         }
 
+        protected void WhenSigningKeyIsUpdated()
+        {
+            FallbackSigningKey = SigningKey;
+            SigningKey = GenerateSecurityKey();
+        }
+        
         protected void GivenClaimsPrincipal()
         {
             var claims = new List<Claim>
@@ -101,13 +120,15 @@ namespace Platibus.UnitTests.Security
 
         protected async Task WhenATokenIsIssued()
         {
-            IssuedToken = await SecurityTokenService.Issue(Principal, Expiration);
+            var securityTokenService = new JwtSecurityTokenService(SigningKey, FallbackSigningKey);
+            IssuedToken = await securityTokenService.Issue(Principal, Expiration);
         }
 
         protected async Task AssertIssuedTokenIsValid()
         {
             Assert.NotNull(IssuedToken);
-            var validatedPrincipal = await SecurityTokenService.Validate(IssuedToken);
+            var securityTokenService = new JwtSecurityTokenService(SigningKey, FallbackSigningKey);
+            var validatedPrincipal = await securityTokenService.Validate(IssuedToken);
             Assert.NotNull(validatedPrincipal);
 
             Assert.True(validatedPrincipal.IsInRole("test"));
