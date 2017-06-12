@@ -54,5 +54,24 @@ namespace Platibus.Security
             };
             return new Message(updatedHeaders, message.Content);
         }
+
+        /// <summary>
+        /// Ensures that the <see cref="IMessageHeaders.SecurityToken"/> header is not present
+        /// in a message.
+        /// </summary>
+        /// <param name="message">The message</param>
+        /// <returns>Returns the specified <paramref name="message"/> if the
+        /// <see cref="IMessageHeaders.SecurityToken"/> header is not present.  Otherwise, returns 
+        /// a new <see cref="Message"/> with the same content and headers minus the
+        /// <see cref="IMessageHeaders.SecurityToken"/> header.</returns>
+        public static Message WithoutSecurityToken(this Message message)
+        {
+            if (string.IsNullOrWhiteSpace(message.Headers.SecurityToken)) return message;
+            var updatedHeaders = new MessageHeaders(message.Headers)
+            {
+                SecurityToken = null
+            };
+            return new Message(updatedHeaders, message.Content);
+        }
     }
 }

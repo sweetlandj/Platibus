@@ -263,8 +263,13 @@ namespace Platibus.RabbitMQ
 
                     var headers = new MessageHeaders(message.Headers)
                     {
-                        Received = DateTime.UtcNow
+                        SecurityToken = null
                     };
+
+                    if (headers.Received == default(DateTime))
+                    {
+                        headers.Received = DateTime.UtcNow;
+                    }
 
                     var context = new RabbitMQQueuedMessageContext(headers, principal);
                     Thread.CurrentPrincipal = context.Principal;

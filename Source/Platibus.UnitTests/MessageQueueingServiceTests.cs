@@ -104,6 +104,23 @@ namespace Platibus.UnitTests
         }
 
         [Fact]
+        public async Task SecurityTokenShouldNotBeExposed()
+        {
+            GivenClaimsPrincipal();
+            var queue = GivenUniqueQueueName();
+            var message = GivenSampleMessage();
+            await GivenExistingQueuedMessage(queue, message, Principal);
+            var listener = new QueueListenerStub();
+            await MessageQueueingService.CreateQueue(queue, listener);
+            await listener.Completed;
+            listener.Dispose();
+
+            await QueueOperationCompletion();
+            Assert.Null(listener.Message.Headers.SecurityToken);
+            Assert.Null(listener.Context.Headers.SecurityToken);
+        }
+
+        [Fact]
         public async Task MessageCanBeAutomaticallyAcknowledged()
         {
             var queue = GivenUniqueQueueName();

@@ -218,7 +218,7 @@ namespace Platibus.MongoDB
             {
                 var messageHeaders = new MessageHeaders(queuedMessage.Headers);
                 var principal = await _securityTokenService.NullSafeValidate(messageHeaders.SecurityToken);
-                var message = new Message(messageHeaders, queuedMessage.Content);
+                var message = new Message(messageHeaders, queuedMessage.Content).WithoutSecurityToken();
                 queuedMessages.Add(new QueuedMessage(message, principal, queuedMessage.Attempts));
             }
             return queuedMessages;
