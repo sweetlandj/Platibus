@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Platibus.Security;
 using Platibus.Serialization;
@@ -97,9 +98,16 @@ namespace Platibus.Http.Controllers
 
         private async Task GetTopics(IHttpResourceResponse response)
         {
+            response.ContentType = "application/json";
+            var encoding = response.ContentEncoding;
+            if (encoding == null)
+            {
+                encoding = Encoding.UTF8;
+                response.ContentEncoding = encoding;
+            }
+
             var topicList = _topics.Select(t => t.ToString()).ToArray();
             var responseContent = _serializer.Serialize(topicList);
-            var encoding = response.ContentEncoding;
             var encodedContent = encoding.GetBytes(responseContent);
             await response.OutputStream.WriteAsync(encodedContent, 0, encodedContent.Length);
             response.StatusCode = 200;

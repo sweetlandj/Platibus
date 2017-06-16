@@ -31,7 +31,8 @@ namespace Platibus.Owin
     internal class OwinResponseAdapter : IHttpResourceResponse
     {
         private readonly IOwinResponse _response;
-        private readonly ContentType _contentType;
+        private ContentType _contentType;
+        private Encoding _contentEncoding;
 
         public int StatusCode
         {
@@ -45,17 +46,36 @@ namespace Platibus.Owin
 
         public string ContentType
         {
-            get { return _response.ContentType; }
-            set { _response.ContentType = value; }
+            get { return _contentType == null ? null : _contentType.Type; }
+            set
+            {
+                if (value == null)
+                {
+                    _contentType = null;
+                    _contentEncoding = null;
+                    return;
+                }
+
+                _contentType = value;
+                if (_contentEncoding != null)
+                {
+                    _contentType.CharsetEncoding = _contentEncoding;
+                }
+                _response.ContentType = _contentType.ToString();
+            }
         }
 
         public Encoding ContentEncoding
         {
-            get { return _contentType.CharsetEncoding; }
+            get { return _contentEncoding; }
             set
             {
-                _contentType.CharsetEncoding = value;
-                _response.ContentType = _contentType;
+                _contentEncoding = value;
+                if (_contentType != null)
+                {
+                    _contentType.CharsetEncoding = value;
+                    _response.ContentType = _contentType;
+                }
             }
         }
 
@@ -69,6 +89,7 @@ namespace Platibus.Owin
             if (response == null) throw new ArgumentNullException("response");
             _response = response;
             _contentType = response.ContentType;
+            _contentEncoding = _contentType == null ? null : _contentType.CharsetEncoding;
         }
 
         public void AddHeader(string header, string value)

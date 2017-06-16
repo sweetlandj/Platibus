@@ -20,6 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Platibus.Http;
+using Platibus.Http.Clients;
+using Platibus.Serialization;
 using Xunit;
 
 namespace Platibus.IntegrationTests.OwinMiddleware
@@ -28,9 +35,60 @@ namespace Platibus.IntegrationTests.OwinMiddleware
     [Collection(OwinMiddlewareCollection.Name)]
     public class OwinMiddlewarePubSubTests : PubSubTests
     {
+        private readonly HttpClientPool _httpClientPool = new HttpClientPool();
+
         public OwinMiddlewarePubSubTests(OwinMiddlewareFixture fixture)
             : base(fixture.Sender, fixture.Receiver)
         {
+        }
+
+        [Fact]
+        public async Task TopicsCanBeQueriedOverHttp()
+        {
+            await AssertTopicsCanBeRetrievedByHttpClient();
+        }
+
+        [Fact]
+        public async Task MessageJournalCanBeQueriedOverHttp()
+        {
+            GivenTestPublication();
+            await WhenPublished();
+            await AssertMessageRetrievedByMessageJournalClient();
+        }
+
+        protected async Task AssertMessageRetrievedByMessageJournalClient()
+        {
+            // From the platibus.owin0 configuration section of app.config
+            var publisherBaseUri = new Uri("http://localhost:52182/platibus0/");
+            var messageJournalClient = new HttpMessageJournalClient(publisherBaseUri);
+            var result = await messageJournalClient.Read(null, 100);
+            Assert.NotNull(result);
+
+            var messages = result.Entries.Select(e => e.Data);
+            var messageContent = messages.Select(DeserializeMessageContent);
+            Assert.Contains(Publication, messageContent);
+        }
+
+        protected async Task AssertTopicsCanBeRetrievedByHttpClient()
+        {
+            // From the platibus.owin0 configuration section of app.config
+            var publisherBaseUri = new Uri("http://localhost:52182/platibus0/");
+            var httpClient = await _httpClientPool.GetClient(publisherBaseUri, null);
+            var responseMessage = await httpClient.GetAsync("topic");
+            Assert.True(responseMessage.IsSuccessStatusCode, "HTTP Status " + responseMessage.StatusCode + " " + responseMessage.ReasonPhrase);
+            var responseContent = await responseMessage.Content.ReadAsStringAsync();
+            var topicArray = JsonConvert.DeserializeObject<string[]>(responseContent);
+            Assert.Contains((string)Topic, topicArray);
+        }
+
+        private static object DeserializeMessageContent(Message message)
+        {
+            var messageNamingService = new DefaultMessageNamingService();
+            var serializationService = new DefaultSerializationService();
+
+            var messageType = messageNamingService.GetTypeForName(message.Headers.MessageName);
+            var serializer = serializationService.GetSerializer(message.Headers.ContentType);
+            return serializer.Deserialize(message.Content, messageType);
         }
     }
 }

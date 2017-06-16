@@ -101,13 +101,14 @@ namespace Platibus.Http.Controllers
             }
             
             response.ContentType = "application/json";
-            var serializedContent = _serializer.Serialize(responseModel);
             var encoding = response.ContentEncoding;
             if (encoding == null)
             {
                 encoding = Encoding.UTF8;
                 response.ContentEncoding = encoding;
             }
+
+            var serializedContent = _serializer.Serialize(responseModel);
             var encodedContent = encoding.GetBytes(serializedContent);
             await response.OutputStream.WriteAsync(encodedContent, 0, encodedContent.Length);
         }
