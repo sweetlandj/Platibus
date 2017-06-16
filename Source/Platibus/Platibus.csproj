@@ -165,6 +165,7 @@
     <Compile Include="Security\SenderIdentity.cs" />
     <Compile Include="Security\SenderPrincipal.cs" />
     <Compile Include="Security\SenderRole.cs" />
+    <Compile Include="Serialization\DataContractJsonSerializerAdapter.cs" />
     <Compile Include="SQL\Commands\CommandBuilderExtensions.cs" />
     <Compile Include="SQL\Commands\CommonMessageJournalingCommandBuilders.cs" />
     <Compile Include="SQL\Commands\CommonSubscriptionTrackingCommandBuilders.cs" />

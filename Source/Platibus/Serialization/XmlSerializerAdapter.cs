@@ -39,6 +39,7 @@ namespace Platibus.Serialization
         /// <returns>Returns the serialized object string</returns>
         public string Serialize(object obj)
         {
+            if (obj == null) return null;
             using (var stringWriter = new StringWriter())
             {
                 var serializer = new XmlSerializer(obj.GetType());
@@ -55,6 +56,7 @@ namespace Platibus.Serialization
         /// <returns>Returns a deserialized object of the specified type</returns>
         public object Deserialize(string str, Type type)
         {
+            if (string.IsNullOrWhiteSpace(str)) return null;
             using (var stringReader = new StringReader(str))
             {
                 var serializer = new XmlSerializer(type);
@@ -70,6 +72,7 @@ namespace Platibus.Serialization
         /// <returns>Returns a deserialized object of type <typeparamref name="T"/></returns>
         public T Deserialize<T>(string str)
         {
+            if (string.IsNullOrWhiteSpace(str)) return default(T);
             return (T) Deserialize(str, typeof (T));
         }
     }

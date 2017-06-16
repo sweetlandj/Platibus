@@ -152,6 +152,7 @@
     <Compile Include="Config\SendRuleValidationTests.cs" />
     <Compile Include="Config\SubscriptionRuleValidationTests.cs" />
     <Compile Include="DataContractMessageNamingServiceTests.cs" />
+    <Compile Include="DateTimeExtensions.cs" />
     <Compile Include="Http\HttpSubscriptionMetadataTests.cs" />
     <Compile Include="MongoDB\MongoDBMessageJournalTests.cs" />
     <Compile Include="MongoDB\MongoDBMessageQueueingServiceTests.cs" />
@@ -160,6 +161,13 @@
     <Compile Include="MongoDB\MongoDBCollection.cs" />
     <Compile Include="MongoDB\MongoDBFixture.cs" />
     <Compile Include="FileUtil.cs" />
+    <Compile Include="Serialization\DataContractJsonSerializerAdapterTests.cs" />
+    <Compile Include="Serialization\DataContractSerializerAdapterTests.cs" />
+    <Compile Include="Serialization\NestedDataContractMessage.cs" />
+    <Compile Include="Serialization\NewtonsoftJsonSerializerTests.cs" />
+    <Compile Include="Serialization\SerializerTests.cs" />
+    <Compile Include="Serialization\DataContractMessage.cs" />
+    <Compile Include="Serialization\XmlSerializerAdapterTests.cs" />
     <Compile Include="TruncateMillisDateTimeEqualityComparer.cs" />
     <Compile Include="DefaultMessageNamingServiceTests.cs" />
     <Compile Include="EndpointAddressEqualityComparerTests.cs" />

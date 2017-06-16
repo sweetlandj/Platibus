@@ -51,8 +51,13 @@ namespace Platibus.Serialization
         public DefaultSerializationService(bool useDataContractSerializer = false)
         {
             var applicationJson = NormalizeContentType("application/json");
-            var defaultJsonSerializer = new NewtonsoftJsonSerializer();
+            var jsonApi = NormalizeContentType("application/vnd.api+json");
+            var defaultJsonSerializer = useDataContractSerializer
+                ? new DataContractJsonSerializerAdapter()
+                : new NewtonsoftJsonSerializer() as ISerializer;
+
             _serializers[applicationJson] = defaultJsonSerializer;
+            _serializers[jsonApi] = defaultJsonSerializer;
 
             var applicationXml = NormalizeContentType("application/xml");
             var textXml = NormalizeContentType("text/xml");

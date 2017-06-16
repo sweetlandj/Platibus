@@ -43,7 +43,7 @@ namespace Platibus.UnitTests
 
         protected virtual DateTime TruncateMillis(DateTime dt)
         {
-            return new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, dt.Kind);
+            return dt.TruncateMillis();
         }
     }
 }

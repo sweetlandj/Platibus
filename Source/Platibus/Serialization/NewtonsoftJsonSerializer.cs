@@ -64,7 +64,8 @@ namespace Platibus.Serialization
 		/// <param name="obj">The object to serialize</param>
 		/// <returns>Returns the serialized object string</returns>
 		public string Serialize(object obj)
-        {
+		{
+		    if (obj == null) return null;
             return JsonConvert.SerializeObject(obj, _settings);
         }
 
@@ -76,6 +77,7 @@ namespace Platibus.Serialization
 		/// <returns>Returns a deserialized object of the specified type</returns>
 		public object Deserialize(string str, Type type)
         {
+            if (string.IsNullOrWhiteSpace(str)) return null;
             return JsonConvert.DeserializeObject(str, type, _settings);
         }
 
@@ -87,6 +89,7 @@ namespace Platibus.Serialization
 		/// <returns>Returns a deserialized object of type <typeparamref name="T"/></returns>
 		public T Deserialize<T>(string str)
         {
+            if (string.IsNullOrWhiteSpace(str)) return default(T);
             return (T) Deserialize(str, typeof (T));
         }
     }
