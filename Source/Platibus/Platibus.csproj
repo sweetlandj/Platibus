@@ -98,6 +98,7 @@
     <Compile Include="Config\IPAddressConverter.cs" />
     <Compile Include="Config\LoopbackConfiguration.cs" />
     <Compile Include="Config\LoopbackConfigurationSection.cs" />
+    <Compile Include="Config\MessageHandlerFactory.cs" />
     <Compile Include="Config\MulticastElement.cs" />
     <Compile Include="Config\PlatibusConfigurationValidationExtensions.cs" />
     <Compile Include="Config\QueueNameFactory.cs" />

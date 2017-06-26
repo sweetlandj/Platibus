@@ -89,7 +89,7 @@ namespace Platibus.Config
             _queueName = queueName ?? GenerateQueueName(messageHandler);
             _queueOptions = queueOptions;
         }
-
+        
         /// <summary>
         /// Deterministically generates a queue name for a 
         /// <paramref name="messageHandler"/> based on the MD5 hash of its full

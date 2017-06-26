@@ -25,23 +25,101 @@ namespace Platibus.UnitTests.Config
         }
 
         private class A
-        { }
+        {
+        }
 
         private class B
         {
         }
-
+        
         private class H : IMessageHandler<A>, IMessageHandler<B>
         {
-            public async Task HandleMessage(A content, IMessageContext messageContext, CancellationToken cancellationToken)
+            async Task IMessageHandler<A>.HandleMessage(A content, IMessageContext messageContext, CancellationToken cancellationToken)
             {
                 await messageContext.SendReply("A", cancellationToken: cancellationToken);
             }
 
-            public async Task HandleMessage(B content, IMessageContext messageContext, CancellationToken cancellationToken)
+            async Task IMessageHandler<B>.HandleMessage(B content, IMessageContext messageContext, CancellationToken cancellationToken)
             {
                 await messageContext.SendReply("B", cancellationToken: cancellationToken);
             }
+        }
+
+        [Fact]
+        public async Task HandlingRuleAddedForImplicitNamePatterns()
+        {
+            var configuration = new PlatibusConfiguration
+            {
+                MessageNamingService = new TestMessageNamingService()
+            };
+            var aHandler = new H() as IMessageHandler<A>;
+            configuration.AddHandlingRule("^A$", aHandler);
+
+            var bHandler = new H() as IMessageHandler<B>;
+            configuration.AddHandlingRule("^B$", bHandler);
+            await AssertRulesAdded(configuration);
+        }
+
+        [Fact]
+        public async Task HandlingRuleAddedForImplicitNamePatternsWithExplicitQueueNames()
+        {
+            var configuration = new PlatibusConfiguration
+            {
+                MessageNamingService = new TestMessageNamingService()
+            };
+            var aHandler = new H() as IMessageHandler<A>;
+            configuration.AddHandlingRule("^A$", aHandler, "QHA");
+
+            var bHandler = new H() as IMessageHandler<B>;
+            configuration.AddHandlingRule("^B$", bHandler, "QHB");
+
+            await AssertRulesAdded(configuration);
+            AssertExplicitQueueNames(configuration);
+        }
+
+        [Fact]
+        public async Task HandlingRuleAddedForImplicitNamePatternsWithPerInstanceHandlerFactories()
+        {
+            var configuration = new PlatibusConfiguration
+            {
+                MessageNamingService = new TestMessageNamingService()
+            };
+            configuration.AddHandlingRule("^A$", () => new H() as IMessageHandler<A>);
+            configuration.AddHandlingRule("^B$", () => new H() as IMessageHandler<B>);
+
+            await AssertRulesAdded(configuration);
+        }
+
+        [Fact]
+        public async Task HandlingRuleAddedForImplicitNamePatternsWithSingletonHandlerFactories()
+        {
+            var configuration = new PlatibusConfiguration
+            {
+                MessageNamingService = new TestMessageNamingService()
+            };
+            var aHandler = new H() as IMessageHandler<A>;
+            configuration.AddHandlingRule("^A$", () => aHandler);
+
+            var bHandler = new H() as IMessageHandler<B>;
+            configuration.AddHandlingRule("^B$", () => bHandler);
+
+            await AssertRulesAdded(configuration);
+        }
+
+        [Fact]
+        public async Task HandlingRuleAddedForImplicitNamePatternsWithHandlerFactoriesAndExplicitQueueNames()
+        {
+            var configuration = new PlatibusConfiguration
+            {
+                MessageNamingService = new TestMessageNamingService()
+            };
+            var aHandler = new H() as IMessageHandler<A>;
+            configuration.AddHandlingRule("^A$", () => aHandler, "QHA");
+
+            var bHandler = new H() as IMessageHandler<B>;
+            configuration.AddHandlingRule("^B$", () => bHandler, "QHB");
+
+            await AssertRulesAdded(configuration);
         }
 
         [Fact]
@@ -66,19 +144,7 @@ namespace Platibus.UnitTests.Config
             configuration.AddHandlingRules<H>(queueNameFactory: (ht, mt) => "Q" + ht.Name + mt.Name);
 
             await AssertRulesAdded(configuration);
-
-            var handlingRules = configuration.HandlingRules.ToList();
-            Assert.Equal(2, handlingRules.Count);
-
-            var expectedASpec = new MessageNamePatternSpecification(@"^A$");
-            var aRules = handlingRules.Where(r => expectedASpec.Equals(r.Specification)).ToList();
-            Assert.Equal(1, aRules.Count);
-            Assert.Equal((QueueName)"QHA", aRules[0].QueueName);
-
-            var expectedBSpec = new MessageNamePatternSpecification(@"^B$");
-            var bRules = handlingRules.Where(r => expectedBSpec.Equals(r.Specification)).ToList();
-            Assert.Equal(1, bRules.Count);
-            Assert.Equal((QueueName)"QHB", bRules[0].QueueName);
+            AssertExplicitQueueNames(configuration);
         }
 
         [Fact]
@@ -180,6 +246,22 @@ namespace Platibus.UnitTests.Config
             await bRules[0].MessageHandler.HandleMessage(new B(), mockContext.Object, cancellationToken);
 
             mockContext.Verify();
+        }
+
+        private static void AssertExplicitQueueNames(IPlatibusConfiguration configuration)
+        {
+            var handlingRules = configuration.HandlingRules.ToList();
+            Assert.Equal(2, handlingRules.Count);
+
+            var expectedASpec = new MessageNamePatternSpecification(@"^A$");
+            var aRules = handlingRules.Where(r => expectedASpec.Equals(r.Specification)).ToList();
+            Assert.Equal(1, aRules.Count);
+            Assert.Equal((QueueName)"QHA", aRules[0].QueueName);
+
+            var expectedBSpec = new MessageNamePatternSpecification(@"^B$");
+            var bRules = handlingRules.Where(r => expectedBSpec.Equals(r.Specification)).ToList();
+            Assert.Equal(1, bRules.Count);
+            Assert.Equal((QueueName)"QHB", bRules[0].QueueName);
         }
     }
 }

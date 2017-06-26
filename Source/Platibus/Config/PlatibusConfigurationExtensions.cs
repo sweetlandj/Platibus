@@ -63,6 +63,29 @@ namespace Platibus.Config
         /// <summary>
         /// Adds a handling rule based on message name pattern matching
         /// </summary>
+        /// <param name="configuration">The configuration object to which the
+        /// handling rule is being added</param>
+        /// <param name="namePattern">A regular expression used to match
+        /// message names</param>
+        /// <param name="handlerFactory">A factory method for getting an instance of the handler 
+        /// (may return a singleton or scoped handler instance)</param>
+        /// <param name="queueName">(Optional) The name of the queue to which
+        /// the handler will be attached</param>
+        /// <param name="queueOptions">(Optional) Options for how queued messages for the handler 
+        /// should be processed</param>
+        public static void AddHandlingRule(this PlatibusConfiguration configuration,
+            string namePattern, Func<IMessageHandler> handlerFactory,
+            QueueName queueName = null, QueueOptions queueOptions = null)
+        {
+            var specification = new MessageNamePatternSpecification(namePattern);
+            var messageHandler = MessageHandlerFactory.For(handlerFactory);
+            var handlingRule = new HandlingRule(specification, messageHandler, queueName, queueOptions);
+            configuration.AddHandlingRule(handlingRule);
+        }
+
+        /// <summary>
+        /// Adds a handling rule based on message name pattern matching
+        /// </summary>
         /// <typeparam name="TContent">The type of deserialized message 
         /// content expected</typeparam>
         /// <param name="configuration">The configuration object to which the
@@ -82,6 +105,35 @@ namespace Platibus.Config
             var specification = new MessageNamePatternSpecification(namePattern);
             var genericMessageHandler = GenericMessageHandlerAdapter.For(messageHandler);
             var handlingRule = new HandlingRule(specification, genericMessageHandler, queueName, queueOptions);
+            configuration.AddHandlingRule(handlingRule);
+        }
+
+        /// <summary>
+        /// Adds a handling rule based on message name pattern matching
+        /// </summary>
+        /// <typeparam name="TContent">The type of deserialized message 
+        /// content expected</typeparam>
+        /// <param name="configuration">The configuration object to which the
+        /// handling rule is being added</param>
+        /// <param name="namePattern">A regular expression used to match
+        /// message names</param>
+        /// <param name="handlerFactory">A factory method for getting an instance of the handler 
+        /// (may return a singleton or scoped handler instance)</param>
+        /// <param name="queueName">(Optional) The name of the queue to which
+        /// the handler will be attached</param>
+        /// <param name="queueOptions">(Optional) Options for how queued messages for the handler 
+        /// should be processed</param>
+        public static void AddHandlingRule<TContent>(this PlatibusConfiguration configuration,
+            string namePattern, Func<IMessageHandler<TContent>> handlerFactory,
+            QueueName queueName = null, QueueOptions queueOptions = null)
+        {
+            var specification = new MessageNamePatternSpecification(namePattern);
+            var messageHandler = new DelegateMessageHandler((content, context, ct) =>
+            {
+                var handler = GenericMessageHandlerAdapter.For(handlerFactory());
+                return handler.HandleMessage(content, context, ct);
+            });
+            var handlingRule = new HandlingRule(specification, messageHandler, queueName, queueOptions);
             configuration.AddHandlingRule(handlingRule);
         }
 
