@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Platibus.UnitTests.Http
 {
+    [Trait("Category", "UnitTests")]
     public class HttpSubscriptionMetadataTests
     {
         protected IEndpoint Endpoint;

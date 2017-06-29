@@ -143,7 +143,7 @@ namespace Platibus
         /// </summary>
         /// <param name="headerName">The other header name</param>
         /// <returns>Returns <c>true</c> if the other <paramref name="headerName"/> is equal
-        /// to this one; <c>fale</c> otherwise</returns>
+        /// to this one; <c>false</c> otherwise</returns>
         public bool Equals(HeaderName headerName)
         {
             return !ReferenceEquals(null, headerName) && 

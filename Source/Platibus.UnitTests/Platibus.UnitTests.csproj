@@ -153,6 +153,13 @@
     <Compile Include="Config\SubscriptionRuleValidationTests.cs" />
     <Compile Include="DataContractMessageNamingServiceTests.cs" />
     <Compile Include="DateTimeExtensions.cs" />
+    <Compile Include="Diagnostics\CommonLoggingSinkTests.cs" />
+    <Compile Include="Diagnostics\GelfLoggingSinkTests.cs" />
+    <Compile Include="Diagnostics\GelfTcpLoggingSinkTests.cs" />
+    <Compile Include="Diagnostics\GelfUdpLoggingSinkTests.cs" />
+    <Compile Include="Diagnostics\TestLog.cs" />
+    <Compile Include="Diagnostics\TestOutputHelperTarget.cs" />
+    <Compile Include="Diagnostics\UnixTimeTests.cs" />
     <Compile Include="Http\HttpSubscriptionMetadataTests.cs" />
     <Compile Include="MongoDB\MongoDBMessageJournalTests.cs" />
     <Compile Include="MongoDB\MongoDBMessageQueueingServiceTests.cs" />
