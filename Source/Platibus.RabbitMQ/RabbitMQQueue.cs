@@ -329,15 +329,13 @@ namespace Platibus.RabbitMQ
         /// <remarks>
         /// This method will not be called more than once
         /// </remarks>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_consumer")]
         protected virtual void Dispose(bool disposing)
         {
             _cancellationTokenSource.Cancel();
             if (disposing)
             {
-                _consumer.TryDispose();
-                _cancellationTokenSource.TryDispose();
+                _cancellationTokenSource.Dispose();
+                _consumer.Dispose();
             }
         }
     }

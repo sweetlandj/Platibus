@@ -122,13 +122,26 @@ namespace Platibus.IIS
         /// </remarks>
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
+            if (!disposing) return;
+
+            _bus.Dispose();
+            _transportService.Dispose();
+            var disposableMessageQueueingService = _messageQueueingService as IDisposable;
+            if (disposableMessageQueueingService != null)
             {
-                _bus.TryDispose();
-                _transportService.TryDispose();
-                _messageQueueingService.TryDispose();
-                _messageJournal.TryDispose();
-                _subscriptionTrackingService.TryDispose();
+                disposableMessageQueueingService.Dispose();
+            }
+
+            var disposableMessageJournal = _messageJournal as IDisposable;
+            if (disposableMessageJournal != null)
+            {
+                disposableMessageJournal.Dispose();
+            }
+
+            var disposableSubscriptionTrackingService = _subscriptionTrackingService as IDisposable;
+            if (disposableSubscriptionTrackingService != null)
+            {
+                disposableSubscriptionTrackingService.Dispose();
             }
         }
     }

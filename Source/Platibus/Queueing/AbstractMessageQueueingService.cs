@@ -123,12 +123,11 @@ namespace Platibus.Queueing
         /// <see cref="Dispose()"/> method (<c>true</c>) or from the finalizer (<c>false</c>)</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (_disposed) return;
             if (disposing)
             {
                 foreach (var queue in _queues.Values)
                 {
-                    queue.TryDispose();
+                    queue.Dispose();
                 }
             }
         }

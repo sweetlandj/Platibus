@@ -21,7 +21,7 @@
 // THE SOFTWARE.
 
 using System;
-using Common.Logging;
+using Platibus.Diagnostics;
 
 namespace Platibus.Http
 {
@@ -31,9 +31,10 @@ namespace Platibus.Http
     /// </summary>
     public class HttpExceptionHandler
     {
-        private readonly ILog _log;
         private readonly IHttpResourceRequest _request;
         private readonly IHttpResourceResponse _response;
+        private readonly object _source;
+        private readonly IDiagnosticEventSink _diagnosticEventSink;
 
         /// <summary>
         /// Initializes a new <see cref="HttpExceptionHandler"/> for the specified HTTP 
@@ -41,16 +42,19 @@ namespace Platibus.Http
         /// </summary>
         /// <param name="request">The HTTP request being processed</param>
         /// <param name="response">The HTTP response being constructed</param>
-        /// <param name="log">(Optional) A log in which errors will be recorded</param>
+        /// <param name="source">(Optional) The object in which the exception occurred</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events emitted from the HTTP transport service</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="request"/> or
         /// <paramref name="response"/> are <c>null</c></exception>
-        public HttpExceptionHandler(IHttpResourceRequest request, IHttpResourceResponse response, ILog log = null)
+        public HttpExceptionHandler(IHttpResourceRequest request, IHttpResourceResponse response, object source = null, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (request == null) throw new ArgumentNullException("request");
             if (response == null) throw new ArgumentNullException("response");
             _request = request;
             _response = response;
-            _log = log ?? LogManager.GetLogger(LoggingCategories.Http);
+            _source = source;
+            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
         }
 
         /// <summary>
@@ -69,8 +73,6 @@ namespace Platibus.Http
             var aggregateException = ex as AggregateException;
             if (aggregateException != null)
             {
-                _log.ErrorFormat("One or more errors occurred processing {0} request for resource {1}:", ex,
-                    _request.HttpMethod, _request.Url);
                 aggregateException.Handle(HandleException);
                 return true;
             }
@@ -78,26 +80,44 @@ namespace Platibus.Http
             var unauthorizedAccessException = ex as UnauthorizedAccessException;
             if (unauthorizedAccessException != null)
             {
-                _log.ErrorFormat("{0} request for resource {1} not authorized for user {2}", ex, _request.HttpMethod,
-                    _request.Url, _request.Principal.GetName());
                 _response.StatusCode = 401;
+                _diagnosticEventSink.Receive(new HttpEventBuilder(_source, DiagnosticEventType.AccessDenied)
+                {
+                    Detail = "Unauthorized",
+                    Uri = _request.Url,
+                    Method = _request.HttpMethod,
+                    Status = 401,
+                    Exception = unauthorizedAccessException
+                }.Build());
                 return true;
             }
 
             var notAcknowledgedException = ex as MessageNotAcknowledgedException;
             if (notAcknowledgedException != null)
             {
-                _log.ErrorFormat("{0} request for resource {1} was not acknowledged", ex, _request.HttpMethod,
-                    _request.Url);
                 // HTTP 422: Unprocessable Entity
                 _response.StatusCode = 422;
+                _diagnosticEventSink.Receive(new HttpEventBuilder(_source, DiagnosticEventType.MessageNotAcknowledged)
+                {
+                    Detail = "Message not acknowledged",
+                    Uri = _request.Url,
+                    Method = _request.HttpMethod,
+                    Status = 422,
+                    Exception = notAcknowledgedException
+                }.Build());
                 return true;
             }
 
-            _log.ErrorFormat("Unknown error processing {0} request for resource {1}", ex, _request.HttpMethod,
-                _request.Url);
             // HTTP 500: Unknown error
             _response.StatusCode = 500;
+            _diagnosticEventSink.Receive(new HttpEventBuilder(_source, DiagnosticEventType.AccessDenied)
+            {
+                Detail = "Unexpected error",
+                Uri = _request.Url,
+                Method = _request.HttpMethod,
+                Status = 500,
+                Exception = ex
+            }.Build());
             return true;
         }
     }

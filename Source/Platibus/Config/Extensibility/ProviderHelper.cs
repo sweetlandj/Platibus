@@ -23,17 +23,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Common.Logging;
 
 namespace Platibus.Config.Extensibility
 {
     /// <summary>
-    /// Helper class used to load providers by name,
+    /// Factory class used to initialize service providers
     /// </summary>
     public static class ProviderHelper
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
-
         /// <summary>
         /// Finds the most appropriate type or subtype of 
         /// <typeparamref name="TProvider"/> whose type name is <paramref name="providerName"/>
@@ -57,7 +54,6 @@ namespace Platibus.Config.Extensibility
             var providerType = Type.GetType(providerName);
             if (providerType == null)
             {
-                Log.DebugFormat("Looking for provider \"{0}\"...", providerName);
                 var prioritizedProviders = ReflectionHelper
                     .FindConcreteSubtypes<TProvider>()
                     .WithProviderName(providerName)
@@ -73,10 +69,9 @@ namespace Platibus.Config.Extensibility
                 providerType = providers.First();
             }
 
-            Log.DebugFormat("Found provider type \"{0}\"", providerType.FullName);
-            return (TProvider)Activator.CreateInstance(providerType);
+            return (TProvider) Activator.CreateInstance(providerType);
         }
-
+        
         private static IEnumerable<Type> WithProviderName(this IEnumerable<Type> types, string providerName)
         {
             return string.IsNullOrWhiteSpace(providerName) 

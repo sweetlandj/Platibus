@@ -25,7 +25,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Common.Logging;
 
 // The MIT License (MIT)
 // 
@@ -53,8 +52,6 @@ namespace Platibus.Config
 {
     internal static class ReflectionHelper
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
-
         public static IEnumerable<Type> FindConcreteSubtypes<TBase>()
         {
             var appDomainBaseDirectory = AppDomain.CurrentDomain.BaseDirectory;
@@ -80,8 +77,6 @@ namespace Platibus.Config
 	            try
 	            {
 		            var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyFile.FullName);
-		            Log.TraceFormat("Scanning assembly {0} for concrete subtypes of {1}...", assembly.GetName().FullName,
-			            typeof (TBase).FullName);
 		            subtypes.AddRange(AppDomain.CurrentDomain.Load(assembly.GetName())
 			            .GetTypes()
 			            .Where(typeof (TBase).IsAssignableFrom)
@@ -91,9 +86,8 @@ namespace Platibus.Config
 	            {
 					// Ignore non-managed assemblies and executables
 	            }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    Log.DebugFormat("Error scanning assembly file {0}", ex, assemblyFile);
                 }
             }
             return subtypes;

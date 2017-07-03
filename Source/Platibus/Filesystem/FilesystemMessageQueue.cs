@@ -21,74 +21,153 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
-using Common.Logging;
+using Platibus.Diagnostics;
+using Platibus.Queueing;
 using Platibus.Security;
 
 namespace Platibus.Filesystem
 {
-    internal class FilesystemMessageQueue : IDisposable
+    /// <summary>
+    /// A message queue that persists messages to disk so that they survive application restarts
+    /// </summary>
+    public class FilesystemMessageQueue : AbstractMessageQueue
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Filesystem);
-
-        private bool _disposed;
-        private int _initialized;
-        private readonly bool _autoAcknowledge;
-        private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly DirectoryInfo _directory;
         private readonly DirectoryInfo _deadLetterDirectory;
-        private readonly IQueueListener _listener;
         private readonly ISecurityTokenService _securityTokenService;
-        private readonly int _maxAttempts;
-        private readonly ActionBlock<MessageFile> _queuedMessages;
-        private readonly TimeSpan _retryDelay;
 
-        public FilesystemMessageQueue(DirectoryInfo directory, IQueueListener listener,
-            ISecurityTokenService securityTokenService,
-            QueueOptions options = null)
+        private int _initialized;
+
+        /// <summary>
+        /// Initializes a new <see cref="FilesystemMessageQueue"/>
+        /// </summary>
+        /// <param name="directory">The directory into which message files will be persisted</param>
+        /// <param name="securityTokenService">The service used to issue and validate security
+        /// tokens stored with the persisted messages to preserve the security context in which
+        /// the message was received</param>
+        /// <param name="queueName">The name of the queue</param>
+        /// <param name="listener">The listener that will consume messages from the queue</param>
+        /// <param name="options">(Optional) Queueing options</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events related to queueing</param>
+        public FilesystemMessageQueue(DirectoryInfo directory, ISecurityTokenService securityTokenService, QueueName queueName, IQueueListener listener, QueueOptions options = null, IDiagnosticEventSink diagnosticEventSink = null)
+            : base(queueName, listener, options, diagnosticEventSink)
         {
+            if (queueName == null) throw new ArgumentNullException("queueName");
             if (directory == null) throw new ArgumentNullException("directory");
             if (listener == null) throw new ArgumentNullException("listener");
             if (securityTokenService == null) throw new ArgumentNullException("securityTokenService");
 
             _directory = directory;
             _deadLetterDirectory = new DirectoryInfo(Path.Combine(directory.FullName, "dead"));
-            _listener = listener;
             _securityTokenService = securityTokenService;
 
-            var myOptions = options ?? new QueueOptions();
-
-            _autoAcknowledge = myOptions.AutoAcknowledge;
-            _maxAttempts = myOptions.MaxAttempts;
-            _retryDelay = myOptions.RetryDelay;
-
-            var concurrencyLimit = myOptions.ConcurrencyLimit;
-
-            _cancellationTokenSource = new CancellationTokenSource();
-            _queuedMessages = new ActionBlock<MessageFile>(async msg =>
-                await ProcessQueuedMessage(msg, _cancellationTokenSource.Token),
-                new ExecutionDataflowBlockOptions
-                {
-                    CancellationToken = _cancellationTokenSource.Token,
-                    MaxDegreeOfParallelism = concurrencyLimit
-                });
+            MessageEnqueued += OnMessageEnqueued;
+            MessageAcknowledged += OnMessageAcknowledged;
+            MaximumAttemptsExceeded += OnMaximumAttemptsExceeded;
         }
 
-        public async Task Enqueue(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
+        private Task OnMessageEnqueued(object source, MessageQueueEventArgs args)
         {
-            CheckDisposed();
+            return CreateMessageFile(args.QueuedMessage);
+        }
+
+        private Task OnMessageAcknowledged(object source, MessageQueueEventArgs args)
+        {
+            return DeleteMessageFile(args.QueuedMessage);
+        }
+        
+        private Task OnMaximumAttemptsExceeded(object source, MessageQueueEventArgs args)
+        {
+            return MoveToDeadLetterDirectory(args.QueuedMessage);
+        }
+
+        /// <inheritdoc />
+        protected override async Task<IEnumerable<QueuedMessage>> GetPendingMessages(CancellationToken cancellationToken = new CancellationToken())
+        {
+            var pendingMessages = new List<QueuedMessage>();
+            var files = _directory.EnumerateFiles("*.pmsg");
+            foreach (var file in files)
+            {
+                var messageFile = new MessageFile(file);
+                var message = await messageFile.ReadMessage(cancellationToken);
+                var principal = await messageFile.ReadPrincipal(cancellationToken);
+                if (!string.IsNullOrWhiteSpace(message.Headers.SecurityToken))
+                {
+                    principal = await _securityTokenService.NullSafeValidate(message.Headers.SecurityToken);
+                }
+
+                var queuedMessage = new QueuedMessage(message, principal);
+                pendingMessages.Add(queuedMessage);
+            }
+            return pendingMessages;
+        }
+
+        private async Task CreateMessageFile(QueuedMessage queuedMessage)
+        {
+            var message = queuedMessage.Message;
+            var principal = queuedMessage.Principal;
             var securityToken = await _securityTokenService.NullSafeIssue(principal, message.Headers.Expires);
             var messageWithSecurityToken = message.WithSecurityToken(securityToken);
-            var queuedMessage = await MessageFile.Create(_directory, messageWithSecurityToken, cancellationToken);
-            await _queuedMessages.SendAsync(queuedMessage, cancellationToken);
-            // TODO: handle accepted == false
+            var messageFile = await MessageFile.Create(_directory, messageWithSecurityToken);
+
+            await DiagnosticEventSink.ReceiveAsync(
+                new FilesystemEventBuilder(this, FilesystemEventType.MessageFileCreated)
+                {
+                    Detail = "Message file created",
+                    Message = message,
+                    Queue = QueueName,
+                    File = messageFile.File
+                }.Build());
         }
 
-        public async Task Init(CancellationToken cancellationToken = default(CancellationToken))
+        private async Task DeleteMessageFile(QueuedMessage queuedMessage)
+        {
+            var message = queuedMessage.Message;
+            var headers = message.Headers;
+            var pattern = headers.MessageId + "*.pmsg";
+            var matchingFiles = _directory.EnumerateFiles(pattern);
+            foreach (var matchingFile in matchingFiles)
+            {
+                matchingFile.Delete();
+                await DiagnosticEventSink.ReceiveAsync(
+                    new FilesystemEventBuilder(this, FilesystemEventType.MessageFileDeleted)
+                    {
+                        Detail = "Message file deleted",
+                        Message = message,
+                        Queue = QueueName,
+                        File = matchingFile
+                    }.Build());
+            }
+        }
+
+        private async Task MoveToDeadLetterDirectory(QueuedMessage queuedMessage)
+        {
+            var message = queuedMessage.Message;
+            var headers = message.Headers;
+            var pattern = headers.MessageId + "*.pmsg";
+            var matchingFiles = _directory.EnumerateFiles(pattern);
+            foreach (var matchingFile in matchingFiles)
+            {
+                var messageFile = new MessageFile(matchingFile);
+                var deadLetter = await messageFile.MoveTo(_deadLetterDirectory);
+                await DiagnosticEventSink.ReceiveAsync(
+                    new FilesystemEventBuilder(this, DiagnosticEventType.DeadLetter)
+                    {
+                        Detail = "Message file deleted",
+                        Message = message,
+                        Queue = QueueName,
+                        File = deadLetter.File
+                    }.Build());
+            }
+        }
+
+        /// <inheritdoc />
+        public override async Task Init(CancellationToken cancellationToken = default(CancellationToken))
         {
             if (Interlocked.Exchange(ref _initialized, 1) == 0)
             {
@@ -106,125 +185,19 @@ namespace Platibus.Filesystem
                     _deadLetterDirectory.Create();
                     _deadLetterDirectory.Refresh();
                 }
-
-                if (directoryAlreadyExisted)
-                {
-                    await EnqueueExistingFiles(cancellationToken);
-                }
-
-                cancellationToken.ThrowIfCancellationRequested();
-            }
-        }
-
-        private async Task EnqueueExistingFiles(CancellationToken cancellationToken)
-        {
-            var files = _directory.EnumerateFiles();
-            foreach (var file in files)
-            {
-                Log.DebugFormat("Enqueueing existing message from file {0}...", file);
-                var queuedMessage = new MessageFile(file);
-                await _queuedMessages.SendAsync(queuedMessage, cancellationToken);
-            }
-        }
-
-        // ReSharper disable once UnusedMethodReturnValue.Local
-        private async Task ProcessQueuedMessage(MessageFile queuedMessage, CancellationToken cancellationToken)
-        {
-            var attemptCount = 0;
-            var deadLetter = false;
-
-            var message = await queuedMessage.ReadMessage(cancellationToken);
-            var principal = await queuedMessage.ReadPrincipal(cancellationToken);
-            if (!string.IsNullOrWhiteSpace(message.Headers.SecurityToken))
-            {
-                principal = await _securityTokenService.NullSafeValidate(message.Headers.SecurityToken);
-            }
-
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            while (!deadLetter && attemptCount < _maxAttempts)
-            {
-                attemptCount++;
-
-                Log.DebugFormat("Processing queued message {0} (attempt {1} of {2})...",
-                    queuedMessage.File,
-                    attemptCount,
-                    _maxAttempts);
-
-
-                var context = new FilesystemQueuedMessageContext(message.Headers, principal);
-                Thread.CurrentPrincipal = context.Principal;
-                cancellationToken.ThrowIfCancellationRequested();
-
-                try
-                {
-                    await _listener.MessageReceived(message, context, cancellationToken);
-                    if (_autoAcknowledge && !context.Acknowledged)
-                    {
-                        await context.Acknowledge();
-                    }
-                }
-                catch (MessageFileFormatException ex)
-                {
-                    Log.ErrorFormat("Unable to read invalid or corrupt message file {0}", ex, ex.Path);
-                    deadLetter = true;
-                }
-                catch (Exception ex)
-                {
-                    Log.WarnFormat("Unhandled exception handling queued message file {0}", ex, queuedMessage.File);
-                }
                 
-                if (context.Acknowledged)
-                {
-                    Log.DebugFormat("Message acknowledged.  Deleting message file {0}...", queuedMessage.File);
-                    await queuedMessage.Delete(cancellationToken);
-                    Log.DebugFormat("Message file {0} deleted successfully", queuedMessage.File);
-                    return;
-                }
+                cancellationToken.ThrowIfCancellationRequested();
 
-                // TODO: Use TTL/Expiry instead of max attempts per queue
-                if (attemptCount >= _maxAttempts)
-                {
-                    Log.WarnFormat("Maximum attempts to process message file {0} exceeded", queuedMessage.File);
-                    deadLetter = true;
-                }
-
-                if (deadLetter)
-                {
-                    await queuedMessage.MoveTo(_deadLetterDirectory, cancellationToken);
-                    return;
-                }
-
-                Log.DebugFormat("Message not acknowledged.  Retrying in {0}...", _retryDelay);
-                await Task.Delay(_retryDelay, cancellationToken);
+                await DiagnosticEventSink.ReceiveAsync(
+                    new FilesystemEventBuilder(this, DiagnosticEventType.ComponentInitialization)
+                    {
+                        Detail = "Filesystem queue initialized",
+                        Queue = QueueName,
+                        Directory = _directory
+                    }.Build(), cancellationToken);
             }
-        }
 
-        private void CheckDisposed()
-        {
-            if (_disposed) throw new ObjectDisposedException(GetType().FullName);
-        }
-
-        ~FilesystemMessageQueue()
-        {
-            Dispose(false);
-        }
-
-        public void Dispose()
-        {
-            if (_disposed) return;
-            Dispose(true);
-            _disposed = true;
-            GC.SuppressFinalize(this);
-        }
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
-        protected virtual void Dispose(bool disposing)
-        {
-            _cancellationTokenSource.Cancel();
-            if (disposing)
-            {
-                _cancellationTokenSource.TryDispose();
-            }
+            await base.Init(cancellationToken);
         }
     }
 }

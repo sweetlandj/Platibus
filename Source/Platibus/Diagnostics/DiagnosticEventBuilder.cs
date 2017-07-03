@@ -46,6 +46,11 @@ namespace Platibus.Diagnostics
         public Message Message { get; set; }
 
         /// <summary>
+        /// The name of the endpoint, if applicable
+        /// </summary>
+        public EndpointName Endpoint { get; set; }
+
+        /// <summary>
         /// The queue to which the message pertains, if applicable
         /// </summary>
         public QueueName Queue { get; set; }
@@ -61,7 +66,7 @@ namespace Platibus.Diagnostics
         /// <returns>Returns the newly constructed diagnostic event</returns>
         public virtual DiagnosticEvent Build()
         {
-            return new DiagnosticEvent(Source, Type, Detail, Exception, Message, Queue, Topic);
+            return new DiagnosticEvent(Source, Type, Detail, Exception, Message, Endpoint, Queue, Topic);
         }
     }
 }

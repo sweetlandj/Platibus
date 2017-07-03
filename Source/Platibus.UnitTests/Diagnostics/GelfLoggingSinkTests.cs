@@ -93,7 +93,7 @@ namespace Platibus.UnitTests.Diagnostics
 
         protected Task WhenReceivingEvent()
         {
-            return GelfLoggingSink.Receive(Event);
+            return GelfLoggingSink.ReceiveAsync(Event);
         }
     }
 }

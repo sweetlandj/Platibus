@@ -20,7 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using Common.Logging;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -30,6 +29,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using Platibus.Diagnostics;
 using Platibus.Journaling;
 
 namespace Platibus.Http
@@ -40,8 +40,6 @@ namespace Platibus.Http
     /// </summary>
     public class HttpTransportService : ITransportService, IQueueListener, IDisposable
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Http);
-
         private readonly Uri _baseUri;
         private readonly IEndpointCollection _endpoints;
         private readonly IMessageQueueingService _messageQueueingService;
@@ -49,6 +47,7 @@ namespace Platibus.Http
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
         private readonly bool _bypassTransportLocalDestination;
         private readonly Func<Message, CancellationToken, Task> _handleMessage;
+        private readonly IDiagnosticEventSink _diagnosticEventSink;
         private readonly QueueName _outboundQueueName;
 
         private readonly HttpClientPool _clientPool;
@@ -71,10 +70,12 @@ namespace Platibus.Http
         /// <param name="handleMessage">A delegate used to handle messages locally rather than
         /// incurring the costs of sending them over HTTP if 
         /// <paramref name="bypassTransportLocalDestination"/> is <c>true</c></param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// that handles diagnostic events emitted from the HTTP transport service</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="baseUri"/>, 
         /// <paramref name="messageQueueingService"/>, or <paramref name="subscriptionTrackingService"/>
         /// are <c>null</c></exception>
-        public HttpTransportService(Uri baseUri, IEndpointCollection endpoints, IMessageQueueingService messageQueueingService, IMessageJournal messageJournal, ISubscriptionTrackingService subscriptionTrackingService, bool bypassTransportLocalDestination = false, Func<Message, CancellationToken, Task> handleMessage = null)
+        public HttpTransportService(Uri baseUri, IEndpointCollection endpoints, IMessageQueueingService messageQueueingService, IMessageJournal messageJournal, ISubscriptionTrackingService subscriptionTrackingService, bool bypassTransportLocalDestination = false, Func<Message, CancellationToken, Task> handleMessage = null, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (baseUri == null) throw new ArgumentNullException("baseUri");
             if (messageQueueingService == null) throw new ArgumentNullException("messageQueueingService");
@@ -94,8 +95,9 @@ namespace Platibus.Http
             _subscriptionTrackingService = subscriptionTrackingService;
             _bypassTransportLocalDestination = bypassTransportLocalDestination;
             _handleMessage = handleMessage;
+            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
             _outboundQueueName = "Outbound";
-
+            
             _clientPool = new HttpClientPool();
         }
 
@@ -152,7 +154,6 @@ namespace Platibus.Http
 
             if (message.Headers.Importance == MessageImportance.Critical)
             {
-                Log.DebugFormat("Enqueueing critical message ID {0} for queued outbound delivery...", message.Headers.MessageId);
                 await _messageQueueingService.EnqueueMessage(_outboundQueueName, message, Thread.CurrentPrincipal, cancellationToken);
                 return;
             }
@@ -192,12 +193,10 @@ namespace Platibus.Http
                 var addressedMessage = new Message(perEndpointHeaders, message.Content);
                 if (addressedMessage.Headers.Importance == MessageImportance.Critical)
                 {
-                    Log.DebugFormat("Enqueueing critical message ID {0} for queued outbound delivery...", message.Headers.MessageId);
                     await _messageQueueingService.EnqueueMessage(_outboundQueueName, addressedMessage, null, cancellationToken);
                     continue;
                 }
 
-                Log.DebugFormat("Forwarding message ID {0} published to topic {0} to subscriber {2}...", message.Headers.MessageId, topicName, subscriber);
                 transportTasks.Add(TransportMessage(addressedMessage, subscriberCredentials, cancellationToken));
             }
 
@@ -207,6 +206,8 @@ namespace Platibus.Http
         private async Task TransportMessage(Message message, IEndpointCredentials credentials, CancellationToken cancellationToken = default(CancellationToken))
         {
             HttpClient httpClient = null;
+            Uri postUri = null;
+            int? status = null;
             try
             {
                 if (_messageJournal != null)
@@ -217,25 +218,37 @@ namespace Platibus.Http
                 var endpointBaseUri = message.Headers.Destination.WithTrailingSlash();
                 if (_bypassTransportLocalDestination && endpointBaseUri == _baseUri)
                 {
-                    Log.DebugFormat("Handling local delivery of message ID {0} to destination {1}...", message.Headers.MessageId, message.Headers.Destination);
+                    await _diagnosticEventSink.ReceiveAsync(
+                        new HttpEventBuilder(this, HttpEventType.HttpTransportBypassed)
+                        {
+                            Message = message,
+                            Uri = endpointBaseUri
+                        }.Build(), cancellationToken);
+
                     await _handleMessage(message, cancellationToken);
                     return;
                 }
+
+                var messageId = message.Headers.MessageId;
+                var urlEncodedMessageId = HttpUtility.UrlEncode(messageId);
+                var relativeUri = string.Format("message/{0}", urlEncodedMessageId);
+                postUri = new Uri(endpointBaseUri, relativeUri);
 
                 var httpContent = new StringContent(message.Content);
                 WriteHttpContentHeaders(message, httpContent);
                 
                 httpClient = await _clientPool.GetClient(endpointBaseUri, credentials, cancellationToken);
-                var messageId = message.Headers.MessageId;
-                var urlEncodedMessageId = HttpUtility.UrlEncode(messageId);
-                var relativeUri = string.Format("message/{0}", urlEncodedMessageId);
-                var postUri = new Uri(endpointBaseUri, relativeUri);
-                Log.DebugFormat("POSTing content of message ID {0} to URI {1}...", message.Headers.MessageId, postUri);
                 var httpResponseMessage = await httpClient.PostAsync(relativeUri, httpContent, cancellationToken);
-                Log.DebugFormat("Received HTTP response code {0} {1} for POST request {2}...",
-                    (int) httpResponseMessage.StatusCode,
-                    httpResponseMessage.StatusCode.ToString("G"),
-                    postUri);
+                status = (int)httpResponseMessage.StatusCode;
+
+                await _diagnosticEventSink.ReceiveAsync(
+                    new HttpEventBuilder(this, DiagnosticEventType.MessageSent)
+                    {
+                        Message = message,
+                        Method = HttpMethod.Post.ToString(),
+                        Uri = postUri,
+                        Status = status
+                    }.Build(), cancellationToken);
 
                 HandleHttpErrorResponse(httpResponseMessage);
             }
@@ -258,15 +271,24 @@ namespace Platibus.Http
             catch (Exception ex)
             {
                 var errorMessage = string.Format("Error sending message ID {0}", message.Headers.MessageId);
-                Log.ErrorFormat(errorMessage, ex);
+
+                _diagnosticEventSink.Receive(
+                    new HttpEventBuilder(this, HttpEventType.HttpCommunicationError)
+                    {
+                        Detail = errorMessage,
+                        Message = message,
+                        Method = HttpMethod.Post.ToString(),
+                        Uri = postUri,
+                        Status = status,
+                        Exception = ex
+                    }.Build());
 
                 HandleCommunicationException(ex, message.Headers.Destination);
-
                 throw new TransportException(errorMessage, ex);
             }
             finally
             {
-                httpClient.TryDispose();
+                if (httpClient != null) httpClient.Dispose();
             }
         }
 
@@ -293,8 +315,8 @@ namespace Platibus.Http
                     TimeSpan retryOrRenewAfter;
                     try
                     {
-                        Log.DebugFormat("Sending subscription request for topic {0} to {1}...", topicName, endpoint);
                         await SendSubscriptionRequest(subscription, cancellationToken);
+
                         if (!subscription.Expires)
                         {
                             // Subscription is not set to expire on the remote server.  Since
@@ -304,17 +326,33 @@ namespace Platibus.Http
                         }
                         
                         retryOrRenewAfter = subscription.RenewalInterval;
-                        Log.DebugFormat(
-                            "Subscription request for topic {0} successfuly sent to {1}.  Subscription TTL is {2} and is scheduled to auto-renew in {3}",
-                            topicName, endpoint, ttl, retryOrRenewAfter);
+
+                        _diagnosticEventSink.Receive(
+                            new HttpEventBuilder(this, DiagnosticEventType.SubscriptionRenewed)
+                            {
+                                Detail = "Subscription renewed.  Next renewal in " + retryOrRenewAfter,
+                                Topic = topicName,
+                            }.Build());
                     }
                     catch (EndpointNotFoundException enfe)
                     {
                         // Endpoint is not defined in the supplied configuration,
                         // so we cannot determine the URI.  This is an unrecoverable
                         // error, so simply return.
-                        Log.ErrorFormat("Fatal error subscribing to topic {0} of endpoint \"{1}\"", enfe, topicName,
-                            endpoint);
+                        _diagnosticEventSink.Receive(
+                            new HttpEventBuilder(this, DiagnosticEventType.EndpointNotFound)
+                            {
+                                Detail = "Fatal error sending subscription request: endpoint not found",
+                                Topic = topicName,
+                                Exception = enfe
+                            }.Build());
+
+                        _diagnosticEventSink.Receive(
+                            new HttpEventBuilder(this, DiagnosticEventType.SubscriptionFailed)
+                            {
+                                Topic = topicName
+                            }.Build());
+
                         return;
                     }
                     catch (NameResolutionFailedException nrfe)
@@ -323,8 +361,13 @@ namespace Platibus.Http
                         // endpoint URI.  This may or may not be a temporary error.
                         // In either case, retry after 30 seconds.
                         retryOrRenewAfter = subscription.RetryInterval;
-                        Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", nrfe,
-                            topicName, endpoint, retryOrRenewAfter);
+                        _diagnosticEventSink.Receive(
+                            new HttpEventBuilder(this, HttpEventType.HttpCommunicationError)
+                            {
+                                Detail = "Non-fatal error sending subscription request: unable to resolve address for hostname " + nrfe.Hostname + ".  Retry in " + retryOrRenewAfter,
+                                Topic = topicName,
+                                Exception = nrfe
+                            }.Build());
                     }
                     catch (ConnectionRefusedException cre)
                     {
@@ -332,23 +375,45 @@ namespace Platibus.Http
                         // endpoint URI.  This may or may not be a temporary error.
                         // In either case, retry after 30 seconds.
                         retryOrRenewAfter = subscription.RetryInterval;
-                        Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", cre,
-                            topicName, endpoint, retryOrRenewAfter);
+                        _diagnosticEventSink.Receive(
+                            new HttpEventBuilder(this, HttpEventType.HttpCommunicationError)
+                            {
+                                Detail = "Non-fatal error sending subscription request: connection refused for " + cre.Host + ":" + cre.Port + ".  Retry in " + retryOrRenewAfter,
+                                Topic = topicName,
+                                Exception = cre
+                            }.Build());
                     }
                     catch (ResourceNotFoundException ire)
                     {
                         // Topic is not found.  This may be temporary.
                         retryOrRenewAfter = subscription.RetryInterval;
-                        Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", ire,
-                            topicName, endpoint, retryOrRenewAfter);
+                        _diagnosticEventSink.Receive(
+                            new HttpEventBuilder(this, HttpEventType.HttpCommunicationError)
+                            {
+                                Detail = "Non-fatal error sending subscription request: resource not found.  Topic may be misconfigured.  Retry in " + retryOrRenewAfter,
+                                Topic = topicName,
+                                Exception = ire
+                            }.Build());
                     }
                     catch (InvalidRequestException ire)
                     {
                         // Request is not valid.  Either the URL is malformed or the
                         // topic does not exist.  In any case, retrying would be
                         // fruitless, so just return.
-                        Log.ErrorFormat("Fatal error subscribing to topic {0} of endpoint {1}", ire, topicName,
-                            endpoint);
+                        _diagnosticEventSink.Receive(
+                            new HttpEventBuilder(this, DiagnosticEventType.EndpointNotFound)
+                            {
+                                Detail = "Fatal error sending subscription request: invalid request.  Subscription abandoned.",
+                                Topic = topicName,
+                                Exception = ire
+                            }.Build());
+
+                        _diagnosticEventSink.Receive(
+                            new HttpEventBuilder(this, DiagnosticEventType.SubscriptionFailed)
+                            {
+                                Topic = topicName
+                            }.Build());
+
                         return;
                     }
                     catch (TransportException te)
@@ -357,8 +422,13 @@ namespace Platibus.Http
                         // due to temporary conditions that will resolve 
                         // themselves.  Retry in 30 seconds.
                         retryOrRenewAfter = subscription.RetryInterval;
-                        Log.WarnFormat("Non-fatal error subscribing to topic {0} of endpoint {1}.  Retrying in {2}", te,
-                            topicName, endpoint, retryOrRenewAfter);
+                        _diagnosticEventSink.Receive(
+                            new HttpEventBuilder(this, HttpEventType.HttpCommunicationError)
+                            {
+                                Detail = "Non-fatal error sending subscription request: communication error.  Retry in " + retryOrRenewAfter,
+                                Topic = topicName,
+                                Exception = te
+                            }.Build());
                     }
                     await Task.Delay(retryOrRenewAfter, cancellationToken);
                 }
@@ -375,7 +445,7 @@ namespace Platibus.Http
             var endpoint = subscriptionMetadata.Endpoint;
             var topic = subscriptionMetadata.Topic;
             var ttl = subscriptionMetadata.TTL;
-
+            
             HttpClient httpClient = null;
             try
             {
@@ -389,7 +459,18 @@ namespace Platibus.Http
                     relativeUri += "&ttl=" + ttl.TotalSeconds;
                 }
 
+                var postUri = new Uri(endpointBaseUri, relativeUri);
                 var httpResponseMessage = await httpClient.PostAsync(relativeUri, new StringContent(""), cancellationToken);
+                var status = (int?)httpResponseMessage.StatusCode;
+
+                await _diagnosticEventSink.ReceiveAsync(
+                    new HttpEventBuilder(this, HttpEventType.HttpSubscriptionRequestSent)
+                    {
+                        Uri = postUri,
+                        Topic = subscriptionMetadata.Topic,
+                        Status = status
+                    }.Build(), cancellationToken);
+
                 HandleHttpErrorResponse(httpResponseMessage);
             }
             catch (TransportException)
@@ -404,15 +485,14 @@ namespace Platibus.Http
             {
                 var errorMessage = string.Format("Error sending subscription request for topic {0} of publisher {1}",
                     topic, endpoint.Address);
-                Log.ErrorFormat(errorMessage, ex);
-
+                
                 HandleCommunicationException(ex, endpoint.Address);
 
                 throw new TransportException(errorMessage, ex);
             }
             finally
             {
-                httpClient.TryDispose();
+                if (httpClient != null) httpClient.Dispose();
             }
         }
 
@@ -512,7 +592,7 @@ namespace Platibus.Http
         {
             if (disposing)
             {
-                _clientPool.TryDispose();
+                _clientPool.Dispose();
             }
         }
         

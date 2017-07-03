@@ -21,12 +21,10 @@
 // THE SOFTWARE.
 
 using System;
-using System.Collections.Concurrent;
 using System.IO;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
-using Common.Logging;
+using Platibus.Queueing;
 using Platibus.Security;
 
 namespace Platibus.SQLite
@@ -35,18 +33,11 @@ namespace Platibus.SQLite
     /// An <see cref="IMessageQueueingService"/> implementation that stores queued
     /// messages in a SQLite database
     /// </summary>
-    public class SQLiteMessageQueueingService : IMessageQueueingService, IDisposable
+    public class SQLiteMessageQueueingService : AbstractMessageQueueingService<SQLiteMessageQueue>
     {
-        private static readonly ILog Log = LogManager.GetLogger(SQLiteLoggingCategories.SQLite);
-
         private readonly DirectoryInfo _baseDirectory;
         private readonly ISecurityTokenService _securityTokenService;
-
-        private readonly ConcurrentDictionary<QueueName, SQLiteMessageQueue> _queues =
-            new ConcurrentDictionary<QueueName, SQLiteMessageQueue>();
-
-        private bool _disposed;
-
+        
         /// <summary>
         /// Initializes a new <see cref="SQLiteMessageQueueingService"/>
         /// </summary>
@@ -87,98 +78,13 @@ namespace Platibus.SQLite
                 _baseDirectory.Refresh();
             }
         }
-
-        /// <summary>
-        /// Establishes a named queue
-        /// </summary>
-        /// <param name="queueName">The name of the queue</param>
-        /// <param name="listener">An object that will receive messages off of the queue for processing</param>
-        /// <param name="options">(Optional) Options that govern how the queue behaves</param>
-        /// <param name="cancellationToken">(Optional) A cancellation token that can be used
-        /// by the caller to cancel queue creation if necessary</param>
-        /// <returns>Returns a task that will complete when the queue has been created</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/> or
-        /// <paramref name="listener"/> is <c>null</c></exception>
-        /// <exception cref="QueueAlreadyExistsException">Thrown if a queue with the specified
-        /// name already exists</exception>
-        public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
+        
+        /// <inheritdoc />
+        protected override Task<SQLiteMessageQueue> InternalCreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null,
+            CancellationToken cancellationToken = new CancellationToken())
         {
-            CheckDisposed();
             var queue = new SQLiteMessageQueue(_baseDirectory, queueName, listener, _securityTokenService, options);
-            if (!_queues.TryAdd(queueName, queue))
-            {
-                throw new QueueAlreadyExistsException(queueName);
-            }
-
-            await queue.Init();
-            Log.DebugFormat("SQLite queue \"{0}\" created successfully", queueName);
-        }
-
-        /// <summary>
-        /// Enqueues a message on a queue
-        /// </summary>
-        /// <param name="queueName">The name of the queue</param>
-        /// <param name="message">The message to enqueue</param>
-        /// <param name="senderPrincipal">(Optional) The sender principal, if applicable</param>
-        /// <param name="cancellationToken">(Optional) A cancellation token that can be
-        /// used be the caller to cancel the enqueue operation if necessary</param>
-        /// <returns>Returns a task that will complete when the message has been enqueued</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/>
-        /// or <paramref name="message"/> is <c>null</c></exception>
-        public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            SQLiteMessageQueue queue;
-            if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
-
-            Log.DebugFormat("Enqueueing message ID {0} in SQL queue \"{1}\"...", message.Headers.MessageId, queueName);
-            await queue.Enqueue(message, senderPrincipal);
-            Log.DebugFormat("Message ID {0} enqueued successfully in SQL queue \"{1}\"", message.Headers.MessageId,
-                queueName);
-        }
-
-        /// <summary>
-        /// Finalizer to ensure all resources are released
-        /// </summary>
-        ~SQLiteMessageQueueingService()
-        {
-            Dispose(false);
-        }
-
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        /// <filterpriority>2</filterpriority>
-        public void Dispose()
-        {
-            if (_disposed) return;
-            Dispose(true);
-            GC.SuppressFinalize(this);
-            _disposed = true;
-        }
-
-        /// <summary>
-        /// Called by <see cref="Dispose()"/> or the finalizer to ensure that resources are released
-        /// </summary>
-        /// <param name="disposing">Indicates whether this method is called from the 
-        /// <see cref="Dispose()"/> method (<c>true</c>) or the finalizer (<c>false</c>)</param>
-        /// <remarks>
-        /// This method will not be called more than once
-        /// </remarks>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (_disposed) return;
-            if (disposing)
-            {
-                foreach (var queue in _queues.Values)
-                {
-                    queue.TryDispose();
-                }
-            }
-        }
-
-        private void CheckDisposed()
-        {
-            if (_disposed) throw new ObjectDisposedException(GetType().FullName);
+            return Task.FromResult(queue);
         }
     }
 }

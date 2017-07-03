@@ -25,7 +25,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Common.Logging;
+using Platibus.Diagnostics;
 using Platibus.Http.Controllers;
 using Platibus.Journaling;
 
@@ -36,8 +36,6 @@ namespace Platibus.Http
     /// </summary>
     public class HttpServer : IDisposable
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Http);
-
         /// <summary>
         /// Creates and starts a new <see cref="HttpServer"/> based on the configuration
         /// in the named configuration section.
@@ -51,7 +49,9 @@ namespace Platibus.Http
         public static async Task<HttpServer> Start(string configSectionName = "platibus.httpserver",
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            var configuration = await HttpServerConfigurationManager.LoadConfiguration(configSectionName);
+            var configManager = new HttpServerConfigurationManager();
+            var configuration = new HttpServerConfiguration();
+            await configManager.Initialize(configuration, configSectionName);
             return await Start(configuration, cancellationToken);
         }
 
@@ -74,6 +74,7 @@ namespace Platibus.Http
 
         private bool _disposed;
         private readonly Uri _baseUri;
+        private readonly IDiagnosticEventSink _diagnosticEventSink;
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
         private readonly IMessageQueueingService _messageQueueingService;
         private readonly IMessageJournal _messageJournal;
@@ -105,6 +106,7 @@ namespace Platibus.Http
         private HttpServer(IHttpServerConfiguration configuration)
         {
             _baseUri = configuration.BaseUri;
+            _diagnosticEventSink = configuration.DiagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
             _subscriptionTrackingService = configuration.SubscriptionTrackingService;
             _messageQueueingService = configuration.MessageQueueingService;
             _messageJournal = configuration.MessageJournal;
@@ -142,7 +144,12 @@ namespace Platibus.Http
         {
             if (_bus == null)
             {
-                Log.WarnFormat("Unable to handle local delivery of message ID {0}: bus not initialized", message.Headers.MessageId);
+                await _diagnosticEventSink.ReceiveAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.BusNotInitialized)
+                    {
+                        Detail = "Unable to delivery message: bus not initialized",
+                        Message = message
+                    }.Build(), cancellationToken);
                 return;
             }
             await _bus.HandleMessage(message, Thread.CurrentPrincipal);
@@ -171,9 +178,14 @@ namespace Platibus.Http
             await _transportService.Init(cancellationToken);
             await _bus.Init(cancellationToken);
             
-            Log.InfoFormat("Starting HTTP server listening on {0}...", _baseUri);
             _httpListener.Start();
-            Log.InfoFormat("HTTP server started successfully");
+
+            await _diagnosticEventSink.ReceiveAsync(
+                new HttpEventBuilder(this, HttpEventType.HttpServerStarted)
+                {
+                    Detail = "HTTP listener started",
+                    Uri = _baseUri
+                }.Build(), cancellationToken);
 
             // Create a new async task but do not wait for it to complete.
             _listenTask = Listen(_cancellationTokenSource.Token);
@@ -196,10 +208,16 @@ namespace Platibus.Http
                     if (cancellationToken.IsCancellationRequested) break;
 
                     var context = await contextReceived;
-
-                    Log.DebugFormat("Accepting {0} request for resource {1} from {2}...",
-                        context.Request.HttpMethod, context.Request.Url, context.Request.RemoteEndPoint);
-
+                    var request = context.Request;
+                    var remote = request.RemoteEndPoint == null ? null : request.RemoteEndPoint.ToString();
+                    await _diagnosticEventSink.ReceiveAsync(
+                        new HttpEventBuilder(this, HttpEventType.HttpRequestReceived)
+                        {
+                            Remote = remote,
+                            Uri = request.Url,
+                            Method = request.HttpMethod
+                        }.Build(), cancellationToken);
+                    
                     // Create a new async task but do not wait for it to complete.
                     await _acceptBlock.SendAsync(context, cancellationToken);
                 }
@@ -221,27 +239,31 @@ namespace Platibus.Http
         /// <returns>Returns a task that will complete when the request has been handled</returns>
         protected async Task Accept(HttpListenerContext context)
         {
+            var request = context.Request;
+            var remote = request.RemoteEndPoint == null ? null : request.RemoteEndPoint.ToString();
             var resourceRequest = new HttpListenerRequestAdapter(context.Request, context.User);
             var resourceResponse = new HttpListenerResponseAdapter(context.Response);
             try
             {
-                Log.DebugFormat("Routing {0} request for resource {1} from {2}...",
-                    context.Request.HttpMethod, context.Request.Url, context.Request.RemoteEndPoint);
-
                 await _resourceRouter.Route(resourceRequest, resourceResponse);
-
-                Log.DebugFormat("{0} request for resource {1} handled successfully",
-                    context.Request.HttpMethod, context.Request.Url);
             }
             catch (Exception ex)
             {
-                var exceptionHandler = new HttpExceptionHandler(resourceRequest, resourceResponse, Log);
+                var exceptionHandler = new HttpExceptionHandler(resourceRequest, resourceResponse, _diagnosticEventSink);
                 exceptionHandler.HandleException(ex);
             }
             finally
             {
                 context.Response.Close();
             }
+
+            await _diagnosticEventSink.ReceiveAsync(
+                new HttpEventBuilder(this, HttpEventType.HttpResponseSent)
+                {
+                    Remote = remote,
+                    Uri = request.Url,
+                    Method = request.HttpMethod
+                }.Build());
         }
 
         /// <summary>
@@ -273,36 +295,56 @@ namespace Platibus.Http
         /// <remarks>
         /// This method will not be called more than once
         /// </remarks>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_transportService")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_bus")]
         protected virtual void Dispose(bool disposing)
         {
-            if (_disposed) return;
-
-            Log.Info("Stopping HTTP server...");
             _httpListener.Stop();
             _cancellationTokenSource.Cancel();
             _listenTask.Wait(TimeSpan.FromSeconds(30));
-            Log.InfoFormat("HTTP server stopped");
+            if (!disposing) return;
 
-            _bus.TryDispose();
-            _transportService.TryDispose();
-            _messageQueueingService.TryDispose();
-            _messageJournal.TryDispose();
-            _subscriptionTrackingService.TryDispose();
-
+            _cancellationTokenSource.Dispose();
             try
             {
                 _httpListener.Close();
+
+                _diagnosticEventSink.Receive(
+                    new HttpEventBuilder(this, HttpEventType.HttpServerStopped)
+                    {
+                        Uri = _baseUri
+                    }.Build());
             }
             catch (Exception ex)
             {
-                Log.Warn("Error closing HTTP listener; aborting...", ex);
+                _diagnosticEventSink.Receive(
+                    new HttpEventBuilder(this, HttpEventType.HttpServerError)
+                    {
+                        Detail = "Unexpected error closing HTTP listener",
+                        Uri = _baseUri,
+                        Exception = ex
+                    }.Build());
                 _httpListener.Abort();
             }
+            
+            _bus.Dispose();
+            _transportService.Dispose();
+            
+            var disposableMessageQueueingService = _messageQueueingService as IDisposable;
+            if (disposableMessageQueueingService != null)
+            {
+                disposableMessageQueueingService.Dispose();
+            }
 
-            _cancellationTokenSource.TryDispose();
+            var disposableMessageJournal = _messageJournal as IDisposable;
+            if (disposableMessageJournal != null)
+            {
+                disposableMessageJournal.Dispose();
+            }
+
+            var disposableSubscriptionTrackingService = _subscriptionTrackingService as IDisposable;
+            if (disposableSubscriptionTrackingService != null)
+            {
+                disposableSubscriptionTrackingService.Dispose();
+            }
         }
     }
 }

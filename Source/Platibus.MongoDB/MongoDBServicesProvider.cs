@@ -50,7 +50,11 @@ namespace Platibus.MongoDB
             {
                 throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
             }
-            var securityTokenService = await PlatibusConfigurationManager.InitSecurityTokenService(configuration.SecurityTokens);
+
+            var securityTokenServiceFactory = new SecurityTokenServiceFactory();
+            var securitTokenConfig = configuration.SecurityTokens;
+            var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securitTokenConfig);
+
             var sqlMessageQueueingService = new MongoDBMessageQueueingService(connectionStringSettings, securityTokenService);
             return sqlMessageQueueingService;
         }

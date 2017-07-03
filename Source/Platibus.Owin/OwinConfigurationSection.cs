@@ -26,13 +26,23 @@ using Platibus.Config;
 
 namespace Platibus.Owin
 {
-    internal class OwinConfigurationSection : PlatibusConfigurationSection
+    /// <summary>
+    /// Configuration section for the Platibus OWIN middleware
+    /// </summary>
+    public class OwinConfigurationSection : PlatibusConfigurationSection
     {
         private const string BaseUriPropertyName = "baseUri";
         private const string SubscriptionTrackingPropertyName = "subscriptionTracking";
         private const string QueueingPropertyName = "queueing";
         private const string BypassTransportLocalDestinationPropertyName = "bypassTransportLocalDestination";
 
+        /// <summary>
+        /// The base URI of the application
+        /// </summary>
+        /// <remarks>
+        /// Must agree with the address to which the HTTP listener is bound (if self hosting) or
+        /// one of the IIS bindings of the hosting web application
+        /// </remarks>
         [ConfigurationProperty(BaseUriPropertyName)]
         public Uri BaseUri
         {
@@ -40,6 +50,9 @@ namespace Platibus.Owin
             set { base[BaseUriPropertyName] = value; }
         }
 
+        /// <summary>
+        /// Subscription tracking options
+        /// </summary>
         [ConfigurationProperty(SubscriptionTrackingPropertyName)]
         public SubscriptionTrackingElement SubscriptionTracking
         {
@@ -47,6 +60,9 @@ namespace Platibus.Owin
             set { base[SubscriptionTrackingPropertyName] = value; }
         }
 
+        /// <summary>
+        /// Queueing options
+        /// </summary>
         [ConfigurationProperty(QueueingPropertyName)]
         public QueueingElement Queueing
         {

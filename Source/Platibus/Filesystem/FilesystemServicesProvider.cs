@@ -47,9 +47,12 @@ namespace Platibus.Filesystem
         /// <see cref="IMessageQueueingService"/></returns>
         public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
+            var securityTokenServiceFactory = new SecurityTokenServiceFactory();
+            var securitTokenConfig = configuration.SecurityTokens;
+            var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securitTokenConfig);
+
             var path = configuration.GetString("path");
             var fsQueueingBaseDir = GetRootedDirectory(path);
-            var securityTokenService = await PlatibusConfigurationManager.InitSecurityTokenService(configuration.SecurityTokens);
             var fsQueueingService = new FilesystemMessageQueueingService(fsQueueingBaseDir, securityTokenService);
             fsQueueingService.Init();
             return fsQueueingService;

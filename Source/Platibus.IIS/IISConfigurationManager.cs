@@ -21,12 +21,10 @@
 // THE SOFTWARE.
 
 using System;
-using System.Configuration;
 using System.Threading.Tasks;
-using Common.Logging;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
-using Platibus.Filesystem;
+using Platibus.Diagnostics;
 
 namespace Platibus.IIS
 {
@@ -34,9 +32,57 @@ namespace Platibus.IIS
     /// Factory class used to initialize <see cref="IISConfiguration"/> objects from
     /// declarative configuration elements in web configuration files.
     /// </summary>
-    public static class IISConfigurationManager
+    public class IISConfigurationManager : PlatibusConfigurationManager<IISConfiguration>
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
+        /// <summary>
+        /// Initializes a new <see cref="IISConfigurationManager"/>
+        /// </summary>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events related to IIS configuration</param>
+        public IISConfigurationManager(IDiagnosticEventSink diagnosticEventSink = null) : base(diagnosticEventSink)
+        {
+        }
+
+        /// <inheritdoc />
+        public override async Task Initialize(IISConfiguration configuration, string configSectionName = null)
+        {
+            if (string.IsNullOrWhiteSpace(configSectionName))
+            {
+                configSectionName = "platibus.iis";
+                await DiagnosticEventSink.ReceiveAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                    {
+                        Detail = "Using default configuration section \"" + configSectionName + "\""
+                    }.Build());
+            }
+
+            var configSection = LoadConfigurationSection<IISConfigurationSection>(configSectionName);
+            await Initialize(configuration, configSection);
+        }
+        
+        /// <summary>
+        /// Initializes the supplied HTTP server <paramref name="configuration"/> based on the
+        /// properties of the provided <paramref name="configSection"/>
+        /// </summary>
+        /// <param name="configuration">The configuration to initialize</param>
+        /// <param name="configSection">The configuration section whose properties are to be used
+        /// to initialize the <paramref name="configuration"/></param>
+        /// <returns>Returns a task that completes when the configuration has been initialized</returns>
+        public async Task Initialize(IISConfiguration configuration,
+            IISConfigurationSection configSection)
+        {
+            await base.Initialize(configuration, configSection);
+            configuration.BaseUri = configSection.BaseUri;
+            configuration.BypassTransportLocalDestination = configSection.BypassTransportLocalDestination;
+
+            var mqsFactory = new MessageQueueingServiceFactory(DiagnosticEventSink);
+            var mqsConfig = configSection.Queueing;
+            configuration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(mqsConfig);
+
+            var stsFactory = new SubscriptionTrackingServiceFactory(DiagnosticEventSink);
+            var stsConfig = configSection.SubscriptionTracking;
+            configuration.SubscriptionTrackingService = await stsFactory.InitSubscriptionTrackingService(stsConfig);
+        }
 
         /// <summary>
         /// Initializes and returns a <see cref="IISConfiguration"/> instance based on
@@ -52,24 +98,16 @@ namespace Platibus.IIS
         /// <see cref="PlatibusConfiguration"/> object</returns>
         /// <seealso cref="PlatibusConfigurationSection"/>
         /// <seealso cref="IConfigurationHook"/>
-        public static async Task<IISConfiguration> LoadConfiguration(string sectionName = null,
+        public new static async Task<IISConfiguration> LoadConfiguration(string sectionName = null,
             bool processConfigurationHooks = true)
         {
-            if (string.IsNullOrWhiteSpace(sectionName))
+            var configurationManager = new IISConfigurationManager();
+            var configuration = new IISConfiguration();
+            await configurationManager.Initialize(configuration, sectionName);
+            if (processConfigurationHooks)
             {
-                sectionName = "platibus.iis";
+                await configurationManager.FindAndProcessConfigurationHooks(configuration);
             }
-            var configSection = (IISConfigurationSection) ConfigurationManager.GetSection(sectionName) ??
-                                new IISConfigurationSection();
-
-            var configuration = await PlatibusConfigurationManager.LoadConfiguration<IISConfiguration>(sectionName, processConfigurationHooks);
-            configuration.BaseUri = configSection.BaseUri;
-            configuration.BypassTransportLocalDestination = configSection.BypassTransportLocalDestination;
-
-            var subscriptionTracking = configSection.SubscriptionTracking ?? new SubscriptionTrackingElement();
-            configuration.SubscriptionTrackingService = await InitSubscriptionTrackingService(subscriptionTracking);
-            configuration.MessageQueueingService = await PlatibusConfigurationManager.InitMessageQueueingService(configSection.Queueing);
-
             return configuration;
         }
 
@@ -81,23 +119,12 @@ namespace Platibus.IIS
         /// <returns>Returns a task whose result is an initialized subscription tracking service</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="config"/> is
         /// <c>null</c></exception>
+        [Obsolete("Use SecurityTokenServiceFactory")]
         public static Task<ISubscriptionTrackingService> InitSubscriptionTrackingService(
             SubscriptionTrackingElement config)
         {
-            var providerName = config.Provider;
-            ISubscriptionTrackingServiceProvider provider;
-            if (string.IsNullOrWhiteSpace(providerName))
-            {
-                Log.Debug("No subscription tracking service provider specified; using default provider...");
-                provider = new FilesystemServicesProvider();
-            }
-            else
-            {
-                provider = ProviderHelper.GetProvider<ISubscriptionTrackingServiceProvider>(providerName);
-            }
-
-            Log.Debug("Initializing subscription tracking service...");
-            return provider.CreateSubscriptionTrackingService(config);
+            var factory = new SubscriptionTrackingServiceFactory();
+            return factory.InitSubscriptionTrackingService(config);
         }
     }
 }

@@ -302,13 +302,28 @@ namespace Platibus.RabbitMQ
             {
                 foreach (var subscriptionQueue in _subscriptions)
                 {
-                    subscriptionQueue.TryDispose();
+                    subscriptionQueue.Value.Dispose();
                 }
-                _inboundQueue.TryDispose();
-                _messageQueueingService.TryDispose();
-                _messageJournal.TryDispose();
-                _connectionManager.TryDispose();
-                _bus.TryDispose();
+                _inboundQueue.Dispose();
+                _bus.Dispose();
+
+                var disposableMessageQueueingService = _messageQueueingService as IDisposable;
+                if (disposableMessageQueueingService != null)
+                {
+                    disposableMessageQueueingService.Dispose();
+                }
+
+                var disposableMessageJournal = _messageJournal as IDisposable;
+                if (disposableMessageJournal != null)
+                {
+                    disposableMessageJournal.Dispose();
+                }
+
+                var disposableConnectionManager = _connectionManager as IDisposable;
+                if (disposableConnectionManager != null)
+                {
+                    disposableConnectionManager.Dispose();
+                }
             }
         }
 

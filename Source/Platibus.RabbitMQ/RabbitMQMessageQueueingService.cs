@@ -188,12 +188,13 @@ namespace Platibus.RabbitMQ
             {
                 foreach (var queue in _queues.Values)
                 {
-                    queue.TryDispose();
+                    queue.Dispose();
                 }
 
-                if (_disposeConnectionManager)
+                var disposableConnectionManager = _connectionManager as IDisposable;
+                if (_disposeConnectionManager && disposableConnectionManager != null)
                 {
-                    _connectionManager.TryDispose();
+                    disposableConnectionManager.Dispose();
                 }
             }
             _disposed = true;

@@ -83,17 +83,13 @@ namespace Platibus.UnitTests.MongoDB
             GC.SuppressFinalize(this);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_subscriptionTrackingService")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_messageQueueingService")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_messageJournal")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_mongoDbRunner")]
         protected virtual void Dispose(bool disposing)
         {
-            _subscriptionTrackingService.TryDispose();
-            _messageQueueingService.TryDispose();
-            _messageJournal.TryDispose();
-            _mongoDbRunner.TryDispose();
-            
+            if (disposing)
+            {
+                _messageQueueingService.Dispose();
+                _mongoDbRunner.Dispose();
+            }
         }
     }
 }

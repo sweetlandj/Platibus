@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Platibus.Diagnostics;
 using Platibus.Serialization;
 
 namespace Platibus
@@ -32,12 +33,11 @@ namespace Platibus
     internal class MessageHandlingListener : IQueueListener
     {
         private readonly Bus _bus;
-        private readonly IMessageNamingService _messageNamingService;
-        private readonly ISerializationService _serializationService;
         private readonly IEnumerable<IMessageHandler> _messageHandlers;
+        private readonly MessageHandler _messageHandler;
 
         public MessageHandlingListener(Bus bus, IMessageNamingService namingService,
-            ISerializationService serializationService, IEnumerable<IMessageHandler> messageHandlers)
+            ISerializationService serializationService, IDiagnosticEventSink diagnosticEventSink, IEnumerable<IMessageHandler> messageHandlers)
         {
             if (bus == null) throw new ArgumentNullException("bus");
             if (namingService == null) throw new ArgumentNullException("namingService");
@@ -48,17 +48,16 @@ namespace Platibus
             if (!handlerList.Any()) throw new ArgumentNullException("messageHandlers");
 
             _bus = bus;
-            _messageNamingService = namingService;
-            _serializationService = serializationService;
             _messageHandlers = handlerList;
+            _messageHandler = new MessageHandler(namingService, serializationService, diagnosticEventSink);
         }
 
         public async Task MessageReceived(Message message, IQueuedMessageContext context,
             CancellationToken cancellationToken = default(CancellationToken))
         {
             var messageContext = new BusMessageContext(_bus, context.Headers, context.Principal);
-            await MessageHandler.HandleMessage(_messageNamingService, _serializationService, _messageHandlers,
-                message, messageContext, cancellationToken);
+
+            await _messageHandler.HandleMessage(_messageHandlers, message, messageContext, cancellationToken);
 
             if (messageContext.MessageAcknowledged)
             {

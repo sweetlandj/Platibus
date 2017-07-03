@@ -46,7 +46,7 @@ namespace Platibus.IntegrationTests.HttpServer
         {
             if (disposing)
             {
-                _httpClientPool.TryDispose();
+                _httpClientPool.Dispose();
             }
             base.Dispose(disposing);
         }

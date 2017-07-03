@@ -98,7 +98,7 @@ namespace Platibus.Multicast
             var buffer = new byte[datagramLen];
 
             var off = 0;
-            Array.Copy(_nodeId, 0, buffer, off, NodeId.Length);
+            Array.Copy(_nodeId.GetBytes(), 0, buffer, off, NodeId.Length);
             off += NodeIdLenth;
 
             buffer[off] = TypeId;

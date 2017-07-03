@@ -131,13 +131,15 @@ namespace Platibus.SQLite
         /// <param name="disposing">Indicates whether this method is called from the 
         /// <see cref="SQLSubscriptionTrackingService.Dispose()"/> method (<c>true</c>) or
         /// from the finalizer (<c>false</c>)</param>
-        [SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
             _operationQueue.Complete();
             _cancellationTokenSource.Cancel();
-            _cancellationTokenSource.TryDispose();
+            if (disposing)
+            {
+                _cancellationTokenSource.Dispose();
+            }
         }
     }
 }

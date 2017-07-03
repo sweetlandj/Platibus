@@ -5,7 +5,7 @@ namespace Platibus.Diagnostics
     /// <summary>
     /// A diagnostic event
     /// </summary>
-    public class DiagnosticEvent : EventArgs
+    public class DiagnosticEvent
     {
         private readonly object _source;
         private readonly DateTime _timestamp;
@@ -13,6 +13,7 @@ namespace Platibus.Diagnostics
         private readonly string _detail;
         private readonly Exception _exception;
         private readonly Message _message;
+        private readonly EndpointName _endpointName;
         private readonly QueueName _queue;
         private readonly TopicName _topic;
 
@@ -47,6 +48,11 @@ namespace Platibus.Diagnostics
         public Message Message { get { return _message; } }
 
         /// <summary>
+        /// The name of the endpoint, if applicable
+        /// </summary>
+        public EndpointName EndpointName { get { return _endpointName; } }
+
+        /// <summary>
         /// The queue to which the message pertains, if applicable
         /// </summary>
         public QueueName Queue { get { return _queue; } }
@@ -64,9 +70,10 @@ namespace Platibus.Diagnostics
         /// <param name="detail">Specific details regarding this instance of the event</param>
         /// <param name="exception">The exception related to the event, if applicable</param>
         /// <param name="message">The message to which the event pertains, if applicable</param>
+        /// <param name="endpointName">The name of the endpoint, if applicable</param>
         /// <param name="queue">The queue to which the event pertains, if applicable</param>
         /// <param name="topic">The topic to which the message pertains, if applicable</param>
-        public DiagnosticEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, QueueName queue = null, TopicName topic = null)
+        public DiagnosticEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, EndpointName endpointName = null, QueueName queue = null, TopicName topic = null)
         {
             if (source == null) throw new ArgumentNullException("source");
             if (type == null) throw new ArgumentNullException("type");
@@ -76,6 +83,7 @@ namespace Platibus.Diagnostics
             _detail = detail;
             _exception = exception;
             _message = message;
+            _endpointName = endpointName;
             _queue = queue;
             _topic = topic;
         }

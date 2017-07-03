@@ -21,21 +21,69 @@
 // THE SOFTWARE.
 
 using System;
-using System.Configuration;
 using System.Threading.Tasks;
-using Common.Logging;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
-using Platibus.Filesystem;
+using Platibus.Diagnostics;
 
 namespace Platibus.Http
 {
     /// <summary>
     /// Helper class for loading HTTP server configuration information
     /// </summary>
-    public static class HttpServerConfigurationManager
+    public class HttpServerConfigurationManager : PlatibusConfigurationManager<HttpServerConfiguration>
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
+        /// <summary>
+        /// Initializes a <see cref="PlatibusConfigurationManager"/>
+        /// </summary>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events related to HTTP server configuration</param>
+        public HttpServerConfigurationManager(IDiagnosticEventSink diagnosticEventSink = null) : base(diagnosticEventSink)
+        {
+        }
+
+        /// <inheritdoc />
+        public override async Task Initialize(HttpServerConfiguration configuration, string configSectionName = null)
+        {
+            if (string.IsNullOrWhiteSpace(configSectionName))
+            {
+                configSectionName = "platibus.httpserver";
+                await DiagnosticEventSink.ReceiveAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                    {
+                        Detail = "Using default configuration section \"" + configSectionName + "\""
+                    }.Build());
+            }
+
+            var configSection = LoadConfigurationSection<HttpServerConfigurationSection>(configSectionName);
+            await Initialize(configuration, configSection);
+        }
+
+        /// <summary>
+        /// Initializes the supplied HTTP server <paramref name="configuration"/> based on the
+        /// properties of the provided <paramref name="configSection"/>
+        /// </summary>
+        /// <param name="configuration">The configuration to initialize</param>
+        /// <param name="configSection">The configuration section whose properties are to be used
+        /// to initialize the <paramref name="configuration"/></param>
+        /// <returns>Returns a task that completes when the configuration has been initialized</returns>
+        public async Task Initialize(HttpServerConfiguration configuration,
+            HttpServerConfigurationSection configSection)
+        {
+            await base.Initialize(configuration, configSection);
+            configuration.BaseUri = configSection.BaseUri;
+            configuration.ConcurrencyLimit = configSection.ConcurrencyLimit;
+            configuration.AuthenticationSchemes = configSection.AuthenticationSchemes.GetFlags();
+            configuration.BypassTransportLocalDestination = configSection.BypassTransportLocalDestination;
+
+            var mqsFactory = new MessageQueueingServiceFactory(DiagnosticEventSink);
+            var mqsConfig = configSection.Queueing;
+            configuration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(mqsConfig);
+
+            var stsFactory = new SubscriptionTrackingServiceFactory(DiagnosticEventSink);
+            var stsConfig = configSection.SubscriptionTracking;
+            configuration.SubscriptionTrackingService = await stsFactory.InitSubscriptionTrackingService(stsConfig);
+        }
 
         /// <summary>
         /// Initializes an <see cref="HttpServerConfiguration"/> object based on the data in the named
@@ -44,26 +92,13 @@ namespace Platibus.Http
         /// <param name="sectionName">(Optional) The name of the configuration section</param>
         /// <returns>Returns a task that will complete when the HTTP server configuration has been 
         /// loaded and initialized and whose result will be the initialized configuration</returns>
+        [Obsolete("Use instance method Initialize")]
         public static async Task<HttpServerConfiguration> LoadConfiguration(string sectionName = null)
         {
-            if (string.IsNullOrWhiteSpace(sectionName))
-            {
-                sectionName = "platibus.httpserver";
-            }
-            var configSection = (HttpServerConfigurationSection) ConfigurationManager.GetSection(sectionName) ??
-                                new HttpServerConfigurationSection();
-
-            var configuration =
-                await PlatibusConfigurationManager.LoadConfiguration<HttpServerConfiguration>(sectionName);
-            configuration.BaseUri = configSection.BaseUri;
-            configuration.ConcurrencyLimit = configSection.ConcurrencyLimit;
-            configuration.AuthenticationSchemes = configSection.AuthenticationSchemes.GetFlags();
-            configuration.BypassTransportLocalDestination = configSection.BypassTransportLocalDestination;
-
-            var subscriptionTracking = configSection.SubscriptionTracking ?? new SubscriptionTrackingElement();
-            configuration.SubscriptionTrackingService = await InitSubscriptionTrackingService(subscriptionTracking);
-            configuration.MessageQueueingService = await PlatibusConfigurationManager.InitMessageQueueingService(configSection.Queueing);
-
+            var configuration = new HttpServerConfiguration();
+            var configManager = new HttpServerConfigurationManager();
+            await configManager.Initialize(configuration, sectionName);
+            await configManager.FindAndProcessConfigurationHooks(configuration);
             return configuration;
         }
 
@@ -76,24 +111,12 @@ namespace Platibus.Http
         /// initialized and whose result is the initialized subscription tracking service</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="config"/> is <c>null</c>
         /// </exception>
+        [Obsolete("Use SubscriptionTrackingServiceFactory.InitSubscriptionTrackingService")]
         public static Task<ISubscriptionTrackingService> InitSubscriptionTrackingService(
             SubscriptionTrackingElement config)
         {
-            if (config == null) throw new ArgumentNullException("config");
-            var providerName = config.Provider;
-            ISubscriptionTrackingServiceProvider provider;
-            if (string.IsNullOrWhiteSpace(providerName))
-            {
-                Log.Debug("No subscription tracking service provider specified; using default provider...");
-                provider = new FilesystemServicesProvider();
-            }
-            else
-            {
-                provider = ProviderHelper.GetProvider<ISubscriptionTrackingServiceProvider>(providerName);
-            }
-
-            Log.Debug("Initializing subscription tracking service...");
-            return provider.CreateSubscriptionTrackingService(config);
+            var factory = new SubscriptionTrackingServiceFactory();
+            return factory.InitSubscriptionTrackingService(config);
         }
     }
 }

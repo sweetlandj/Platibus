@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System.Threading.Tasks;
+using Platibus.Diagnostics;
 using Platibus.Journaling;
 
 namespace Platibus.Config.Extensibility
@@ -34,8 +35,7 @@ namespace Platibus.Config.Extensibility
         /// Creates an initializes a <see cref="IMessageJournal"/>
         /// based on the provided <paramref name="configuration"/>.
         /// </summary>
-        /// <param name="configuration">The journaling configuration
-        /// element.</param>
+        /// <param name="configuration">The journaling configuration element.</param>
         /// <returns>Returns a task whose result is an initialized
         /// <see cref="IMessageJournal"/>.</returns>
         Task<IMessageJournal> CreateMessageJournal(JournalingElement configuration);

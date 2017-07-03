@@ -72,8 +72,8 @@ namespace Platibus.IntegrationTests.HttpServer
         protected virtual void Dispose(bool disposing)
         {
             Task.WhenAll(
-                    _sendingHttpServer.ContinueWith(t => t.Result.TryDispose()),
-                    _receivingHttpServer.ContinueWith(t => t.Result.TryDispose()))
+                    _sendingHttpServer.ContinueWith(t => t.Result.Dispose()),
+                    _receivingHttpServer.ContinueWith(t => t.Result.Dispose()))
                 .Wait(TimeSpan.FromSeconds(10));
         }
     }

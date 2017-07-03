@@ -124,16 +124,15 @@ namespace Platibus.Http
         /// <param name="disposing">
         /// Whether this method was called from <see cref="Dispose()"/>
         /// </param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_poolSync")]
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
+            if (!disposing) return;
+
+            _poolSync.Dispose();
+
+            foreach (var httpClientHandler in _pool)
             {
-                _poolSync.TryDispose();
-                foreach (var httpClientHandler in _pool)
-                {
-                    httpClientHandler.Value.TryDispose();
-                }
+                httpClientHandler.Value.Dispose();
             }
         }
 

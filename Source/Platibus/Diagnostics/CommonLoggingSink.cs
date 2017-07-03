@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
 
@@ -25,7 +26,7 @@ namespace Platibus.Diagnostics
         }
 
         /// <inheritdoc />
-        public Task Receive(DiagnosticEvent @event)
+        public void Receive(DiagnosticEvent @event)
         {
             var message = FormatLogMessage(@event);
             switch (@event.Type.Level)
@@ -49,7 +50,12 @@ namespace Platibus.Diagnostics
                     _log.Debug(message, @event.Exception);
                     break;
             }
-            
+        }
+
+        /// <inheritdoc />
+        public Task ReceiveAsync(DiagnosticEvent @event, CancellationToken cancellationToken = new CancellationToken())
+        {
+            Receive(@event);
             return Task.FromResult(0);
         }
 

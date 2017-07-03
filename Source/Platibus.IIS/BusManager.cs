@@ -63,24 +63,17 @@ namespace Platibus.IIS
         }
 
         /// <summary>
-        /// Provides access to the IIS-hosted bus with the default configuration
-        /// </summary>
-        /// <returns>Returns a task whose result is the bus instance</returns>
-        public async Task<IBus> GetBus()
-        {
-            var configuration = await IISConfigurationManager.LoadConfiguration();
-            return await GetBus(configuration);
-        }
-
-        /// <summary>
         /// Provides access to the IIS-hosted bus using the configuration loaded
         /// from the configuration section with the specified <paramref name="sectionName"/>
         /// </summary>
         /// <param name="sectionName">The name of the configuration section</param>
         /// <returns>Returns a task whose result is the bus instance</returns>
-        public async Task<IBus> GetBus(string sectionName)
+        public async Task<IBus> GetBus(string sectionName = null)
         {
-            var configuration = await IISConfigurationManager.LoadConfiguration(sectionName);
+            var configManager = new IISConfigurationManager();
+            var configuration = new IISConfiguration();
+            await configManager.Initialize(configuration);
+            await configManager.FindAndProcessConfigurationHooks(configuration);
             return await GetBus(configuration);
         }
 
@@ -134,7 +127,7 @@ namespace Platibus.IIS
             if (bus != null)
             {
                 Log.InfoFormat("Disposing managed bus instance {0}...", uri);
-                bus.TryDispose();
+                bus.Dispose();
             }
         }
 
@@ -179,7 +172,7 @@ namespace Platibus.IIS
                     var uri = busInstance.Key;
                     var managedBus = busInstance.Value;
                     Log.InfoFormat("Disposing managed bus instance {0}...", uri);
-                    managedBus.TryDispose();
+                    managedBus.Dispose();
                 }
             }
         }

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 
 namespace Platibus.Diagnostics
 {
@@ -8,9 +9,17 @@ namespace Platibus.Diagnostics
     public interface IDiagnosticEventSink
     {
         /// <summary>
-        /// Raises a diagnostic event
+        ///  Receives and handles a diagnostic event
         /// </summary>
-        /// <param name="event">The event</param>
-        Task Receive(DiagnosticEvent @event);
+        /// <param name="event">The diagnostic event to consume</param>
+        void Receive(DiagnosticEvent @event);
+
+        /// <summary>
+        /// Receives and handles a diagnostic event asynchronously
+        /// </summary>
+        /// <param name="event">The diagnostic event to consume</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be provided
+        /// by the caller to interrupt processing of the diagnostic event</param>
+        Task ReceiveAsync(DiagnosticEvent @event, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

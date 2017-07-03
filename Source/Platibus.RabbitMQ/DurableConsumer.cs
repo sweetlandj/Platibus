@@ -181,7 +181,7 @@ namespace Platibus.RabbitMQ
 
             if (disposing)
             {
-                _cancellationTokenSource.TryDispose();
+                _cancellationTokenSource.Dispose();
             }
         }
 

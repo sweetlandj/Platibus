@@ -4,13 +4,12 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
-using Platibus.Security;
 
 namespace Platibus.UnitTests.Filesystem
 {
     /// <summary>
     /// A copy of the MessageFileWriter class as it existed prior to the introduction of the
-    /// <see cref="ISecurityTokenService"/> interface and the 
+    /// <see cref="Platibus.Security.ISecurityTokenService"/> interface and the 
     /// <see cref="IMessageHeaders.SecurityToken"/> message header.
     /// </summary>
     internal class LegacyMessageFileWriter : IDisposable
@@ -110,12 +109,9 @@ namespace Platibus.UnitTests.Filesystem
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_writer")]
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
+            if (disposing && !_leaveOpen)
             {
-                if (!_leaveOpen)
-                {
-                    _writer.TryDispose();
-                }
+                _writer.Dispose();
             }
         }
     }

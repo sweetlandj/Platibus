@@ -44,6 +44,10 @@ namespace Platibus.RabbitMQ
         /// <see cref="IMessageQueueingService"/></returns>
         public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
+            var securityTokenServiceFactory = new SecurityTokenServiceFactory();
+            var securitTokenConfig = configuration.SecurityTokens;
+            var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securitTokenConfig);
+
             var uri = configuration.GetUri("uri") ?? new Uri("amqp://localhost:5672");
 
             var encodingName = configuration.GetString("encoding");
@@ -53,7 +57,6 @@ namespace Platibus.RabbitMQ
             }
 
             var encoding = ParseEncoding(encodingName);
-            var securityTokenService = await PlatibusConfigurationManager.InitSecurityTokenService(configuration.SecurityTokens);
             var messageQueueingService = new RabbitMQMessageQueueingService(uri, encoding: encoding, securityTokenService: securityTokenService);
             return messageQueueingService;
         }

@@ -138,14 +138,14 @@ namespace Platibus.SQLite
         }
 
         /// <inheritdoc />
-        [SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
         protected override void Dispose(bool disposing)
         {
+            _cancellationTokenSource.Cancel();
+            _operationQueue.Complete();
             if (disposing)
             {
-                _cancellationTokenSource.Cancel();
-                _cancellationTokenSource.TryDispose();
-                _operationQueue.Complete();
+                _cancellationTokenSource.Dispose();
+                
             }
             base.Dispose(disposing);
         }

@@ -59,8 +59,8 @@ namespace Platibus.IntegrationTests.RabbitMQHost
         protected virtual void Dispose(bool disposing)
         {
             Task.WhenAll(
-                    _sendingHost.ContinueWith(t => t.Result.TryDispose()),
-                    _receivingHost.ContinueWith(t => t.Result.TryDispose()))
+                    _sendingHost.ContinueWith(t => t.Result.Dispose()),
+                    _receivingHost.ContinueWith(t => t.Result.Dispose()))
                 .Wait(TimeSpan.FromSeconds(10));
         }
     }

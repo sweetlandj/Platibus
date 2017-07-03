@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Http;
 
@@ -38,11 +39,18 @@ namespace Platibus.Diagnostics
         }
 
         /// <inheritdoc />
-        public override Task Process(string gelfMessage)
+        public override void Process(string gelfMessage)
         {
-            return _httpClient.PostAsync(_uri, new StringContent(gelfMessage, Encoding.UTF8, "application/json"));
+            _httpClient.PostAsync(_uri, new StringContent(gelfMessage, Encoding.UTF8, "application/json")).Wait();
         }
-        
+
+        /// <inheritdoc />
+        public override Task ProcessAsync(string gelfMessage, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var content = new StringContent(gelfMessage, Encoding.UTF8, "application/json");
+            return _httpClient.PostAsync(_uri, content, cancellationToken);
+        }
+
         /// <inheritdoc />
         public void Dispose()
         {
@@ -62,7 +70,7 @@ namespace Platibus.Diagnostics
         {
             if (disposing)
             {
-                _httpClient.TryDispose();
+                _httpClient.Dispose();
             }
         }
     }

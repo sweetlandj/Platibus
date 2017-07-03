@@ -10,10 +10,36 @@ namespace Platibus.Diagnostics
     public class DiagnosticEventType
     {
         /// <summary>
+        /// Emitted as a component or service is initialized
+        /// </summary>
+        public static readonly DiagnosticEventType ComponentInitialization = new DiagnosticEventType("ComponentInitialization", DiagnosticEventLevel.Info);
+
+        /// <summary>
+        /// Emitted when a default configuration is used
+        /// </summary>
+        public static readonly DiagnosticEventType ConfigurationDefault = new DiagnosticEventType("ConfigurationDefault", DiagnosticEventLevel.Info);
+
+        /// <summary>
+        /// Emitted when an invalid configuration is encountered
+        /// </summary>
+        public static readonly DiagnosticEventType ConfigurationError = new DiagnosticEventType("ConfigurationError", DiagnosticEventLevel.Error);
+
+        /// <summary>
+        /// Emitted when a configuration hook is processed
+        /// </summary>
+        public static readonly DiagnosticEventType ConfigurationHook = new DiagnosticEventType("ConfigurationHook", DiagnosticEventLevel.Error);
+
+        /// <summary>
         /// Emitted whenever a bus instance is initialized
         /// </summary>
         public static readonly DiagnosticEventType BusInitialized = new DiagnosticEventType("BusInitialized", DiagnosticEventLevel.Info);
 
+        /// <summary>
+        /// Emitted whenever an attempt is made to access a bus instance that has not been fully 
+        /// initialized
+        /// </summary>
+        public static readonly DiagnosticEventType BusNotInitialized = new DiagnosticEventType("BusNotInitialized", DiagnosticEventLevel.Error);
+        
         /// <summary>
         /// Emitted whenever a bus instance is shut down
         /// </summary>
@@ -30,31 +56,72 @@ namespace Platibus.Diagnostics
         public static readonly DiagnosticEventType MessageSent = new DiagnosticEventType("MessageSent", DiagnosticEventLevel.Trace);
 
         /// <summary>
+        /// Emitted whenever a message is successfully delivered to its intended destination
+        /// </summary>
+        public static readonly DiagnosticEventType MessageDelivered = new DiagnosticEventType("MessageDelivered", DiagnosticEventLevel.Trace);
+
+        /// <summary>
+        /// Emitted whenever a message cannot be delivered to its intended destination
+        /// </summary>
+        public static readonly DiagnosticEventType MessageDeliveryFailed = new DiagnosticEventType("MessageDeliveryFailed", DiagnosticEventLevel.Trace);
+
+        /// <summary>
         /// Emitted whenever a message is published to a topic
         /// </summary>
         public static readonly DiagnosticEventType MessagePublished = new DiagnosticEventType("MessagePublished", DiagnosticEventLevel.Trace);
-
-        /// <summary>
-        /// Emitted whenever a message is acknowledged (i.e. successfully handled)
-        /// </summary>
-        public static readonly DiagnosticEventType MessageAcknowledged = new DiagnosticEventType("MessageAcknowledged", DiagnosticEventLevel.Trace);
-
-        /// <summary>
-        /// Emitted whenever a message is abandoned (i.e. moved to a dead letter queue) due to
-        /// their not being any handling rules that match the message or due to the message not
-        /// being acknowledged by any handlers
-        /// </summary>
-        public static readonly DiagnosticEventType MessageAbandoned = new DiagnosticEventType("MessageAbandoned", DiagnosticEventLevel.Warn);
-
+        
         /// <summary>
         /// Emitted whenever a message is inserted into a message queue
         /// </summary>
         public static readonly DiagnosticEventType MessageEnqueued = new DiagnosticEventType("MessageEnqueued", DiagnosticEventLevel.Trace);
 
         /// <summary>
-        /// Emitted whenever a message is received out of a message queue for processing
+        /// Emitted whenever a message is added back into a queue e.g. after a restart
         /// </summary>
-        public static readonly DiagnosticEventType MessageDequeued = new DiagnosticEventType("MessageDequeued", DiagnosticEventLevel.Trace);
+        public static readonly DiagnosticEventType MessageReueued = new DiagnosticEventType("MessageRequeued", DiagnosticEventLevel.Trace);
+
+        /// <summary>
+        /// Emitted whenever an attempt is made to process a queued message
+        /// </summary>
+        public static readonly DiagnosticEventType QueuedMessageAttempt = new DiagnosticEventType("QueuedMessageAttempt", DiagnosticEventLevel.Trace);
+
+        /// <summary>
+        /// Emitted whenever a queued message will be retried
+        /// </summary>
+        public static readonly DiagnosticEventType QueuedMessageRetry = new DiagnosticEventType("QueuedMessageRetry", DiagnosticEventLevel.Trace);
+        
+        /// <summary>
+        /// Emitted whenever a message is acknowledged (i.e. successfully handled)
+        /// </summary>
+        public static readonly DiagnosticEventType MessageAcknowledged = new DiagnosticEventType("MessageAcknowledged", DiagnosticEventLevel.Trace);
+
+        /// <summary>
+        /// Emitted whenever an attempt is made to sent a message or subscription request to a
+        /// named endpoint that has not been configured
+        /// </summary>
+        public static readonly DiagnosticEventType EndpointNotFound = new DiagnosticEventType("EndpointNotFound", DiagnosticEventLevel.Error);
+
+        /// <summary>
+        /// Emitted whenever a message is not acknowledged
+        /// </summary>
+        public static readonly DiagnosticEventType MessageNotAcknowledged = new DiagnosticEventType("MessageNotAcknowledged", DiagnosticEventLevel.Trace);
+
+        /// <summary>
+        /// Emitted whenever an attempt is made to handle a message that has expired
+        /// </summary>
+        public static readonly DiagnosticEventType MessageExpired = new DiagnosticEventType("MessageExpired", DiagnosticEventLevel.Warn);
+
+        /// <summary>
+        /// Emitted whenever the maximum number of attempts to process a message have been exceeded
+        /// </summary>
+        public static readonly DiagnosticEventType MaxAttemptsExceeded = new DiagnosticEventType("MaxAttemptsExceeded", DiagnosticEventLevel.Warn);
+
+        /// <summary>
+        /// Emitted whenever a message is abandoned (i.e. moved to a dead letter queue) due to
+        /// there not being any handling rules that match the message or due to the message not
+        /// being acknowledged by any handlers
+        /// </summary>
+        public static readonly DiagnosticEventType DeadLetter = new DiagnosticEventType("DeadLetter", DiagnosticEventLevel.Warn);
         
         /// <summary>
         /// Emitted whenever access is denied to a resource
@@ -74,12 +141,17 @@ namespace Platibus.Diagnostics
         /// <summary>
         /// Emitted whenever an attempt to send a message fails
         /// </summary>
-        public static readonly DiagnosticEventType SendFailed = new DiagnosticEventType("SendFailed", DiagnosticEventLevel.Error);
+        public static readonly DiagnosticEventType MessageSendFailed = new DiagnosticEventType("SendFailed", DiagnosticEventLevel.Error);
 
         /// <summary>
         /// Emitted whenever a subscription request attempt fails
         /// </summary>
         public static readonly DiagnosticEventType SubscriptionFailed = new DiagnosticEventType("SubscriptionFailed", DiagnosticEventLevel.Error);
+
+        /// <summary>
+        /// Emitted whenever a subscription is renewed
+        /// </summary>
+        public static readonly DiagnosticEventType SubscriptionRenewed = new DiagnosticEventType("SubscriptionRenewed", DiagnosticEventLevel.Trace);
 
         /// <summary>
         /// Emitted whenever a subscription is created or updated in the local subscription
@@ -96,6 +168,11 @@ namespace Platibus.Diagnostics
         /// </remarks>
         public static readonly DiagnosticEventType CorrelationFailed = new DiagnosticEventType("CorrelationFailed", DiagnosticEventLevel.Warn);
 
+        /// <summary>
+        /// Emitted when an unexpected exception is caught
+        /// </summary>
+        public static readonly DiagnosticEventType UnhandledException = new DiagnosticEventType("UnhandledException", DiagnosticEventLevel.Error);
+        
         private readonly string _name;
         private readonly DiagnosticEventLevel _level;
 

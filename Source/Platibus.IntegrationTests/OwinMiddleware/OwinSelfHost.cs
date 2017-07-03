@@ -65,9 +65,15 @@ namespace Platibus.IntegrationTests.OwinMiddleware
 
         protected virtual void Dispose(bool disposing)
         {
-            _webApp.TryDispose();
-            _bus.TryDispose();
-            _middleware.TryDispose();
+            if (!disposing) return;
+            
+            _webApp.Dispose();
+            var disposableBus = _bus as IDisposable;
+            if (disposableBus != null)
+            {
+                disposableBus.Dispose();
+            }
+            _middleware.Dispose();
         }
     }
 }

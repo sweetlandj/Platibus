@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -18,14 +19,30 @@ namespace Platibus.Diagnostics
         };
 
         /// <inheritdoc />
-        public async Task Receive(DiagnosticEvent @event)
+        public void Receive(DiagnosticEvent @event)
         {
             try
             {
                 var gelfMessage = new GelfMessage();
                 PopulateGelfMessage(gelfMessage, @event);
                 var json = JsonConvert.SerializeObject(gelfMessage, _jsonSerializerSettings);
-                await Process(json);
+                Process(json);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine("Error processing GELF message: " + ex);
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task ReceiveAsync(DiagnosticEvent @event, CancellationToken cancellationToken = new CancellationToken())
+        {
+            try
+            {
+                var gelfMessage = new GelfMessage();
+                PopulateGelfMessage(gelfMessage, @event);
+                var json = JsonConvert.SerializeObject(gelfMessage, _jsonSerializerSettings);
+                await ProcessAsync(json, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -39,7 +56,17 @@ namespace Platibus.Diagnostics
         /// </summary>
         /// <param name="gelfMessage">The JSON serialized GELF message to process</param>
         /// <returns>Returns a task that will complete when the GELF message has been processed</returns>
-        public abstract Task Process(string gelfMessage);
+        public abstract void Process(string gelfMessage);
+
+        /// <summary>
+        /// Processes the specified GELF formatted string by writing it to a file or sending it to
+        /// a network endpoint
+        /// </summary>
+        /// <param name="gelfMessage">The JSON serialized GELF message to process</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be provided
+        /// by the caller to interrupt processing of the GELF message</param>
+        /// <returns>Returns a task that will complete when the GELF message has been processed</returns>
+        public abstract Task ProcessAsync(string gelfMessage, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Serializes the specified <paramref name="gelfMessage"/> to a JSON string

@@ -39,9 +39,12 @@ namespace Platibus.SQLite
         /// <inheritdoc />
         public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
+            var securityTokenServiceFactory = new SecurityTokenServiceFactory();
+            var securitTokenConfig = configuration.SecurityTokens;
+            var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securitTokenConfig);
+
             var path = configuration.GetString("path");
             var sqliteBaseDir = GetRootedDirectory(path);
-            var securityTokenService = await PlatibusConfigurationManager.InitSecurityTokenService(configuration.SecurityTokens);
             var sqliteMessageQueueingService = new SQLiteMessageQueueingService(sqliteBaseDir, securityTokenService);
             sqliteMessageQueueingService.Init();
             return sqliteMessageQueueingService;

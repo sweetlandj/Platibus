@@ -23,12 +23,10 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Common.Logging;
 using Platibus.Config.Extensibility;
-using Platibus.Filesystem;
+using Platibus.Diagnostics;
 using Platibus.Journaling;
 using Platibus.Security;
 using Platibus.Serialization;
@@ -39,142 +37,272 @@ namespace Platibus.Config
     /// Factory class used to initialize <see cref="PlatibusConfiguration"/> objects from
     /// declarative configuration elements in application configuration files.
     /// </summary>
-    public static class PlatibusConfigurationManager
+    public class PlatibusConfigurationManager : PlatibusConfigurationManager<PlatibusConfiguration>
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
+        /// <summary>
+        /// Initializes a new <see cref="PlatibusConfigurationManager"/>
+        /// </summary>
+        /// <param name="diagnosticEventSink">(Optional) A caller specified event sink that can
+        /// receive and process <see cref="DiagnosticEvent"/>s related to configuration</param>
+        public PlatibusConfigurationManager(IDiagnosticEventSink diagnosticEventSink = null) 
+            : base(diagnosticEventSink)
+        {
+        }
+    }
+    
+    /// <summary>
+    /// Factory class used to initialize <see cref="PlatibusConfiguration"/> objects from
+    /// declarative configuration elements in application configuration files.
+    /// </summary>
+    public class PlatibusConfigurationManager<TConfiguration> where TConfiguration : PlatibusConfiguration
+    {
+        /// <summary>
+        /// An event sink that handles <see cref="DiagnosticEvent"/>s raised during initialization
+        /// </summary>
+        protected readonly IDiagnosticEventSink DiagnosticEventSink;
 
         /// <summary>
-        /// Initializes and returns a <see cref="PlatibusConfiguration"/> instance based on
-        /// the <see cref="PlatibusConfigurationSection"/> with the specified 
-        /// <paramref name="sectionName"/>
+        /// Initializes a <see cref="PlatibusConfigurationManager"/>
         /// </summary>
-        /// <param name="sectionName">(Optional) The name of the configuration section 
-        /// (default is "platibus")</param>
-        /// <param name="processConfigurationHooks">(Optional) Whether to initialize and
-        /// process implementations of <see cref="IConfigurationHook"/> found in the
-        /// application domain (default is true)</param>
-        /// <returns>Returns a task whose result will be an initialized 
-        /// <see cref="PlatibusConfiguration"/> object</returns>
-        /// <seealso cref="PlatibusConfigurationSection"/>
-        /// <seealso cref="IConfigurationHook"/>
-        public static Task<PlatibusConfiguration> LoadConfiguration(string sectionName = null,
-            bool processConfigurationHooks = true)
+        /// <param name="diagnosticEventSink">(Optional) A caller specified event sink that can
+        /// receive and process <see cref="DiagnosticEvent"/>s related to configuration</param>
+        protected PlatibusConfigurationManager(IDiagnosticEventSink diagnosticEventSink = null)
         {
-            if (string.IsNullOrWhiteSpace(sectionName))
-            {
-                sectionName = "platibus";
-            }
-            return LoadConfiguration<PlatibusConfiguration>(sectionName, processConfigurationHooks);
+            DiagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
         }
 
         /// <summary>
-        /// Initializes and returns a <see cref="PlatibusConfiguration"/> instance based on
-        /// the <see cref="LoopbackConfigurationSection"/> with the specified 
-        /// <paramref name="sectionName"/>
+        /// Loads the configuration section of the specified <typeparamref name="TConfigSection">
+        /// type and name, appling defaults where appropriate</typeparamref>
         /// </summary>
-        /// <param name="sectionName">(Optional) The name of the configuration section 
-        /// (default is "platibus.loopback")</param>
-        /// <param name="processConfigurationHooks">(Optional) Whether to initialize and
-        /// process implementations of <see cref="IConfigurationHook"/> found in the
-        /// application domain (default is true)</param>
-        /// <returns>Returns a task whose result will be an initialized 
-        /// <see cref="PlatibusConfiguration"/> object</returns>
-        /// <seealso cref="PlatibusConfigurationSection"/>
-        /// <seealso cref="IConfigurationHook"/>
-        public static async Task<LoopbackConfiguration> LoadLoopbackConfiguration(string sectionName = null,
-            bool processConfigurationHooks = true)
+        /// <typeparam name="TConfigSection">The type of configuration section to load</typeparam>
+        /// <param name="configSectionName">The name of the configuration section</param>
+        /// <returns>Returns the loaded configuration section</returns>
+        protected TConfigSection LoadConfigurationSection<TConfigSection>(string configSectionName)
+            where TConfigSection : ConfigurationSection
         {
-            if (string.IsNullOrWhiteSpace(sectionName))
+            if (string.IsNullOrWhiteSpace(configSectionName)) throw new ArgumentNullException("configSectionName");
+
+            var configSection = ConfigurationManager.GetSection(configSectionName);
+            if (configSection == null)
             {
-                sectionName = "platibus.loopback";
+                DiagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                {
+                    Detail = "Configuration section \"" + configSectionName + "\" not found; using default configuration"
+                }.Build());
+                configSection = new PlatibusConfigurationSection();
             }
 
-            var configSection = (LoopbackConfigurationSection)ConfigurationManager.GetSection(sectionName) ??
-                                new LoopbackConfigurationSection();
-
-            var configuration = new LoopbackConfiguration
+            var typedConfigSection = configSection as TConfigSection;
+            if (typedConfigSection == null)
             {
-                ReplyTimeout = configSection.ReplyTimeout,
-                SerializationService = new DefaultSerializationService(),
-                MessageNamingService = new DefaultMessageNamingService(),
-				MessageQueueingService = await InitMessageQueueingService(configSection.Queueing),
-				DefaultContentType = configSection.DefaultContentType
-            };
+                var errorMessage = "Unexpected type for configuration section \"" + configSectionName +
+                                   "\": expected " + typeof(TConfigSection) + " but was " +
+                                   configSection.GetType();
 
+                DiagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
+                {
+                    Detail = errorMessage
+                }.Build());
+                throw new ConfigurationErrorsException(errorMessage);
+            }
+
+            return typedConfigSection;
+        }
+
+        /// <summary>
+        /// Initializes the specified <paramref name="configuration"/> object according to the
+        /// values in the <see cref="PlatibusConfigurationSection"/> with the specified 
+        /// <paramref name="configSectionName"/>
+        /// </summary>
+        /// <param name="configuration">The configuration object to initialize</param>
+        /// <param name="configSectionName">(Optional) The name of the 
+        /// <see cref="PlatibusConfigurationSection"/> to load</param>
+        /// <remarks>
+        /// The default configuration section name is "platibus".
+        /// </remarks>
+        /// <seealso cref="Initialize(TConfiguration,PlatibusConfigurationSection)"/>
+        public virtual Task Initialize(TConfiguration configuration, string configSectionName = null)
+        {
+            if (configuration == null) throw new ArgumentNullException("configuration");
+
+            if (string.IsNullOrWhiteSpace(configSectionName))
+            {
+                configSectionName = "platibus";
+                DiagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                {
+                    Detail = "Using default configuration section \"" + configSectionName + "\""
+                }.Build());
+            }
+
+            var configSection = LoadConfigurationSection<PlatibusConfigurationSection>(configSectionName);
+            return Initialize(configuration, configSection);
+        }
+
+        /// <summary>
+        /// Initializes the specified <paramref name="configuration"/> object according to the
+        /// values in the supplied <paramref name="configSection"/>
+        /// </summary>
+        /// <param name="configuration">The configuration object to initialize</param>
+        /// <param name="configSection">The <see cref="PlatibusConfigurationSection"/>
+        /// containing the values used to initialize the Platibus configuration</param>
+        public virtual Task Initialize(TConfiguration configuration, PlatibusConfigurationSection configSection)
+        {
+            if (configuration == null) throw new ArgumentNullException("configuration");
+            if (configSection == null) throw new ArgumentNullException("configSection");
+
+            configuration.ReplyTimeout = configSection.ReplyTimeout;
+            configuration.SerializationService = new DefaultSerializationService();
+            configuration.MessageNamingService = new DefaultMessageNamingService();
+            configuration.DefaultContentType = configSection.DefaultContentType;
+
+            InitializeEndpoints(configuration, configSection);
+            InitializeTopics(configuration, configSection);
+            InitializeSendRules(configuration, configSection);
+            InitializeSubscriptions(configuration, configSection);
+
+            var messageJournalFactory = new MessageJournalFactory(DiagnosticEventSink);
+            return messageJournalFactory.InitMessageJournal(configSection.Journaling);
+        }
+        
+        /// <summary>
+        /// Uses reflection to locate, initialize, and invoke all types inheriting from
+        /// <see cref="IConfigurationHook"/> or <see cref="IAsyncConfigurationHook"/> found in the 
+        /// application domain
+        /// </summary>
+        /// <param name="configuration">The configuration that will be passed to the configuration
+        /// hooks</param>
+        public virtual async Task FindAndProcessConfigurationHooks(TConfiguration configuration)
+        {
+            if (configuration == null) return;
+
+            var hookTypes = ReflectionHelper.FindConcreteSubtypes<IConfigurationHook>();
+            foreach (var hookType in hookTypes.Distinct())
+            {
+                try
+                {
+                    await DiagnosticEventSink.ReceiveAsync(
+                        new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationHook)
+                        {
+                            Detail = "Found configuration hook " + hookType,
+                        }.Build());
+
+                    var hook = (IConfigurationHook)Activator.CreateInstance(hookType);
+                    hook.Configure(configuration);
+
+                    await DiagnosticEventSink.ReceiveAsync(
+                        new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationHook)
+                        {
+                            Detail = "Configuration hook " + hookType + " processed successfully"
+                        }.Build());
+                }
+                catch (Exception ex)
+                {
+                    DiagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
+                    {
+                        Detail = "Unhandled exception processing configuration hook " + hookType,
+                        Exception = ex
+                    }.Build());
+                }
+            }
+
+            var asyncHookTypes = ReflectionHelper.FindConcreteSubtypes<IAsyncConfigurationHook>();
+            foreach (var hookType in asyncHookTypes.Distinct())
+            {
+                try
+                {
+                    await DiagnosticEventSink.ReceiveAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationHook)
+                    {
+                        Detail = "Found configuration hook " + hookType,
+                    }.Build());
+
+                    var hook = (IAsyncConfigurationHook)Activator.CreateInstance(hookType);
+                    await hook.Configure(configuration);
+
+                    await DiagnosticEventSink.ReceiveAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationHook)
+                    {
+                        Detail = "Configuration hook " + hookType + " processed successfully"
+                    }.Build());
+                }
+                catch (Exception ex)
+                {
+                    DiagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
+                    {
+                        Detail = "Unhandled exception processing configuration hook " + hookType,
+                        Exception = ex
+                    }.Build());
+                }
+            }
+        }
+
+        /// <summary>
+        /// Initializes subscriptions in the supplied <paramref name="configuration"/> based on the
+        /// properties of the specified <paramref name="configSection"/>
+        /// </summary>
+        /// <param name="configuration">The configuration to initialize</param>
+        /// <param name="configSection">The configuration section containing the subscription
+        /// properties</param>
+        protected virtual void InitializeSubscriptions(TConfiguration configuration,
+            PlatibusConfigurationSection configSection)
+        {
+            IEnumerable<SubscriptionElement> subscriptions = configSection.Subscriptions;
+            foreach (var subscription in subscriptions)
+            {
+                var endpointName = subscription.Endpoint;
+                var topicName = subscription.Topic;
+                var ttl = subscription.TTL;
+                configuration.AddSubscription(new Subscription(endpointName, topicName, ttl));
+            }
+        }
+        
+        /// <summary>
+        /// Initializes send rules in the supplied <paramref name="configuration"/> based on the
+        /// properties of the specified <paramref name="configSection"/>
+        /// </summary>
+        /// <param name="configuration">The configuration to initialize</param>
+        /// <param name="configSection">The configuration section containing the send rule 
+        /// properties</param>
+        protected virtual void InitializeSendRules(TConfiguration configuration, PlatibusConfigurationSection configSection)
+        {
+            IEnumerable<SendRuleElement> sendRules = configSection.SendRules;
+            foreach (var sendRule in sendRules)
+            {
+                var messageSpec = new MessageNamePatternSpecification(sendRule.NamePattern);
+                var endpointName = (EndpointName) sendRule.Endpoint;
+                configuration.AddSendRule(new SendRule(messageSpec, endpointName));
+            }
+        }
+
+        /// <summary>
+        /// Initializes topics in the supplied <paramref name="configuration"/> based on the
+        /// properties of the specified <paramref name="configSection"/>
+        /// </summary>
+        /// <param name="configuration">The configuration to initialize</param>
+        /// <param name="configSection">The configuration section containing the topic 
+        /// properties</param>
+        protected virtual void InitializeTopics(TConfiguration configuration, PlatibusConfigurationSection configSection)
+        {
+            if (configuration == null) throw new ArgumentNullException("configuration");
+            if (configSection == null) throw new ArgumentNullException("configSection");
             IEnumerable<TopicElement> topics = configSection.Topics;
             foreach (var topic in topics)
             {
                 configuration.AddTopic(topic.Name);
             }
-
-            // Journaling is optional
-            var journaling = configSection.Journaling;
-            if (journaling != null && journaling.IsEnabled && !string.IsNullOrWhiteSpace(journaling.Provider))
-            {
-                configuration.MessageJournal = await InitMessageJournal(journaling);
-            }
-            
-            if (processConfigurationHooks)
-            {
-                await ProcessConfigurationHooks(configuration);
-            }
-            return configuration;
         }
 
         /// <summary>
-        /// Initializes and returns a <typeparamref name="TConfig"/> instance based on
-        /// the <see cref="PlatibusConfigurationSection"/> with the specified 
-        /// <paramref name="sectionName"/>
+        /// Initializes endpoints in the supplied <paramref name="configuration"/> based on the
+        /// properties of the specified <paramref name="configSection"/>
         /// </summary>
-        /// <typeparam name="TConfig">A type that inherits <see cref="PlatibusConfiguration"/>
-        /// and has a default constructor</typeparam>
-        /// <param name="sectionName">(Optional) The name of the configuration section 
-        /// (default is "platibus")</param>
-        /// <param name="processConfigurationHooks">(Optional) Whether to initialize and
-        /// process implementations of <see cref="IConfigurationHook"/> found in the
-        /// application domain (default is true)</param>
-        /// <returns>Returns a task whose result will be an initialized 
-        /// <typeparamref name="TConfig"/> object</returns>
-        /// <seealso cref="PlatibusConfigurationSection"/>
-        /// <seealso cref="IConfigurationHook"/>
-        public static Task<TConfig> LoadConfiguration<TConfig>(string sectionName, bool processConfigurationHooks = true)
-            where TConfig : PlatibusConfiguration, new()
+        /// <param name="configuration">The configuration to initialize</param>
+        /// <param name="configSection">The configuration section containing the endpoint 
+        /// properties</param>
+        protected virtual void InitializeEndpoints(TConfiguration configuration, PlatibusConfigurationSection configSection)
         {
-            if (string.IsNullOrWhiteSpace(sectionName)) throw new ArgumentNullException("sectionName");
-            var configSection = (PlatibusConfigurationSection) ConfigurationManager.GetSection(sectionName) ??
-                                new PlatibusConfigurationSection();
-            return LoadConfiguration<TConfig>(configSection, processConfigurationHooks);
-        }
-
-        /// <summary>
-        /// Initializes and returns a <typeparamref name="TConfig"/> instance based on
-        /// the supplied <see cref="PlatibusConfigurationSection"/>
-        /// </summary>
-        /// <typeparam name="TConfig">A type that inherits <see cref="PlatibusConfiguration"/>
-        /// and has a default constructor</typeparam>
-        /// <param name="configSection">The configuration section</param>
-        /// <param name="processConfigurationHooks">(Optional) Whether to initialize and
-        /// process implementations of <see cref="IConfigurationHook"/> found in the
-        /// application domain (default is true)</param>
-        /// <returns>Returns a task whose result will be an initialized 
-        /// <typeparamref name="TConfig"/> object</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="configSection"/>
-        /// is <c>null</c></exception>
-        /// <seealso cref="PlatibusConfigurationSection"/>
-        /// <seealso cref="IConfigurationHook"/>
-        public static async Task<TConfig> LoadConfiguration<TConfig>(PlatibusConfigurationSection configSection,
-            bool processConfigurationHooks = true) where TConfig : PlatibusConfiguration, new()
-        {
+            if (configuration == null) throw new ArgumentNullException("configuration");
             if (configSection == null) throw new ArgumentNullException("configSection");
-
-            var configuration = new TConfig
-            {
-                ReplyTimeout = configSection.ReplyTimeout,
-                SerializationService = new DefaultSerializationService(),
-                MessageNamingService = new DefaultMessageNamingService(),
-				DefaultContentType = configSection.DefaultContentType
-            };
-
+            
             IEnumerable<EndpointElement> endpoints = configSection.Endpoints;
             foreach (var endpointConfig in endpoints)
             {
@@ -195,40 +323,125 @@ namespace Platibus.Config
                 var endpoint = new Endpoint(endpointConfig.Address, credentials);
                 configuration.AddEndpoint(endpointConfig.Name, endpoint);
             }
-
-            IEnumerable<TopicElement> topics = configSection.Topics;
-            foreach (var topic in topics)
-            {
-                configuration.AddTopic(topic.Name);
-            }
-
-            // Journaling is optional
-            var journaling = configSection.Journaling;
-            if (journaling != null && journaling.IsEnabled && !string.IsNullOrWhiteSpace(journaling.Provider))
-            {
-                configuration.MessageJournal = await InitMessageJournal(journaling);
-            }
-
-            IEnumerable<SendRuleElement> sendRules = configSection.SendRules;
-            foreach (var sendRule in sendRules)
-            {
-                var messageSpec = new MessageNamePatternSpecification(sendRule.NamePattern);
-                var endpointName = (EndpointName) sendRule.Endpoint;
-                configuration.AddSendRule(new SendRule(messageSpec, endpointName));
-            }
-
-            IEnumerable<SubscriptionElement> subscriptions = configSection.Subscriptions;
-            foreach (var subscription in subscriptions)
-            {
-                var endpointName = subscription.Endpoint;
-                var topicName = subscription.Topic;
-                var ttl = subscription.TTL;
-                configuration.AddSubscription(new Subscription(endpointName, topicName, ttl));
-            }
-
+        }
+        
+        /// <summary>
+        /// Initializes and returns a <see cref="PlatibusConfiguration"/> instance based on
+        /// the <see cref="PlatibusConfigurationSection"/> with the specified 
+        /// <paramref name="sectionName"/>
+        /// </summary>
+        /// <param name="sectionName">(Optional) The name of the configuration section 
+        /// (default is "platibus")</param>
+        /// <param name="processConfigurationHooks">(Optional) Whether to initialize and
+        /// process implementations of <see cref="IConfigurationHook"/> found in the
+        /// application domain (default is true)</param>
+        /// <returns>Returns a task whose result will be an initialized 
+        /// <see cref="PlatibusConfiguration"/> object</returns>
+        /// <seealso cref="PlatibusConfigurationSection"/>
+        /// <seealso cref="IConfigurationHook"/>
+        /// <seealso cref="Initialize(TConfiguration,string)"/>
+        [Obsolete("Use instance method Initialize")]
+        public static async Task<PlatibusConfiguration> LoadConfiguration(string sectionName = null,
+            bool processConfigurationHooks = true)
+        {
+            var configurationManager = new PlatibusConfigurationManager();
+            var configuration = new PlatibusConfiguration();
+            await configurationManager.Initialize(configuration, sectionName);
+            await configurationManager.FindAndProcessConfigurationHooks(configuration);
             if (processConfigurationHooks)
             {
-                await ProcessConfigurationHooks(configuration);
+                await configurationManager.FindAndProcessConfigurationHooks(configuration);
+            }
+            return configuration;
+        }
+        
+        /// <summary>
+        /// Initializes and returns a <see cref="PlatibusConfiguration"/> instance based on
+        /// the <see cref="LoopbackConfigurationSection"/> with the specified 
+        /// <paramref name="sectionName"/>
+        /// </summary>
+        /// <param name="sectionName">(Optional) The name of the configuration section 
+        /// (default is "platibus.loopback")</param>
+        /// <param name="processConfigurationHooks">(Optional) Whether to initialize and
+        /// process implementations of <see cref="IConfigurationHook"/> found in the
+        /// application domain (default is true)</param>
+        /// <returns>Returns a task whose result will be an initialized 
+        /// <see cref="PlatibusConfiguration"/> object</returns>
+        /// <seealso cref="PlatibusConfigurationSection"/>
+        /// <seealso cref="IConfigurationHook"/>
+        /// <seealso cref="LoopbackConfigurationManager.Initialize(LoopbackConfiguration,string)"/>
+        [Obsolete("Use instance method LoopbackConfigurationManager.Initialize")]
+        public static async Task<LoopbackConfiguration> LoadLoopbackConfiguration(string sectionName = null,
+            bool processConfigurationHooks = true)
+        {
+            var configurationManager = new LoopbackConfigurationManager();
+            var configuration = new LoopbackConfiguration();
+            await configurationManager.Initialize(configuration, sectionName);
+            if (processConfigurationHooks)
+            {
+                await configurationManager.FindAndProcessConfigurationHooks(configuration);
+            }
+            return configuration;
+        }
+
+        /// <summary>
+        /// Initializes and returns a <typeparamref name="TConfig"/> instance based on
+        /// the <see cref="PlatibusConfigurationSection"/> with the specified 
+        /// <paramref name="sectionName"/>
+        /// </summary>
+        /// <typeparam name="TConfig">A type that inherits <see cref="PlatibusConfiguration"/>
+        /// and has a default constructor</typeparam>
+        /// <param name="sectionName">(Optional) The name of the configuration section 
+        /// (default is "platibus")</param>
+        /// <param name="processConfigurationHooks">(Optional) Whether to initialize and
+        /// process implementations of <see cref="IConfigurationHook"/> found in the
+        /// application domain (default is true)</param>
+        /// <returns>Returns a task whose result will be an initialized 
+        /// <typeparamref name="TConfig"/> object</returns>
+        /// <seealso cref="PlatibusConfigurationSection"/>
+        /// <seealso cref="IConfigurationHook"/>
+        /// <see cref="Initialize(TConfiguration,string)"/>
+        [Obsolete("Use instance method Initialize")]
+        public static async Task<TConfig> LoadConfiguration<TConfig>(string sectionName, bool processConfigurationHooks = true)
+            where TConfig : PlatibusConfiguration, new()
+        {
+            var configurationManager = new PlatibusConfigurationManager<TConfig>();
+            var configuration = new TConfig();
+            await configurationManager.Initialize(configuration, sectionName);
+            if (processConfigurationHooks)
+            {
+                await configurationManager.FindAndProcessConfigurationHooks(configuration);
+            }
+            return configuration;
+        }
+
+        /// <summary>
+        /// Initializes and returns a <typeparamref name="TConfig"/> instance based on
+        /// the supplied <see cref="PlatibusConfigurationSection"/>
+        /// </summary>
+        /// <typeparam name="TConfig">A type that inherits <see cref="PlatibusConfiguration"/>
+        /// and has a default constructor</typeparam>
+        /// <param name="configSection">The configuration section</param>
+        /// <param name="processConfigurationHooks">(Optional) Whether to initialize and
+        /// process implementations of <see cref="IConfigurationHook"/> found in the
+        /// application domain (default is true)</param>
+        /// <returns>Returns a task whose result will be an initialized 
+        /// <typeparamref name="TConfig"/> object</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="configSection"/>
+        /// is <c>null</c></exception>
+        /// <seealso cref="PlatibusConfigurationSection"/>
+        /// <seealso cref="IConfigurationHook"/>
+        /// <see cref="Initialize(TConfiguration, PlatibusConfigurationSection)"/>
+        [Obsolete("Use instance method Initialize")]
+        public static async Task<TConfig> LoadConfiguration<TConfig>(PlatibusConfigurationSection configSection,
+            bool processConfigurationHooks = true) where TConfig : PlatibusConfiguration, new()
+        {
+            var configurationManager = new PlatibusConfigurationManager<TConfig>();
+            var configuration = new TConfig();
+            await configurationManager.Initialize(configuration, configSection);
+            if (processConfigurationHooks)
+            {
+                await configurationManager.FindAndProcessConfigurationHooks(configuration);
             }
             return configuration;
         }
@@ -239,23 +452,12 @@ namespace Platibus.Config
         /// </summary>
         /// <param name="config">The queueing configuration element</param>
         /// <returns>Returns a task whose result is an initialized message queueing service</returns>
+        /// <seealso cref="MessageQueueingServiceFactory.InitMessageQueueingService"/>
+        [Obsolete("Use MessageQueueingServiceFactory.InitMessageQueueingService")]
         public static Task<IMessageQueueingService> InitMessageQueueingService(QueueingElement config)
         {
-            var myConfig = config ?? new QueueingElement();
-            var providerName = myConfig.Provider;
-            IMessageQueueingServiceProvider provider;
-            if (string.IsNullOrWhiteSpace(providerName))
-            {
-                Log.Debug("No message queueing service provider specified; using default provider...");
-                provider = new FilesystemServicesProvider();
-            }
-            else
-            {
-                provider = ProviderHelper.GetProvider<IMessageQueueingServiceProvider>(providerName);
-            }
-
-            Log.Debug("Initializing message queueing service...");
-            return provider.CreateMessageQueueingService(myConfig);
+            var factory = new MessageQueueingServiceFactory();
+            return factory.InitMessageQueueingService(config);
         }
 
         /// <summary>
@@ -264,24 +466,11 @@ namespace Platibus.Config
         /// </summary>
         /// <param name="config">The security tokens configuration element</param>
         /// <returns>Returns a task whose result is an initialized security token service</returns>
+        [Obsolete("Use SecurityTokenServiceFactory.InitSecurityTokenService")]
         public static Task<ISecurityTokenService> InitSecurityTokenService(SecurityTokensElement config)
         {
-            var myConfig = config ?? new SecurityTokensElement();
-
-            var providerName = myConfig.Provider;
-            ISecurityTokenServiceProvider provider;
-            if (string.IsNullOrWhiteSpace(providerName))
-            {
-                Log.Debug("No security token service provider specified; using default provider...");
-                provider = new JwtSecurityTokenServiceProvider();
-            }
-            else
-            {
-                provider = ProviderHelper.GetProvider<ISecurityTokenServiceProvider>(providerName);
-            }
-
-            Log.Debug("Initializing security token service...");
-            return provider.CreateSecurityTokenService(myConfig);
+            var factory = new SecurityTokenServiceFactory();
+            return factory.InitSecurityTokenService(config);
         }
 
         /// <summary>
@@ -292,91 +481,25 @@ namespace Platibus.Config
         /// <returns>Returns a task whose result is an initialized message journaling service</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="config"/> is
         /// <c>null</c></exception>
-        public static async Task<IMessageJournal> InitMessageJournal(JournalingElement config)
+        [Obsolete("Use MessageJournalFactory.InitMessageJournal")]
+        public static Task<IMessageJournal> InitMessageJournal(JournalingElement config)
         {
-            if (config == null) throw new ArgumentNullException("config");
-
-            var providerName = config.Provider;
-            if (string.IsNullOrWhiteSpace(providerName))
-            {
-                Log.Debug("No message journaling service provider specified; journaling will be disabled");
-                return null;
-            }
-
-            var provider = ProviderHelper.GetProvider<IMessageJournalProvider>(providerName);
-
-            Log.Debug("Initializing message journaling service...");
-            var messageJournal = await provider.CreateMessageJournal(config);
-
-            var categories = new List<MessageJournalCategory>();
-            if (config.JournalSentMessages) categories.Add(MessageJournalCategory.Sent);
-            if (config.JournalReceivedMessages) categories.Add(MessageJournalCategory.Received);
-            if (config.JournalPublishedMessages) categories.Add(MessageJournalCategory.Published);
-
-            var filteredMessageJournalingService = new FilteredMessageJournal(messageJournal, categories);
-            return filteredMessageJournalingService;
+            var factory = new MessageJournalFactory();
+            return factory.InitMessageJournal(config);
         }
-
-        /// <summary>
-        /// Helper method that ensures a path is rooted.
-        /// </summary>
-        /// <param name="path">The path</param>
-        /// <remarks>
-        /// If the specified <paramref name="path"/> is rooted then it is returned unchanged.
-        /// Otherwise it is appended to the base directory of the application domain to form
-        /// an absolute rooted path.
-        /// </remarks>
-        /// <returns>Returns a rooted path based on the provided <paramref name="path"/> and
-        /// the application domain base directory</returns>
-        public static string GetRootedPath(string path)
-        {
-            if (Path.IsPathRooted(path)) return path;
-
-            var appDomainDir = AppDomain.CurrentDomain.BaseDirectory;
-            return Path.Combine(appDomainDir, path);
-        }
-
+        
 	    /// <summary>
 	    /// Helper method to locate, initialize, and invoke all types inheriting from
 	    /// <see cref="IConfigurationHook"/> found in the application domain
 	    /// </summary>
 	    /// <param name="configuration">The configuration that will be passed to the
 	    ///     configuration hooks</param>
-	    public static async Task ProcessConfigurationHooks(PlatibusConfiguration configuration)
+	    [Obsolete("Use instance method FindAndProcessConfigurationHooks")]
+	    public static Task ProcessConfigurationHooks(PlatibusConfiguration configuration)
         {
-            if (configuration == null) return;
-
-            var hookTypes = ReflectionHelper.FindConcreteSubtypes<IConfigurationHook>();
-            foreach (var hookType in hookTypes.Distinct())
-            {
-                try
-                {
-                    Log.InfoFormat("Processing configuration hook {0}...", hookType.FullName);
-                    var hook = (IConfigurationHook) Activator.CreateInstance(hookType);
-                    hook.Configure(configuration);
-                    Log.InfoFormat("Configuration hook {0} processed successfully.", hookType.FullName);
-                }
-                catch (Exception ex)
-                {
-                    Log.ErrorFormat("Unhandled exception in configuration hook {0}", ex, hookType.FullName);
-                }
-            }
-
-			var asynHookTypes = ReflectionHelper.FindConcreteSubtypes<IAsyncConfigurationHook>();
-			foreach (var hookType in asynHookTypes.Distinct())
-			{
-				try
-				{
-					Log.InfoFormat("Processing configuration hook {0}...", hookType.FullName);
-					var hook = (IAsyncConfigurationHook)Activator.CreateInstance(hookType);
-					await hook.Configure(configuration);
-					Log.InfoFormat("Configuration hook {0} processed successfully.", hookType.FullName);
-				}
-				catch (Exception ex)
-				{
-					Log.ErrorFormat("Unhandled exception in configuration hook {0}", ex, hookType.FullName);
-				}
-			}
+            if (configuration == null) Task.FromResult(0);
+            var configManager = new PlatibusConfigurationManager();
+            return configManager.FindAndProcessConfigurationHooks(configuration);
         }
     }
 }

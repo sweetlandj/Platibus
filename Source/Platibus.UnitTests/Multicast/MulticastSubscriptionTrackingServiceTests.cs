@@ -110,12 +110,13 @@ namespace Platibus.UnitTests.Multicast
             GC.SuppressFinalize(this);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "SendingMulticastSubscriptionTrackingService")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "ReceivingMulticastSubscriptionTrackingService")]
         protected virtual void Dispose(bool disposing)
         {
-            SendingMulticastSubscriptionTrackingService.TryDispose();
-            ReceivingMulticastSubscriptionTrackingService.TryDispose();
+            if (disposing)
+            {
+                SendingMulticastSubscriptionTrackingService.Dispose();
+                ReceivingMulticastSubscriptionTrackingService.Dispose();
+            }
         }
     }
 }

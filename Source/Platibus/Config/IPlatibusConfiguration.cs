@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using Platibus.Diagnostics;
 using Platibus.Journaling;
 using Platibus.Serialization;
 
@@ -82,9 +83,15 @@ namespace Platibus.Config
         /// </summary>
         IEnumerable<ISubscription> Subscriptions { get; }
 
-		/// <summary>
-		/// The default content type for messages sent by this instance
-		/// </summary>
-		string DefaultContentType { get; }
+        /// <summary>
+        /// Handler for diagnostic events emitted by bus components e.g. for logging, monitoring,
+        /// health checks, etc.
+        /// </summary>
+        IDiagnosticEventSink DiagnosticEventSink { get; }
+
+        /// <summary>
+        /// The default content type for messages sent by this instance
+        /// </summary>
+        string DefaultContentType { get; }
     }
 }

@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using Platibus.Diagnostics;
 using Platibus.Journaling;
 using Platibus.Serialization;
 
@@ -88,6 +89,9 @@ namespace Platibus.Config
 
         /// <inheritdoc />
         public string DefaultContentType { get; set; }
+
+        /// <inheritdoc />
+        public IDiagnosticEventSink DiagnosticEventSink { get; set; }
 
         /// <summary>
         /// Initializes a new <see cref="PlatibusConfiguration"/> instance with

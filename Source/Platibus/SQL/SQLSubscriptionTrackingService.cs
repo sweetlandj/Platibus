@@ -365,7 +365,12 @@ namespace Platibus.SQL
             if (_disposed) return;
             if (disposing)
             {
-                _connectionProvider.TryDispose();
+                // ReSharper disable once SuspiciousTypeConversion.Global
+                var disposableConnectionProvider = _connectionProvider as IDisposable;
+                if (disposableConnectionProvider != null)
+                {
+                    disposableConnectionProvider.Dispose();
+                }
             }
         }
 

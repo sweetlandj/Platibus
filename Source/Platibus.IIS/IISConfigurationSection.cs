@@ -26,13 +26,22 @@ using Platibus.Config;
 
 namespace Platibus.IIS
 {
-    internal class IISConfigurationSection : PlatibusConfigurationSection
+    /// <summary>
+    /// Configuration section for IIS HTTP module and handler
+    /// </summary>
+    public class IISConfigurationSection : PlatibusConfigurationSection
     {
         private const string BaseUriPropertyName = "baseUri";
         private const string SubscriptionTrackingPropertyName = "subscriptionTracking";
         private const string QueueingPropertyName = "queueing";
         private const string BypassTransportLocalDestinationPropertyName = "bypassTransportLocalDestination";
 
+        /// <summary>
+        /// The base URI of this instance
+        /// </summary>
+        /// <remarks>
+        /// Must agree with at least one of the bindings for the hosting web application
+        /// </remarks>
         [ConfigurationProperty(BaseUriPropertyName)]
         public Uri BaseUri
         {
@@ -40,6 +49,9 @@ namespace Platibus.IIS
             set { base[BaseUriPropertyName] = value; }
         }
 
+        /// <summary>
+        /// The subscription tracking configuration
+        /// </summary>
         [ConfigurationProperty(SubscriptionTrackingPropertyName)]
         public SubscriptionTrackingElement SubscriptionTracking
         {
@@ -47,6 +59,9 @@ namespace Platibus.IIS
             set { base[SubscriptionTrackingPropertyName] = value; }
         }
 
+        /// <summary>
+        /// The queueing configuration
+        /// </summary>
         [ConfigurationProperty(QueueingPropertyName)]
         public QueueingElement Queueing
         {

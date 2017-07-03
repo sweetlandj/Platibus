@@ -21,12 +21,10 @@
 // THE SOFTWARE.
 
 using System;
-using System.Configuration;
 using System.Threading.Tasks;
-using Common.Logging;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
-using Platibus.Filesystem;
+using Platibus.Diagnostics;
 
 namespace Platibus.Owin
 {
@@ -34,9 +32,55 @@ namespace Platibus.Owin
     /// Factory class used to initialize <see cref="OwinConfiguration"/> objects from
     /// declarative configuration elements in web configuration files.
     /// </summary>
-    public static class OwinConfigurationManager
+    public class OwinConfigurationManager : PlatibusConfigurationManager<OwinConfiguration>
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
+        /// <summary>
+        /// Initializes a new <see cref="OwinConfigurationManager"/>
+        /// </summary>
+        /// <param name="diagnosticEventSink">(Optional) A caller specified event sink that can
+        /// receive and process <see cref="DiagnosticEvent"/>s related to configuration</param>
+        public OwinConfigurationManager(IDiagnosticEventSink diagnosticEventSink = null) : base(diagnosticEventSink)
+        {
+        }
+
+        public override async Task Initialize(OwinConfiguration configuration, string configSectionName = null)
+        {
+            if (string.IsNullOrWhiteSpace(configSectionName))
+            {
+                configSectionName = "platibus.owin";
+                await DiagnosticEventSink.ReceiveAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                    {
+                        Detail = "Using default configuration section \"" + configSectionName + "\""
+                    }.Build());
+            }
+
+            var configSection = LoadConfigurationSection<OwinConfigurationSection>(configSectionName);
+            await Initialize(configuration, configSection);
+        }
+        
+        /// <summary>
+        /// Initializes the supplied HTTP server <paramref name="configuration"/> based on the
+        /// properties of the provided <paramref name="configSection"/>
+        /// </summary>
+        /// <param name="configuration">The configuration to initialize</param>
+        /// <param name="configSection">The configuration section whose properties are to be used
+        /// to initialize the <paramref name="configuration"/></param>
+        /// <returns>Returns a task that completes when the configuration has been initialized</returns>
+        public async Task Initialize(OwinConfiguration configuration, OwinConfigurationSection configSection)
+        {
+            await base.Initialize(configuration, configSection);
+            configuration.BaseUri = configSection.BaseUri;
+            configuration.BypassTransportLocalDestination = configSection.BypassTransportLocalDestination;
+
+            var mqsFactory = new MessageQueueingServiceFactory(DiagnosticEventSink);
+            var mqsConfig = configSection.Queueing;
+            configuration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(mqsConfig);
+
+            var stsFactory = new SubscriptionTrackingServiceFactory(DiagnosticEventSink);
+            var stsConfig = configSection.SubscriptionTracking;
+            configuration.SubscriptionTrackingService = await stsFactory.InitSubscriptionTrackingService(stsConfig);
+        }
 
         /// <summary>
         /// Initializes and returns a <see cref="OwinConfiguration"/> instance based on
@@ -52,25 +96,16 @@ namespace Platibus.Owin
         /// <see cref="PlatibusConfiguration"/> object</returns>
         /// <seealso cref="PlatibusConfigurationSection"/>
         /// <seealso cref="IConfigurationHook"/>
-        public static async Task<OwinConfiguration> LoadConfiguration(string sectionName = null,
+        public new static async Task<OwinConfiguration> LoadConfiguration(string sectionName = null,
             bool processConfigurationHooks = true)
         {
-            if (string.IsNullOrWhiteSpace(sectionName))
+            var configManager = new OwinConfigurationManager();
+            var configuration = new OwinConfiguration();
+            await configManager.Initialize(configuration, sectionName);
+            if (processConfigurationHooks)
             {
-                sectionName = "platibus.owin";
+                await configManager.FindAndProcessConfigurationHooks(configuration);
             }
-
-            var configSection = (OwinConfigurationSection) ConfigurationManager.GetSection(sectionName) ??
-                                new OwinConfigurationSection();
-
-            var configuration = await PlatibusConfigurationManager.LoadConfiguration<OwinConfiguration>(sectionName, processConfigurationHooks);
-            configuration.BaseUri = configSection.BaseUri;
-            configuration.BypassTransportLocalDestination = configSection.BypassTransportLocalDestination;
-
-            var subscriptionTracking = configSection.SubscriptionTracking ?? new SubscriptionTrackingElement();
-            configuration.SubscriptionTrackingService = await InitSubscriptionTrackingService(subscriptionTracking);
-            configuration.MessageQueueingService = await PlatibusConfigurationManager.InitMessageQueueingService(configSection.Queueing);
-
             return configuration;
         }
 
@@ -82,23 +117,12 @@ namespace Platibus.Owin
         /// <returns>Returns a task whose result is an initialized subscription tracking service</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="config"/> is
         /// <c>null</c></exception>
+        [Obsolete("Use SubscriptionTrackingServiceFactory.InitSubscriptionTrackingService")]
         public static Task<ISubscriptionTrackingService> InitSubscriptionTrackingService(
             SubscriptionTrackingElement config)
         {
-            var providerName = config.Provider;
-            ISubscriptionTrackingServiceProvider provider;
-            if (string.IsNullOrWhiteSpace(providerName))
-            {
-                Log.Debug("No subscription tracking service provider specified; using default provider...");
-                provider = new FilesystemServicesProvider();
-            }
-            else
-            {
-                provider = ProviderHelper.GetProvider<ISubscriptionTrackingServiceProvider>(providerName);
-            }
-
-            Log.Debug("Initializing subscription tracking service...");
-            return provider.CreateSubscriptionTrackingService(config);
+            var factory = new SubscriptionTrackingServiceFactory();
+            return factory.InitSubscriptionTrackingService(config);
         }
     }
 }

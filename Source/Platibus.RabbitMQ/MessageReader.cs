@@ -179,12 +179,9 @@ namespace Platibus.RabbitMQ
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_reader")]
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
+            if (disposing && !_leaveOpen)
             {
-                if (!_leaveOpen)
-                {
-                    _reader.TryDispose();
-                }
+                _reader.Dispose();
             }
         }
     }

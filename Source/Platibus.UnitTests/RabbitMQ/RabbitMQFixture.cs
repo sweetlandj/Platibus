@@ -52,10 +52,9 @@ namespace Platibus.UnitTests.RabbitMQ
             GC.SuppressFinalize(this);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_messageQueueingService")]
         protected virtual void Dispose(bool disposing)
         {
-            _messageQueueingService.TryDispose();
+            _messageQueueingService.Dispose();
         }
     }
 }

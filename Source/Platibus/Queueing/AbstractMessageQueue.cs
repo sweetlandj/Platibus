@@ -22,12 +22,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Common.Logging;
+using Platibus.Diagnostics;
 
 namespace Platibus.Queueing
 {
@@ -36,12 +35,16 @@ namespace Platibus.Queueing
     /// </summary>
     public abstract class AbstractMessageQueue : IDisposable
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Queueing);
-
         /// <summary>
         /// The name of the queue
         /// </summary>
         protected readonly QueueName QueueName;
+
+        /// <summary>
+        /// A data sink provided by the implementer that handles diagnostic events emitted from
+        /// the message queue 
+        /// </summary>
+        protected readonly IDiagnosticEventSink DiagnosticEventSink;
 
         private readonly IQueueListener _listener;
         private readonly CancellationTokenSource _cancellationTokenSource;
@@ -49,7 +52,7 @@ namespace Platibus.Queueing
         private readonly int _maxAttempts;
         private readonly ActionBlock<QueuedMessage> _queuedMessages;
         private readonly TimeSpan _retryDelay;
-
+        
         private bool _disposed;
         private int _initialized;
 
@@ -80,15 +83,18 @@ namespace Platibus.Queueing
         /// <param name="listener">The object that will be notified when messages are
         ///     added to the queue</param>
         /// <param name="options">(Optional) Settings that influence how the queue behaves</param>
+        /// <param name="diagnosticEventSink">(Optional) Data sink provided by the implementer to
+        /// handle diagnostic events related to message queueing</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/>, or 
         /// <paramref name="listener"/> are <c>null</c></exception>
-        protected AbstractMessageQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null)
+        protected AbstractMessageQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (queueName == null) throw new ArgumentNullException("queueName");
             if (listener == null) throw new ArgumentNullException("listener");
 
             QueueName = queueName;
             _listener = listener;
+            DiagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
 
             var myOptions = options ?? new QueueOptions();
 
@@ -132,8 +138,14 @@ namespace Platibus.Queueing
             var pendingMessages = await GetPendingMessages(cancellationToken);
             foreach (var pendingMessage in pendingMessages)
             {
-                Log.DebugFormat("Enqueueing existing message ID {0}...", pendingMessage.Message.Headers.MessageId);
                 await _queuedMessages.SendAsync(pendingMessage, cancellationToken);
+                await DiagnosticEventSink.ReceiveAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageReueued)
+                    {
+                        Detail = "Existing message requeued",
+                        Message = pendingMessage.Message,
+                        Queue = QueueName
+                    }.Build(), cancellationToken);
             }
         }
 
@@ -169,11 +181,19 @@ namespace Platibus.Queueing
             if (handler != null)
             {
                 var args = new MessageQueueEventArgs(QueueName, queuedMessage);
-                await MessageEnqueued(this, args);
+                await MessageEnqueued(this, args);    
             }
             
             await _queuedMessages.SendAsync(queuedMessage, cancellationToken);
             // TODO: handle accepted == false
+
+            await DiagnosticEventSink.ReceiveAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.MessageEnqueued)
+                {
+                    Detail = "New message enqueued",
+                    Message = message,
+                    Queue = QueueName
+                }.Build(), cancellationToken);
         }
 
         /// <summary>
@@ -186,7 +206,6 @@ namespace Platibus.Queueing
         protected virtual async Task ProcessQueuedMessage(QueuedMessage queuedMessage, CancellationToken cancellationToken)
         {
             Exception exception = null;
-            var messageId = queuedMessage.Message.Headers.MessageId;
             var message = queuedMessage.Message;
             var principal = queuedMessage.Principal;
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
@@ -194,8 +213,14 @@ namespace Platibus.Queueing
             {
                 queuedMessage = queuedMessage.NextAttempt();
 
-                Log.DebugFormat("Processing queued message {0} (attempt {1} of {2})...", messageId, queuedMessage.Attempts,  _maxAttempts);
-
+                await DiagnosticEventSink.ReceiveAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageEnqueued)
+                    {
+                        Detail = "Processing queued message (attempt " + queuedMessage.Attempts + " of " + _maxAttempts + ")",
+                        Message = message,
+                        Queue = QueueName
+                    }.Build(), cancellationToken);
+                
                 var context = new QueuedMessageContext(message, principal);
                 Thread.CurrentPrincipal = context.Principal;
                 cancellationToken.ThrowIfCancellationRequested();
@@ -210,30 +235,58 @@ namespace Platibus.Queueing
                 catch (Exception ex)
                 {
                     exception = ex;
-                    Log.WarnFormat("Unhandled exception handling queued message {0}", ex, messageId);
+                    DiagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.UnhandledException)
+                    {
+                        Detail = "Unhandled exception handling queued message",
+                        Message = message,
+                        Queue = QueueName,
+                        Exception = ex
+                    }.Build());
                 }
 
                 var eventArgs = new MessageQueueEventArgs(QueueName, queuedMessage, exception);
                 if (context.Acknowledged)
                 {
-                    Log.DebugFormat("Message acknowledged.  Marking message {0} as acknowledged...", messageId);
+                    await DiagnosticEventSink.ReceiveAsync(
+                        new DiagnosticEventBuilder(this, DiagnosticEventType.MessageAcknowledged)
+                        {
+                            Detail = "Message acknowledged",
+                            Message = message,
+                            Queue = QueueName
+                        }.Build(), cancellationToken);
+
                     var messageAcknowledgedHandlers = MessageAcknowledged;
                     if (messageAcknowledgedHandlers != null)
                     {
                         await messageAcknowledgedHandlers(this, eventArgs);
                     }
-                    Log.DebugFormat("Message {0} acknowledged successfully", messageId);
                     return;
                 }
 
+                await DiagnosticEventSink.ReceiveAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
+                    {
+                        Detail = "Message not acknowledged",
+                        Message = message,
+                        Queue = QueueName
+                    }.Build(), cancellationToken);
+
                 if (queuedMessage.Attempts >= _maxAttempts)
                 {
-                    Log.WarnFormat("Maximum attempts to process message {0} exceeded", messageId);
+                    await DiagnosticEventSink.ReceiveAsync(
+                        new DiagnosticEventBuilder(this, DiagnosticEventType.MaxAttemptsExceeded)
+                        {
+                            Detail = "Maximum attempts exceeded (" + _maxAttempts + ")",
+                            Message = message,
+                            Queue = QueueName
+                        }.Build(), cancellationToken);
+
                     var maxAttemptsExceededHandlers = MaximumAttemptsExceeded;
                     if (maxAttemptsExceededHandlers != null)
                     {
                         await MaximumAttemptsExceeded(this, eventArgs);
                     }
+                    
                     return;
                 }
 
@@ -242,7 +295,15 @@ namespace Platibus.Queueing
                 {
                     await AcknowledgementFailure(this, eventArgs);
                 }
-                Log.DebugFormat("Message not acknowledged.  Retrying in {0}...", _retryDelay);
+
+                await DiagnosticEventSink.ReceiveAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.QueuedMessageRetry)
+                    {
+                        Detail = "Message not acknowledged; retrying in " + _retryDelay,
+                        Message = message,
+                        Queue = QueueName
+                    }.Build(), cancellationToken);
+
                 await Task.Delay(_retryDelay, cancellationToken);
             }
         }
@@ -281,13 +342,12 @@ namespace Platibus.Queueing
         /// </summary>
         /// <param name="disposing">Indicates whether this method is called from the 
         /// <see cref="Dispose()"/> method (<c>true</c>) or from the finalizer (<c>false</c>)</param>
-        [SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
         protected virtual void Dispose(bool disposing)
         {
             _cancellationTokenSource.Cancel();
             if (disposing)
             {
-                _cancellationTokenSource.TryDispose();
+                _cancellationTokenSource.Dispose();
             }
         }
     }

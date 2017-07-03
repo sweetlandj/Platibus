@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Platibus.Diagnostics
@@ -39,7 +40,7 @@ namespace Platibus.Diagnostics
         }
         
         /// <inheritdoc />
-        public override Task Process(string gelfMessage)
+        public override void Process(string gelfMessage)
         {
             var bytes = Encoding.UTF8.GetBytes(gelfMessage);
             if (_enableCompression)
@@ -54,7 +55,24 @@ namespace Platibus.Diagnostics
                     udpClient.Send(datagram, datagram.Length);
                 }
             }
-            return Task.FromResult(0);
+        }
+
+        /// <inheritdoc />
+        public override async Task ProcessAsync(string gelfMessage, CancellationToken cancellationToken = new CancellationToken())
+        {
+            var bytes = Encoding.UTF8.GetBytes(gelfMessage);
+            if (_enableCompression)
+            {
+                bytes = Compress(bytes);
+            }
+            var datagrams = Chunk(bytes);
+            using (var udpClient = new UdpClient(_host, _port))
+            {
+                foreach (var datagram in datagrams)
+                {
+                    await udpClient.SendAsync(datagram, datagram.Length);
+                }
+            }
         }
 
         /// <summary>
@@ -64,13 +82,17 @@ namespace Platibus.Diagnostics
         /// <returns>Returns the compressed bytes</returns>
         protected virtual byte[] Compress(byte[] bytes)
         {
-            using (var compressByteStream = new MemoryStream())
-            using (var zipStream = new GZipStream(compressByteStream, CompressionMode.Compress))
+            var compressByteStream = new MemoryStream();
+            var zipStream = new GZipStream(compressByteStream, CompressionMode.Compress);
+            try
             {
                 zipStream.Write(bytes, 0, bytes.Length);
                 zipStream.Flush();
-                zipStream.Close();
                 return compressByteStream.ToArray();
+            }
+            finally
+            {
+                zipStream.Close();
             }
         }
 

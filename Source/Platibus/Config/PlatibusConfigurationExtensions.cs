@@ -26,7 +26,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Common.Logging;
+using Platibus.Diagnostics;
 
 namespace Platibus.Config
 {
@@ -36,8 +36,6 @@ namespace Platibus.Config
     /// </summary>
     public static class PlatibusConfigurationExtensions
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Config);
-
         /// <summary>
         /// Adds a handling rule based on message name pattern matching
         /// </summary>
@@ -386,6 +384,8 @@ namespace Platibus.Config
             Type handlerType, Func<object> handlerFactory = null, 
             QueueNameFactory queueNameFactory = null, QueueOptions queueOptions = null)
         {
+            var diagnosticEventSink = configuration.DiagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+
             var autoBindInterfaces = handlerType
                 .GetInterfaces()
                 .Where(i => i.IsGenericType && typeof(IMessageHandler<>).IsAssignableFrom(i.GetGenericTypeDefinition()));
@@ -421,7 +421,11 @@ namespace Platibus.Config
                         }
                         catch (Exception e)
                         {
-                            Log.ErrorFormat("Error activiting instance of message handler type {0}", e);
+                            diagnosticEventSink.Receive(new DiagnosticEventBuilder(null, DiagnosticEventType.ConfigurationError)
+                            {
+                                Detail = "Error activiting instance of message handler " + handlerType,
+                                Exception = e
+                            }.Build());
                             throw;
                         }
                     }, queueName, queueOptions);

@@ -353,9 +353,10 @@ namespace Platibus.UnitTests
 
             protected virtual void Dispose(bool disposing)
             {
+                _cancellationTokenSource.Cancel();
                 if (disposing)
                 {
-                    _cancellationTokenSource.TryDispose();
+                    _cancellationTokenSource.Dispose();
                 }
             }
         }
@@ -413,9 +414,10 @@ namespace Platibus.UnitTests
 
             protected virtual void Dispose(bool disposing)
             {
+                _cancellationTokenSource.Cancel();
                 if (disposing)
                 {
-                    _cancellationTokenSource.TryDispose();
+                    _cancellationTokenSource.Dispose();
                 }
             }
         }

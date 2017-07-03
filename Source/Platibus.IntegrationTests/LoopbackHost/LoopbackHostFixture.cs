@@ -51,7 +51,7 @@ namespace Platibus.IntegrationTests.LoopbackHost
 
         protected virtual void Dispose(bool disposing)
         {
-            Task.WhenAll(_host.ContinueWith(t => t.Result.TryDispose()))
+            Task.WhenAll(_host.ContinueWith(t => t.Result.Dispose())) 
                 .Wait(TimeSpan.FromSeconds(10));
         }
     }

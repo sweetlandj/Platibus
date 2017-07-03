@@ -22,13 +22,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
-using Common.Logging;
 using Platibus.Config;
+using Platibus.Diagnostics;
 using Platibus.Journaling;
 using Platibus.Serialization;
 
@@ -39,9 +38,6 @@ namespace Platibus
     /// </summary>
     public class Bus : IBus, IDisposable
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Core);
-
-        private bool _disposed;
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly IEndpointCollection _endpoints;
         private readonly IList<Task> _subscriptionTasks = new List<Task>();
@@ -50,7 +46,8 @@ namespace Platibus
         private readonly IMessageJournal _messageJournal;
         private readonly IMessageQueueingService _messageQueueingService;
 	    private readonly string _defaultContentType;
-        
+        private readonly IDiagnosticEventSink _diagnosticEventSink;
+
         private readonly MemoryCacheReplyHub _replyHub = new MemoryCacheReplyHub(TimeSpan.FromMinutes(5));
         private readonly IList<ISendRule> _sendRules;
         private readonly ISerializationService _serializationService;
@@ -58,6 +55,9 @@ namespace Platibus
         private readonly IList<TopicName> _topics;
         private readonly Uri _baseUri;
         private readonly ITransportService _transportService;
+        private readonly MessageHandler _messageHandler;
+
+        private bool _disposed;
 
         /// <summary>
         /// Initializes a new <see cref="Bus"/> with the specified configuration and services
@@ -82,9 +82,9 @@ namespace Platibus
             _baseUri = baseUri;
             _transportService = transportService;
             _messageQueueingService = messageQueueingService;
-	        _defaultContentType = string.IsNullOrWhiteSpace(configuration.DefaultContentType)
-		        ? "application/json"
-		        : configuration.DefaultContentType;
+            _defaultContentType = string.IsNullOrWhiteSpace(configuration.DefaultContentType)
+                ? "application/json"
+                : configuration.DefaultContentType;
 
             _messageJournal = configuration.MessageJournal;
             _messageNamingService = configuration.MessageNamingService;
@@ -95,6 +95,9 @@ namespace Platibus
             _sendRules = configuration.SendRules.ToList();
             _handlingRules = configuration.HandlingRules.ToList();
             _subscriptions = configuration.Subscriptions.ToList();
+
+            _diagnosticEventSink = configuration.DiagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _messageHandler = new MessageHandler(_messageNamingService, _serializationService, _diagnosticEventSink);
         }
 
         /// <summary>
@@ -124,7 +127,9 @@ namespace Platibus
                     .Select(r => r.QueueOptions)
                     .FirstOrDefault();
 
-                var queueListener = new MessageHandlingListener(this, _messageNamingService, _serializationService, handlers);
+                var queueListener = new MessageHandlingListener(this, _messageNamingService,
+                    _serializationService, _diagnosticEventSink, handlers);
+
                 await _messageQueueingService.CreateQueue(queueName, queueListener, queueOptions, cancellationToken);
             }
 
@@ -141,6 +146,10 @@ namespace Platibus
 
                 _subscriptionTasks.Add(subscriptionTask);
             }
+
+            await _diagnosticEventSink.ReceiveAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.BusInitialized).Build(),
+                cancellationToken);
         }
 
         private static int QueueOptionPrecedence(QueueOptions queueOptions)
@@ -149,10 +158,22 @@ namespace Platibus
             return queueOptions == null ? 1 : 0;
         }
 
-        private async Task TransportMessage(Message message, IEndpointCredentials credentials,
+        private async Task SendMessage(Message message, IEndpointCredentials credentials,
             CancellationToken cancellationToken)
         {
-            await _transportService.SendMessage(message, credentials, cancellationToken);
+            try
+            {
+                await _transportService.SendMessage(message, credentials, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _diagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSendFailed)
+                {
+                    Message = message,
+                    Exception = ex
+                }.Build());
+                throw;
+            }
         }
 
         /// <inheritdoc />
@@ -167,7 +188,7 @@ namespace Platibus
             var prototypicalMessage = BuildMessage(content, options: options);
             var endpoints = GetEndpointsForSend(prototypicalMessage);
 
-            var transportTasks = new List<Task>();
+            var sendTasks = new List<Task>();
 
             // Create the sent message before transporting it in order to ensure that the
             // reply stream is cached before any replies arrive.
@@ -190,13 +211,16 @@ namespace Platibus
                     Sent = sent
                 };
 
-                Log.DebugFormat("Sending message ID {0} to endpoint \"{1}\" ({2})...",
-                    prototypicalMessage.Headers.MessageId, endpointName, endpoint.Address);
-
                 var addressedMessage = new Message(perEndpointHeaders, prototypicalMessage.Content);
-                transportTasks.Add(TransportMessage(addressedMessage, credentials, cancellationToken));
+                sendTasks.Add(SendMessage(addressedMessage, credentials, cancellationToken));
+
+                await _diagnosticEventSink.ReceiveAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
+                {
+                    Message = addressedMessage,
+                    Endpoint = endpointName
+                }.Build(), cancellationToken);
             }
-            await Task.WhenAll(transportTasks);
+            await Task.WhenAll(sendTasks);
             return sentMessage;
         }
         
@@ -223,13 +247,17 @@ namespace Platibus
             };
             var message = BuildMessage(content, headers, options);
 
-            Log.DebugFormat("Sending message ID {0} to endpoint \"{1}\" ({2})...",
-                message.Headers.MessageId, endpointName, endpoint.Address);
-
             // Create the sent message before transporting it in order to ensure that the
             // reply stream is cached before any replies arrive.
             var sentMessage = _replyHub.CreateSentMessage(message);
-            await TransportMessage(message, credentials, cancellationToken);
+            await SendMessage(message, credentials, cancellationToken);
+
+            await _diagnosticEventSink.ReceiveAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
+            {
+                Message = message,
+                Endpoint = endpointName
+            }.Build(), cancellationToken);
+
             return sentMessage;
         }
 
@@ -268,14 +296,17 @@ namespace Platibus
             {
                 credentials = knownEndpoint.Credentials;
             }
-
-            Log.DebugFormat("Sending message ID {0} to \"{2}\"...",
-                message.Headers.MessageId, endpointAddress);
-
+            
             // Create the sent message before transporting it in order to ensure that the
             // reply stream is cached before any replies arrive.
             var sentMessage = _replyHub.CreateSentMessage(message);
-            await TransportMessage(message, credentials, cancellationToken);
+            await SendMessage(message, credentials, cancellationToken);
+
+            await _diagnosticEventSink.ReceiveAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
+            {
+                Message = message
+            }.Build(), cancellationToken);
+
             return sentMessage;
         }
         
@@ -382,7 +413,7 @@ namespace Platibus
                 RelatedTo = messageContext.Headers.MessageId
             };
             var replyMessage = BuildMessage(replyContent, headers, options);
-            await TransportMessage(replyMessage, credentials, cancellationToken);
+            await SendMessage(replyMessage, credentials, cancellationToken);
         }
 
         /// <summary>
@@ -433,8 +464,7 @@ namespace Platibus
                 .Select(rule => rule.MessageHandler)
                 .ToList();
             
-            await MessageHandler.HandleMessage(_messageNamingService, _serializationService,
-                handlers, message, messageContext, _cancellationTokenSource.Token);
+            await _messageHandler.HandleMessage(handlers, message, messageContext, _cancellationTokenSource.Token);
             
             if (!messageContext.MessageAcknowledged)
             {
@@ -497,16 +527,14 @@ namespace Platibus
         /// of the <paramref name="disposing"/> parameter; managed resources
         /// should only be disposed if <paramref name="disposing"/> is <c>true</c>
         /// </remarks>
-        [SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_replyHub")]
-        [SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
         protected virtual void Dispose(bool disposing)
         {
             _cancellationTokenSource.Cancel();
             Task.WhenAll(_subscriptionTasks).Wait(TimeSpan.FromSeconds(10));
             if (disposing)
             {
-                _cancellationTokenSource.TryDispose();
-                _replyHub.TryDispose();
+                _cancellationTokenSource.Dispose();
+                _replyHub.Dispose();
             }
         }
     }

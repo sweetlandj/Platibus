@@ -83,13 +83,10 @@ namespace Platibus.UnitTests.LocalDB
             GC.SuppressFinalize(this);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_subscriptionTrackingService")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_messageQueueingService")]
         protected virtual void Dispose(bool disposing)
         {
-            _messageQueueingService.TryDispose();
-            _subscriptionTrackingService.TryDispose();
-            _messageJournal.TryDispose();
+            _messageQueueingService.Dispose();
+            _subscriptionTrackingService.Dispose();
         }
 
         public void DeleteQueuedMessages()

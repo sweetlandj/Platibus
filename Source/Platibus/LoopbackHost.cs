@@ -48,7 +48,9 @@ namespace Platibus
         public static async Task<LoopbackHost> Start(string configSectionName = "platibus",
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            var configuration = await PlatibusConfigurationManager.LoadLoopbackConfiguration(configSectionName);
+            var configManager = new LoopbackConfigurationManager();
+            var configuration = new LoopbackConfiguration();
+            await configManager.Initialize(configuration, configSectionName);
             return await Start(configuration, cancellationToken);
         }
 
@@ -130,12 +132,11 @@ namespace Platibus
         /// <remarks>
         /// This method will not be called more than once
         /// </remarks>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_bus")]
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)
             {
-                _bus.TryDispose();
+                _bus.Dispose();
             }
         }
     }

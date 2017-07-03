@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Common.Logging;
+using Platibus.Diagnostics;
 
 namespace Platibus.Multicast
 {
@@ -16,8 +16,6 @@ namespace Platibus.Multicast
     /// </summary>
     public class MulticastSubscriptionTrackingService : ISubscriptionTrackingService, IDisposable
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.UDP);
-
         private readonly ISubscriptionTrackingService _inner;
         private readonly IPAddress _groupAddress;
         private readonly int _port;
@@ -27,6 +25,7 @@ namespace Platibus.Multicast
         private readonly Task _listeningTask;
         private readonly ActionBlock<UdpReceiveResult> _receiveResultQueue;
         private readonly NodeId _nodeId;
+        private readonly IDiagnosticEventSink _diagnosticEventSink;
 
         private bool _disposed;
 
@@ -40,6 +39,8 @@ namespace Platibus.Multicast
         /// maintain subscription state</param>
         /// <param name="groupAddress">The address of the multicast group to join</param>
         /// <param name="port">The local port to bind to</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// that handles diagnostic events related to UDP multicast</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="inner"/> or
         /// <paramref name="groupAddress"/> is <c>null</c></exception>
         /// <exception cref="ArgumentException">Thrown if <paramref name="groupAddress"/> does not
@@ -49,20 +50,17 @@ namespace Platibus.Multicast
         /// <remarks>
         /// The multicast group <paramref name="groupAddress"/> must be on the 224.0.0/4 subnet 
         /// </remarks>
-        public MulticastSubscriptionTrackingService(ISubscriptionTrackingService inner, IPAddress groupAddress, int port)
+        public MulticastSubscriptionTrackingService(ISubscriptionTrackingService inner, IPAddress groupAddress, int port, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (inner == null) throw new ArgumentNullException("inner");
             if (groupAddress == null) throw new ArgumentNullException("groupAddress");
 
             _nodeId = NodeId.Generate();
-
             _inner = inner;
             _groupAddress = groupAddress;
             _port = port;
+            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
 
-            Log.InfoFormat("[{0}] Starting multicast subscription tracking service for multicast group {1}:{2}...", _nodeId, _groupAddress, _port);
-
-            Log.InfoFormat("[{0}] Binding multicast broadcast socket...", _nodeId);
             _broadcastClient = new UdpClient
             {
                 ExclusiveAddressUse = false
@@ -71,11 +69,15 @@ namespace Platibus.Multicast
             _broadcastClient.JoinMulticastGroup(groupAddress, IPAddress.Any);
             _broadcastClient.Ttl = 2;
             _broadcastClient.Client.Bind(new IPEndPoint(IPAddress.Any, 0));
-
             var broadcastBinding = (IPEndPoint) _broadcastClient.Client.LocalEndPoint;
-            Log.InfoFormat("[{0}] Multicast broadcast socket bound to {1}:{2}", _nodeId, broadcastBinding.Address, broadcastBinding.Port);
 
-            Log.InfoFormat("[{0}] Binding multicast listener socket...", _nodeId);
+            _diagnosticEventSink.Receive(new MulticastEventBuilder(this, MulticastEventType.BroadcastSocketBound)
+            {
+                Node = _nodeId,
+                Host = broadcastBinding.Address.ToString(),
+                Port = broadcastBinding.Port
+            }.Build());
+
             _listenerClient = new UdpClient
             {
                 ExclusiveAddressUse = false
@@ -83,13 +85,23 @@ namespace Platibus.Multicast
             _listenerClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             _listenerClient.JoinMulticastGroup(groupAddress, IPAddress.Any);
             _listenerClient.Client.Bind(new IPEndPoint(IPAddress.Any, _port));
-
-            var listenerBinding = (IPEndPoint)_broadcastClient.Client.LocalEndPoint;
-            Log.InfoFormat("[{0}] Multicast listener socket bound to {1}:{2}", _nodeId, listenerBinding.Address, listenerBinding.Port);
+            var listenerBinding = (IPEndPoint)_listenerClient.Client.LocalEndPoint;
+            _diagnosticEventSink.Receive(new MulticastEventBuilder(this, MulticastEventType.ListenerSocketBound)
+            {
+                Node = _nodeId,
+                Host = listenerBinding.Address.ToString(),
+                Port = listenerBinding.Port
+            }.Build());
 
             _cancellationTokenSource = new CancellationTokenSource();
             _listeningTask = Task.Run(async () => await Listen(_cancellationTokenSource.Token));
-
+            _diagnosticEventSink.Receive(new MulticastEventBuilder(this, MulticastEventType.ListenerStarted)
+            {
+                Node = _nodeId,
+                Host = listenerBinding.Address.ToString(),
+                Port = listenerBinding.Port
+            }.Build());
+            
             _receiveResultQueue = new ActionBlock<UdpReceiveResult>(result => HandleReceiveResult(result),
                 new ExecutionDataflowBlockOptions
                 {
@@ -104,7 +116,6 @@ namespace Platibus.Multicast
             var canceled = cancelation.Task;
             try
             {
-                Log.DebugFormat("[{0}] Multicast listener started", _nodeId);
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     var received = _listenerClient.ReceiveAsync();
@@ -115,15 +126,27 @@ namespace Platibus.Multicast
                     }
 
                     var receiveResult = await received;
-                    Log.TraceFormat("[{0}] Received multicast datagram from {1}", _nodeId, receiveResult.RemoteEndPoint);
+                    await _diagnosticEventSink.ReceiveAsync(new MulticastEventBuilder(this, MulticastEventType.ListenerStarted)
+                    {
+                        Node = _nodeId,
+                        Host = receiveResult.RemoteEndPoint.Address.ToString(),
+                        Port = receiveResult.RemoteEndPoint.Port
+                    }.Build(), cancellationToken);
+
                     await _receiveResultQueue.SendAsync(receiveResult, cancellationToken);
                 }
-                Log.DebugFormat("[{0}] Multicast listener stopped", _nodeId);
             }
             catch (OperationCanceledException)
             {
-                Log.DebugFormat("[{0}] Multicast listener canceled", _nodeId);
             }
+
+            var listenerBinding = (IPEndPoint)_listenerClient.Client.LocalEndPoint;
+            await _diagnosticEventSink.ReceiveAsync(new MulticastEventBuilder(this, MulticastEventType.ListenerStopped)
+            {
+                Node = _nodeId,
+                Host = listenerBinding.Address.ToString(),
+                Port = listenerBinding.Port
+            }.Build(), cancellationToken);
         }
 
         private async Task HandleReceiveResult(UdpReceiveResult result)
@@ -133,7 +156,6 @@ namespace Platibus.Multicast
                 var datagram = SubscriptionTrackingDatagram.Decode(result.Buffer);
                 if (datagram.NodeId == _nodeId)
                 {
-                    Log.TraceFormat("[{0}] Ignoring local broadcast datagram (same node)", _nodeId);
                     return;
                 }
 
@@ -146,13 +168,26 @@ namespace Platibus.Multicast
                         await _inner.RemoveSubscription(datagram.Topic, datagram.SubscriberUri);
                         return;
                     default:
-                        Log.WarnFormat("[{0}] Unknown or unsupported action type in datagram received from remote endpoint {1}: {2}", _nodeId, result.RemoteEndPoint, datagram.Action);
+                        await _diagnosticEventSink.ReceiveAsync(new MulticastEventBuilder(this, MulticastEventType.MalformedDatagram)
+                        {
+                            Detail = "Unknown or unsupported subscription tracking action: " + datagram.Action,
+                            Node = _nodeId,
+                            Host = result.RemoteEndPoint.Address.ToString(),
+                            Port = result.RemoteEndPoint.Port
+                        }.Build());
                         break;
                 }
             }
             catch (Exception e)
             {
-                Log.ErrorFormat("[{0}] Error processing datagram received from remote endpoint {1}", e, _nodeId, result.RemoteEndPoint);
+                _diagnosticEventSink.Receive(new MulticastEventBuilder(this, MulticastEventType.MalformedDatagram)
+                {
+                    Detail = "Error unmarshaling datagram",
+                    Node = _nodeId,
+                    Host = result.RemoteEndPoint.Address.ToString(),
+                    Port = result.RemoteEndPoint.Port,
+                    Exception = e
+                }.Build());
             }
         }
 
@@ -162,12 +197,24 @@ namespace Platibus.Multicast
             {
                 var bytes = datagram.Encode();
                 var endpoint = new IPEndPoint(_groupAddress, _port);
-                Log.DebugFormat("[{0}] Broadcasting subscription tracking datagram to {1}:{2}...", _nodeId, endpoint.Address, endpoint.Port);
                 await _broadcastClient.SendAsync(bytes, bytes.Length, endpoint);
+                await _diagnosticEventSink.ReceiveAsync(new MulticastEventBuilder(this, MulticastEventType.MalformedDatagram)
+                {
+                    Node = _nodeId,
+                    Host = _groupAddress.ToString(),
+                    Port = _port
+                }.Build());
             }
             catch (Exception e)
             {
-                Log.ErrorFormat("[{0}] Error broadcasting datagram", e, _nodeId);
+                _diagnosticEventSink.Receive(new MulticastEventBuilder(this, MulticastEventType.MalformedDatagram)
+                {
+                    Detail = "Error broadcasting datagram",
+                    Node = _nodeId,
+                    Host = _groupAddress.ToString(),
+                    Port = _port,
+                    Exception = e
+                }.Build());
             }
         }
 

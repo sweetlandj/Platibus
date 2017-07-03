@@ -25,7 +25,6 @@ using System.IO;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
-using Common.Logging;
 
 namespace Platibus.Filesystem
 {
@@ -34,8 +33,6 @@ namespace Platibus.Filesystem
     /// </summary>
     public class MessageFile : IDisposable
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.Filesystem);
-
         private bool _disposed;
         private readonly FileInfo _file;
         private readonly SemaphoreSlim _fileAccess = new SemaphoreSlim(1);
@@ -91,8 +88,6 @@ namespace Platibus.Filesystem
 
         private static async Task<MessageFile> Create(Message message, FileInfo file, CancellationToken cancellationToken = default(CancellationToken))
         {
-            Log.DebugFormat("Creating message file {0} for message ID {1}...", file, message.Headers.MessageId);
-
             cancellationToken.ThrowIfCancellationRequested();
 
             string messageFileContent;
@@ -110,9 +105,6 @@ namespace Platibus.Filesystem
             {
                 await fileWriter.WriteAsync(messageFileContent);
             }
-
-            Log.DebugFormat("Message file {0} created successfully", file, message.Headers.MessageId);
-
             return new MessageFile(file);
         }
 
@@ -155,7 +147,6 @@ namespace Platibus.Filesystem
 
             await _fileAccess.WaitAsync(cancellationToken);
 
-            Log.DebugFormat("Reading message file {0}...", _file);
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -179,7 +170,6 @@ namespace Platibus.Filesystem
                     _principal = await messageFileReader.ReadLegacySenderPrincipal();
                     _message = await messageFileReader.ReadMessage();
                 }
-                Log.DebugFormat("Message file {0} read successfully", _file);
             }
             catch (TaskCanceledException)
             {
@@ -231,7 +221,6 @@ namespace Platibus.Filesystem
             CheckDisposed();
             await _fileAccess.WaitAsync(cancellationToken);
 
-            Log.DebugFormat("Deleting message file {0}...", _file);
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -240,12 +229,7 @@ namespace Platibus.Filesystem
                 if (_file.Exists)
                 {
                     _file.Delete();
-                    Log.DebugFormat("Message file {0} deleted successfully", _file);
                 }
-            }
-            catch (Exception ex)
-            {
-                Log.ErrorFormat("Error deleting message file {0}", ex, _file);
             }
             finally
             {
@@ -278,12 +262,11 @@ namespace Platibus.Filesystem
         /// </summary>
         /// <param name="disposing">Indicates whether this method is called from the 
         /// <see cref="Dispose()"/> method</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_fileAccess")]
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)
             {
-                _fileAccess.TryDispose();
+                _fileAccess.Dispose();
             }
         }
     }

@@ -1,6 +1,7 @@
 using System;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
@@ -33,13 +34,19 @@ namespace Platibus.Diagnostics
         }
         
         /// <inheritdoc />
-        public override Task Process(string gelfMessage)
+        public override void Process(string gelfMessage)
         {
             var bytes = Encoding.ASCII.GetBytes(gelfMessage);
             var nullTerminatedBytes = new byte[bytes.Length + 1];
             Array.Copy(bytes, 0, nullTerminatedBytes, 0, bytes.Length);
             nullTerminatedBytes[bytes.Length] = 0;
             Send(nullTerminatedBytes);
+        }
+
+        /// <inheritdoc />
+        public override Task ProcessAsync(string gelfMessage, CancellationToken cancellationToken = new CancellationToken())
+        {
+            Process(gelfMessage);
             return Task.FromResult(0);
         }
 

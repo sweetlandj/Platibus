@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System.Threading.Tasks;
+using Platibus.Diagnostics;
 
 namespace Platibus.Config.Extensibility
 {

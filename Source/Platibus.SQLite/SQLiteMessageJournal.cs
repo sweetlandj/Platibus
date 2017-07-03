@@ -152,7 +152,7 @@ namespace Platibus.SQLite
             _cancellationTokenSource.Cancel();
             if (disposing)
             {
-                _cancellationTokenSource.TryDispose();
+                _cancellationTokenSource.Dispose();
             }
         }
     }

@@ -24,7 +24,7 @@ using System;
 using System.Configuration;
 using System.Data;
 using System.Data.Common;
-using Common.Logging;
+using Platibus.Diagnostics;
 
 namespace Platibus.SQL
 {
@@ -34,9 +34,9 @@ namespace Platibus.SQL
     /// </summary>
     public class DefaultConnectionProvider : IDbConnectionProvider
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.SQL);
         private readonly ConnectionStringSettings _connectionStringSettings;
         private readonly DbProviderFactory _providerFactory;
+        private readonly IDiagnosticEventSink _diagnosticEventSink;
 
         /// <summary>
         /// The connection string settings for this connection provider
@@ -60,12 +60,15 @@ namespace Platibus.SQL
         /// </summary>
         /// <param name="connectionStringSettings">The connection string settings for which
         /// the connection provider will provide connections</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink supplied by the implementer
+        /// to handle diagnostic events related to database connectivity</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionStringSettings"/>
         /// is <c>null</c></exception>
-        public DefaultConnectionProvider(ConnectionStringSettings connectionStringSettings)
+        public DefaultConnectionProvider(ConnectionStringSettings connectionStringSettings, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
             _connectionStringSettings = connectionStringSettings;
+            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
             _providerFactory = DbProviderFactories.GetFactory(connectionStringSettings.ProviderName);
         }
 
@@ -90,7 +93,12 @@ namespace Platibus.SQL
             if (connection != null)
             {
                 connection.ConnectionString = _connectionStringSettings.ConnectionString;
-                connection.Open();
+                connection.Open(); 
+
+                _diagnosticEventSink.Receive(new SQLEventBuilder(this, SQLEventType.ConnectionOpened)
+                {
+                    ConnectionName = _connectionStringSettings.Name
+                }.Build());
             }
             return connection;
         }
@@ -106,10 +114,19 @@ namespace Platibus.SQL
                 try
                 {
                     connection.Close();
+                    _diagnosticEventSink.Receive(new SQLEventBuilder(this, SQLEventType.ConnectionClosed)
+                    {
+                        ConnectionName = _connectionStringSettings.Name
+                    }.Build());
                 }
                 catch (Exception ex)
                 {
-                    Log.Warn("Error closing database connection", ex);
+                    _diagnosticEventSink.Receive(new SQLEventBuilder(this, SQLEventType.CommandError)
+                    {
+                        Detail = "Error closing connection",
+                        ConnectionName = _connectionStringSettings.Name,
+                        Exception = ex
+                    }.Build());
                 }
             }
         }

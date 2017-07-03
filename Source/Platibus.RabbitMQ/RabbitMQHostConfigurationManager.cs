@@ -20,15 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-
 using System;
-using System.Configuration;
 using System.Text;
 using System.Threading.Tasks;
-using Common.Logging;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
-using Platibus.Security;
+using Platibus.Diagnostics;
 
 namespace Platibus.RabbitMQ
 {
@@ -36,9 +33,63 @@ namespace Platibus.RabbitMQ
     /// Factory class used to initialize <see cref="RabbitMQHostConfiguration"/> objects from
     /// declarative configuration elements in application configuration files.
     /// </summary>
-    public class RabbitMQHostConfigurationManager
+    public class RabbitMQHostConfigurationManager : PlatibusConfigurationManager<RabbitMQHostConfiguration>
     {
-        private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
+        /// <summary>
+        /// Initializes a <see cref="PlatibusConfigurationManager"/>
+        /// </summary>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events related to RabbitMQ host configuration</param>
+        public RabbitMQHostConfigurationManager(IDiagnosticEventSink diagnosticEventSink = null) 
+            : base(diagnosticEventSink)
+        {
+        }
+
+        /// <inheritdoc />
+        public override async Task Initialize(RabbitMQHostConfiguration configuration, string configSectionName = null)
+        {
+            if (string.IsNullOrWhiteSpace(configSectionName))
+            {
+                configSectionName = "platibus.rabbitmq";
+                await DiagnosticEventSink.ReceiveAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                    {
+                        Detail = "Using default configuration section \"" + configSectionName + "\""
+                    }.Build());
+            }
+
+            var configSection = LoadConfigurationSection<RabbitMQHostConfigurationSection>(configSectionName);
+            await Initialize(configuration, configSection);
+        }
+
+        /// <summary>
+        /// Initializes the supplied HTTP server <paramref name="configuration"/> based on the
+        /// properties of the provided <paramref name="configSection"/>
+        /// </summary>
+        /// <param name="configuration">The configuration to initialize</param>
+        /// <param name="configSection">The configuration section whose properties are to be used
+        /// to initialize the <paramref name="configuration"/></param>
+        /// <returns>Returns a task that completes when the configuration has been initialized</returns>
+        public async Task Initialize(RabbitMQHostConfiguration configuration,
+            RabbitMQHostConfigurationSection configSection)
+        {
+            configuration.BaseUri = configSection.BaseUri
+                                    ?? new Uri(RabbitMQHostConfigurationSection.DefaultBaseUri);
+
+            configuration.Encoding = string.IsNullOrWhiteSpace(configSection.Encoding)
+                ? Encoding.UTF8
+                : Encoding.GetEncoding(configSection.Encoding);
+
+            configuration.AutoAcknowledge = configSection.AutoAcknowledge;
+            configuration.ConcurrencyLimit = configSection.ConcurrencyLimit;
+            configuration.MaxAttempts = configSection.MaxAttempts;
+            configuration.RetryDelay = configSection.RetryDelay;
+            configuration.IsDurable = configSection.IsDurable;
+
+            var securityTokenServiceFactory = new SecurityTokenServiceFactory(DiagnosticEventSink);
+            var securityTokenConfig = configSection.SecurityTokens;
+            configuration.SecurityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securityTokenConfig);
+        }
 
         /// <summary>
         /// Initializes and returns a <see cref="RabbitMQHostConfiguration"/> instance based on
@@ -54,29 +105,16 @@ namespace Platibus.RabbitMQ
         /// <see cref="PlatibusConfiguration"/> object</returns>
         /// <seealso cref="PlatibusConfigurationSection"/>
         /// <seealso cref="IConfigurationHook"/>
-        public static async Task<RabbitMQHostConfiguration> LoadConfiguration(string sectionName = "platibus.rabbitmq", 
+        public new static async Task<RabbitMQHostConfiguration> LoadConfiguration(string sectionName = "platibus.rabbitmq", 
             bool processConfigurationHooks = true)
         {
-            if (string.IsNullOrWhiteSpace(sectionName)) throw new ArgumentNullException("sectionName");
-            var configSection = (RabbitMQHostConfigurationSection)ConfigurationManager.GetSection(sectionName) ??
-                                new RabbitMQHostConfigurationSection();
-
-            var configuration = await PlatibusConfigurationManager.LoadConfiguration<RabbitMQHostConfiguration>(sectionName);
-
-            configuration.BaseUri = configSection.BaseUri 
-                ?? new Uri(RabbitMQHostConfigurationSection.DefaultBaseUri);
-
-            configuration.Encoding = string.IsNullOrWhiteSpace(configSection.Encoding) 
-                ? Encoding.UTF8 
-                : Encoding.GetEncoding(configSection.Encoding);
-
-            configuration.AutoAcknowledge = configSection.AutoAcknowledge;
-            configuration.ConcurrencyLimit = configSection.ConcurrencyLimit;
-            configuration.MaxAttempts = configSection.MaxAttempts;
-            configuration.RetryDelay = configSection.RetryDelay;
-            configuration.IsDurable = configSection.IsDurable;
-            configuration.SecurityTokenService = await InitSecurityTokenService(configSection.SecurityTokens);
-            
+            var configManager = new RabbitMQHostConfigurationManager();
+            var configuration = new RabbitMQHostConfiguration();
+            await configManager.Initialize(configuration, sectionName);
+            if (processConfigurationHooks)
+            {
+                await configManager.FindAndProcessConfigurationHooks(configuration);
+            }
             return configuration;
         }
 
@@ -86,24 +124,12 @@ namespace Platibus.RabbitMQ
         /// </summary>
         /// <param name="config">The security tokens configuration element</param>
         /// <returns>Returns a task whose result is an initialized security token service</returns>
-        public static Task<ISecurityTokenService> InitSecurityTokenService(SecurityTokensElement config)
+        [Obsolete("Use SubscriptionTrackingServiceFactory.InitSubscriptionTrackingService")]
+        public static Task<ISubscriptionTrackingService> InitSubscriptionTrackingService(
+            SubscriptionTrackingElement config)
         {
-            var myConfig = config ?? new SecurityTokensElement();
-
-            var providerName = myConfig.Provider;
-            ISecurityTokenServiceProvider provider;
-            if (string.IsNullOrWhiteSpace(providerName))
-            {
-                Log.Debug("No security token service provider specified; using default provider...");
-                provider = new JwtSecurityTokenServiceProvider();
-            }
-            else
-            {
-                provider = ProviderHelper.GetProvider<ISecurityTokenServiceProvider>(providerName);
-            }
-
-            Log.Debug("Initializing security token service...");
-            return provider.CreateSecurityTokenService(myConfig);
+            var factory = new SubscriptionTrackingServiceFactory();
+            return factory.InitSubscriptionTrackingService(config);
         }
     }
 }
