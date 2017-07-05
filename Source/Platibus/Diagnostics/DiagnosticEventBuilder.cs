@@ -16,20 +16,7 @@ namespace Platibus.Diagnostics
         /// The type of event
         /// </summary>
         protected readonly DiagnosticEventType Type;
-
-        /// <summary>
-        /// Initializes a new <see cref="DiagnosticEventBuilder"/> for the specified 
-        /// </summary>
-        /// <param name="source">The object that will produce the event</param>
-        /// <param name="type">The type of event</param>
-        public DiagnosticEventBuilder(object source, DiagnosticEventType type)
-        {
-            if (source == null) throw new ArgumentNullException("source");
-            if (type == null) throw new ArgumentNullException("type");
-            Source = source;
-            Type = type;
-        }
-
+        
         /// <summary>
         /// Specific details regarding this instance of the event
         /// </summary>
@@ -48,17 +35,30 @@ namespace Platibus.Diagnostics
         /// <summary>
         /// The name of the endpoint, if applicable
         /// </summary>
-        public EndpointName Endpoint { get; set; }
+        public string Endpoint { get; set; }
 
         /// <summary>
         /// The queue to which the message pertains, if applicable
         /// </summary>
-        public QueueName Queue { get; set; }
+        public string Queue { get; set; }
 
         /// <summary>
         /// The topic to which the message pertains, if applicable
         /// </summary>
-        public TopicName Topic { get; set; }
+        public string Topic { get; set; }
+
+        /// <summary>
+        /// Initializes a new <see cref="DiagnosticEventBuilder"/> for the specified 
+        /// </summary>
+        /// <param name="source">The object that will produce the event</param>
+        /// <param name="type">The type of event</param>
+        public DiagnosticEventBuilder(object source, DiagnosticEventType type)
+        {
+            if (source == null) throw new ArgumentNullException("source");
+            if (type == null) throw new ArgumentNullException("type");
+            Source = source;
+            Type = type;
+        }
 
         /// <summary>
         /// Builds the diagnostic event

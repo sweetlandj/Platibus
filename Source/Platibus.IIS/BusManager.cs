@@ -24,7 +24,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Web.Hosting;
-using Common.Logging;
 
 namespace Platibus.IIS
 {
@@ -33,8 +32,6 @@ namespace Platibus.IIS
     /// </summary>
     public class BusManager : IBusManager, IDisposable, IRegisteredObject
     {
-        private static readonly ILog Log = LogManager.GetLogger(IISLoggingCategories.IIS);
-
         internal static readonly BusManager SingletonInstance = new BusManager();
 
         /// <summary>
@@ -58,7 +55,6 @@ namespace Platibus.IIS
         /// <inheritdoc />
         public virtual void Stop(bool immediate)
         {
-            Log.Info("Stopping bus manager...");
             Dispose(true);
         }
 
@@ -102,10 +98,8 @@ namespace Platibus.IIS
                 {
                     return bus;
                 }
-                Log.InfoFormat("Initializing managed bus instance {0}...", uri);
                 bus = new ManagedBus(configuration);
                 _busInstances[configuration.BaseUri] = bus;
-                Log.InfoFormat("Managed bus instance {0} successfully initialized", uri);
             }
             return await Task.FromResult(bus);
         }
@@ -126,7 +120,6 @@ namespace Platibus.IIS
 
             if (bus != null)
             {
-                Log.InfoFormat("Disposing managed bus instance {0}...", uri);
                 bus.Dispose();
             }
         }
@@ -169,9 +162,7 @@ namespace Platibus.IIS
 
                 foreach (var busInstance in busInstances)
                 {
-                    var uri = busInstance.Key;
                     var managedBus = busInstance.Value;
-                    Log.InfoFormat("Disposing managed bus instance {0}...", uri);
                     managedBus.Dispose();
                 }
             }

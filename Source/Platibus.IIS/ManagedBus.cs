@@ -23,6 +23,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Platibus.Diagnostics;
 using Platibus.Http;
 using Platibus.Journaling;
 
@@ -37,11 +38,12 @@ namespace Platibus.IIS
         private readonly Task _initialization;
 
         private readonly IIISConfiguration _configuration;
-        private Uri _baseUri;
-        private ISubscriptionTrackingService _subscriptionTrackingService;
-        private IMessageQueueingService _messageQueueingService;
-        private IMessageJournal _messageJournal;
-        private HttpTransportService _transportService;
+        private readonly Uri _baseUri;
+        private readonly ISubscriptionTrackingService _subscriptionTrackingService;
+        private readonly IMessageQueueingService _messageQueueingService;
+        private readonly IMessageJournal _messageJournal;
+        private readonly HttpTransportService _transportService;
+
         private Bus _bus;
         private bool _disposed;
 
@@ -64,23 +66,24 @@ namespace Platibus.IIS
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
             _configuration = configuration;
-            _initialization = Init();
-        }
-
-        private async Task Init(CancellationToken cancellationToken = default(CancellationToken))
-        {
             _baseUri = _configuration.BaseUri;
             _subscriptionTrackingService = _configuration.SubscriptionTrackingService;
             _messageQueueingService = _configuration.MessageQueueingService;
             _messageJournal = _configuration.MessageJournal;
 
             var endpoints = _configuration.Endpoints;
-            _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, 
-                _messageJournal, _subscriptionTrackingService,
-                _configuration.BypassTransportLocalDestination, HandleMessage);
+            var diagnosticEventSink = configuration.DiagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            
+            _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService,
+                _messageJournal, _subscriptionTrackingService, _configuration.BypassTransportLocalDestination,
+                HandleMessage, diagnosticEventSink);
 
+            _initialization = Init();
+        }
+
+        private async Task Init(CancellationToken cancellationToken = default(CancellationToken))
+        {
             _bus = new Bus(_configuration, _baseUri, _transportService, _messageQueueingService);
-
             await _transportService.Init(cancellationToken);
             await _bus.Init(cancellationToken);
         }

@@ -41,10 +41,10 @@ namespace Platibus.SQL
     /// </summary>
     public class SQLMessageJournal : IMessageJournal
     {
+        protected readonly IDiagnosticEventSink DiagnosticEventSink;
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly IMessageJournalingCommandBuilders _commandBuilders;
-        protected readonly IDiagnosticEventSink DiagnosticEventSink;
-
+        
         /// <summary>
         /// The connection provider used to obtain connections to the SQL database
         /// </summary>

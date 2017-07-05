@@ -70,7 +70,7 @@ namespace Platibus.Config
         /// <param name="configuration">The configuration object to initialize</param>
         /// <param name="configSection">The <see cref="LoopbackConfigurationSection"/>
         /// containing the values used to initialize the Platibus configuration</param>
-        public Task Initialize(LoopbackConfiguration configuration, LoopbackConfigurationSection configSection)
+        public async Task Initialize(LoopbackConfiguration configuration, LoopbackConfigurationSection configSection)
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
             if (configSection == null) throw new ArgumentNullException("configSection");
@@ -83,7 +83,10 @@ namespace Platibus.Config
             InitializeTopics(configuration, configSection);
 
             var messageJournalFactory = new MessageJournalFactory(DiagnosticEventSink);
-            return messageJournalFactory.InitMessageJournal(configSection.Journaling);
+            configuration.MessageJournal = await messageJournalFactory.InitMessageJournal(configSection.Journaling);
+
+            var mqsFactory = new MessageQueueingServiceFactory(DiagnosticEventSink);
+            configuration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(configSection.Queueing);
         }
 
         /// <summary>

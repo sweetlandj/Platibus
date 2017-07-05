@@ -1,8 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.UI;
 using Common.Logging;
 
 namespace Platibus.Diagnostics
@@ -13,12 +15,42 @@ namespace Platibus.Diagnostics
     /// </summary>
     public class CommonLoggingSink : IDiagnosticEventSink
     {
-        /// <inheritdoc />
-        public void Receive(DiagnosticEvent @event)
+        private readonly Func<DiagnosticEvent, ILog> _logFactory;
+
+        public CommonLoggingSink()
+        {
+            _logFactory = DefaultLogFactory;
+        }
+
+        public CommonLoggingSink(ILog log)
+        {
+            if (log == null)
+            {
+                _logFactory = DefaultLogFactory;
+            }
+            else
+            {
+                _logFactory = _ => log;
+            }
+        }
+
+        public CommonLoggingSink(Func<DiagnosticEvent, ILog> logFactory)
+        {
+            _logFactory = logFactory ?? DefaultLogFactory;
+        }
+
+        private static ILog DefaultLogFactory(DiagnosticEvent @event)
         {
             var source = @event.Source;
             var category = source == null ? "Platibus" : source.GetType().FullName;
             var log = LogManager.GetLogger(category);
+            return log;
+        }
+
+        /// <inheritdoc />
+        public void Receive(DiagnosticEvent @event)
+        {
+            var log = _logFactory(@event);
 
             var message = FormatLogMessage(@event);
             switch (@event.Type.Level)

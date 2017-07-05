@@ -160,15 +160,7 @@ namespace Platibus.Diagnostics
         protected virtual void PopulateFilesystemFields(GelfMessage gelfMessage, FilesystemEvent fsEvent)
         {
             if (fsEvent == null) return;
-            if (fsEvent.File != null)
-            {
-                gelfMessage.File = fsEvent.File.FullName;
-            }
-
-            if (fsEvent.Directory != null)
-            {
-                gelfMessage.Directory = fsEvent.Directory.FullName;
-            }
+            gelfMessage.Path = fsEvent.Path;
         }
 
         private static readonly IDictionary<DiagnosticEventLevel, int> SyslogLevels = new Dictionary<DiagnosticEventLevel, int>

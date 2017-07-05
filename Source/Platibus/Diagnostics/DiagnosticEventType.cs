@@ -78,7 +78,7 @@ namespace Platibus.Diagnostics
         /// <summary>
         /// Emitted whenever a message is added back into a queue e.g. after a restart
         /// </summary>
-        public static readonly DiagnosticEventType MessageReueued = new DiagnosticEventType("MessageRequeued", DiagnosticEventLevel.Trace);
+        public static readonly DiagnosticEventType MessageRequeued = new DiagnosticEventType("MessageRequeued", DiagnosticEventLevel.Trace);
 
         /// <summary>
         /// Emitted whenever an attempt is made to process a queued message

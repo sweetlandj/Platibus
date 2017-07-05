@@ -140,7 +140,7 @@ namespace Platibus.Queueing
             {
                 await _queuedMessages.SendAsync(pendingMessage, cancellationToken);
                 await DiagnosticEventSink.ReceiveAsync(
-                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageReueued)
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageRequeued)
                     {
                         Detail = "Existing message requeued",
                         Message = pendingMessage.Message,

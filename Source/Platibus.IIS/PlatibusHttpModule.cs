@@ -24,7 +24,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Web;
-using Common.Logging;
+using Platibus.Diagnostics;
 
 namespace Platibus.IIS
 {
@@ -33,10 +33,9 @@ namespace Platibus.IIS
     /// </summary>
     public class PlatibusHttpModule : IHttpModule
     {
-        private static readonly ILog Log = LogManager.GetLogger(IISLoggingCategories.IIS);
-
         private readonly Task<IIISConfiguration> _configuration;
         private readonly Task<Bus> _bus;
+
         private bool _disposed;
         
 		/// <summary>
@@ -45,32 +44,53 @@ namespace Platibus.IIS
 		/// </summary>
 		public PlatibusHttpModule()
 		{
-		    _configuration = LoadDefaultConfiguration();
+		    _configuration = LoadConfiguration();
             _bus = InitBus(_configuration);
         }
 
-		/// <summary>
-		/// Initializes a new <see cref="PlatibusHttpModule"/> with the specified configuration
-		/// and any configuration hooks present in the app domain assemblies
-		/// </summary>
-		public PlatibusHttpModule(IIISConfiguration configuration)
+        /// <summary>
+        /// Initializes a new <see cref="PlatibusHttpModule"/> with the default configuration
+        /// using any configuration hooks present in the app domain assemblies
+        /// </summary>
+        /// <param name="configurationSectionName">(Optional) The name of the configuration
+        /// section from which the bus configuration should be loaded</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events</param>
+        public PlatibusHttpModule(string configurationSectionName = null, IDiagnosticEventSink diagnosticEventSink = null)
+        {
+            _configuration = LoadConfiguration(configurationSectionName, diagnosticEventSink);
+            _bus = InitBus(_configuration);
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="PlatibusHttpModule"/> with the specified configuration
+        /// and any configuration hooks present in the app domain assemblies
+        /// </summary>
+        public PlatibusHttpModule(IIISConfiguration configuration)
 		{
 		    if (configuration == null) throw new ArgumentNullException("configuration");
 		    _configuration = Task.FromResult(configuration);
 		    _bus = InitBus(configuration);
 		}
-        
-        private static async Task<IIISConfiguration> LoadDefaultConfiguration()
-        {
-            return await IISConfigurationManager.LoadConfiguration();
-        }
 
-        private static async Task<Bus> InitBus(Task<IIISConfiguration> configuration)
+        private static async Task<IIISConfiguration> LoadConfiguration(string sectionName = null, IDiagnosticEventSink diagnosticEventSink = null)
+        {
+            var configuration = new IISConfiguration
+            {
+                DiagnosticEventSink = diagnosticEventSink
+            };
+            var configManager = new IISConfigurationManager(diagnosticEventSink);
+            await configManager.Initialize(configuration, sectionName);
+            await configManager.FindAndProcessConfigurationHooks(configuration);
+            return configuration;
+        }
+        
+        private async Task<Bus> InitBus(Task<IIISConfiguration> configuration)
         {
             return await InitBus(await configuration);
         }
 
-        private static async Task<Bus> InitBus(IIISConfiguration configuration)
+        private async Task<Bus> InitBus(IIISConfiguration configuration)
         {
             var managedBus = await BusManager.SingletonInstance.GetManagedBus(configuration);
             return await managedBus.GetBus();
@@ -82,17 +102,11 @@ namespace Platibus.IIS
         /// <param name="context">An <see cref="T:System.Web.HttpApplication"/> that provides access to the methods, properties, and events common to all application objects within an ASP.NET application </param>
         public void Init(HttpApplication context)
 		{
-            Log.DebugFormat("Initializing Platibus HTTP module...");
-
-            Log.DebugFormat("Registering event handler for begin-request event...");
             var beginRequest = new EventHandlerTaskAsyncHelper(OnBeginRequest);
             context.AddOnBeginRequestAsync(beginRequest.BeginEventHandler, beginRequest.EndEventHandler);
             
-            Log.DebugFormat("Registering event handler for post-map-request-handler event...");
             var postMapRequestHandler = new EventHandlerTaskAsyncHelper(OnPostMapRequestHandler);
             context.AddOnPostMapRequestHandlerAsync(postMapRequestHandler.BeginEventHandler, postMapRequestHandler.EndEventHandler);
-
-            Log.DebugFormat("Platibus HTTP module initialized successfully");
         }
 
         private async Task OnBeginRequest(object source, EventArgs args)

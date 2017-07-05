@@ -1,5 +1,4 @@
-﻿using System.IO;
-using Platibus.Diagnostics;
+﻿using Platibus.Diagnostics;
 
 namespace Platibus.Filesystem
 {
@@ -9,14 +8,9 @@ namespace Platibus.Filesystem
     public class FilesystemEventBuilder : DiagnosticEventBuilder
     {
         /// <summary>
-        /// The file to which the event pertains
+        /// The path of the file or directory to which the event pertains
         /// </summary>
-        public FileInfo File { get; set; }
-
-        /// <summary>
-        /// The directory to which the event pertains
-        /// </summary>
-        public DirectoryInfo Directory { get; set; }
+        public string Path { get; set; }
 
         /// <summary>
         /// Initializes a new <see cref="FilesystemEventBuilder"/>
@@ -30,7 +24,7 @@ namespace Platibus.Filesystem
         /// <inheritdoc />
         public override DiagnosticEvent Build()
         {
-            return new FilesystemEvent(Source, Type, Detail, Exception, Message, Endpoint, Queue, Topic, File, Directory);
+            return new FilesystemEvent(Source, Type, Detail, Exception, Message, Endpoint, Queue, Topic, Path);
         }
     }
 }

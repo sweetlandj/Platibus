@@ -32,7 +32,6 @@ namespace Platibus.Config.Extensibility
         public async Task<IMessageJournal> InitMessageJournal(JournalingElement configuration)
         {
             var myConfig = configuration ?? new JournalingElement();
-            var provider = GetProvider(myConfig.Provider);
             if (string.IsNullOrWhiteSpace(myConfig.Provider))
             {
                 await _diagnosticEventSink.ReceiveAsync(
@@ -43,6 +42,7 @@ namespace Platibus.Config.Extensibility
                 return null;
             }
 
+            var provider = GetProvider(myConfig.Provider);
             var messageJournal = await provider.CreateMessageJournal(myConfig);
 
             var categories = new List<MessageJournalCategory>();

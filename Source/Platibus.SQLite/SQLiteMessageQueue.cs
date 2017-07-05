@@ -56,7 +56,7 @@ namespace Platibus.SQLite
         /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
         /// to handle diagnostic events related to SQL subscription tracking</param>
         public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null, IDiagnosticEventSink diagnosticEventSink = null)
-            : base(InitConnectionProvider(baseDirectory, queueName), new SQLiteMessageQueueingCommandBuilders(), queueName, listener, securityTokenService, options)
+            : base(InitConnectionProvider(baseDirectory, queueName, diagnosticEventSink), new SQLiteMessageQueueingCommandBuilders(), queueName, listener, securityTokenService, options)
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _operationQueue = new ActionBlock<ISQLiteOperation>(
@@ -68,7 +68,7 @@ namespace Platibus.SQLite
                 });
         }
 
-        private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory, QueueName queueName)
+        private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory, QueueName queueName, IDiagnosticEventSink diagnosticEventSink)
         {
             var dbPath = Path.Combine(directory.FullName, queueName + ".db");
             var connectionStringSettings = new ConnectionStringSettings
@@ -78,7 +78,7 @@ namespace Platibus.SQLite
                 ProviderName = "System.Data.SQLite"
             };
 
-            return new SingletonConnectionProvider(connectionStringSettings);
+            return new SingletonConnectionProvider(connectionStringSettings, diagnosticEventSink);
         }
 
         /// <inheritdoc />

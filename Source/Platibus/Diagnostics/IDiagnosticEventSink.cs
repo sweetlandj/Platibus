@@ -6,6 +6,9 @@ namespace Platibus.Diagnostics
     /// <summary>
     /// Interface through which Platibus reports diagnostic events
     /// </summary>
+    /// <remarks>
+    /// Implementations of this interface must be threadsafe.
+    /// </remarks>
     public interface IDiagnosticEventSink
     {
         /// <summary>

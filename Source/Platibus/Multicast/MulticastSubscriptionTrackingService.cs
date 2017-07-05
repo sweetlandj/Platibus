@@ -73,7 +73,7 @@ namespace Platibus.Multicast
 
             _diagnosticEventSink.Receive(new MulticastEventBuilder(this, MulticastEventType.BroadcastSocketBound)
             {
-                Node = _nodeId,
+                Node = _nodeId.ToString(),
                 Host = broadcastBinding.Address.ToString(),
                 Port = broadcastBinding.Port
             }.Build());
@@ -88,7 +88,7 @@ namespace Platibus.Multicast
             var listenerBinding = (IPEndPoint)_listenerClient.Client.LocalEndPoint;
             _diagnosticEventSink.Receive(new MulticastEventBuilder(this, MulticastEventType.ListenerSocketBound)
             {
-                Node = _nodeId,
+                Node = _nodeId.ToString(),
                 Host = listenerBinding.Address.ToString(),
                 Port = listenerBinding.Port
             }.Build());
@@ -97,7 +97,7 @@ namespace Platibus.Multicast
             _listeningTask = Task.Run(async () => await Listen(_cancellationTokenSource.Token));
             _diagnosticEventSink.Receive(new MulticastEventBuilder(this, MulticastEventType.ListenerStarted)
             {
-                Node = _nodeId,
+                Node = _nodeId.ToString(),
                 Host = listenerBinding.Address.ToString(),
                 Port = listenerBinding.Port
             }.Build());
@@ -128,7 +128,7 @@ namespace Platibus.Multicast
                     var receiveResult = await received;
                     await _diagnosticEventSink.ReceiveAsync(new MulticastEventBuilder(this, MulticastEventType.ListenerStarted)
                     {
-                        Node = _nodeId,
+                        Node = _nodeId.ToString(),
                         Host = receiveResult.RemoteEndPoint.Address.ToString(),
                         Port = receiveResult.RemoteEndPoint.Port
                     }.Build(), cancellationToken);
@@ -143,7 +143,7 @@ namespace Platibus.Multicast
             var listenerBinding = (IPEndPoint)_listenerClient.Client.LocalEndPoint;
             await _diagnosticEventSink.ReceiveAsync(new MulticastEventBuilder(this, MulticastEventType.ListenerStopped)
             {
-                Node = _nodeId,
+                Node = _nodeId.ToString(),
                 Host = listenerBinding.Address.ToString(),
                 Port = listenerBinding.Port
             }.Build(), cancellationToken);
@@ -171,7 +171,7 @@ namespace Platibus.Multicast
                         await _diagnosticEventSink.ReceiveAsync(new MulticastEventBuilder(this, MulticastEventType.MalformedDatagram)
                         {
                             Detail = "Unknown or unsupported subscription tracking action: " + datagram.Action,
-                            Node = _nodeId,
+                            Node = _nodeId.ToString(),
                             Host = result.RemoteEndPoint.Address.ToString(),
                             Port = result.RemoteEndPoint.Port
                         }.Build());
@@ -183,7 +183,7 @@ namespace Platibus.Multicast
                 _diagnosticEventSink.Receive(new MulticastEventBuilder(this, MulticastEventType.MalformedDatagram)
                 {
                     Detail = "Error unmarshaling datagram",
-                    Node = _nodeId,
+                    Node = _nodeId.ToString(),
                     Host = result.RemoteEndPoint.Address.ToString(),
                     Port = result.RemoteEndPoint.Port,
                     Exception = e
@@ -200,7 +200,7 @@ namespace Platibus.Multicast
                 await _broadcastClient.SendAsync(bytes, bytes.Length, endpoint);
                 await _diagnosticEventSink.ReceiveAsync(new MulticastEventBuilder(this, MulticastEventType.MalformedDatagram)
                 {
-                    Node = _nodeId,
+                    Node = _nodeId.ToString(),
                     Host = _groupAddress.ToString(),
                     Port = _port
                 }.Build());
@@ -210,7 +210,7 @@ namespace Platibus.Multicast
                 _diagnosticEventSink.Receive(new MulticastEventBuilder(this, MulticastEventType.MalformedDatagram)
                 {
                     Detail = "Error broadcasting datagram",
-                    Node = _nodeId,
+                    Node = _nodeId.ToString(),
                     Host = _groupAddress.ToString(),
                     Port = _port,
                     Exception = e

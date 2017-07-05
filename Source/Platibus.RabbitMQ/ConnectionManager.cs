@@ -22,7 +22,7 @@
 
 using System;
 using System.Collections.Concurrent;
-using Common.Logging;
+using Platibus.Diagnostics;
 using RabbitMQ.Client;
 
 namespace Platibus.RabbitMQ
@@ -32,9 +32,20 @@ namespace Platibus.RabbitMQ
     /// </summary>
     public class ConnectionManager : IDisposable, IConnectionManager
     {
-        private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
         private readonly ConcurrentDictionary<Uri, ManagedConnection> _managedConnections = new ConcurrentDictionary<Uri, ManagedConnection>();
+        private readonly IDiagnosticEventSink _diagnosticEventSink;
+
         private volatile bool _disposed;
+
+        /// <summary>
+        /// Initializes a new <see cref="ConnectionManager"/>
+        /// </summary>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events</param>
+        public ConnectionManager(IDiagnosticEventSink diagnosticEventSink = null)
+        {
+            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+        }
 
         /// <summary>
         /// Returns a RabbitMQ connection to the server at the specified
@@ -88,7 +99,6 @@ namespace Platibus.RabbitMQ
         {
             if (disposing)
             {
-                Log.Info("Closing RabbitMQ connections...");
                 foreach (var uri in _managedConnections.Keys)
                 {
                     ManagedConnection connection;
@@ -103,24 +113,26 @@ namespace Platibus.RabbitMQ
             if (_disposed) throw new ObjectDisposedException(GetType().FullName);
         }
 
-        private static ManagedConnection CreateManagedConnection(Uri uri)
+        private ManagedConnection CreateManagedConnection(Uri uri)
         {
-            return new ManagedConnection(uri);
+            return new ManagedConnection(uri, _diagnosticEventSink);
         }
 
-        private static void CloseManagedConnection(ManagedConnection connection)
+        private void CloseManagedConnection(ManagedConnection connection)
         {
             if (connection == null) return;
             try
             {
-                Log.DebugFormat("Closing RabbitMQ connection {0}...", connection.ManagedConnectionId);
                 connection.CloseManagedConnection(true);
-                Log.DebugFormat("RabbitMQ connection {0} closed successfully", connection.ManagedConnectionId);
                 return;
             }
             catch (Exception ex)
             {
-                Log.Info("Error closing RabbitMQ connection.  Attempting to abort...", ex);
+                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionError)
+                {
+                    Detail = "Unhandled exception closing managed connection ID " + connection.ManagedConnectionId,
+                    Exception = ex
+                }.Build());
             }
 
             try
@@ -129,7 +141,11 @@ namespace Platibus.RabbitMQ
             }
             catch (Exception ex)
             {
-                Log.Info("Error aborting RabbitMQ connection", ex);
+                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionError)
+                {
+                    Detail = "Unhandled exception aborting managed connection ID " + connection.ManagedConnectionId,
+                    Exception = ex
+                }.Build());
             }
         }
 

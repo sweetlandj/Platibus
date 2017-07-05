@@ -3,6 +3,7 @@ using Xunit;
 
 namespace Platibus.UnitTests.Serialization
 {
+    [Trait("Category", "UnitTests")]
     public class NewtonsoftJsonSerializerTests : SerializerTests
     {
         public NewtonsoftJsonSerializerTests() : base(new NewtonsoftJsonSerializer())

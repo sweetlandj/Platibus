@@ -166,17 +166,11 @@ namespace Platibus.Diagnostics
         public string MulticastNode { get; set; }
 
         /// <summary>
-        /// The filename related to the event
+        /// The path of the file or directory to which the event pertains
         /// </summary>
-        [JsonProperty("_file")]
-        public string File { get; set; }
-
-        /// <summary>
-        /// The directory related to the event
-        /// </summary>
-        [JsonProperty("_directory")]
-        public string Directory { get; set; }
-
+        [JsonProperty("_path")]
+        public string Path { get; set; }
+        
         /// <summary>
         /// Initializes a <see cref="GelfMessage"/> object
         /// </summary>

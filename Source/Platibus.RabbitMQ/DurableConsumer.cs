@@ -24,7 +24,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Common.Logging;
+using Platibus.Diagnostics;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -32,14 +32,13 @@ namespace Platibus.RabbitMQ
 {
     internal class DurableConsumer : IDisposable
     {
-        private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
-
         private readonly string _queueName;
         private readonly string _consumerTag;
         private readonly ushort _concurrencyLimit;
         private readonly Action<IModel, BasicDeliverEventArgs, CancellationToken> _consume;
         private readonly bool _autoAcknowledge;
         private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly IDiagnosticEventSink _diagnosticEventSink;
         
         private volatile IConnection _connection;
         private volatile IModel _channel;
@@ -49,7 +48,7 @@ namespace Platibus.RabbitMQ
         public DurableConsumer(IConnection connection, string queueName, 
             Action<IModel, BasicDeliverEventArgs, CancellationToken> consume, 
             string consumerTag = null, int concurrencyLimit = 0,
-            bool autoAcknowledge = false)
+            bool autoAcknowledge = false, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (string.IsNullOrWhiteSpace(queueName)) throw new ArgumentNullException("queueName");
             if (connection == null) throw new ArgumentNullException("connection");
@@ -64,35 +63,41 @@ namespace Platibus.RabbitMQ
 
             _autoAcknowledge = autoAcknowledge;
             _cancellationTokenSource = new CancellationTokenSource();
+            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
         }
 
         public void Init()
         {
             var cancellationToken = _cancellationTokenSource.Token;
             _channel = CreateChannel(cancellationToken);
-            
-            Log.DebugFormat("Initializing consumer '{0}' on channel number '{1}' for queue '{2}'...",
-                _consumerTag, _channel.ChannelNumber, _queueName);
-
             var consumer = new EventingBasicConsumer(_channel);
             consumer.Received += (sender, args) =>
             {
-                Log.DebugFormat("Consumer '{0}' received delivery '{1}' from queue '{2}'", _consumerTag,
-                    args.DeliveryTag, _queueName);
                 try
                 {
                     _consume(_channel, args, cancellationToken);
                 }
                 catch (Exception ex)
                 {
-                    Log.ErrorFormat(
-                        "Unhandled exception in callback (consumer '{0}', channel '{1}', queue '{2}'", ex,
-                        _consumerTag, _channel, _queueName);
+                    _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
+                    {
+                        Detail = "Unhandled exception in consumer callback",
+                        Exception = ex,
+                        ChannelNumber = _channel.ChannelNumber,
+                        ConsumerTag = _consumerTag,
+                        DeliveryTag = args.DeliveryTag,
+                    }.Build());
+
                     _channel.BasicNack(args.DeliveryTag, true, false);
                 }
             };
 
             _channel.BasicConsume(_queueName, _autoAcknowledge, _consumerTag, consumer);
+            _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConsumerAdded)
+            {
+                ChannelNumber = _channel.ChannelNumber,
+                ConsumerTag = _consumerTag
+            }.Build());
         }
 
         private IModel CreateChannel(CancellationToken cancellationToken = default(CancellationToken))
@@ -101,21 +106,26 @@ namespace Platibus.RabbitMQ
             {
                 try
                 {
-                    Log.DebugFormat("Attempting to create RabbitMQ channel for consumer '{0}' of queue '{1}'...",
-                        _consumerTag, _queueName);
-
                     var channel = _connection.CreateModel();
-                    Log.DebugFormat(
-                        "RabbitMQ channel number \"{0}\" successfully created for consumer '{1}' of queue '{2}'",
-                        channel.ChannelNumber, _consumerTag, _queueName);
-
                     channel.BasicQos(0, _concurrencyLimit, false);
+
+                    _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQChannelCreated)
+                    {
+                        ChannelNumber = channel.ChannelNumber,
+                        ConsumerTag = _consumerTag
+                    }.Build());
+
                     return channel;
                 }
                 catch (Exception ex)
                 {
                     var delay = TimeSpan.FromSeconds(5);
-                    Log.ErrorFormat("Error creating RabbitMQ channel.  Retrying in {0}...", ex, delay);
+                    _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQChannelCreationFailed)
+                    {
+                        Detail = "Error creating RabbitMQ channel.  Retrying in " + delay,
+                        Exception = ex,
+                        ConsumerTag = _consumerTag
+                    }.Build());
                     Task.Delay(delay, cancellationToken).Wait(cancellationToken);
                 }
             } 
@@ -124,35 +134,53 @@ namespace Platibus.RabbitMQ
 
         private void TryCancelConsumer()
         {
-            if (_channel == null) return;
-            if (!_channel.IsOpen) return;
+            var myChannel = _channel;
+            if (myChannel == null) return;
+            if (!myChannel.IsOpen) return;
             
             try
             {
-                Log.DebugFormat("Canceling consumer '{0}' on channel number '{1}' for queue '{2}'...", _consumerTag, _channel.ChannelNumber, _queueName);
-                _channel.BasicCancel(_consumerTag);
-                Log.DebugFormat("Consumer '{0}' on channel number '{1}' for queue '{2}' canceled successfully", _consumerTag, _channel.ChannelNumber, _queueName);
+                myChannel.BasicCancel(_consumerTag);
+                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConsumerCanceled)
+                {
+                    ChannelNumber = myChannel.ChannelNumber,
+                    ConsumerTag = _consumerTag
+                }.Build());
             }
             catch (Exception ex)
             {
-                Log.WarnFormat("Error canceling RabbitMQ consumer {0}", ex, _consumerTag);
+                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConsumerCancelError)
+                {
+                    ChannelNumber = myChannel.ChannelNumber,
+                    ConsumerTag = _consumerTag,
+                    Exception = ex
+                }.Build());
             }
         }
 
         private void TryCloseChannel()
         {
-            if (_channel == null) return;
-            if (_channel.IsClosed) return;
+            var myChannel = _channel;
+            if (myChannel == null) return;
+            if (!myChannel.IsOpen) return;
 
             try
             {
-                Log.DebugFormat("Closing channel number '{0}' for queue '{1}'...", _channel.ChannelNumber, _queueName);
-                _channel.Close();
-                Log.DebugFormat("Channel number '{0}' for queue '{1}' closed successfully", _channel.ChannelNumber, _queueName);
+                myChannel.Close();
+                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQChannelClosed)
+                {
+                    ChannelNumber = myChannel.ChannelNumber,
+                    ConsumerTag = _consumerTag
+                }.Build());
             }
             catch (Exception ex)
             {
-                Log.WarnFormat("Error closing RabbitMQ channel number '{0}' for queue '{1}'", ex, _channel.ChannelNumber, _queueName);
+                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQChannelCloseError)
+                {
+                    ChannelNumber = myChannel.ChannelNumber,
+                    ConsumerTag = _consumerTag,
+                    Exception = ex
+                }.Build());
             }
             _channel = null;
         }
@@ -171,7 +199,6 @@ namespace Platibus.RabbitMQ
             GC.SuppressFinalize(this);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
         protected virtual void Dispose(bool disposing)
         {
             _cancellationTokenSource.Cancel();

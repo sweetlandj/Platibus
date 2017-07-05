@@ -13,7 +13,7 @@ namespace Platibus.Multicast
         /// <remarks>
         /// The node to which the event pertains may differ from the node that emitted the event
         /// </remarks>
-        public NodeId Node { get; set; }
+        public string Node { get; set; }
 
         /// <summary>
         /// The host to which the event pertains

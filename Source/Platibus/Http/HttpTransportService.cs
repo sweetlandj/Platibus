@@ -110,6 +110,11 @@ namespace Platibus.Http
         public async Task Init(CancellationToken cancellationToken = default(CancellationToken))
         {
             await _messageQueueingService.CreateQueue(_outboundQueueName, this, cancellationToken: cancellationToken);
+            await _diagnosticEventSink.ReceiveAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
+                {
+                    Detail = "HTTP transport service initialized"
+                }.Build(), cancellationToken);
         }
 
         /// <summary>

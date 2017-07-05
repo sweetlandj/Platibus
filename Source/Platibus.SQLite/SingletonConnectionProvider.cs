@@ -24,28 +24,28 @@ using System;
 using System.Configuration;
 using System.Data;
 using System.Data.Common;
-using Common.Logging;
+using Platibus.Diagnostics;
 using Platibus.SQL;
 
 namespace Platibus.SQLite
 {
     internal class SingletonConnectionProvider : IDbConnectionProvider
     {
-        private static readonly ILog Log = LogManager.GetLogger(SQLiteLoggingCategories.SQLite);
         private readonly object _syncRoot = new object();
         private readonly DbProviderFactory _dbProviderFactory;
-        private readonly string _connectionString;
+        private readonly ConnectionStringSettings _connectionStringSettings;
+        private readonly IDiagnosticEventSink _diagnosticEventSink;
 
         private volatile DbConnection _connection;
         private bool _disposed;
 
-        public SingletonConnectionProvider(ConnectionStringSettings connectionStringSettings)
+        public SingletonConnectionProvider(ConnectionStringSettings connectionStringSettings, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
             _dbProviderFactory = DbProviderFactories.GetFactory(connectionStringSettings.ProviderName);
-            _connectionString = connectionStringSettings.ConnectionString;
+            _connectionStringSettings = connectionStringSettings;
+            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
         }
-
 
         public DbConnection GetConnection()
         {
@@ -63,10 +63,20 @@ namespace Platibus.SQLite
                     try
                     {
                         myConnection.Close();
+
+                        _diagnosticEventSink.Receive(new SQLEventBuilder(this, SQLEventType.ConnectionClosed)
+                        {
+                            ConnectionName = _connectionStringSettings.Name
+                        }.Build());
                     }
                     catch (Exception ex)
                     {
-                        Log.Warn("Error closing connection", ex);
+                        _diagnosticEventSink.Receive(new SQLEventBuilder(this, SQLEventType.CommandError)
+                        {
+                            Detail = "Error closing singleton connection",
+                            ConnectionName = _connectionStringSettings.Name,
+                            Exception = ex
+                        }.Build());
                     }
                     myConnection = null;
                 }
@@ -76,13 +86,18 @@ namespace Platibus.SQLite
                     myConnection = _dbProviderFactory.CreateConnection();
                     if (myConnection != null)
                     {
-                        myConnection.ConnectionString = _connectionString;
+                        myConnection.ConnectionString = _connectionStringSettings.ConnectionString;
                     }
                 }
 
                 if (myConnection != null && myConnection.State == ConnectionState.Closed)
                 {
                     myConnection.Open();
+
+                    _diagnosticEventSink.Receive(new SQLEventBuilder(this, SQLEventType.ConnectionOpened)
+                    {
+                        ConnectionName = _connectionStringSettings.Name
+                    }.Build());
                 }
                 _connection = myConnection;
             }
@@ -122,7 +137,12 @@ namespace Platibus.SQLite
                 }
                 catch (Exception ex)
                 {
-                    Log.Warn("Error closing singleton connection", ex);
+                    _diagnosticEventSink.Receive(new SQLEventBuilder(this, SQLEventType.CommandError)
+                    {
+                        Detail = "Error closing singleton connection",
+                        ConnectionName = _connectionStringSettings.Name,
+                        Exception = ex
+                    }.Build());
                 }
             }
         }

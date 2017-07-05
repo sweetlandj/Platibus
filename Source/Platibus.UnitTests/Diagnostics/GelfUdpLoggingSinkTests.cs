@@ -32,6 +32,8 @@ namespace Platibus.UnitTests.Diagnostics
     /// These tests automate the execution of the test cases but require manual verification in
     /// the target log collector service.
     /// </summary>
+    [Trait("Category", "UnitTests")]
+    [Trait("Dependency", "Graylog2")]
     public class GelfUdpLoggingSinkTests : GelfLoggingSinkTests
     {
         protected const string Host = "localhost";

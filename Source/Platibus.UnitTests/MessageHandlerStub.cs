@@ -30,8 +30,6 @@ namespace Platibus.UnitTests
 {
     public class MessageHandlerStub : IMessageHandler
     {
-        private static readonly ILog Log = LogManager.GetLogger(UnitTestLoggingCategories.UnitTests);
-
         private static readonly AutoResetEvent MessageReceivedEvent = new AutoResetEvent(false);
         private static readonly ConcurrentQueue<object> HandledMessageQueue = new ConcurrentQueue<object>();
 
@@ -53,7 +51,6 @@ namespace Platibus.UnitTests
         public Task HandleMessage(object content, IMessageContext messageContext,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Log.DebugFormat("Handling message ID {0}...", messageContext.Headers.MessageId);
             HandledMessageQueue.Enqueue(content);
             messageContext.Acknowledge();
             MessageReceivedEvent.Set();

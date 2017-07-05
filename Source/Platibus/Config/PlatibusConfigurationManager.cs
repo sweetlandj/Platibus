@@ -79,7 +79,7 @@ namespace Platibus.Config
         /// <param name="configSectionName">The name of the configuration section</param>
         /// <returns>Returns the loaded configuration section</returns>
         protected TConfigSection LoadConfigurationSection<TConfigSection>(string configSectionName)
-            where TConfigSection : ConfigurationSection
+            where TConfigSection : ConfigurationSection, new()
         {
             if (string.IsNullOrWhiteSpace(configSectionName)) throw new ArgumentNullException("configSectionName");
 
@@ -90,7 +90,7 @@ namespace Platibus.Config
                 {
                     Detail = "Configuration section \"" + configSectionName + "\" not found; using default configuration"
                 }.Build());
-                configSection = new PlatibusConfigurationSection();
+                configSection = new TConfigSection();
             }
 
             var typedConfigSection = configSection as TConfigSection;
@@ -146,7 +146,7 @@ namespace Platibus.Config
         /// <param name="configuration">The configuration object to initialize</param>
         /// <param name="configSection">The <see cref="PlatibusConfigurationSection"/>
         /// containing the values used to initialize the Platibus configuration</param>
-        public virtual Task Initialize(TConfiguration configuration, PlatibusConfigurationSection configSection)
+        public virtual async Task Initialize(TConfiguration configuration, PlatibusConfigurationSection configSection)
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
             if (configSection == null) throw new ArgumentNullException("configSection");
@@ -162,7 +162,7 @@ namespace Platibus.Config
             InitializeSubscriptions(configuration, configSection);
 
             var messageJournalFactory = new MessageJournalFactory(DiagnosticEventSink);
-            return messageJournalFactory.InitMessageJournal(configSection.Journaling);
+            configuration.MessageJournal = await messageJournalFactory.InitMessageJournal(configSection.Journaling);
         }
         
         /// <summary>

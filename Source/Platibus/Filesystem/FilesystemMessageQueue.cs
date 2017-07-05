@@ -121,7 +121,7 @@ namespace Platibus.Filesystem
                     Detail = "Message file created",
                     Message = message,
                     Queue = QueueName,
-                    File = messageFile.File
+                    Path = messageFile.File.FullName
                 }.Build());
         }
 
@@ -140,7 +140,7 @@ namespace Platibus.Filesystem
                         Detail = "Message file deleted",
                         Message = message,
                         Queue = QueueName,
-                        File = matchingFile
+                        Path = matchingFile.FullName
                     }.Build());
             }
         }
@@ -161,7 +161,7 @@ namespace Platibus.Filesystem
                         Detail = "Message file deleted",
                         Message = message,
                         Queue = QueueName,
-                        File = deadLetter.File
+                        Path = deadLetter.File.FullName
                     }.Build());
             }
         }
@@ -193,7 +193,7 @@ namespace Platibus.Filesystem
                     {
                         Detail = "Filesystem queue initialized",
                         Queue = QueueName,
-                        Directory = _directory
+                        Path = _directory.FullName
                     }.Build(), cancellationToken);
             }
 

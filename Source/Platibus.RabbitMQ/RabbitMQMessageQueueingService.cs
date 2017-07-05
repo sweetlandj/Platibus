@@ -26,7 +26,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Common.Logging;
+using Platibus.Diagnostics;
 using Platibus.Security;
 
 namespace Platibus.RabbitMQ
@@ -36,8 +36,6 @@ namespace Platibus.RabbitMQ
     /// </summary>
     public class RabbitMQMessageQueueingService : IMessageQueueingService, IDisposable
     {
-        private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
-
         private readonly ConcurrentDictionary<QueueName, RabbitMQQueue> _queues =
             new ConcurrentDictionary<QueueName, RabbitMQQueue>();
 
@@ -47,6 +45,8 @@ namespace Platibus.RabbitMQ
         private readonly IConnectionManager _connectionManager;
         private readonly ISecurityTokenService _securityTokenService;
         private readonly bool _disposeConnectionManager;
+        private readonly IDiagnosticEventSink _diagnosticEventSink;
+
         private bool _disposed;
 
         /// <summary>
@@ -59,15 +59,21 @@ namespace Platibus.RabbitMQ
         /// message content to byte streams</param>
         /// <param name="securityTokenService">(Optional) The message security token
         /// service to use to issue and validate security tokens for persisted messages.</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink supplied by the implementor
+        /// to handle diagnostic events</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="uri"/> is
         /// <c>null</c></exception>
         /// <remarks>
         /// <para>If a <paramref name="securityTokenService"/> is not specified then a
         /// default implementation based on unsigned JWTs will be used.</para>
         /// </remarks>
-        public RabbitMQMessageQueueingService(Uri uri, QueueOptions defaultQueueOptions = null, IConnectionManager connectionManager = null, Encoding encoding = null, ISecurityTokenService securityTokenService = null)
+        public RabbitMQMessageQueueingService(Uri uri, QueueOptions defaultQueueOptions = null, 
+            IConnectionManager connectionManager = null, Encoding encoding = null, 
+            ISecurityTokenService securityTokenService = null, 
+            IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (uri == null) throw new ArgumentNullException("uri");
+
             _uri = uri;
             _defaultQueueOptions = defaultQueueOptions ?? new QueueOptions();
             if (connectionManager == null)
@@ -78,6 +84,7 @@ namespace Platibus.RabbitMQ
             _connectionManager = connectionManager;
             _encoding = encoding ?? Encoding.UTF8;
             _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
+            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
         }
 
         /// <summary>
@@ -97,16 +104,15 @@ namespace Platibus.RabbitMQ
         {
             CheckDisposed();
             var connection = _connectionManager.GetConnection(_uri);
-            var queue = new RabbitMQQueue(queueName, listener, connection, _securityTokenService, _encoding, options ?? _defaultQueueOptions);
+            var queue = new RabbitMQQueue(queueName, listener, connection, _securityTokenService,
+                _encoding, options ?? _defaultQueueOptions, _diagnosticEventSink);
+
             if (!_queues.TryAdd(queueName, queue))
             {
                 throw new QueueAlreadyExistsException(queueName);
             }
-
-            Log.DebugFormat("Initializing RabbitMQ queue \"{0}\"", queueName);
+            
             queue.Init();
-            Log.DebugFormat("RabbitMQ queue \"{0}\" created successfully", queueName);
-
             return Task.FromResult(true);
         }
 
@@ -127,11 +133,7 @@ namespace Platibus.RabbitMQ
             RabbitMQQueue queue;
             if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
 
-            Log.DebugFormat("Enqueueing message ID {0} in RabbitMQ queue \"{1}\"...", message.Headers.MessageId, queueName);
-
             await queue.Enqueue(message, senderPrincipal);
-            
-            Log.DebugFormat("Message ID {0} enqueued successfully in RabbitMQ queue \"{1}\"", message.Headers.MessageId, queueName);
         }
 
         /// <summary>

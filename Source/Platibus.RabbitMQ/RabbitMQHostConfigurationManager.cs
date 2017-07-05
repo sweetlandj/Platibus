@@ -73,6 +73,8 @@ namespace Platibus.RabbitMQ
         public async Task Initialize(RabbitMQHostConfiguration configuration,
             RabbitMQHostConfigurationSection configSection)
         {
+            await base.Initialize(configuration, configSection);
+
             configuration.BaseUri = configSection.BaseUri
                                     ?? new Uri(RabbitMQHostConfigurationSection.DefaultBaseUri);
 

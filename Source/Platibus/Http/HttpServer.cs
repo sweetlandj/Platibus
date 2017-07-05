@@ -52,6 +52,7 @@ namespace Platibus.Http
             var configManager = new HttpServerConfigurationManager();
             var configuration = new HttpServerConfiguration();
             await configManager.Initialize(configuration, configSectionName);
+            await configManager.FindAndProcessConfigurationHooks(configuration);
             return await Start(configuration, cancellationToken);
         }
 

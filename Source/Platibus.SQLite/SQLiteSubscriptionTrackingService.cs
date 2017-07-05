@@ -54,7 +54,7 @@ namespace Platibus.SQLite
         /// directory.  If the base directory does not exist it will be created.
         /// </remarks>
         public SQLiteSubscriptionTrackingService(DirectoryInfo baseDirectory, IDiagnosticEventSink diagnosticEventSink = null)
-            : base(InitConnectionProvider(baseDirectory), new SQLiteSubscriptionTrackingCommandBuilders(), diagnosticEventSink)
+            : base(InitConnectionProvider(baseDirectory, diagnosticEventSink), new SQLiteSubscriptionTrackingCommandBuilders(), diagnosticEventSink)
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _operationQueue = new ActionBlock<ISQLiteOperation>(
@@ -66,7 +66,7 @@ namespace Platibus.SQLite
                 });
         }
 
-        private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory)
+        private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory, IDiagnosticEventSink diagnosticEventSink)
         {
             if (directory == null)
             {
@@ -88,7 +88,7 @@ namespace Platibus.SQLite
                 ProviderName = "System.Data.SQLite"
             };
 
-            return new SingletonConnectionProvider(connectionStringSettings);
+            return new SingletonConnectionProvider(connectionStringSettings, diagnosticEventSink);
         }
 
         /// <summary>

@@ -71,6 +71,7 @@ namespace Platibus.Http
             HttpServerConfigurationSection configSection)
         {
             await base.Initialize(configuration, configSection);
+
             configuration.BaseUri = configSection.BaseUri;
             configuration.ConcurrencyLimit = configSection.ConcurrencyLimit;
             configuration.AuthenticationSchemes = configSection.AuthenticationSchemes.GetFlags();

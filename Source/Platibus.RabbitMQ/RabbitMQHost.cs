@@ -20,14 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Common.Logging;
+using Platibus.Diagnostics;
 using Platibus.Journaling;
 using Platibus.Security;
 
@@ -38,8 +37,6 @@ namespace Platibus.RabbitMQ
     /// </summary>
     public class RabbitMQHost : ITransportService, IQueueListener, IDisposable
     {
-        private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
-
         /// <summary>
         /// Creates and starts a new <see cref="RabbitMQHost"/> based on the configuration
         /// in the named configuration section.
@@ -48,12 +45,21 @@ namespace Platibus.RabbitMQ
         /// settings for this RabbitMQ hostinstance.</param>
         /// <param name="cancellationToken">(Optional) A cancelation token that may be
         /// used by the caller to interrupt the Rabbit MQ host initialization process</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events</param>
         /// <returns>Returns the fully initialized and listening HTTP server</returns>
         /// <seealso cref="RabbitMQHostConfigurationSection"/>
         public static async Task<RabbitMQHost> Start(string configSectionName = "platibus.rabbitmq",
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default(CancellationToken), 
+            IDiagnosticEventSink diagnosticEventSink = null)
         {
-            var configuration = await RabbitMQHostConfigurationManager.LoadConfiguration(configSectionName);
+            var configManager = new RabbitMQHostConfigurationManager(diagnosticEventSink);
+            var configuration = new RabbitMQHostConfiguration
+            {
+                DiagnosticEventSink = diagnosticEventSink
+            };
+            await configManager.Initialize(configuration, configSectionName);
+            await configManager.FindAndProcessConfigurationHooks(configuration);
             return await Start(configuration, cancellationToken);
         }
 
@@ -84,6 +90,7 @@ namespace Platibus.RabbitMQ
         private readonly IMessageQueueingService _messageQueueingService;
         private readonly IMessageJournal _messageJournal;
         private readonly ISecurityTokenService _securityTokenService;
+        private readonly IDiagnosticEventSink _diagnosticEventSink;
         private readonly Bus _bus;
         private readonly ConcurrentDictionary<SubscriptionKey, RabbitMQQueue> _subscriptions = new ConcurrentDictionary<SubscriptionKey, RabbitMQQueue>(); 
 
@@ -101,6 +108,7 @@ namespace Platibus.RabbitMQ
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
 
+            _diagnosticEventSink = configuration.DiagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
             _baseUri = configuration.BaseUri.WithoutTrailingSlash();
             _connectionManager = new ConnectionManager();
             _encoding = configuration.Encoding ?? Encoding.UTF8;
@@ -124,12 +132,18 @@ namespace Platibus.RabbitMQ
                 foreach (var topicName in configuration.Topics)
                 {
                     var exchangeName = topicName.GetTopicExchangeName();
-                    Log.DebugFormat("Initializing fanout exchange '{0}' for topic '{1}'...", exchangeName, topicName);
                     channel.ExchangeDeclare(exchangeName, "fanout", configuration.IsDurable, false, new Dictionary<string, object>());
+                    _diagnosticEventSink.Receive(
+                        new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQExchangeDeclared)
+                        {
+                            Detail = "Fanout exchange declared for topic",
+                            Exchange = exchangeName,
+                            Topic = topicName,
+                            ChannelNumber = channel.ChannelNumber
+                        }.Build());
                 }
             }
 
-            Log.DebugFormat("Initializing inbox queue '{0}'...", InboxQueueName);
             _inboundQueue = new RabbitMQQueue(InboxQueueName, this, connection, _securityTokenService, _encoding, _defaultQueueOptions);
             _bus = new Bus(configuration, configuration.BaseUri, this, _messageQueueingService);
         }
@@ -219,9 +233,7 @@ namespace Platibus.RabbitMQ
 
         private RabbitMQQueue BindSubscriptionQueue(TopicName topicName, Uri publisherUri, string subscriptionQueueName, CancellationToken cancellationToken)
         {
-            var publisherTopicExchange = topicName.GetTopicExchangeName();
-            Log.DebugFormat("Binding subscription queue '{0}' to topic exchange '{1}'...", subscriptionQueueName, publisherTopicExchange);
-            
+            var publisherTopicExchange = topicName.GetTopicExchangeName();           
             var attempts = 0;
             const int maxAttempts = 10;
             var retryDelay = TimeSpan.FromSeconds(5);
@@ -233,13 +245,23 @@ namespace Platibus.RabbitMQ
                     using (var channel = connection.CreateModel())
                     {
                         attempts++;
-                        Log.DebugFormat("Binding subscription queue '{0}' to topic exchange '{1}' (attempt {2} of {3})...", subscriptionQueueName, publisherTopicExchange, attempts, maxAttempts);
                         channel.ExchangeDeclarePassive(publisherTopicExchange);
 
                         var subscriptionQueue = new RabbitMQQueue(subscriptionQueueName, this, connection, _securityTokenService, _encoding, _defaultQueueOptions);
                         subscriptionQueue.Init();
 
                         channel.QueueBind(subscriptionQueueName, publisherTopicExchange, "", null);
+
+                        _diagnosticEventSink.Receive(
+                            new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQQueueBound)
+                            {
+                                Detail = "Subscription queue bound to topic exchange",
+                                Queue = subscriptionQueueName,
+                                Exchange = publisherTopicExchange,
+                                Topic = topicName,
+                                ChannelNumber = channel.ChannelNumber
+                            }.Build());
+
                         return subscriptionQueue;
                     }
                 }
@@ -250,10 +272,16 @@ namespace Platibus.RabbitMQ
                         throw;
                     }
 
-                    Log.ErrorFormat(
-                        "Error binding subscription queue '{0}' to topic exchange '{1}' (attempt {2} of {3}).  Retrying in {4}...",
-                        ex, subscriptionQueueName, publisherTopicExchange, attempts, maxAttempts, retryDelay);
-
+                    _diagnosticEventSink.Receive(
+                        new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQQueueBindError)
+                        {
+                            Detail = "Error binding subscription queue to topic exchange (attempt " + attempts + " of " + maxAttempts + ").  Retrying in " + retryDelay,
+                            Queue = subscriptionQueueName,
+                            Exchange = publisherTopicExchange,
+                            Topic = topicName,
+                            Exception = ex
+                        }.Build());
+                    
                     Task.Delay(retryDelay, cancellationToken).Wait(cancellationToken);
                 }
             }

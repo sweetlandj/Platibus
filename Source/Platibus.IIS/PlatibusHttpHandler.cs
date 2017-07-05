@@ -23,7 +23,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Web;
-using Common.Logging;
+using Platibus.Diagnostics;
 using Platibus.Http;
 using Platibus.Http.Controllers;
 
@@ -34,9 +34,8 @@ namespace Platibus.IIS
     /// </summary>
     public class PlatibusHttpHandler : HttpTaskAsyncHandler
     {
-        private static readonly ILog Log = LogManager.GetLogger(IISLoggingCategories.IIS);
-        
         private readonly Task<IHttpResourceRouter> _resourceRouter;
+        private IDiagnosticEventSink _diagnosticEventSink;
 
         /// <summary>
         /// The base URI for requests handled by this handler
@@ -60,7 +59,9 @@ namespace Platibus.IIS
         /// </summary>
         public PlatibusHttpHandler()
         {
-            _resourceRouter = InitResourceRouter();
+            var configuration = LoadConfiguration();
+            var bus = InitBus(configuration);
+            _resourceRouter = InitResourceRouter(configuration, bus);
         }
 
         /// <summary>
@@ -70,10 +71,14 @@ namespace Platibus.IIS
         /// </summary>
         /// <param name="configurationSectionName">The name of the configuration
         /// section from which the bus configuration should be loaded</param>
-        public PlatibusHttpHandler(string configurationSectionName)
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events</param>
+        public PlatibusHttpHandler(string configurationSectionName = null, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (string.IsNullOrWhiteSpace(configurationSectionName)) throw new ArgumentNullException("configurationSectionName");
-            _resourceRouter = InitResourceRouter(configurationSectionName);
+            var configuration = LoadConfiguration(configurationSectionName, diagnosticEventSink);
+            var bus = InitBus(configuration);
+            _resourceRouter = InitResourceRouter(configuration, bus);
         }
 
         /// <summary>
@@ -86,33 +91,41 @@ namespace Platibus.IIS
         {
             if (bus == null) throw new ArgumentNullException("bus");
             if (configuration == null) throw new ArgumentNullException("configuration");
+            _diagnosticEventSink = configuration.DiagnosticEventSink;
             _resourceRouter = Task.FromResult(InitResourceRouter(bus, configuration));
         }
-        
-        private async Task<IHttpResourceRouter> InitResourceRouter()
-        {
-            var configuration = await IISConfigurationManager.LoadConfiguration();
-            return await InitResourceRouter(configuration);
-        }
 
-        private async Task<IHttpResourceRouter> InitResourceRouter(string configSectionName)
+        private static async Task<IIISConfiguration> LoadConfiguration(string sectionName = null, IDiagnosticEventSink diagnosticEventSink = null)
         {
-            var configuration = await IISConfigurationManager.LoadConfiguration(configSectionName);
-            return await InitResourceRouter(configuration);
-        }
-
-        private async Task<IHttpResourceRouter> InitResourceRouter(IIISConfiguration configuration)
-        {
-            if (configuration == null)
+            var configuration = new IISConfiguration
             {
-                configuration = await IISConfigurationManager.LoadConfiguration();
-            }
+                DiagnosticEventSink = diagnosticEventSink
+            };
+            var configManager = new IISConfigurationManager(diagnosticEventSink);
+            await configManager.Initialize(configuration, sectionName);
+            await configManager.FindAndProcessConfigurationHooks(configuration);
+            return configuration;
+        }
 
+        private async Task<Bus> InitBus(Task<IIISConfiguration> configurationTask)
+        {
+            return await InitBus(await configurationTask);
+        }
+
+        private async Task<Bus> InitBus(IIISConfiguration configuration)
+        {
             BaseUri = configuration.BaseUri;
-
+            if (configuration.DiagnosticEventSink != null)
+            {
+                _diagnosticEventSink = configuration.DiagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            }
             var managedBus = await BusManager.SingletonInstance.GetManagedBus(configuration);
-            var bus = await managedBus.GetBus();
-            return InitResourceRouter(bus, configuration);
+            return await managedBus.GetBus();
+        }
+
+        private static async Task<IHttpResourceRouter> InitResourceRouter(Task<IIISConfiguration> configuration, Task<Bus> bus)
+        {
+            return InitResourceRouter(await bus, await configuration);
         }
 
         private static IHttpResourceRouter InitResourceRouter(Bus bus, IIISConfiguration configuration)
@@ -141,24 +154,35 @@ namespace Platibus.IIS
 
         private async Task ProcessRequestAsync(HttpContextBase context)
         {
-            Log.DebugFormat("Processing {0} request for resource {1}...",
-                context.Request.HttpMethod, context.Request.Url);
-
+            await _diagnosticEventSink.ReceiveAsync(
+                new HttpEventBuilder(this, HttpEventType.HttpRequestReceived)
+                {
+                    Remote = context.Request.UserHostAddress,
+                    Uri = context.Request.Url,
+                    Method = context.Request.HttpMethod
+                }.Build());
+            
             var resourceRequest = new HttpRequestAdapter(context.Request, context.User);
             var resourceResponse = new HttpResponseAdapter(context.Response);
             try
             {
                 var resourceRouter = await _resourceRouter;
                 await resourceRouter.Route(resourceRequest, resourceResponse);
-
-                Log.DebugFormat("{0} request for resource {1} processed successfully",
-                    context.Request.HttpMethod, context.Request.Url);
             }
             catch (Exception ex)
             {
-                var exceptionHandler = new HttpExceptionHandler(resourceRequest, resourceResponse, Log);
+                var exceptionHandler = new HttpExceptionHandler(resourceRequest, resourceResponse, _diagnosticEventSink);
                 exceptionHandler.HandleException(ex);
             }
+
+            await _diagnosticEventSink.ReceiveAsync(
+                new HttpEventBuilder(this, HttpEventType.HttpRequestReceived)
+                {
+                    Remote = context.Request.UserHostAddress,
+                    Uri = context.Request.Url,
+                    Method = context.Request.HttpMethod,
+                    Status = context.Response.StatusCode
+                }.Build());
         }
     }
 }

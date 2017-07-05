@@ -22,7 +22,7 @@
 
 using System;
 using System.Collections.Generic;
-using Common.Logging;
+using Platibus.Diagnostics;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -34,18 +34,18 @@ namespace Platibus.RabbitMQ
     /// </summary>
     internal class ManagedConnection : IConnection
     {
-        private static readonly ILog Log = LogManager.GetLogger(RabbitMQLoggingCategories.RabbitMQ);
-
         private readonly object _syncRoot = new object();
         private readonly string _managedConnectionId;
         private readonly IConnectionFactory _connectionFactory;
+        private readonly IDiagnosticEventSink _diagnosticEventSink;
+
         private volatile IConnection _connection;
 
         private bool _closed;
 
         public string ManagedConnectionId { get { return _managedConnectionId; } }
 
-        public ManagedConnection(Uri uri)
+        public ManagedConnection(Uri uri, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (uri == null) throw new ArgumentNullException("uri");
 
@@ -63,8 +63,7 @@ namespace Platibus.RabbitMQ
 
             _managedConnectionId = managedConnectionIdBuilder.Uri.ToString();
             _connectionFactory = new ConnectionFactory {Uri = uri.ToString()};
-
-            Log.InfoFormat("Establishing managed connection to {0}...", _managedConnectionId);
+            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
             _connection = _connectionFactory.CreateConnection();
         }
 
@@ -80,7 +79,13 @@ namespace Platibus.RabbitMQ
                     myConnection = _connection;
                     if (myConnection != null && myConnection.IsOpen) return myConnection;
 
-                    Log.InfoFormat("Reconnecting to {0}...", _managedConnectionId);
+                    if (myConnection != null)
+                    {
+                        _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQReconnect)
+                        {
+                            Detail = "Reconnecting managed connection ID " + _managedConnectionId
+                        }.Build());
+                    }
 
                     myConnection = _connectionFactory.CreateConnection();
                     myConnection.CallbackException += CallbackException;
@@ -90,6 +95,11 @@ namespace Platibus.RabbitMQ
                     myConnection.ConnectionUnblocked += ConnectionUnblocked;
 
                     _connection = myConnection;
+
+                    _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionOpened)
+                    {
+                        Detail = "Opened managed connection ID " + _managedConnectionId
+                    }.Build());
                 }
                 return _connection;
             }
@@ -135,12 +145,17 @@ namespace Platibus.RabbitMQ
         public void CloseManagedConnection(bool disposing)
         {
             if (_closed) return;
+
             _closed = true;
             if (disposing)
             {
-                Log.InfoFormat("Closing managed connection {0}...", _managedConnectionId);
                 _connection.Close();
-                _connection = null;    
+                _connection = null;
+                
+                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionClosed)
+                {
+                    Detail = "Managed connection ID " + _managedConnectionId + " successfully closed"
+                }.Build());
             }
             GC.SuppressFinalize(this);
         }
@@ -153,6 +168,10 @@ namespace Platibus.RabbitMQ
                 if (_connection == null) return;
                 _connection.Abort();
                 _connection = null;
+                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionAborted)
+                {
+                    Detail = "Managed connection ID " + _managedConnectionId + " aborted"
+                }.Build());
             }
         }
 
