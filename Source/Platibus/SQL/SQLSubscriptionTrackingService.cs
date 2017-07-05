@@ -30,6 +30,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using Platibus.Config.Extensibility;
+using Platibus.Diagnostics;
 using Platibus.SQL.Commands;
 
 namespace Platibus.SQL
@@ -40,6 +41,7 @@ namespace Platibus.SQL
     /// </summary>
     public class SQLSubscriptionTrackingService : ISubscriptionTrackingService, IDisposable
     {
+        protected readonly IDiagnosticEventSink DiagnosticEventSink;
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly ISubscriptionTrackingCommandBuilders _commandBuilders;
 
@@ -65,20 +67,24 @@ namespace Platibus.SQL
         /// <param name="commandBuilders">(Optional) A collection of factories capable of 
         /// generating database commands for manipulating subscriptions that conform to the SQL
         /// syntax required by the underlying connection provider (if needed)</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events related to SQL subscription tracking</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionStringSettings"/>
         /// is <c>null</c></exception>
         /// <remarks>
         /// If a SQL dialect is not specified, then one will be selected based on the supplied
         /// connection string settings
         /// </remarks>
-        /// <seealso cref="CommandBuilderExtensions.GetSubscriptionTrackingCommandBuilders"/>
         /// <seealso cref="ISubscriptionTrackingCommandBuildersProvider"/>
         public SQLSubscriptionTrackingService(ConnectionStringSettings connectionStringSettings,
-            ISubscriptionTrackingCommandBuilders commandBuilders = null)
+            ISubscriptionTrackingCommandBuilders commandBuilders = null, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
             _connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
-            _commandBuilders = commandBuilders ?? connectionStringSettings.GetSubscriptionTrackingCommandBuilders();
+            DiagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _commandBuilders = commandBuilders ??
+                               new CommandBuildersFactory(connectionStringSettings, DiagnosticEventSink)
+                                   .InitSubscriptionTrackingCommandBuilders();
         }
 
         /// <summary>
@@ -90,14 +96,18 @@ namespace Platibus.SQL
         /// <param name="commandBuilders">A collection of factories capable of 
         /// generating database commands for manipulating subscriptions that conform to the SQL
         /// syntax required by the underlying connection provider</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events related to SQL subscription tracking</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>
         /// or <paramref name="commandBuilders"/> is <c>null</c></exception>
-        public SQLSubscriptionTrackingService(IDbConnectionProvider connectionProvider, ISubscriptionTrackingCommandBuilders commandBuilders)
+        public SQLSubscriptionTrackingService(IDbConnectionProvider connectionProvider, 
+            ISubscriptionTrackingCommandBuilders commandBuilders, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
             if (commandBuilders == null) throw new ArgumentNullException("commandBuilders");
             _connectionProvider = connectionProvider;
             _commandBuilders = commandBuilders;
+            DiagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
         }
 
         /// <summary>

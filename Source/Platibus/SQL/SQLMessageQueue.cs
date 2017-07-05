@@ -30,6 +30,7 @@ using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
+using Platibus.Diagnostics;
 using Platibus.Queueing;
 using Platibus.Security;
 using Platibus.SQL.Commands;
@@ -76,12 +77,15 @@ namespace Platibus.SQL
         /// <param name="securityTokenService">(Optional) The message security token
         /// service to use to issue and validate security tokens for persisted messages.</param>
         /// <param name="options">(Optional) Settings that influence how the queue behaves</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events related to SQL message queueing</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>,
         /// <paramref name="commandBuilders"/>, <paramref name="queueName"/>, or <paramref name="listener"/>
         /// are <c>null</c></exception>
         public SQLMessageQueue(IDbConnectionProvider connectionProvider, IMessageQueueingCommandBuilders commandBuilders, 
-            QueueName queueName, IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null)
-            : base(queueName, listener, options)
+            QueueName queueName, IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null, 
+            IDiagnosticEventSink diagnosticEventSink = null)
+            : base(queueName, listener, options, diagnosticEventSink)
         {
             if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
             if (commandBuilders == null) throw new ArgumentNullException("commandBuilders");

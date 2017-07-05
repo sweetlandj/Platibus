@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Platibus.Filesystem;
+using Platibus.Http;
 
 namespace Platibus.Diagnostics
 {
@@ -88,6 +90,8 @@ namespace Platibus.Diagnostics
         /// <returns>The GELF formatted string</returns>
         protected virtual void PopulateGelfMessage(GelfMessage gelfMessage, DiagnosticEvent @event)
         {
+            var source = @event.Source;
+            gelfMessage.Facility = source == null ? "Platibus" : source.GetType().FullName;
             gelfMessage.Level = GetSyslogLevel(@event.Type.Level);
             gelfMessage.Timestamp = @event.Timestamp;
             gelfMessage.EventType = @event.Type;
@@ -110,27 +114,60 @@ namespace Platibus.Diagnostics
                 gelfMessage.Exception = @event.Exception.ToString();
             }
 
-            if (@event.Message != null)
-            {
-                var headers = @event.Message.Headers;
-                gelfMessage.MessageId = headers.MessageId;
-                gelfMessage.MessageName = headers.MessageName;
-                gelfMessage.RelatedTo = headers.RelatedTo == default(MessageId) 
-                    ? null 
-                    : headers.MessageId.ToString();
+            PopulateMessageFields(gelfMessage, @event);
+            PopulateHttpFields(gelfMessage, @event as HttpEvent);
+            PopulateFilesystemFields(gelfMessage, @event as FilesystemEvent);
+        }
 
-                if (headers.Origination != null)
-                {
-                    gelfMessage.Origination = headers.Origination.ToString();
-                }
-                if (headers.Destination != null)
-                {
-                    gelfMessage.Destination = headers.Destination.ToString();
-                }
-                if (headers.ReplyTo != null)
-                {
-                    gelfMessage.Destination = headers.ReplyTo.ToString();
-                }
+        protected virtual void PopulateMessageFields(GelfMessage gelfMessage, DiagnosticEvent @event)
+        {
+            if (@event.Message == null) return;
+
+            var headers = @event.Message.Headers;
+            gelfMessage.MessageId = headers.MessageId;
+            gelfMessage.MessageName = headers.MessageName;
+            gelfMessage.RelatedTo = headers.RelatedTo == default(MessageId)
+                ? null
+                : headers.MessageId.ToString();
+
+            if (headers.Origination != null)
+            {
+                gelfMessage.Origination = headers.Origination.ToString();
+            }
+            if (headers.Destination != null)
+            {
+                gelfMessage.Destination = headers.Destination.ToString();
+            }
+            if (headers.ReplyTo != null)
+            {
+                gelfMessage.Destination = headers.ReplyTo.ToString();
+            }
+        }
+
+        protected virtual void PopulateHttpFields(GelfMessage gelfMessage, HttpEvent httpEvent)
+        {
+            if (httpEvent == null) return;
+
+            gelfMessage.Remote = httpEvent.Remote;
+            gelfMessage.HttpMethod = httpEvent.Method;
+            gelfMessage.HttpStatus = httpEvent.Status;
+            if (httpEvent.Uri != null)
+            {
+                gelfMessage.Uri = httpEvent.Uri.ToString();
+            }
+        }
+
+        protected virtual void PopulateFilesystemFields(GelfMessage gelfMessage, FilesystemEvent fsEvent)
+        {
+            if (fsEvent == null) return;
+            if (fsEvent.File != null)
+            {
+                gelfMessage.File = fsEvent.File.FullName;
+            }
+
+            if (fsEvent.Directory != null)
+            {
+                gelfMessage.Directory = fsEvent.Directory.FullName;
             }
         }
 

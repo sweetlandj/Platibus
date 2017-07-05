@@ -70,6 +70,12 @@ namespace Platibus.Diagnostics
         public string FullMessage { get; set; }
 
         /// <summary>
+        /// The facility (component) that emitted the log event
+        /// </summary>
+        [JsonProperty("_facility")]
+        public string Facility { get; set; }
+
+        /// <summary>
         /// The type of diagnostic event
         /// </summary>
         [JsonProperty("_event_type")]
@@ -128,6 +134,48 @@ namespace Platibus.Diagnostics
         /// </summary>
         [JsonProperty("_topic")]
         public string Topic { get; set; }
+
+        /// <summary>
+        /// The HTTP method related to the event
+        /// </summary>
+        [JsonProperty("_http_method")]
+        public string HttpMethod { get; set; }
+
+        /// <summary>
+        /// The IP or hostname of the remote client
+        /// </summary>
+        [JsonProperty("_remote")]
+        public string Remote { get; set; }
+
+        /// <summary>
+        /// The URI related to the event
+        /// </summary>
+        [JsonProperty("_uri")]
+        public string Uri { get; set; }
+
+        /// <summary>
+        /// The HTTP status related to the event
+        /// </summary>
+        [JsonProperty("_http_status")]
+        public int? HttpStatus { get; set; }
+
+        /// <summary>
+        /// The UDP multicast node ID related to the event
+        /// </summary>
+        [JsonProperty("_mcast_node")]
+        public string MulticastNode { get; set; }
+
+        /// <summary>
+        /// The filename related to the event
+        /// </summary>
+        [JsonProperty("_file")]
+        public string File { get; set; }
+
+        /// <summary>
+        /// The directory related to the event
+        /// </summary>
+        [JsonProperty("_directory")]
+        public string Directory { get; set; }
 
         /// <summary>
         /// Initializes a <see cref="GelfMessage"/> object

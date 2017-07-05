@@ -90,6 +90,7 @@
       <Link>Properties\Copyright.cs</Link>
     </Compile>
     <Compile Include="Config\ClientCredentialType.cs" />
+    <Compile Include="Config\Extensibility\CommandBuildersFactory.cs" />
     <Compile Include="Config\Extensibility\ISecurityTokenServiceProvider.cs" />
     <Compile Include="Config\Extensibility\MessageJournalFactory.cs" />
     <Compile Include="Config\Extensibility\MessageQueueingServiceFactory.cs" />
@@ -110,6 +111,7 @@
     <Compile Include="Config\SecurityTokensElement.cs" />
     <Compile Include="DataContractMessageNamingService.cs" />
     <Compile Include="Diagnostics\CommonLoggingSink.cs" />
+    <Compile Include="Diagnostics\ConsoleLoggingSink.cs" />
     <Compile Include="Diagnostics\DiagnosticEvent.cs" />
     <Compile Include="Diagnostics\DiagnosticEventBuilder.cs" />
     <Compile Include="Diagnostics\DiagnosticEventLevel.cs" />
@@ -121,6 +123,7 @@
     <Compile Include="Diagnostics\GelfUdpLoggingSink.cs" />
     <Compile Include="Diagnostics\IDiagnosticEventSink.cs" />
     <Compile Include="Diagnostics\NoopDiagnosticEventSink.cs" />
+    <Compile Include="Diagnostics\TextLoggingSink.cs" />
     <Compile Include="Diagnostics\UnixTime.cs" />
     <Compile Include="EndpointAddressEqualityComparer.cs" />
     <Compile Include="EndpointCollection.cs" />

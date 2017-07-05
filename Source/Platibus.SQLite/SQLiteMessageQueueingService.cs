@@ -24,6 +24,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Platibus.Diagnostics;
 using Platibus.Queueing;
 using Platibus.Security;
 
@@ -35,9 +36,10 @@ namespace Platibus.SQLite
     /// </summary>
     public class SQLiteMessageQueueingService : AbstractMessageQueueingService<SQLiteMessageQueue>
     {
+        protected readonly IDiagnosticEventSink DiagnosticEventSink;
         private readonly DirectoryInfo _baseDirectory;
         private readonly ISecurityTokenService _securityTokenService;
-        
+
         /// <summary>
         /// Initializes a new <see cref="SQLiteMessageQueueingService"/>
         /// </summary>
@@ -45,6 +47,8 @@ namespace Platibus.SQLite
         /// be created</param>
         /// <param name="securityTokenService">(Optional) The message security token
         /// service to use to issue and validate security tokens for persisted messages.</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events related to SQL subscription tracking</param>
         /// <remarks>
         /// <para>If a base directory is not specified then the base directory will default to a
         /// directory named <c>platibus\queues</c> beneath the current app domain base 
@@ -52,7 +56,7 @@ namespace Platibus.SQLite
         /// <para>If a <paramref name="securityTokenService"/> is not specified then a
         /// default implementation based on unsigned JWTs will be used.</para>
         /// </remarks>
-        public SQLiteMessageQueueingService(DirectoryInfo baseDirectory, ISecurityTokenService securityTokenService = null)
+        public SQLiteMessageQueueingService(DirectoryInfo baseDirectory, ISecurityTokenService securityTokenService = null, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (baseDirectory == null)
             {
@@ -61,6 +65,7 @@ namespace Platibus.SQLite
             }
             _baseDirectory = baseDirectory;
             _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
+            DiagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
         }
 
         /// <summary>
@@ -83,7 +88,7 @@ namespace Platibus.SQLite
         protected override Task<SQLiteMessageQueue> InternalCreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null,
             CancellationToken cancellationToken = new CancellationToken())
         {
-            var queue = new SQLiteMessageQueue(_baseDirectory, queueName, listener, _securityTokenService, options);
+            var queue = new SQLiteMessageQueue(_baseDirectory, queueName, listener, _securityTokenService, options, DiagnosticEventSink);
             return Task.FromResult(queue);
         }
     }

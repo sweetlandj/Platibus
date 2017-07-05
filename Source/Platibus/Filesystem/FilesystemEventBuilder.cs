@@ -19,11 +19,6 @@ namespace Platibus.Filesystem
         public DirectoryInfo Directory { get; set; }
 
         /// <summary>
-        /// The path to which the event pertains
-        /// </summary>
-        public string Path { get; set; }
-
-        /// <summary>
         /// Initializes a new <see cref="FilesystemEventBuilder"/>
         /// </summary>
         /// <param name="source">The object that will produce the event</param>
@@ -35,7 +30,7 @@ namespace Platibus.Filesystem
         /// <inheritdoc />
         public override DiagnosticEvent Build()
         {
-            return new FilesystemEvent(Source, Type, Detail, Exception, Message, Endpoint, Queue, Topic, File, Directory, Path);
+            return new FilesystemEvent(Source, Type, Detail, Exception, Message, Endpoint, Queue, Topic, File, Directory);
         }
     }
 }

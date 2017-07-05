@@ -1,54 +1,42 @@
-﻿using System.Collections;
+using System;
+using System.Collections;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Common.Logging;
 
 namespace Platibus.Diagnostics
 {
     /// <summary>
-    /// A <see cref="IDiagnosticEventSink"/> implementation that sends formatted log messages to
-    /// a Commons Logging log
+    /// A <see cref="IDiagnosticEventSink"/> implementation that writes log messages to a 
+    /// <see cref="TextWriter"/>
     /// </summary>
-    public class CommonLoggingSink : IDiagnosticEventSink
+    public class TextLoggingSink : IDiagnosticEventSink
     {
+        private readonly TextWriter _writer;
+
+        /// <summary>
+        /// Initializes a new <see cref="TextLoggingSink"/> that targets the supplied
+        /// text <paramref name="writer"/>
+        /// </summary>
+        /// <param name="writer">The text writer to target</param>
+        public TextLoggingSink(TextWriter writer)
+        {
+            if (writer == null) throw new ArgumentNullException("writer");
+            _writer = writer;
+        }
+
         /// <inheritdoc />
         public void Receive(DiagnosticEvent @event)
         {
-            var source = @event.Source;
-            var category = source == null ? "Platibus" : source.GetType().FullName;
-            var log = LogManager.GetLogger(category);
-
-            var message = FormatLogMessage(@event);
-            switch (@event.Type.Level)
-            {
-                case DiagnosticEventLevel.Trace:
-                    log.Trace(message, @event.Exception);
-                    break;
-                case DiagnosticEventLevel.Debug:
-                    log.Debug(message, @event.Exception);
-                    break;
-                case DiagnosticEventLevel.Info:
-                    log.Info(message, @event.Exception);
-                    break;
-                case DiagnosticEventLevel.Warn:
-                    log.Warn(message, @event.Exception);
-                    break;
-                case DiagnosticEventLevel.Error:
-                    log.Error(message, @event.Exception);
-                    break;
-                default:
-                    log.Debug(message, @event.Exception);
-                    break;
-            }
+            _writer.WriteLine(FormatLogMessage(@event));
         }
 
         /// <inheritdoc />
         public Task ReceiveAsync(DiagnosticEvent @event, CancellationToken cancellationToken = new CancellationToken())
         {
-            Receive(@event);
-            return Task.FromResult(0);
+            return _writer.WriteLineAsync(FormatLogMessage(@event));
         }
 
         /// <summary>
@@ -58,7 +46,11 @@ namespace Platibus.Diagnostics
         /// <returns>Returns a formatted log message</returns>
         protected virtual string FormatLogMessage(DiagnosticEvent @event)
         {
-            var message = @event.Type.Name;
+            var source = @event.Source;
+            var timestamp = @event.Timestamp.ToString("s");
+            var level = @event.Type.Level.ToString("G");
+            var category = source == null ? "Platibus" : source.GetType().FullName;
+            var message = timestamp + " " + level + " " + category + " " + @event.Type.Name;
             if (@event.Detail != null)
             {
                 message += ": " + @event.Detail;

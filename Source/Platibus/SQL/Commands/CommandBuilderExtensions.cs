@@ -22,7 +22,6 @@
 
 using System;
 using System.Configuration;
-using Common.Logging;
 using Platibus.Config.Extensibility;
 
 namespace Platibus.SQL.Commands
@@ -31,10 +30,9 @@ namespace Platibus.SQL.Commands
     /// Convenience methods for determining appropriate command builders based on connection
     /// string settings and ADO.NET providers.
     /// </summary>
+    [Obsolete("Use CommandBuildersFactory")]
     public static class CommandBuilderExtensions
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggingCategories.SQL);
-
         /// <summary>
         /// Returns the message journal commands that are most appropriate for the specified 
         /// <paramref name="connectionStringSettings"/>
@@ -49,23 +47,11 @@ namespace Platibus.SQL.Commands
         /// <see cref="MSSQLMessageQueueingCommandBuilders"/> will be returned by default.
         /// </remarks>
         /// <seealso cref="ProviderHelper"/>
+        [Obsolete("Use instance method CommandBuildersFactory.InitMessageJournalingCommandBuilders")]
         public static IMessageJournalingCommandBuilders GetMessageJournalingCommandBuilders(this ConnectionStringSettings connectionStringSettings)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-            var providerName = connectionStringSettings.ProviderName;
-            IMessageJournalingCommandBuildersProvider provider;
-            if (string.IsNullOrWhiteSpace(providerName))
-            {
-                Log.Debug("No connection string provider specified; using default provider...");
-                provider = new MSSQLCommandBuildersProvider();
-            }
-            else
-            {
-                provider = ProviderHelper.GetProvider<IMessageJournalingCommandBuildersProvider>(providerName);
-            }
-
-            Log.Debug("Getting message journal commands...");
-            return provider.GetMessageJournalingCommandBuilders(connectionStringSettings);
+            return new CommandBuildersFactory(connectionStringSettings).InitMessageJournalingCommandBuilders();
         }
 
         /// <summary>
@@ -82,23 +68,11 @@ namespace Platibus.SQL.Commands
         /// <see cref="MSSQLMessageQueueingCommandBuilders"/> will be returned by default.
         /// </remarks>
         /// <seealso cref="ProviderHelper"/>
+        [Obsolete("Use instance method CommandBuildersFactory.InitMessageQueueingCommandBuilders")]
         public static IMessageQueueingCommandBuilders GetMessageQueueingCommandBuilders(this ConnectionStringSettings connectionStringSettings)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-            var providerName = connectionStringSettings.ProviderName;
-            IMessageQueueingCommandBuildersProvider provider;
-            if (string.IsNullOrWhiteSpace(providerName))
-            {
-                Log.Debug("No connection string provider specified; using default provider...");
-                provider = new MSSQLCommandBuildersProvider();
-            }
-            else
-            {
-                provider = ProviderHelper.GetProvider<IMessageQueueingCommandBuildersProvider>(providerName);
-            }
-
-            Log.Debug("Getting message queueing service  commands...");
-            return provider.GetMessageQueueingCommandBuilders(connectionStringSettings);
+            return new CommandBuildersFactory(connectionStringSettings).InitMessageQueueingCommandBuilders();
         }
 
         /// <summary>
@@ -115,23 +89,11 @@ namespace Platibus.SQL.Commands
         /// <see cref="MSSQLSubscriptionTrackingCommandBuilders"/> will be returned by default.
         /// </remarks>
         /// <seealso cref="ProviderHelper"/>
+        [Obsolete("Use instance method CommandBuildersFactory.InitSubscriptionTrackingCommandBuilders")]
         public static ISubscriptionTrackingCommandBuilders GetSubscriptionTrackingCommandBuilders(this ConnectionStringSettings connectionStringSettings)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-            var providerName = connectionStringSettings.ProviderName;
-            ISubscriptionTrackingCommandBuildersProvider provider;
-            if (string.IsNullOrWhiteSpace(providerName))
-            {
-                Log.Debug("No connection string provider specified; using default provider...");
-                provider = new MSSQLCommandBuildersProvider();
-            }
-            else
-            {
-                provider = ProviderHelper.GetProvider<ISubscriptionTrackingCommandBuildersProvider>(providerName);
-            }
-
-            Log.Debug("Getting message queueing service  commands...");
-            return provider.GetSubscriptionTrackingCommandBuilders(connectionStringSettings);
+            return new CommandBuildersFactory(connectionStringSettings).InitSubscriptionTrackingCommandBuilders();
         }
     }
 }

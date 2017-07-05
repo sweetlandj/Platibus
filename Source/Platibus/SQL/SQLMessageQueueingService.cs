@@ -22,10 +22,10 @@
 
 using System;
 using System.Configuration;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Config.Extensibility;
+using Platibus.Diagnostics;
 using Platibus.Queueing;
 using Platibus.Security;
 using Platibus.SQL.Commands;
@@ -38,6 +38,7 @@ namespace Platibus.SQL
     /// </summary>
     public class SQLMessageQueueingService : AbstractMessageQueueingService<SQLMessageQueue>
     {
+        protected readonly IDiagnosticEventSink DiagnosticEventSink;
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly IMessageQueueingCommandBuilders _commandBuilders;
         private readonly ISecurityTokenService _securityTokenService;
@@ -69,6 +70,8 @@ namespace Platibus.SQL
         /// syntax required by the underlying connection provider (if needed)</param>
         /// <param name="securityTokenService">(Optional) The message security token
         /// service to use to issue and validate security tokens for persisted messages.</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events related to SQL message queueing</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionStringSettings"/>
         /// is <c>null</c></exception>
         /// <remarks>
@@ -77,13 +80,15 @@ namespace Platibus.SQL
         /// <para>If a <paramref name="securityTokenService"/> is not specified then a
         /// default implementation based on unsigned JWTs will be used.</para>
         /// </remarks>
-        /// <seealso cref="CommandBuilderExtensions.GetMessageQueueingCommandBuilders"/>
         /// <seealso cref="IMessageQueueingCommandBuildersProvider"/>
-        public SQLMessageQueueingService(ConnectionStringSettings connectionStringSettings, IMessageQueueingCommandBuilders commandBuilders = null, ISecurityTokenService securityTokenService = null)
+        public SQLMessageQueueingService(ConnectionStringSettings connectionStringSettings, IMessageQueueingCommandBuilders commandBuilders = null, ISecurityTokenService securityTokenService = null, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
             _connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
-            _commandBuilders = commandBuilders ?? connectionStringSettings.GetMessageQueueingCommandBuilders();
+            DiagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _commandBuilders = commandBuilders ??
+                               new CommandBuildersFactory(connectionStringSettings, DiagnosticEventSink)
+                                   .InitMessageQueueingCommandBuilders();
             _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
         }
 
@@ -98,26 +103,28 @@ namespace Platibus.SQL
         /// the underlying connection provider</param>
         /// <param name="securityTokenService">(Optional) The message security token
         /// service to use to issue and validate security tokens for persisted messages.</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events related to SQL message queueing</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>
         /// or <paramref name="commandBuilders"/> is <c>null</c></exception>
         /// <remarks>
         /// <para>If a <paramref name="securityTokenService"/> is not specified then a
         /// default implementation based on unsigned JWTs will be used.</para>
         /// </remarks>
-        public SQLMessageQueueingService(IDbConnectionProvider connectionProvider, IMessageQueueingCommandBuilders commandBuilders, ISecurityTokenService securityTokenService = null)
+        public SQLMessageQueueingService(IDbConnectionProvider connectionProvider, IMessageQueueingCommandBuilders commandBuilders, ISecurityTokenService securityTokenService = null, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
             if (commandBuilders == null) throw new ArgumentNullException("commandBuilders");
             _connectionProvider = connectionProvider;
             _commandBuilders = commandBuilders;
             _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
+            DiagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
         }
 
         /// <summary>
         /// Initializes the message queueing service by creating the necessary objects in the
         /// SQL database
         /// </summary>
-        [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public void Init()
         {
             var connection = _connectionProvider.GetConnection();
@@ -139,7 +146,9 @@ namespace Platibus.SQL
         protected override Task<SQLMessageQueue> InternalCreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null,
             CancellationToken cancellationToken = new CancellationToken())
         {
-            var queue = new SQLMessageQueue(_connectionProvider, _commandBuilders, queueName, listener, _securityTokenService, options);
+            var queue = new SQLMessageQueue(_connectionProvider, _commandBuilders, queueName, listener,
+                _securityTokenService, options, DiagnosticEventSink);
+
             return Task.FromResult(queue);
         }
 

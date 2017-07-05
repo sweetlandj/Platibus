@@ -22,11 +22,11 @@
 
 using System;
 using System.Configuration;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Platibus.Diagnostics;
 using Platibus.SQL;
 using Platibus.SQLite.Commands;
 
@@ -46,13 +46,15 @@ namespace Platibus.SQLite
         /// </summary>
         /// <param name="baseDirectory">The directory in which the SQLite database files will
         /// be created</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events related to SQL subscription tracking</param>
         /// <remarks>
         /// If a base directory is not specified then the base directory will default to a
         /// directory named <c>platibus\subscriptions</c> beneath the current app domain base 
         /// directory.  If the base directory does not exist it will be created.
         /// </remarks>
-        public SQLiteSubscriptionTrackingService(DirectoryInfo baseDirectory)
-            : base(InitConnectionProvider(baseDirectory), new SQLiteSubscriptionTrackingCommandBuilders())
+        public SQLiteSubscriptionTrackingService(DirectoryInfo baseDirectory, IDiagnosticEventSink diagnosticEventSink = null)
+            : base(InitConnectionProvider(baseDirectory), new SQLiteSubscriptionTrackingCommandBuilders(), diagnosticEventSink)
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _operationQueue = new ActionBlock<ISQLiteOperation>(

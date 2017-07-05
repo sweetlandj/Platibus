@@ -23,11 +23,11 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Platibus.Diagnostics;
 using Platibus.Queueing;
 using Platibus.Security;
 using Platibus.SQL;
@@ -53,7 +53,9 @@ namespace Platibus.SQLite
         /// that can be stored with queued messages to preserve the security context in which
         /// they were enqueued</param>
         /// <param name="options">(Optional) Options for concurrency and retry limits</param>
-        public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null)
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
+        /// to handle diagnostic events related to SQL subscription tracking</param>
+        public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null, IDiagnosticEventSink diagnosticEventSink = null)
             : base(InitConnectionProvider(baseDirectory, queueName), new SQLiteMessageQueueingCommandBuilders(), queueName, listener, securityTokenService, options)
         {
             _cancellationTokenSource = new CancellationTokenSource();

@@ -29,6 +29,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using Platibus.Config.Extensibility;
+using Platibus.Diagnostics;
 using Platibus.Journaling;
 using Platibus.SQL.Commands;
 
@@ -42,6 +43,7 @@ namespace Platibus.SQL
     {
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly IMessageJournalingCommandBuilders _commandBuilders;
+        protected readonly IDiagnosticEventSink DiagnosticEventSink;
 
         /// <summary>
         /// The connection provider used to obtain connections to the SQL database
@@ -84,24 +86,29 @@ namespace Platibus.SQL
         /// Initializes a new <see cref="SQLMessageJournal"/> with the specified connection
         /// string settings and dialect
         /// </summary>
-        /// <param name="connectionStringSettings">The connection string settings to use to connect to
-        /// the SQL database</param>
+        /// <param name="connectionStringSettings">The connection string settings to use to connect
+        /// to the SQL database</param>
         /// <param name="commandBuilders">(Optional) A collection of factories capable of 
         /// generating database commands for manipulating queued messages that conform to the SQL
         /// syntax required by the underlying connection provider (if needed)</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer to
+        /// handle diagnostic events related to SQL message journaling</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionStringSettings"/>
         /// is <c>null</c></exception>
         /// <remarks>
         /// If a SQL dialect is not specified, then one will be selected based on the supplied
         /// connection string settings
         /// </remarks>
-        /// <seealso cref="CommandBuilderExtensions.GetMessageJournalingCommandBuilders"/>
+        /// <seealso cref="CommandBuildersFactory.InitMessageJournalingCommandBuilders"/>
         /// <seealso cref="IMessageJournalingCommandBuildersProvider"/>
-        public SQLMessageJournal(ConnectionStringSettings connectionStringSettings, IMessageJournalingCommandBuilders commandBuilders = null)
+        public SQLMessageJournal(ConnectionStringSettings connectionStringSettings, IMessageJournalingCommandBuilders commandBuilders = null, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
             _connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
-            _commandBuilders = commandBuilders ?? connectionStringSettings.GetMessageJournalingCommandBuilders();
+            DiagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _commandBuilders = commandBuilders ??
+                               new CommandBuildersFactory(connectionStringSettings, DiagnosticEventSink)
+                                   .InitMessageJournalingCommandBuilders();
         }
 
         /// <summary>
@@ -112,14 +119,17 @@ namespace Platibus.SQL
         /// the SQL database</param>
         /// <param name="commandBuilders">A set of commands that conform to the SQL syntax
         /// required by the underlying connection provider</param>
+        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer to
+        /// handle diagnostic events related to SQL message journaling</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>
         /// or <paramref name="commandBuilders"/> is <c>null</c></exception>
-        public SQLMessageJournal(IDbConnectionProvider connectionProvider, IMessageJournalingCommandBuilders commandBuilders)
+        public SQLMessageJournal(IDbConnectionProvider connectionProvider, IMessageJournalingCommandBuilders commandBuilders, IDiagnosticEventSink diagnosticEventSink = null)
         {
             if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
             if (commandBuilders == null) throw new ArgumentNullException("commandBuilders");
             _connectionProvider = connectionProvider;
             _commandBuilders = commandBuilders;
+            DiagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
         }
 
         /// <inheritdoc />
