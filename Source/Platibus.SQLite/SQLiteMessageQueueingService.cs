@@ -36,7 +36,11 @@ namespace Platibus.SQLite
     /// </summary>
     public class SQLiteMessageQueueingService : AbstractMessageQueueingService<SQLiteMessageQueue>
     {
+        /// <summary>
+        /// A data sink provided by the implementer to handle diagnostic events
+        /// </summary>
         protected readonly IDiagnosticEventSink DiagnosticEventSink;
+
         private readonly DirectoryInfo _baseDirectory;
         private readonly ISecurityTokenService _securityTokenService;
 

@@ -41,7 +41,11 @@ namespace Platibus.SQL
     /// </summary>
     public class SQLMessageJournal : IMessageJournal
     {
+        /// <summary>
+        /// A data sink provided by the implementer to handle diagnostic events
+        /// </summary>
         protected readonly IDiagnosticEventSink DiagnosticEventSink;
+
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly IMessageJournalingCommandBuilders _commandBuilders;
         

@@ -119,6 +119,12 @@ namespace Platibus.Diagnostics
             PopulateFilesystemFields(gelfMessage, @event as FilesystemEvent);
         }
 
+        /// <summary>
+        /// Populates fields on the GELF message that correspond to the properties of the 
+        /// <see cref="DiagnosticEvent.Message"/>
+        /// </summary>
+        /// <param name="gelfMessage">The GELF message to populate</param>
+        /// <param name="event">The diagnostic event</param>
         protected virtual void PopulateMessageFields(GelfMessage gelfMessage, DiagnosticEvent @event)
         {
             if (@event.Message == null) return;
@@ -144,6 +150,12 @@ namespace Platibus.Diagnostics
             }
         }
 
+        /// <summary>
+        /// Populates fields on the GELF message that correspond to properties on an 
+        /// <see cref="HttpEvent"/>
+        /// </summary>
+        /// <param name="gelfMessage">The GELF message to populate</param>
+        /// <param name="httpEvent">The HTTP diagnostic event</param>
         protected virtual void PopulateHttpFields(GelfMessage gelfMessage, HttpEvent httpEvent)
         {
             if (httpEvent == null) return;
@@ -157,6 +169,12 @@ namespace Platibus.Diagnostics
             }
         }
 
+        /// <summary>
+        /// Populates fields on the GELF message that correspond to properties on an 
+        /// <see cref="FilesystemEvent"/>
+        /// </summary>
+        /// <param name="gelfMessage">The GELF message to populate</param>
+        /// <param name="fsEvent">The filesystem diagnostic event</param>
         protected virtual void PopulateFilesystemFields(GelfMessage gelfMessage, FilesystemEvent fsEvent)
         {
             if (fsEvent == null) return;

@@ -4,7 +4,6 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web.UI;
 using Common.Logging;
 
 namespace Platibus.Diagnostics
@@ -17,11 +16,19 @@ namespace Platibus.Diagnostics
     {
         private readonly Func<DiagnosticEvent, ILog> _logFactory;
 
+        /// <summary>
+        /// Initializes a new <see cref="CommonLoggingSink"/> with default log factory
+        /// </summary>
         public CommonLoggingSink()
         {
             _logFactory = DefaultLogFactory;
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="CommonLoggingSink"/> that directs all output to the
+        /// specified <paramref name="log"/>
+        /// </summary>
+        /// <param name="log">The log to which all messages should be directed</param>
         public CommonLoggingSink(ILog log)
         {
             if (log == null)
@@ -34,6 +41,13 @@ namespace Platibus.Diagnostics
             }
         }
 
+        /// <summary>
+        /// Initializes a new <see cref="CommonLoggingSink"/> that uses the supplied 
+        /// <paramref name="logFactory"/> function to determine the appropriate <see cref="ILog"/>
+        /// to use for each diagnostic event that is received.
+        /// </summary>
+        /// <param name="logFactory">A function that returns the appropriate log to use for
+        /// each diagnostic event</param>
         public CommonLoggingSink(Func<DiagnosticEvent, ILog> logFactory)
         {
             _logFactory = logFactory ?? DefaultLogFactory;
