@@ -65,15 +65,18 @@ namespace Platibus.Diagnostics
         /// <summary>
         /// Initializes a new <see cref="MetricsCollector"/>
         /// </summary>
-        /// <param name="sampleRate">The rate at which samples should be taken</param>
+        /// <param name="sampleRate">(Optional) The rate at which samples should be taken</param>
+        /// <remarks>
+        /// The default sample rate is 5 seconds
+        /// </remarks>
         public MetricsCollector(TimeSpan sampleRate = default(TimeSpan))
         {
             if (sampleRate <= TimeSpan.Zero)
             {
-                sampleRate = TimeSpan.FromSeconds(1);
+                sampleRate = TimeSpan.FromSeconds(5);
             }
             _sampleRate = sampleRate;
-            _sampleTimer = new Timer(_ => TakeSample(), null, _sampleRate, _sampleRate);
+            _sampleTimer = new Timer(_ => TakeSample(), null, TimeSpan.FromSeconds(1), _sampleRate);
         }
         
         /// <inheritdoc />
@@ -95,9 +98,11 @@ namespace Platibus.Diagnostics
             {
                 case DiagnosticEventLevel.Error:
                     Interlocked.Increment(ref _current.Errors);
+                    Interlocked.Increment(ref _total.Errors);
                     break;
                 case DiagnosticEventLevel.Warn:
                     Interlocked.Increment(ref _current.Warnings);
+                    Interlocked.Increment(ref _total.Warnings);
                     break;
             }
 
@@ -106,7 +111,7 @@ namespace Platibus.Diagnostics
                 Interlocked.Increment(ref _current.Requests);
                 Interlocked.Increment(ref _total.Requests);
             }
-            if (@event.Type == DiagnosticEventType.MessageReceived)
+            else if (@event.Type == DiagnosticEventType.MessageReceived)
             {
                 Interlocked.Increment(ref _current.Received);
                 Interlocked.Increment(ref _total.Received);
