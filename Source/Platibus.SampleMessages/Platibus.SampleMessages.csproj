@@ -35,6 +35,8 @@
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Diagnostics\SimulatedRequest.cs" />
+    <Compile Include="Diagnostics\SimulatedResponse.cs" />
     <Compile Include="Error.cs" />
     <Compile Include="RequestDocument.cs" />
     <Compile Include="ResponseDocument.cs" />

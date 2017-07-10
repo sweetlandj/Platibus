@@ -1,0 +1,58 @@
+﻿@model Platibus.SampleWebApp.Models.DiagnosticsMonitoringModel
+@{
+    ViewBag.Title = "Platibus Sample Web App - Diagnostics";
+}
+
+<h4>Diagnostics - Monitoring</h4>
+
+<hr />
+
+<div id="metrics">
+</div>
+
+<style>
+    .dl-horizontal dt {
+        white-space: normal
+    }
+</style>
+
+<script>
+    function getJSON(url, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'json';
+        xhr.onload = function() {
+            var status = xhr.status;
+            if (status === 200) {
+                callback(null, xhr.response);
+            } else {
+                callback(status);
+            }
+        };
+        xhr.send();
+    };
+
+    function captureMetrics() {
+        getJSON("@(Model.BaseUri)metrics", function(err, data) {
+            if (err == null) {
+                updateMetrics(data);
+            }
+            setTimeout(captureMetrics, 1000);
+        });
+    }
+
+    function updateMetrics(metrics) {
+        var html = "<dl class='dl-horizontal'>";
+        for (var metric in metrics) {
+            if (metrics.hasOwnProperty(metric)) {
+                html += "<dt>" + metric + "</dt>";
+                html += "<dd>" + Number(metrics[metric]).toFixed(2) + "</dd>";
+            }
+        }
+        html += "</dl>";
+        var metricsDiv = document.getElementById("metrics");
+        metricsDiv.innerHTML = html;
+    }
+
+    document.onload += captureMetrics();
+</script>

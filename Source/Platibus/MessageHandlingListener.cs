@@ -33,10 +33,12 @@ namespace Platibus
     internal class MessageHandlingListener : IQueueListener
     {
         private readonly Bus _bus;
+        private readonly QueueName _queueName;
         private readonly IEnumerable<IMessageHandler> _messageHandlers;
         private readonly MessageHandler _messageHandler;
+        private readonly IDiagnosticService _diagnosticService;
 
-        public MessageHandlingListener(Bus bus, IMessageNamingService namingService, ISerializationService serializationService, IEnumerable<IMessageHandler> messageHandlers, IDiagnosticService diagnosticService = null)
+        public MessageHandlingListener(Bus bus, IMessageNamingService namingService, ISerializationService serializationService, QueueName queueName, IEnumerable<IMessageHandler> messageHandlers, IDiagnosticService diagnosticService = null)
         {
             if (bus == null) throw new ArgumentNullException("bus");
             if (namingService == null) throw new ArgumentNullException("namingService");
@@ -47,8 +49,10 @@ namespace Platibus
             if (!handlerList.Any()) throw new ArgumentNullException("messageHandlers");
 
             _bus = bus;
+            _queueName = queueName;
             _messageHandlers = handlerList;
-            _messageHandler = new MessageHandler(namingService, serializationService, diagnosticService);
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+            _messageHandler = new MessageHandler(namingService, serializationService, _diagnosticService);
         }
 
         public async Task MessageReceived(Message message, IQueuedMessageContext context,
@@ -60,7 +64,22 @@ namespace Platibus
 
             if (messageContext.MessageAcknowledged)
             {
+                await _diagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageAcknowledged)
+                    {
+                        Message = message,
+                        Queue = _queueName
+                    }.Build(), cancellationToken);
+
                 await context.Acknowledge();
+            }
+            else
+            {
+                await _diagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
+                    {
+                        Message = message
+                    }.Build(), cancellationToken);
             }
         }
     }

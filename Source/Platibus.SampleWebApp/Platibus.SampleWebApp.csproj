@@ -255,15 +255,19 @@
     <Compile Include="App_Start\PlatibusConfigurationHook.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\Startup.cs" />
+    <Compile Include="Controllers\DiagnosticsController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\MessageJournalController.cs" />
     <Compile Include="Controllers\HtmlHelperExtensions.cs" />
+    <Compile Include="Controllers\RequestSimulator.cs" />
     <Compile Include="Controllers\SubmitActionAttribute.cs" />
     <Compile Include="Controllers\WidgetsClient.cs" />
     <Compile Include="Controllers\WidgetsController.cs" />
     <Compile Include="IdentityServer\Clients.cs" />
     <Compile Include="IdentityServer\Scopes.cs" />
     <Compile Include="IdentityServer\Users.cs" />
+    <Compile Include="Models\DiagnosticsMonitoringModel.cs" />
+    <Compile Include="Models\DiagnosticsIndexModel.cs" />
     <Compile Include="Models\MessageJournalIndexModel.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -287,6 +291,8 @@
     <Content Include="Views\MessageJournal\Details.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\_ViewStart.cshtml" />
+    <Content Include="Views\Diagnostics\Index.cshtml" />
+    <Content Include="Views\Diagnostics\Monitoring.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

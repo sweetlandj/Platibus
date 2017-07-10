@@ -163,6 +163,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\Startup.cs" />
+    <Compile Include="Diagnostics\SimulatedRequestHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SampleApiCategories.cs" />
     <Compile Include="Widgets\InMemoryWidgetRepository.cs" />

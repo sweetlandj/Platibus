@@ -14,6 +14,7 @@ namespace Platibus.Diagnostics
     {
         private readonly TimeSpan _sampleRate;
         private readonly Timer _sampleTimer;
+        private readonly Metrics _total = new Metrics();
 
         private Metrics _current = new Metrics();
         private Metrics _sample = new Metrics();
@@ -27,22 +28,36 @@ namespace Platibus.Diagnostics
         {
             get
             {
+                var total = _total;
                 var sample = _sample;
                 var sampleRateInSeconds = _sampleRate.TotalSeconds;
                 return new Dictionary<string, double>
                 {
-                    {"Requests", sample.Requests/sampleRateInSeconds},
-                    {"Received", sample.Received/sampleRateInSeconds},
-                    {"Acknowledgements", sample.Acknowledgements/sampleRateInSeconds},
-                    {"AcknowledgementFailures", sample.AcknowledgementFailures/sampleRateInSeconds},
-                    {"Expired", sample.Expired/sampleRateInSeconds},
-                    {"Dead", sample.Dead/sampleRateInSeconds},
-                    {"Sent", sample.Sent/sampleRateInSeconds},
-                    {"Published", sample.Published/sampleRateInSeconds},
-                    {"Delivered", sample.Delivered/sampleRateInSeconds},
-                    {"DeliveryFailures", sample.DeliveryFailures/sampleRateInSeconds},
-                    {"Errors", sample.Errors/sampleRateInSeconds},
-                    {"Warnings", sample.Warnings/sampleRateInSeconds}
+                    {"TotalRequests", total.Requests},
+                    {"TotalReceived", total.Received},
+                    {"TotalAcknowledgements", total.Acknowledgements},
+                    {"TotalAcknowledgementFailures", total.AcknowledgementFailures},
+                    {"TotalExpired", total.Expired},
+                    {"TotalDead", total.Dead},
+                    {"TotalSent", total.Sent},
+                    {"TotalPublished", total.Published},
+                    {"TotalDelivered", total.Delivered},
+                    {"TotalDeliveryFailures", total.DeliveryFailures},
+                    {"TotalErrors", total.Errors},
+                    {"TotalWarnings", total.Warnings},
+
+                    {"RequestsPerSecond", sample.Requests/sampleRateInSeconds},
+                    {"ReceivedPerSecond", sample.Received/sampleRateInSeconds},
+                    {"AcknowledgementsPerSecond", sample.Acknowledgements/sampleRateInSeconds},
+                    {"AcknowledgementFailuresPerSecond", sample.AcknowledgementFailures/sampleRateInSeconds},
+                    {"ExpiredPerSecond", sample.Expired/sampleRateInSeconds},
+                    {"DeadPerSecond", sample.Dead/sampleRateInSeconds},
+                    {"SentPerSecond", sample.Sent/sampleRateInSeconds},
+                    {"PublishedPerSecond", sample.Published/sampleRateInSeconds},
+                    {"DeliveredPerSecond", sample.Delivered/sampleRateInSeconds},
+                    {"DeliveryFailuresPerSecond", sample.DeliveryFailures/sampleRateInSeconds},
+                    {"ErrorsPerSecond", sample.Errors/sampleRateInSeconds},
+                    {"WarningsPerSecond", sample.Warnings/sampleRateInSeconds}
                 };
             }
         }
@@ -55,7 +70,7 @@ namespace Platibus.Diagnostics
         {
             if (sampleRate <= TimeSpan.Zero)
             {
-                sampleRate = TimeSpan.FromSeconds(3);
+                sampleRate = TimeSpan.FromSeconds(1);
             }
             _sampleRate = sampleRate;
             _sampleTimer = new Timer(_ => TakeSample(), null, _sampleRate, _sampleRate);
@@ -89,42 +104,52 @@ namespace Platibus.Diagnostics
             if (@event.Type == HttpEventType.HttpRequestReceived)
             {
                 Interlocked.Increment(ref _current.Requests);
+                Interlocked.Increment(ref _total.Requests);
             }
             if (@event.Type == DiagnosticEventType.MessageReceived)
             {
                 Interlocked.Increment(ref _current.Received);
+                Interlocked.Increment(ref _total.Received);
             }
             else if (@event.Type == DiagnosticEventType.MessageAcknowledged)
             {
                 Interlocked.Increment(ref _current.Acknowledgements);
+                Interlocked.Increment(ref _total.Acknowledgements);
             }
             else if (@event.Type == DiagnosticEventType.MessageNotAcknowledged)
             {
                 Interlocked.Increment(ref _current.AcknowledgementFailures);
+                Interlocked.Increment(ref _total.AcknowledgementFailures);
             }
             else if (@event.Type == DiagnosticEventType.MessageSent)
             {
                 Interlocked.Increment(ref _current.Sent);
+                Interlocked.Increment(ref _total.Sent);
             }
             else if (@event.Type == DiagnosticEventType.MessagePublished)
             {
                 Interlocked.Increment(ref _current.Published);
+                Interlocked.Increment(ref _total.Published);
             }
             else if (@event.Type == DiagnosticEventType.MessageDelivered)
             {
                 Interlocked.Increment(ref _current.Delivered);
+                Interlocked.Increment(ref _total.Delivered);
             }
             else if (@event.Type == DiagnosticEventType.MessageDeliveryFailed)
             {
                 Interlocked.Increment(ref _current.DeliveryFailures);
+                Interlocked.Increment(ref _total.DeliveryFailures);
             }
             else if (@event.Type == DiagnosticEventType.MessageExpired)
             {
                 Interlocked.Increment(ref _current.Expired);
+                Interlocked.Increment(ref _total.Expired);
             }
             else if (@event.Type == DiagnosticEventType.DeadLetter)
             {
                 Interlocked.Increment(ref _current.Dead);
+                Interlocked.Increment(ref _total.Dead);
             }
         }
 

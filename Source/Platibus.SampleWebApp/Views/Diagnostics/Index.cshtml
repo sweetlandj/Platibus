@@ -1,0 +1,66 @@
+﻿@model Platibus.SampleWebApp.Models.DiagnosticsIndexModel
+@{
+    ViewBag.Title = "Platibus Sample Web App - Diagnostics";
+}
+
+<h4>Diagnostics</h4>
+
+<hr />
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                @Html.LabelFor(model => model.Requests)
+                @Html.EditorFor(model => model.Requests, new { htmlAttributes = new { @class = "form-control", tabindex="1" } })
+                @Html.ValidationMessageFor(model => model.Requests, "", new { @class = "text-danger" })
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                @Html.LabelFor(model => model.AcknowledgementRate)
+                @Html.EditorFor(model => model.AcknowledgementRate, new { htmlAttributes = new { @class = "form-control", tabindex = "4" } })
+                @Html.ValidationMessageFor(model => model.AcknowledgementRate, "", new { @class = "text-danger" })
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                @Html.LabelFor(model => model.MinTime)
+                @Html.EditorFor(model => model.MinTime, new { htmlAttributes = new { @class = "form-control", tabindex = "2" } })
+                @Html.ValidationMessageFor(model => model.MinTime, "", new { @class = "text-danger" })
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                @Html.LabelFor(model => model.ReplyRate)
+                @Html.EditorFor(model => model.ReplyRate, new { htmlAttributes = new { @class = "form-control", tabindex = "5" } })
+                @Html.ValidationMessageFor(model => model.ReplyRate, "", new { @class = "text-danger" })
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                @Html.LabelFor(model => model.MaxTime)
+                @Html.EditorFor(model => model.MaxTime, new { htmlAttributes = new { @class = "form-control", tabindex = "3" } })
+                @Html.ValidationMessageFor(model => model.MaxTime, "", new { @class = "text-danger" })
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                @Html.LabelFor(model => model.ErrorRate)
+                @Html.EditorFor(model => model.ErrorRate, new { htmlAttributes = new { @class = "form-control", tabindex = "6" } })
+                @Html.ValidationMessageFor(model => model.ReplyRate, "", new { @class = "text-danger" })
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <input type="submit" name="action" value="Start" class="btn btn-primary" tabindex="7" />
+    </div>
+}

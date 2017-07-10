@@ -128,7 +128,7 @@ namespace Platibus
                     .FirstOrDefault();
 
                 var queueListener = new MessageHandlingListener(this, _messageNamingService,
-                    _serializationService, handlers, _diagnosticService);
+                    _serializationService, queueName, handlers, _diagnosticService);
 
                 await _messageQueueingService.CreateQueue(queueName, queueListener, queueOptions, cancellationToken);
             }
@@ -420,6 +420,12 @@ namespace Platibus
             };
             var replyMessage = BuildMessage(replyContent, headers, options);
             await SendMessage(replyMessage, credentials, cancellationToken);
+
+            await _diagnosticService.EmitAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
+                {
+                    Message = replyMessage
+                }.Build(), cancellationToken);
         }
 
         /// <summary>
@@ -434,6 +440,12 @@ namespace Platibus
             {
                 await _messageJournal.Append(message, MessageJournalCategory.Received);
             }
+
+            await _diagnosticService.EmitAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.MessageReceived)
+                {
+                    Message = message
+                }.Build());
 
             var tasks = new List<Task>();
             var isPublication = message.Headers.Topic != null;
@@ -474,8 +486,21 @@ namespace Platibus
             
             if (!messageContext.MessageAcknowledged)
             {
+                await _diagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
+                    {
+                        Message = message
+                    }.Build());
+
                 throw new MessageNotAcknowledgedException();
             }
+
+            await _diagnosticService.EmitAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.MessageAcknowledged)
+                {
+                    Detail = "Unhandled exception in consumer callback",
+                    Message = message
+                }.Build());
         }
 
         private async Task NotifyReplyReceived(Message message)

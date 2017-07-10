@@ -9,6 +9,7 @@ using Owin;
 using Platibus.Config;
 using Platibus.Owin;
 using Platibus.SampleApi;
+using Platibus.SampleApi.Diagnostics;
 using Platibus.SampleApi.Widgets;
 
 [assembly: OwinStartup(typeof(Startup))]
@@ -48,12 +49,14 @@ namespace Platibus.SampleApi
             var widgetRepository = new InMemoryWidgetRepository();
             containerBuilder.RegisterInstance(widgetRepository).As<IWidgetRepository>();
             containerBuilder.RegisterType<WidgetCreationCommandHandler>();
+            containerBuilder.RegisterType<SimulatedRequestHandler>();
         }
 
         private static async Task<IOwinConfiguration> ConfigurePlatibus(IContainer container)
         {
             var configuration = await OwinConfigurationManager.LoadConfiguration();
             configuration.AddHandlingRules(container.Resolve<WidgetCreationCommandHandler>);
+            configuration.AddHandlingRules(container.Resolve<SimulatedRequestHandler>);
             return configuration;
         }
     }
