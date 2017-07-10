@@ -22,7 +22,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -69,23 +68,24 @@ namespace Platibus.SQL
         /// </summary>
         /// <param name="connectionProvider">The database connection provider</param>
         /// <param name="commandBuilders">A collection of factories capable of 
-        /// generating database commands for manipulating queued messages that conform to the SQL
-        /// syntax required by the underlying connection provider</param>
+        ///     generating database commands for manipulating queued messages that conform to the SQL
+        ///     syntax required by the underlying connection provider</param>
         /// <param name="queueName">The name of the queue</param>
         /// <param name="listener">The object that will be notified when messages are
-        /// added to the queue</param>
+        ///     added to the queue</param>
         /// <param name="securityTokenService">(Optional) The message security token
-        /// service to use to issue and validate security tokens for persisted messages.</param>
+        ///     service to use to issue and validate security tokens for persisted messages.</param>
         /// <param name="options">(Optional) Settings that influence how the queue behaves</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// to handle diagnostic events related to SQL message queueing</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        ///     are reported and processed</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>,
         /// <paramref name="commandBuilders"/>, <paramref name="queueName"/>, or <paramref name="listener"/>
         /// are <c>null</c></exception>
-        public SQLMessageQueue(IDbConnectionProvider connectionProvider, IMessageQueueingCommandBuilders commandBuilders, 
-            QueueName queueName, IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null, 
-            IDiagnosticEventSink diagnosticEventSink = null)
-            : base(queueName, listener, options, diagnosticEventSink)
+        public SQLMessageQueue(IDbConnectionProvider connectionProvider, 
+            IMessageQueueingCommandBuilders commandBuilders, QueueName queueName, 
+            IQueueListener listener, ISecurityTokenService securityTokenService, 
+            QueueOptions options = null, IDiagnosticService diagnosticService = null)
+            : base(queueName, listener, options, diagnosticService)
         {
             if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
             if (commandBuilders == null) throw new ArgumentNullException("commandBuilders");
@@ -118,13 +118,19 @@ namespace Platibus.SQL
             return UpdateQueuedMessage(args.QueuedMessage, null);
         }
 
-        private Task OnMaximumAttemptsExceeded(object source, MessageQueueEventArgs args)
+        private async Task OnMaximumAttemptsExceeded(object source, MessageQueueEventArgs args)
         {
-            return UpdateQueuedMessage(args.QueuedMessage, DateTime.UtcNow);
+            await UpdateQueuedMessage(args.QueuedMessage, DateTime.UtcNow);
+            await DiagnosticService.EmitAsync(
+                new SQLEventBuilder(this, DiagnosticEventType.DeadLetter)
+                {
+                    Detail = "Message abandoned",
+                    Message = args.QueuedMessage.Message,
+                    Queue = QueueName
+                }.Build());
         }
 
         /// <inheritdoc />
-        [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         protected override async Task<IEnumerable<QueuedMessage>> GetPendingMessages(CancellationToken cancellationToken = default(CancellationToken))
         {
             var queuedMessages = new List<QueuedMessage>();

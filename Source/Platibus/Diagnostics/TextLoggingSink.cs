@@ -28,13 +28,13 @@ namespace Platibus.Diagnostics
         }
 
         /// <inheritdoc />
-        public void Receive(DiagnosticEvent @event)
+        public void Consume(DiagnosticEvent @event)
         {
             _writer.WriteLine(FormatLogMessage(@event));
         }
 
         /// <inheritdoc />
-        public Task ReceiveAsync(DiagnosticEvent @event, CancellationToken cancellationToken = new CancellationToken())
+        public Task ConsumeAsync(DiagnosticEvent @event, CancellationToken cancellationToken = new CancellationToken())
         {
             return _writer.WriteLineAsync(FormatLogMessage(@event));
         }

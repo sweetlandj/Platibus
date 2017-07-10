@@ -37,7 +37,7 @@ namespace Platibus.RabbitMQ
         private readonly object _syncRoot = new object();
         private readonly string _managedConnectionId;
         private readonly IConnectionFactory _connectionFactory;
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
 
         private volatile IConnection _connection;
 
@@ -45,9 +45,10 @@ namespace Platibus.RabbitMQ
 
         public string ManagedConnectionId { get { return _managedConnectionId; } }
 
-        public ManagedConnection(Uri uri, IDiagnosticEventSink diagnosticEventSink = null)
+        public ManagedConnection(Uri uri, IDiagnosticService diagnosticService)
         {
             if (uri == null) throw new ArgumentNullException("uri");
+            if (diagnosticService == null) throw new ArgumentNullException("diagnosticService");
 
             // Trailing slashes causes errors when connecting to RabbitMQ
             uri = uri.WithoutTrailingSlash();
@@ -63,7 +64,7 @@ namespace Platibus.RabbitMQ
 
             _managedConnectionId = managedConnectionIdBuilder.Uri.ToString();
             _connectionFactory = new ConnectionFactory {Uri = uri.ToString()};
-            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _diagnosticService = diagnosticService;
             _connection = _connectionFactory.CreateConnection();
         }
 
@@ -81,7 +82,7 @@ namespace Platibus.RabbitMQ
 
                     if (myConnection != null)
                     {
-                        _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQReconnect)
+                        _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQReconnect)
                         {
                             Detail = "Reconnecting managed connection ID " + _managedConnectionId
                         }.Build());
@@ -96,7 +97,7 @@ namespace Platibus.RabbitMQ
 
                     _connection = myConnection;
 
-                    _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionOpened)
+                    _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionOpened)
                     {
                         Detail = "Opened managed connection ID " + _managedConnectionId
                     }.Build());
@@ -152,7 +153,7 @@ namespace Platibus.RabbitMQ
                 _connection.Close();
                 _connection = null;
                 
-                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionClosed)
+                _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionClosed)
                 {
                     Detail = "Managed connection ID " + _managedConnectionId + " successfully closed"
                 }.Build());
@@ -168,7 +169,7 @@ namespace Platibus.RabbitMQ
                 if (_connection == null) return;
                 _connection.Abort();
                 _connection = null;
-                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionAborted)
+                _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionAborted)
                 {
                     Detail = "Managed connection ID " + _managedConnectionId + " aborted"
                 }.Build());

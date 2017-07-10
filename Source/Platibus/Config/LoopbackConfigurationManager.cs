@@ -14,35 +14,29 @@ namespace Platibus.Config
     /// </summary>
     public class LoopbackConfigurationManager : PlatibusConfigurationManager<LoopbackConfiguration>
     {
-        /// <summary>
-        /// Initializes a <see cref="LoopbackConfigurationManager"/>
-        /// </summary>
-        /// <param name="diagnosticEventSink">(Optional) A caller specified event sink that can
-        /// receive and process <see cref="DiagnosticEvent"/>s related to configuration</param>
-        public LoopbackConfigurationManager(IDiagnosticEventSink diagnosticEventSink = null) 
-            : base(diagnosticEventSink)
-        {
-        }
-
         /// <inheritdoc />
-        public override Task Initialize(LoopbackConfiguration configuration, string configSectionName = null)
+        public override async Task Initialize(LoopbackConfiguration configuration, string configSectionName = null)
         {
+            var diagnosticService = configuration.DiagnosticService;
             if (string.IsNullOrWhiteSpace(configSectionName))
             {
                 configSectionName = "platibus.loopback";
-                DiagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
-                {
-                    Detail = "Using default configuration section \"" + configSectionName + "\""
-                }.Build());
+                await diagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                    {
+                        Detail = "Using default configuration section \"" + configSectionName + "\""
+                    }.Build());
             }
 
             var configSection = ConfigurationManager.GetSection(configSectionName);
             if (configSection == null)
             {
-                DiagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
-                {
-                    Detail = "Configuration section \"" + configSectionName + "\" not found; using default configuration"
-                }.Build());
+                await diagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                    {
+                        Detail = "Configuration section \"" + configSectionName +
+                                 "\" not found; using default configuration"
+                    }.Build());
                 configSection = new PlatibusConfigurationSection();
             }
 
@@ -53,14 +47,16 @@ namespace Platibus.Config
                                    "\": expected " + typeof(LoopbackConfigurationSection) + " but was " +
                                    configSection.GetType();
 
-                DiagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
-                {
-                    Detail = errorMessage
-                }.Build());
+                await diagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
+                    {
+                        Detail = errorMessage
+                    }.Build());
+
                 throw new ConfigurationErrorsException(errorMessage);
             }
 
-            return Initialize(configuration, platibusConfigSection);
+            await Initialize(configuration, platibusConfigSection);
         }
 
         /// <summary>
@@ -82,10 +78,10 @@ namespace Platibus.Config
 
             InitializeTopics(configuration, configSection);
 
-            var messageJournalFactory = new MessageJournalFactory(DiagnosticEventSink);
+            var messageJournalFactory = new MessageJournalFactory(configuration.DiagnosticService);
             configuration.MessageJournal = await messageJournalFactory.InitMessageJournal(configSection.Journaling);
 
-            var mqsFactory = new MessageQueueingServiceFactory(DiagnosticEventSink);
+            var mqsFactory = new MessageQueueingServiceFactory(configuration.DiagnosticService);
             configuration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(configSection.Queueing);
         }
 

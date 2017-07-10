@@ -23,6 +23,7 @@
 using System;
 using System.Net;
 using Platibus.Config;
+using Platibus.Diagnostics;
 using Platibus.InMemory;
 using Platibus.Security;
 
@@ -82,9 +83,12 @@ namespace Platibus.Http
         public bool BypassTransportLocalDestination { get; set; }
 
         /// <summary>
-        /// Initializes a new <see cref="HttpServerConfiguration"/> with defaults
+        /// Initializes a new <see cref="HttpServerConfiguration"/> with a preconfigured
+        /// <paramref name="diagnosticService"/>
         /// </summary>
-        public HttpServerConfiguration()
+        /// <param name="diagnosticService">The service through which diagnostic events are
+        /// reported and processed</param>
+        public HttpServerConfiguration(IDiagnosticService diagnosticService = null) : base(diagnosticService)
         {
             SubscriptionTrackingService = new InMemorySubscriptionTrackingService();
             MessageQueueingService = new InMemoryMessageQueueingService();

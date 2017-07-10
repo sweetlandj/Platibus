@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using System.Web;
 using Platibus.Diagnostics;
@@ -34,8 +35,35 @@ namespace Platibus.IIS
     /// </summary>
     public class PlatibusHttpHandler : HttpTaskAsyncHandler
     {
+        /// <summary>
+        /// Singleton metrics collector
+        /// </summary>
+        /// <remarks>
+        /// An HTTP handler is created for each request and possibly pooled depending on the value
+        /// returned by <see cref="IsReusable"/>.  Because of this it is possible for several
+        /// HTTP handlers to exist at the same time.  In order to aggregate metrics across all
+        /// of these handlers, a static singleton metrics collector is needed.
+        /// </remarks>
+        private static readonly MetricsCollector SingletonMetricsCollector = new MetricsCollector();
+
+        /// <summary>
+        /// Configuration cache
+        /// </summary>
+        /// <remarks>
+        /// An HTTP handler is created for each request and possibly pooled depending on the value
+        /// returned by <see cref="IsReusable"/>.  Because of this it is possible for several
+        /// HTTP handlers to exist at the same time.  In order to avoid re-initializing the HTTP
+        /// handler for each new request, the configuration tasks will be cached by section name.
+        /// </remarks>
+        private static readonly ConcurrentDictionary<string, Task<IIISConfiguration>> ConfigurationCache = new ConcurrentDictionary<string, Task<IIISConfiguration>>();
+
+        static PlatibusHttpHandler()
+        {
+            DiagnosticService.DefaultInstance.AddConsumer(SingletonMetricsCollector);
+        }
+
+        private readonly Task<IIISConfiguration> _configuration;
         private readonly Task<IHttpResourceRouter> _resourceRouter;
-        private IDiagnosticEventSink _diagnosticEventSink;
 
         /// <summary>
         /// The base URI for requests handled by this handler
@@ -58,10 +86,8 @@ namespace Platibus.IIS
         /// configuration and configuration hooks
         /// </summary>
         public PlatibusHttpHandler()
+            : this(GetConfiguration())
         {
-            var configuration = LoadConfiguration();
-            var bus = InitBus(configuration);
-            _resourceRouter = InitResourceRouter(configuration, bus);
         }
 
         /// <summary>
@@ -71,12 +97,21 @@ namespace Platibus.IIS
         /// </summary>
         /// <param name="configurationSectionName">The name of the configuration
         /// section from which the bus configuration should be loaded</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// to handle diagnostic events</param>
-        public PlatibusHttpHandler(string configurationSectionName = null, IDiagnosticEventSink diagnosticEventSink = null)
+        public PlatibusHttpHandler(string configurationSectionName = null)
+            : this(GetConfiguration(configurationSectionName))
         {
-            if (string.IsNullOrWhiteSpace(configurationSectionName)) throw new ArgumentNullException("configurationSectionName");
-            var configuration = LoadConfiguration(configurationSectionName, diagnosticEventSink);
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="PlatibusHttpHandler"/> with the configuration that will
+        /// eventually be returned by the supplied <paramref name="configuration"/> task.
+        /// </summary>
+        /// <param name="configuration">A task whose result is the configuration to use for this
+        /// handler</param>
+        public PlatibusHttpHandler(Task<IIISConfiguration> configuration)
+        {
+            if (configuration == null) throw new ArgumentNullException("configuration");
+            _configuration = configuration;
             var bus = InitBus(configuration);
             _resourceRouter = InitResourceRouter(configuration, bus);
         }
@@ -87,21 +122,28 @@ namespace Platibus.IIS
         /// </summary>
         /// <param name="bus">The initialized bus instance</param>
         /// <param name="configuration">The bus configuration</param>
-        public PlatibusHttpHandler(Bus bus, IIISConfiguration configuration)
+        /// <remarks>
+        /// Used internally by <see cref="PlatibusHttpModule"/>.  This method bypasses the
+        /// configuration cache and singleton diagnostic service and metrics collector. 
+        /// </remarks>
+        internal PlatibusHttpHandler(Bus bus, IIISConfiguration configuration)
         {
             if (bus == null) throw new ArgumentNullException("bus");
             if (configuration == null) throw new ArgumentNullException("configuration");
-            _diagnosticEventSink = configuration.DiagnosticEventSink;
+            _configuration = Task.FromResult(configuration);
             _resourceRouter = Task.FromResult(InitResourceRouter(bus, configuration));
         }
 
-        private static async Task<IIISConfiguration> LoadConfiguration(string sectionName = null, IDiagnosticEventSink diagnosticEventSink = null)
+        private static Task<IIISConfiguration> GetConfiguration(string sectionName = null)
         {
-            var configuration = new IISConfiguration
-            {
-                DiagnosticEventSink = diagnosticEventSink
-            };
-            var configManager = new IISConfigurationManager(diagnosticEventSink);
+            var cacheKey = sectionName ?? "";
+            return ConfigurationCache.GetOrAdd(cacheKey, LoadConfiguration);
+        }
+
+        private static async Task<IIISConfiguration> LoadConfiguration(string sectionName = null)
+        {
+            var configuration = new IISConfiguration();
+            var configManager = new IISConfigurationManager();
             await configManager.Initialize(configuration, sectionName);
             await configManager.FindAndProcessConfigurationHooks(configuration);
             return configuration;
@@ -115,10 +157,6 @@ namespace Platibus.IIS
         private async Task<Bus> InitBus(IIISConfiguration configuration)
         {
             BaseUri = configuration.BaseUri;
-            if (configuration.DiagnosticEventSink != null)
-            {
-                _diagnosticEventSink = configuration.DiagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
-            }
             var managedBus = await BusManager.SingletonInstance.GetManagedBus(configuration);
             return await managedBus.GetBus();
         }
@@ -136,7 +174,8 @@ namespace Platibus.IIS
             {
                 {"message", new MessageController(bus.HandleMessage, authorizationService)},
                 {"topic", new TopicController(subscriptionTrackingService, configuration.Topics, authorizationService)},
-                {"journal", new JournalController(configuration.MessageJournal, configuration.AuthorizationService)}
+                {"journal", new JournalController(configuration.MessageJournal, configuration.AuthorizationService)},
+                {"metrics", new MetricsController(SingletonMetricsCollector)}
             };
         }
 
@@ -154,7 +193,10 @@ namespace Platibus.IIS
 
         private async Task ProcessRequestAsync(HttpContextBase context)
         {
-            await _diagnosticEventSink.ReceiveAsync(
+            var configuration = await _configuration;
+            var diagnosticService = configuration.DiagnosticService;
+
+            await diagnosticService.EmitAsync(
                 new HttpEventBuilder(this, HttpEventType.HttpRequestReceived)
                 {
                     Remote = context.Request.UserHostAddress,
@@ -171,11 +213,11 @@ namespace Platibus.IIS
             }
             catch (Exception ex)
             {
-                var exceptionHandler = new HttpExceptionHandler(resourceRequest, resourceResponse, _diagnosticEventSink);
+                var exceptionHandler = new HttpExceptionHandler(resourceRequest, resourceResponse, diagnosticService);
                 exceptionHandler.HandleException(ex);
             }
 
-            await _diagnosticEventSink.ReceiveAsync(
+            await diagnosticService.EmitAsync(
                 new HttpEventBuilder(this, HttpEventType.HttpRequestReceived)
                 {
                     Remote = context.Request.UserHostAddress,

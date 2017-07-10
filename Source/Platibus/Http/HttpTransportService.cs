@@ -47,7 +47,7 @@ namespace Platibus.Http
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
         private readonly bool _bypassTransportLocalDestination;
         private readonly Func<Message, CancellationToken, Task> _handleMessage;
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
         private readonly QueueName _outboundQueueName;
 
         private readonly HttpClientPool _clientPool;
@@ -70,12 +70,17 @@ namespace Platibus.Http
         /// <param name="handleMessage">A delegate used to handle messages locally rather than
         /// incurring the costs of sending them over HTTP if 
         /// <paramref name="bypassTransportLocalDestination"/> is <c>true</c></param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// that handles diagnostic events emitted from the HTTP transport service</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="baseUri"/>, 
         /// <paramref name="messageQueueingService"/>, or <paramref name="subscriptionTrackingService"/>
         /// are <c>null</c></exception>
-        public HttpTransportService(Uri baseUri, IEndpointCollection endpoints, IMessageQueueingService messageQueueingService, IMessageJournal messageJournal, ISubscriptionTrackingService subscriptionTrackingService, bool bypassTransportLocalDestination = false, Func<Message, CancellationToken, Task> handleMessage = null, IDiagnosticEventSink diagnosticEventSink = null)
+        public HttpTransportService(Uri baseUri, IEndpointCollection endpoints, 
+            IMessageQueueingService messageQueueingService, IMessageJournal messageJournal, 
+            ISubscriptionTrackingService subscriptionTrackingService, 
+            bool bypassTransportLocalDestination = false, 
+            Func<Message, CancellationToken, Task> handleMessage = null, 
+            IDiagnosticService diagnosticService = null)
         {
             if (baseUri == null) throw new ArgumentNullException("baseUri");
             if (messageQueueingService == null) throw new ArgumentNullException("messageQueueingService");
@@ -95,7 +100,7 @@ namespace Platibus.Http
             _subscriptionTrackingService = subscriptionTrackingService;
             _bypassTransportLocalDestination = bypassTransportLocalDestination;
             _handleMessage = handleMessage;
-            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
             _outboundQueueName = "Outbound";
             
             _clientPool = new HttpClientPool();
@@ -110,7 +115,7 @@ namespace Platibus.Http
         public async Task Init(CancellationToken cancellationToken = default(CancellationToken))
         {
             await _messageQueueingService.CreateQueue(_outboundQueueName, this, cancellationToken: cancellationToken);
-            await _diagnosticEventSink.ReceiveAsync(
+            await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                 {
                     Detail = "HTTP transport service initialized"
@@ -213,6 +218,7 @@ namespace Platibus.Http
             HttpClient httpClient = null;
             Uri postUri = null;
             int? status = null;
+            var delivered = false;
             try
             {
                 if (_messageJournal != null)
@@ -223,7 +229,7 @@ namespace Platibus.Http
                 var endpointBaseUri = message.Headers.Destination.WithTrailingSlash();
                 if (_bypassTransportLocalDestination && endpointBaseUri == _baseUri)
                 {
-                    await _diagnosticEventSink.ReceiveAsync(
+                    await _diagnosticService.EmitAsync(
                         new HttpEventBuilder(this, HttpEventType.HttpTransportBypassed)
                         {
                             Message = message,
@@ -246,38 +252,63 @@ namespace Platibus.Http
                 var httpResponseMessage = await httpClient.PostAsync(relativeUri, httpContent, cancellationToken);
                 status = (int)httpResponseMessage.StatusCode;
 
-                await _diagnosticEventSink.ReceiveAsync(
-                    new HttpEventBuilder(this, DiagnosticEventType.MessageSent)
+                HandleHttpErrorResponse(httpResponseMessage);
+                delivered = true;
+                await _diagnosticService.EmitAsync(
+                    new HttpEventBuilder(this, DiagnosticEventType.MessageDelivered)
                     {
                         Message = message,
                         Method = HttpMethod.Post.ToString(),
                         Uri = postUri,
                         Status = status
                     }.Build(), cancellationToken);
-
-                HandleHttpErrorResponse(httpResponseMessage);
             }
-            catch (TransportException)
+            catch (TransportException ex)
             {
+                _diagnosticService.Emit(
+                    new HttpEventBuilder(this, HttpEventType.HttpCommunicationError)
+                    {
+                        Message = message,
+                        Method = HttpMethod.Post.ToString(),
+                        Uri = postUri,
+                        Status = status,
+                        Exception = ex
+                    }.Build());
+
                 throw;
             }
             catch (UnauthorizedAccessException)
             {
+                _diagnosticService.Emit(
+                    new HttpEventBuilder(this, DiagnosticEventType.AccessDenied)
+                    {
+                        Message = message,
+                        Method = HttpMethod.Post.ToString(),
+                        Uri = postUri,
+                        Status = status
+                    }.Build());
                 throw;
             }
             catch (MessageNotAcknowledgedException)
             {
+                _diagnosticService.Emit(
+                    new HttpEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
+                    {
+                        Message = message,
+                        Method = HttpMethod.Post.ToString(),
+                        Uri = postUri,
+                        Status = status
+                    }.Build());
                 throw;
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException)
             {
                 throw;
             }
             catch (Exception ex)
             {
                 var errorMessage = string.Format("Error sending message ID {0}", message.Headers.MessageId);
-
-                _diagnosticEventSink.Receive(
+                _diagnosticService.Emit(
                     new HttpEventBuilder(this, HttpEventType.HttpCommunicationError)
                     {
                         Detail = errorMessage,
@@ -294,6 +325,17 @@ namespace Platibus.Http
             finally
             {
                 if (httpClient != null) httpClient.Dispose();
+                if (!delivered)
+                {
+                    _diagnosticService.Emit(
+                        new HttpEventBuilder(this, DiagnosticEventType.MessageDeliveryFailed)
+                        {
+                            Message = message,
+                            Method = HttpMethod.Post.ToString(),
+                            Uri = postUri,
+                            Status = status
+                        }.Build());
+                }
             }
         }
 
@@ -332,7 +374,7 @@ namespace Platibus.Http
                         
                         retryOrRenewAfter = subscription.RenewalInterval;
 
-                        _diagnosticEventSink.Receive(
+                        _diagnosticService.Emit(
                             new HttpEventBuilder(this, DiagnosticEventType.SubscriptionRenewed)
                             {
                                 Detail = "Subscription renewed.  Next renewal in " + retryOrRenewAfter,
@@ -344,7 +386,7 @@ namespace Platibus.Http
                         // Endpoint is not defined in the supplied configuration,
                         // so we cannot determine the URI.  This is an unrecoverable
                         // error, so simply return.
-                        _diagnosticEventSink.Receive(
+                        _diagnosticService.Emit(
                             new HttpEventBuilder(this, DiagnosticEventType.EndpointNotFound)
                             {
                                 Detail = "Fatal error sending subscription request: endpoint not found",
@@ -352,7 +394,7 @@ namespace Platibus.Http
                                 Exception = enfe
                             }.Build());
 
-                        _diagnosticEventSink.Receive(
+                        _diagnosticService.Emit(
                             new HttpEventBuilder(this, DiagnosticEventType.SubscriptionFailed)
                             {
                                 Topic = topicName
@@ -366,7 +408,7 @@ namespace Platibus.Http
                         // endpoint URI.  This may or may not be a temporary error.
                         // In either case, retry after 30 seconds.
                         retryOrRenewAfter = subscription.RetryInterval;
-                        _diagnosticEventSink.Receive(
+                        _diagnosticService.Emit(
                             new HttpEventBuilder(this, HttpEventType.HttpCommunicationError)
                             {
                                 Detail = "Non-fatal error sending subscription request: unable to resolve address for hostname " + nrfe.Hostname + ".  Retry in " + retryOrRenewAfter,
@@ -380,7 +422,7 @@ namespace Platibus.Http
                         // endpoint URI.  This may or may not be a temporary error.
                         // In either case, retry after 30 seconds.
                         retryOrRenewAfter = subscription.RetryInterval;
-                        _diagnosticEventSink.Receive(
+                        _diagnosticService.Emit(
                             new HttpEventBuilder(this, HttpEventType.HttpCommunicationError)
                             {
                                 Detail = "Non-fatal error sending subscription request: connection refused for " + cre.Host + ":" + cre.Port + ".  Retry in " + retryOrRenewAfter,
@@ -392,7 +434,7 @@ namespace Platibus.Http
                     {
                         // Topic is not found.  This may be temporary.
                         retryOrRenewAfter = subscription.RetryInterval;
-                        _diagnosticEventSink.Receive(
+                        _diagnosticService.Emit(
                             new HttpEventBuilder(this, HttpEventType.HttpCommunicationError)
                             {
                                 Detail = "Non-fatal error sending subscription request: resource not found.  Topic may be misconfigured.  Retry in " + retryOrRenewAfter,
@@ -405,7 +447,7 @@ namespace Platibus.Http
                         // Request is not valid.  Either the URL is malformed or the
                         // topic does not exist.  In any case, retrying would be
                         // fruitless, so just return.
-                        _diagnosticEventSink.Receive(
+                        _diagnosticService.Emit(
                             new HttpEventBuilder(this, DiagnosticEventType.EndpointNotFound)
                             {
                                 Detail = "Fatal error sending subscription request: invalid request.  Subscription abandoned.",
@@ -413,7 +455,7 @@ namespace Platibus.Http
                                 Exception = ire
                             }.Build());
 
-                        _diagnosticEventSink.Receive(
+                        _diagnosticService.Emit(
                             new HttpEventBuilder(this, DiagnosticEventType.SubscriptionFailed)
                             {
                                 Topic = topicName
@@ -427,7 +469,7 @@ namespace Platibus.Http
                         // due to temporary conditions that will resolve 
                         // themselves.  Retry in 30 seconds.
                         retryOrRenewAfter = subscription.RetryInterval;
-                        _diagnosticEventSink.Receive(
+                        _diagnosticService.Emit(
                             new HttpEventBuilder(this, HttpEventType.HttpCommunicationError)
                             {
                                 Detail = "Non-fatal error sending subscription request: communication error.  Retry in " + retryOrRenewAfter,
@@ -468,7 +510,7 @@ namespace Platibus.Http
                 var httpResponseMessage = await httpClient.PostAsync(relativeUri, new StringContent(""), cancellationToken);
                 var status = (int?)httpResponseMessage.StatusCode;
 
-                await _diagnosticEventSink.ReceiveAsync(
+                await _diagnosticService.EmitAsync(
                     new HttpEventBuilder(this, HttpEventType.HttpSubscriptionRequestSent)
                     {
                         Uri = postUri,

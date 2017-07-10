@@ -22,6 +22,7 @@
 
 using System;
 using Platibus.Config;
+using Platibus.Diagnostics;
 using Platibus.InMemory;
 using Platibus.Security;
 
@@ -66,9 +67,10 @@ namespace Platibus.Owin
         public bool BypassTransportLocalDestination { get; set; }
 
         /// <summary>
-        /// Initializes a new <see cref="OwinConfiguration"/> with defaults
+        /// Initializes a new <see cref="OwinConfiguration"/> with a preconfigured
+        /// <paramref name="diagnosticService"/>
         /// </summary>
-        public OwinConfiguration()
+        public OwinConfiguration(IDiagnosticService diagnosticService = null) : base(diagnosticService)
         {
             SubscriptionTrackingService = new InMemorySubscriptionTrackingService();
             MessageQueueingService = new InMemoryMessageQueueingService();

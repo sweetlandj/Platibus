@@ -35,6 +35,16 @@ namespace Platibus.Config
     public interface IPlatibusConfiguration
     {
         /// <summary>
+        /// Returns the diagnostic service provided by the host
+        /// </summary>
+        /// <remarks>
+        /// This can be used by implementors to raise new diagnostic events during the 
+        /// configuration process or register custom <see cref="IDiagnosticEventSink"/>s to
+        /// handle diagnostic events.
+        /// </remarks>
+        IDiagnosticService DiagnosticService { get; }
+
+        /// <summary>
         /// The maximum amount of time to wait for a reply to a sent message
         /// before clearing references and freeing held resources
         /// </summary>
@@ -82,13 +92,7 @@ namespace Platibus.Config
         /// Subscriptions to topics hosted in local or remote bus instances
         /// </summary>
         IEnumerable<ISubscription> Subscriptions { get; }
-
-        /// <summary>
-        /// Handler for diagnostic events emitted by bus components e.g. for logging, monitoring,
-        /// health checks, etc.
-        /// </summary>
-        IDiagnosticEventSink DiagnosticEventSink { get; }
-
+        
         /// <summary>
         /// The default content type for messages sent by this instance
         /// </summary>

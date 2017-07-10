@@ -35,30 +35,21 @@ namespace Platibus.RabbitMQ
     /// </summary>
     public class RabbitMQHostConfigurationManager : PlatibusConfigurationManager<RabbitMQHostConfiguration>
     {
-        /// <summary>
-        /// Initializes a <see cref="PlatibusConfigurationManager"/>
-        /// </summary>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// to handle diagnostic events related to RabbitMQ host configuration</param>
-        public RabbitMQHostConfigurationManager(IDiagnosticEventSink diagnosticEventSink = null) 
-            : base(diagnosticEventSink)
-        {
-        }
-
         /// <inheritdoc />
         public override async Task Initialize(RabbitMQHostConfiguration configuration, string configSectionName = null)
         {
+            var diagnosticsService = configuration.DiagnosticService;
             if (string.IsNullOrWhiteSpace(configSectionName))
             {
                 configSectionName = "platibus.rabbitmq";
-                await DiagnosticEventSink.ReceiveAsync(
+                await diagnosticsService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
                     {
                         Detail = "Using default configuration section \"" + configSectionName + "\""
                     }.Build());
             }
 
-            var configSection = LoadConfigurationSection<RabbitMQHostConfigurationSection>(configSectionName);
+            var configSection = LoadConfigurationSection<RabbitMQHostConfigurationSection>(configSectionName, diagnosticsService);
             await Initialize(configuration, configSection);
         }
 
@@ -88,7 +79,7 @@ namespace Platibus.RabbitMQ
             configuration.RetryDelay = configSection.RetryDelay;
             configuration.IsDurable = configSection.IsDurable;
 
-            var securityTokenServiceFactory = new SecurityTokenServiceFactory(DiagnosticEventSink);
+            var securityTokenServiceFactory = new SecurityTokenServiceFactory(configuration.DiagnosticService);
             var securityTokenConfig = configSection.SecurityTokens;
             configuration.SecurityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securityTokenConfig);
         }

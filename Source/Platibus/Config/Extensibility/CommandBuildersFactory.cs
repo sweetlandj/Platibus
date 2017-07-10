@@ -12,20 +12,20 @@ namespace Platibus.Config.Extensibility
     public class CommandBuildersFactory
     {
         private readonly ConnectionStringSettings _connectionStringSettings;
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
 
         /// <summary>
         /// Initializes a new <see cref="CommandBuildersFactory"/>
         /// </summary>
         /// <param name="connectionStringSettings">The connection string settings for the
         /// connections that will be used to create and execute the commands</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// to handle diagnostic events related to command builder initialization</param>
-        public CommandBuildersFactory(ConnectionStringSettings connectionStringSettings, IDiagnosticEventSink diagnosticEventSink = null)
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
+        public CommandBuildersFactory(ConnectionStringSettings connectionStringSettings, IDiagnosticService diagnosticService = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
             _connectionStringSettings = connectionStringSettings;
-            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace Platibus.Config.Extensibility
             IMessageJournalingCommandBuildersProvider provider;
             if (string.IsNullOrWhiteSpace(providerName))
             {
-                _diagnosticEventSink.Receive(new SQLEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                _diagnosticService.Emit(new SQLEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
                 {
                     Detail = "No provider name specified; using default provider (MSSQL)",
                     ConnectionName = _connectionStringSettings.Name,
@@ -63,7 +63,7 @@ namespace Platibus.Config.Extensibility
             IMessageQueueingCommandBuildersProvider provider;
             if (string.IsNullOrWhiteSpace(providerName))
             {
-                _diagnosticEventSink.Receive(new SQLEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                _diagnosticService.Emit(new SQLEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
                 {
                     Detail = "No provider name specified; using default provider (MSSQL)",
                     ConnectionName = _connectionStringSettings.Name,
@@ -88,7 +88,7 @@ namespace Platibus.Config.Extensibility
             ISubscriptionTrackingCommandBuildersProvider provider;
             if (string.IsNullOrWhiteSpace(providerName))
             {
-                _diagnosticEventSink.Receive(new SQLEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                _diagnosticService.Emit(new SQLEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
                 {
                     Detail = "No provider name specified; using default provider (MSSQL)",
                     ConnectionName = _connectionStringSettings.Name,

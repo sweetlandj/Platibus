@@ -36,8 +36,7 @@ namespace Platibus
         private readonly IEnumerable<IMessageHandler> _messageHandlers;
         private readonly MessageHandler _messageHandler;
 
-        public MessageHandlingListener(Bus bus, IMessageNamingService namingService,
-            ISerializationService serializationService, IDiagnosticEventSink diagnosticEventSink, IEnumerable<IMessageHandler> messageHandlers)
+        public MessageHandlingListener(Bus bus, IMessageNamingService namingService, ISerializationService serializationService, IEnumerable<IMessageHandler> messageHandlers, IDiagnosticService diagnosticService = null)
         {
             if (bus == null) throw new ArgumentNullException("bus");
             if (namingService == null) throw new ArgumentNullException("namingService");
@@ -49,7 +48,7 @@ namespace Platibus
 
             _bus = bus;
             _messageHandlers = handlerList;
-            _messageHandler = new MessageHandler(namingService, serializationService, diagnosticEventSink);
+            _messageHandler = new MessageHandler(namingService, serializationService, diagnosticService);
         }
 
         public async Task MessageReceived(Message message, IQueuedMessageContext context,

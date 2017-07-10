@@ -34,7 +34,7 @@ namespace Platibus.SQL
         /// <param name="topic">The topic to which the message pertains, if applicable</param>
         /// <param name="connectionName">The name of the connection, if applicable</param>
         /// <param name="commandText">The query string, if applicable</param>
-        public SQLEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, string endpoint = null, string queue = null, string topic = null, string connectionName = null, string commandText = null) 
+        public SQLEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, EndpointName endpoint = null, QueueName queue = null, TopicName topic = null, string connectionName = null, string commandText = null) 
             : base(source, type, detail, exception, message, endpoint, queue, topic)
         {
             _connectionName = connectionName;

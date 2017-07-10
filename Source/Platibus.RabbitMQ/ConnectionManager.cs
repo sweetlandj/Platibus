@@ -33,18 +33,18 @@ namespace Platibus.RabbitMQ
     public class ConnectionManager : IDisposable, IConnectionManager
     {
         private readonly ConcurrentDictionary<Uri, ManagedConnection> _managedConnections = new ConcurrentDictionary<Uri, ManagedConnection>();
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
 
         private volatile bool _disposed;
 
         /// <summary>
         /// Initializes a new <see cref="ConnectionManager"/>
         /// </summary>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// to handle diagnostic events</param>
-        public ConnectionManager(IDiagnosticEventSink diagnosticEventSink = null)
+        /// <param name="diagnosticService">The service through which diagnosic events are reported
+        /// and processed</param>
+        public ConnectionManager(IDiagnosticService diagnosticService = null)
         {
-            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace Platibus.RabbitMQ
 
         private ManagedConnection CreateManagedConnection(Uri uri)
         {
-            return new ManagedConnection(uri, _diagnosticEventSink);
+            return new ManagedConnection(uri, _diagnosticService);
         }
 
         private void CloseManagedConnection(ManagedConnection connection)
@@ -128,7 +128,7 @@ namespace Platibus.RabbitMQ
             }
             catch (Exception ex)
             {
-                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionError)
+                _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionError)
                 {
                     Detail = "Unhandled exception closing managed connection ID " + connection.ManagedConnectionId,
                     Exception = ex
@@ -141,7 +141,7 @@ namespace Platibus.RabbitMQ
             }
             catch (Exception ex)
             {
-                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionError)
+                _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionError)
                 {
                     Detail = "Unhandled exception aborting managed connection ID " + connection.ManagedConnectionId,
                     Exception = ex

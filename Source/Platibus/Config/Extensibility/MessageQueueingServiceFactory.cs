@@ -9,16 +9,16 @@ namespace Platibus.Config.Extensibility
     /// </summary>
     public class MessageQueueingServiceFactory
     {
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
 
         /// <summary>
         /// Initializes a new <see cref="MessageQueueingServiceFactory"/>
         /// </summary>
-        /// <param name="diagnosticEventSink">(Optional) The event sink to which diagnostic events 
-        /// related to message queueing service initialization will be sent</param>
-        public MessageQueueingServiceFactory(IDiagnosticEventSink diagnosticEventSink = null)
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
+        public MessageQueueingServiceFactory(IDiagnosticService diagnosticService = null)
         {
-            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace Platibus.Config.Extensibility
 
             var messageQueueingService = await provider.CreateMessageQueueingService(myConfig);
 
-            await _diagnosticEventSink.ReceiveAsync(
+            await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                 {
                     Detail = "Message queueing service initialized"
@@ -47,7 +47,7 @@ namespace Platibus.Config.Extensibility
         {
             if (string.IsNullOrWhiteSpace(providerName))
             {
-                await _diagnosticEventSink.ReceiveAsync(
+                await _diagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
                     {
                         Detail = "Using default filesystem-based message queueing service provider"

@@ -45,19 +45,16 @@ namespace Platibus.RabbitMQ
         /// settings for this RabbitMQ hostinstance.</param>
         /// <param name="cancellationToken">(Optional) A cancelation token that may be
         /// used by the caller to interrupt the Rabbit MQ host initialization process</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// to handle diagnostic events</param>
+        /// <param name="diagnosticService">The service through which diagnosic events are reported
+        /// and processed</param>
         /// <returns>Returns the fully initialized and listening HTTP server</returns>
         /// <seealso cref="RabbitMQHostConfigurationSection"/>
         public static async Task<RabbitMQHost> Start(string configSectionName = "platibus.rabbitmq",
             CancellationToken cancellationToken = default(CancellationToken), 
-            IDiagnosticEventSink diagnosticEventSink = null)
+            IDiagnosticService diagnosticService = null)
         {
-            var configManager = new RabbitMQHostConfigurationManager(diagnosticEventSink);
-            var configuration = new RabbitMQHostConfiguration
-            {
-                DiagnosticEventSink = diagnosticEventSink
-            };
+            var configManager = new RabbitMQHostConfigurationManager();
+            var configuration = new RabbitMQHostConfiguration(diagnosticService);
             await configManager.Initialize(configuration, configSectionName);
             await configManager.FindAndProcessConfigurationHooks(configuration);
             return await Start(configuration, cancellationToken);
@@ -90,7 +87,7 @@ namespace Platibus.RabbitMQ
         private readonly IMessageQueueingService _messageQueueingService;
         private readonly IMessageJournal _messageJournal;
         private readonly ISecurityTokenService _securityTokenService;
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
         private readonly Bus _bus;
         private readonly ConcurrentDictionary<SubscriptionKey, RabbitMQQueue> _subscriptions = new ConcurrentDictionary<SubscriptionKey, RabbitMQQueue>(); 
 
@@ -108,7 +105,7 @@ namespace Platibus.RabbitMQ
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
 
-            _diagnosticEventSink = configuration.DiagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _diagnosticService = configuration.DiagnosticService;
             _baseUri = configuration.BaseUri.WithoutTrailingSlash();
             _connectionManager = new ConnectionManager();
             _encoding = configuration.Encoding ?? Encoding.UTF8;
@@ -122,9 +119,10 @@ namespace Platibus.RabbitMQ
                 IsDurable = configuration.IsDurable
             };
 
-            _messageQueueingService = new RabbitMQMessageQueueingService(_baseUri, _defaultQueueOptions, _connectionManager, _encoding);
-            _messageJournal = configuration.MessageJournal;
             _securityTokenService = configuration.SecurityTokenService;
+            _messageJournal = configuration.MessageJournal;
+            _messageQueueingService = new RabbitMQMessageQueueingService(_baseUri, _defaultQueueOptions,
+                _connectionManager, _encoding, _securityTokenService, _diagnosticService);
             
             var connection = _connectionManager.GetConnection(_baseUri);
             using (var channel = connection.CreateModel())
@@ -133,7 +131,7 @@ namespace Platibus.RabbitMQ
                 {
                     var exchangeName = topicName.GetTopicExchangeName();
                     channel.ExchangeDeclare(exchangeName, "fanout", configuration.IsDurable, false, new Dictionary<string, object>());
-                    _diagnosticEventSink.Receive(
+                    _diagnosticService.Emit(
                         new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQExchangeDeclared)
                         {
                             Detail = "Fanout exchange declared for topic",
@@ -144,7 +142,9 @@ namespace Platibus.RabbitMQ
                 }
             }
 
-            _inboundQueue = new RabbitMQQueue(InboxQueueName, this, connection, _securityTokenService, _encoding, _defaultQueueOptions);
+            _inboundQueue = new RabbitMQQueue(InboxQueueName, this, connection, _securityTokenService, _encoding,
+                _defaultQueueOptions, _diagnosticService);
+
             _bus = new Bus(configuration, configuration.BaseUri, this, _messageQueueingService);
         }
 
@@ -187,7 +187,17 @@ namespace Platibus.RabbitMQ
             CheckDisposed();
             var destination = message.Headers.Destination;
             var connection = _connectionManager.GetConnection(destination);
-            await RabbitMQHelper.PublishMessage(message, Thread.CurrentPrincipal, connection, InboxQueueName);
+            using (var channel = connection.CreateModel())
+            {
+                await RabbitMQHelper.PublishMessage(message, Thread.CurrentPrincipal, channel, InboxQueueName);
+                await _diagnosticService.EmitAsync(
+                    new RabbitMQEventBuilder(this, DiagnosticEventType.MessageDelivered)
+                    {
+                        Message = message,
+                        ChannelNumber = channel.ChannelNumber,
+                        Queue = InboxQueueName
+                    }.Build(), cancellationToken);
+            }
         }
 
         /// <summary>
@@ -204,7 +214,17 @@ namespace Platibus.RabbitMQ
             CheckDisposed();
             var publisherTopicExchange = topicName.GetTopicExchangeName();
             var connection = _connectionManager.GetConnection(_baseUri);
-            await RabbitMQHelper.PublishMessage(message, Thread.CurrentPrincipal, connection, null, publisherTopicExchange);
+            using (var channel = connection.CreateModel())
+            {
+                await RabbitMQHelper.PublishMessage(message, Thread.CurrentPrincipal, channel, null, publisherTopicExchange);
+                await _diagnosticService.EmitAsync(
+                    new RabbitMQEventBuilder(this, DiagnosticEventType.MessageDelivered)
+                    {
+                        Message = message,
+                        ChannelNumber = channel.ChannelNumber,
+                        Exchange = publisherTopicExchange
+                    }.Build(), cancellationToken);
+            }
         }
 
         /// <summary>
@@ -247,12 +267,14 @@ namespace Platibus.RabbitMQ
                         attempts++;
                         channel.ExchangeDeclarePassive(publisherTopicExchange);
 
-                        var subscriptionQueue = new RabbitMQQueue(subscriptionQueueName, this, connection, _securityTokenService, _encoding, _defaultQueueOptions);
+                        var subscriptionQueue = new RabbitMQQueue(subscriptionQueueName, this, connection,
+                            _securityTokenService, _encoding, _defaultQueueOptions, _diagnosticService);
+
                         subscriptionQueue.Init();
 
                         channel.QueueBind(subscriptionQueueName, publisherTopicExchange, "", null);
 
-                        _diagnosticEventSink.Receive(
+                        _diagnosticService.Emit(
                             new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQQueueBound)
                             {
                                 Detail = "Subscription queue bound to topic exchange",
@@ -272,7 +294,7 @@ namespace Platibus.RabbitMQ
                         throw;
                     }
 
-                    _diagnosticEventSink.Receive(
+                    _diagnosticService.Emit(
                         new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQQueueBindError)
                         {
                             Detail = "Error binding subscription queue to topic exchange (attempt " + attempts + " of " + maxAttempts + ").  Retrying in " + retryDelay,
@@ -323,7 +345,6 @@ namespace Platibus.RabbitMQ
         /// <remarks>
         /// This method will not be called more than once
         /// </remarks>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_bus"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_inboundQueue")]
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)

@@ -9,7 +9,7 @@ using Common.Logging;
 namespace Platibus.Diagnostics
 {
     /// <summary>
-    /// A <see cref="IDiagnosticEventSink"/> implementation that sends formatted log messages to
+    /// A <see cref="IDiagnosticService"/> implementation that sends formatted log messages to
     /// a Commons Logging log
     /// </summary>
     public class CommonLoggingSink : IDiagnosticEventSink
@@ -62,7 +62,7 @@ namespace Platibus.Diagnostics
         }
 
         /// <inheritdoc />
-        public void Receive(DiagnosticEvent @event)
+        public void Consume(DiagnosticEvent @event)
         {
             var log = _logFactory(@event);
 
@@ -91,9 +91,9 @@ namespace Platibus.Diagnostics
         }
 
         /// <inheritdoc />
-        public Task ReceiveAsync(DiagnosticEvent @event, CancellationToken cancellationToken = new CancellationToken())
+        public Task ConsumeAsync(DiagnosticEvent @event, CancellationToken cancellationToken = new CancellationToken())
         {
-            Receive(@event);
+            Consume(@event);
             return Task.FromResult(0);
         }
 

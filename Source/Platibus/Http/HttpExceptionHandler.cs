@@ -33,8 +33,8 @@ namespace Platibus.Http
     {
         private readonly IHttpResourceRequest _request;
         private readonly IHttpResourceResponse _response;
+        private readonly IDiagnosticService _diagnosticService;
         private readonly object _source;
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
 
         /// <summary>
         /// Initializes a new <see cref="HttpExceptionHandler"/> for the specified HTTP 
@@ -43,19 +43,19 @@ namespace Platibus.Http
         /// <param name="request">The HTTP request being processed</param>
         /// <param name="response">The HTTP response being constructed</param>
         /// <param name="source">(Optional) The object in which the exception occurred</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// to handle diagnostic events emitted from the HTTP transport service</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="request"/> or
         /// <paramref name="response"/> are <c>null</c></exception>
-        public HttpExceptionHandler(IHttpResourceRequest request, IHttpResourceResponse response, object source = null, IDiagnosticEventSink diagnosticEventSink = null)
+        public HttpExceptionHandler(IHttpResourceRequest request, IHttpResourceResponse response, IDiagnosticService diagnosticService, object source = null)
         {
             if (request == null) throw new ArgumentNullException("request");
             if (response == null) throw new ArgumentNullException("response");
             _request = request;
             _response = response;
-            _source = source;
-            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
-        }
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+            _source = source ?? this;
+        }   
 
         /// <summary>
         /// Handles an exception by recording exception details in the log and updating
@@ -81,7 +81,7 @@ namespace Platibus.Http
             if (unauthorizedAccessException != null)
             {
                 _response.StatusCode = 401;
-                _diagnosticEventSink.Receive(new HttpEventBuilder(_source, DiagnosticEventType.AccessDenied)
+                _diagnosticService.Emit(new HttpEventBuilder(_source, DiagnosticEventType.AccessDenied)
                 {
                     Detail = "Unauthorized",
                     Uri = _request.Url,
@@ -97,7 +97,7 @@ namespace Platibus.Http
             {
                 // HTTP 422: Unprocessable Entity
                 _response.StatusCode = 422;
-                _diagnosticEventSink.Receive(new HttpEventBuilder(_source, DiagnosticEventType.MessageNotAcknowledged)
+                _diagnosticService.Emit(new HttpEventBuilder(_source, DiagnosticEventType.MessageNotAcknowledged)
                 {
                     Detail = "Message not acknowledged",
                     Uri = _request.Url,
@@ -110,7 +110,7 @@ namespace Platibus.Http
 
             // HTTP 500: Unknown error
             _response.StatusCode = 500;
-            _diagnosticEventSink.Receive(new HttpEventBuilder(_source, DiagnosticEventType.AccessDenied)
+            _diagnosticService.Emit(new HttpEventBuilder(_source, DiagnosticEventType.AccessDenied)
             {
                 Detail = "Unexpected error",
                 Uri = _request.Url,

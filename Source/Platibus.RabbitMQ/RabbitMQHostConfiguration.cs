@@ -23,6 +23,7 @@
 using System;
 using System.Text;
 using Platibus.Config;
+using Platibus.Diagnostics;
 using Platibus.Security;
 
 namespace Platibus.RabbitMQ
@@ -53,5 +54,15 @@ namespace Platibus.RabbitMQ
 
         /// <inheritdoc />
         public ISecurityTokenService SecurityTokenService { get; set; }
+
+        /// <summary>
+        /// Initializes a new <see cref="IRabbitMQHostConfiguration"/> with a preconfigured
+        /// <paramref name="diagnosticService"/>
+        /// </summary>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
+        public RabbitMQHostConfiguration(IDiagnosticService diagnosticService = null) : base(diagnosticService)
+        {
+        }
     }
 }

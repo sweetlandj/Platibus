@@ -52,10 +52,12 @@ namespace Platibus.Filesystem
         /// <param name="queueName">The name of the queue</param>
         /// <param name="listener">The listener that will consume messages from the queue</param>
         /// <param name="options">(Optional) Queueing options</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// to handle diagnostic events related to queueing</param>
-        public FilesystemMessageQueue(DirectoryInfo directory, ISecurityTokenService securityTokenService, QueueName queueName, IQueueListener listener, QueueOptions options = null, IDiagnosticEventSink diagnosticEventSink = null)
-            : base(queueName, listener, options, diagnosticEventSink)
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
+        public FilesystemMessageQueue(DirectoryInfo directory, ISecurityTokenService securityTokenService, 
+            QueueName queueName, IQueueListener listener, QueueOptions options = null, 
+            IDiagnosticService diagnosticService = null)
+            : base(queueName, listener, options, diagnosticService)
         {
             if (queueName == null) throw new ArgumentNullException("queueName");
             if (directory == null) throw new ArgumentNullException("directory");
@@ -115,7 +117,7 @@ namespace Platibus.Filesystem
             var messageWithSecurityToken = message.WithSecurityToken(securityToken);
             var messageFile = await MessageFile.Create(_directory, messageWithSecurityToken);
 
-            await DiagnosticEventSink.ReceiveAsync(
+            await DiagnosticService.EmitAsync(
                 new FilesystemEventBuilder(this, FilesystemEventType.MessageFileCreated)
                 {
                     Detail = "Message file created",
@@ -134,7 +136,7 @@ namespace Platibus.Filesystem
             foreach (var matchingFile in matchingFiles)
             {
                 matchingFile.Delete();
-                await DiagnosticEventSink.ReceiveAsync(
+                await DiagnosticService.EmitAsync(
                     new FilesystemEventBuilder(this, FilesystemEventType.MessageFileDeleted)
                     {
                         Detail = "Message file deleted",
@@ -155,7 +157,7 @@ namespace Platibus.Filesystem
             {
                 var messageFile = new MessageFile(matchingFile);
                 var deadLetter = await messageFile.MoveTo(_deadLetterDirectory);
-                await DiagnosticEventSink.ReceiveAsync(
+                await DiagnosticService.EmitAsync(
                     new FilesystemEventBuilder(this, DiagnosticEventType.DeadLetter)
                     {
                         Detail = "Message file deleted",
@@ -188,7 +190,7 @@ namespace Platibus.Filesystem
                 
                 cancellationToken.ThrowIfCancellationRequested();
 
-                await DiagnosticEventSink.ReceiveAsync(
+                await DiagnosticService.EmitAsync(
                     new FilesystemEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                     {
                         Detail = "Filesystem queue initialized",

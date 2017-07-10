@@ -48,7 +48,7 @@ namespace Platibus.RabbitMQ
         /// <param name="channelNumber">The channel number to which the message pertains, if applicable</param>
         /// <param name="consumerTag">The consumer tag to which the message pertains, if applicable</param>
         /// <param name="deliveryTag">The delivery tag to which the message pertains, if applicable</param>
-        public RabbitMQEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, string endpoint = null, string queue = null, string topic = null, string exchange = null, int? channelNumber = null, string consumerTag = null, ulong? deliveryTag = null) 
+        public RabbitMQEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, EndpointName endpoint = null, QueueName queue = null, TopicName topic = null, string exchange = null, int? channelNumber = null, string consumerTag = null, ulong? deliveryTag = null) 
             : base(source, type, detail, exception, message, endpoint, queue, topic)
         {
             _exchange = exchange;

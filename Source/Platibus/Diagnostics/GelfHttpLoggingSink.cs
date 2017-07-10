@@ -8,7 +8,7 @@ using Platibus.Http;
 namespace Platibus.Diagnostics
 {
     /// <summary>
-    /// A <see cref="IDiagnosticEventSink"/> that formats events in Graylog Extended Log Format
+    /// A <see cref="IDiagnosticService"/> that formats events in Graylog Extended Log Format
     /// (GELF) and posts them to Graylog via its HTTP REST API
     /// </summary>
     public class GelfHttpLoggingSink : GelfLoggingSink, IDisposable

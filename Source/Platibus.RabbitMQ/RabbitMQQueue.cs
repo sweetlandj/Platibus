@@ -55,7 +55,7 @@ namespace Platibus.RabbitMQ
         private readonly bool _isDurable;
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly DurableConsumer _consumer;
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
         private readonly IConnection _connection;
         private bool _disposed;
 
@@ -70,14 +70,14 @@ namespace Platibus.RabbitMQ
         /// <param name="encoding">(Optional) The encoding to use when converting serialized message 
         /// content to byte streams</param>
         /// <param name="options">(Optional) Queueing options</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// to handle diagnostic events related to RabbitMQ</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/>, 
         /// <paramref name="listener"/>, or <paramref name="connection"/> is <c>null</c></exception>
         public RabbitMQQueue(QueueName queueName, IQueueListener listener, IConnection connection,
             ISecurityTokenService securityTokenService,
             Encoding encoding = null, QueueOptions options = null, 
-            IDiagnosticEventSink diagnosticEventSink = null)
+            IDiagnosticService diagnosticService = null)
         {
             if (queueName == null) throw new ArgumentNullException("queueName");
             if (listener == null) throw new ArgumentNullException("listener");
@@ -105,11 +105,11 @@ namespace Platibus.RabbitMQ
 
             var concurrencyLimit = myOptions.ConcurrencyLimit;
             _cancellationTokenSource = new CancellationTokenSource();
-            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
 
             var consumerTag = _queueName;
             _consumer = new DurableConsumer(_connection, queueName, HandleDelivery, consumerTag, 
-                concurrencyLimit, _autoAcknowledge, _diagnosticEventSink);
+                concurrencyLimit, _autoAcknowledge, _diagnosticService);
         }
 
         /// <summary>
@@ -130,7 +130,7 @@ namespace Platibus.RabbitMQ
                 }
 
                 channel.ExchangeDeclare(_queueExchange, "direct", _isDurable, false, null);
-                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQExchangeDeclared)
+                _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQExchangeDeclared)
                 {
                     Detail = "Primary exchange declared for queue",
                     Exchange = _queueExchange,
@@ -138,7 +138,7 @@ namespace Platibus.RabbitMQ
                 }.Build());
 
                 channel.ExchangeDeclare(_deadLetterExchange, "direct", _isDurable, false, null);
-                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQExchangeDeclared)
+                _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQExchangeDeclared)
                 {
                     Detail = "Dead letter exchange declared for queue",
                     Exchange = _deadLetterExchange,
@@ -146,14 +146,14 @@ namespace Platibus.RabbitMQ
                 }.Build());
 
                 channel.QueueDeclare(_queueName, _isDurable, false, false, queueArgs);
-                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQQueueDeclared)
+                _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQQueueDeclared)
                 {
                     Detail = "Queue declared",
                     Queue = _queueName
                 }.Build());
 
                 channel.QueueBind(_queueName, _queueExchange, "", null);
-                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQQueueBound)
+                _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQQueueBound)
                 {
                     Detail = "Queue bound to primary exchange",
                     Exchange = _queueExchange,
@@ -168,7 +168,7 @@ namespace Platibus.RabbitMQ
                 };
 
                 channel.ExchangeDeclare(_retryExchange, "direct", _isDurable, false, null);
-                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQExchangeDeclared)
+                _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQExchangeDeclared)
                 {
                     Detail = "Retry exchange declared for queue",
                     Exchange = _retryExchange,
@@ -176,14 +176,14 @@ namespace Platibus.RabbitMQ
                 }.Build());
 
                 channel.QueueDeclare(_retryQueueName, _isDurable, false, false, retryQueueArgs);
-                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQQueueDeclared)
+                _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQQueueDeclared)
                 {
                     Detail = "Retry queue declared",
                     Queue = _retryQueueName
                 }.Build());
 
                 channel.QueueBind(_retryQueueName, _retryExchange, "", null);
-                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQQueueDeclared)
+                _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQQueueDeclared)
                 {
                     Detail = "Retry queue bound to retry exchange",
                     Exchange = _retryExchange,
@@ -193,7 +193,7 @@ namespace Platibus.RabbitMQ
 
             _consumer.Init();
 
-            _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, DiagnosticEventType.ComponentInitialization)
+            _diagnosticService.Emit(new RabbitMQEventBuilder(this, DiagnosticEventType.ComponentInitialization)
             {
                 Detail = "RabbitMQ queue initialized",
                 Queue = _queueName
@@ -215,7 +215,7 @@ namespace Platibus.RabbitMQ
             using (var channel = _connection.CreateModel())
             {
                 await RabbitMQHelper.PublishMessage(messageWithSecurityToken, principal, channel, null, _queueExchange, _encoding);
-                await _diagnosticEventSink.ReceiveAsync(
+                await _diagnosticService.EmitAsync(
                     new RabbitMQEventBuilder(this, DiagnosticEventType.MessageEnqueued)
                     {
                         Queue = _queueName,
@@ -251,7 +251,7 @@ namespace Platibus.RabbitMQ
                 var result = Task.Run(async () => await DispatchToListener(delivery, cancellationToken), cancellationToken).Result;
                 if (result.Acknowledged || _autoAcknowledge)
                 {
-                    _diagnosticEventSink.Receive(
+                    _diagnosticService.Emit(
                         new RabbitMQEventBuilder(this, DiagnosticEventType.MessageAcknowledged)
                         {
                             Queue = _queueName,
@@ -264,7 +264,7 @@ namespace Platibus.RabbitMQ
                 }
                 else
                 {
-                    _diagnosticEventSink.Receive(
+                    _diagnosticService.Emit(
                         new RabbitMQEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
                         {
                             Queue = _queueName,
@@ -278,7 +278,7 @@ namespace Platibus.RabbitMQ
                     var currentAttempt = delivery.BasicProperties.GetDeliveryAttempts() + 1;
                     if (currentAttempt < _maxAttempts)
                     {
-                        _diagnosticEventSink.Receive(
+                        _diagnosticService.Emit(
                             new RabbitMQEventBuilder(this, DiagnosticEventType.QueuedMessageRetry)
                             {
                                 Detail = "Message not acknowledged; retrying in " + _retryDelay,
@@ -294,7 +294,7 @@ namespace Platibus.RabbitMQ
                     }
                     else
                     {
-                        _diagnosticEventSink.Receive(
+                        _diagnosticService.Emit(
                             new RabbitMQEventBuilder(this, DiagnosticEventType.MaxAttemptsExceeded)
                             {
                                 Message = result.Message,
@@ -304,12 +304,22 @@ namespace Platibus.RabbitMQ
                             }.Build());
                         
                         channel.BasicNack(delivery.DeliveryTag, false, false);
+
+                        _diagnosticService.Emit(
+                            new RabbitMQEventBuilder(this, DiagnosticEventType.DeadLetter)
+                            {
+                                Message = result.Message,
+                                Queue = _queueName,
+                                Exchange = _deadLetterExchange,
+                                ConsumerTag = delivery.ConsumerTag,
+                                DeliveryTag = delivery.DeliveryTag
+                            }.Build());
                     }
                 }
             }
             catch (OperationCanceledException)
             {
-                _diagnosticEventSink.Receive(
+                _diagnosticService.Emit(
                     new RabbitMQEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
                     {
                         Detail = "Message not acknowledged due to requested cancelation",
@@ -322,7 +332,7 @@ namespace Platibus.RabbitMQ
             }
             catch (Exception ex)
             {
-                _diagnosticEventSink.Receive(
+                _diagnosticService.Emit(
                     new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQDeliveryError)
                     {
                         Detail = "Unhandled exception processing delivery",
@@ -379,7 +389,7 @@ namespace Platibus.RabbitMQ
             }
             catch (MessageFileFormatException ex)
             {
-                _diagnosticEventSink.Receive(
+                _diagnosticService.Emit(
                     new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQDeliveryError)
                     {
                         Detail = "Message body could not be parsed",
@@ -391,7 +401,7 @@ namespace Platibus.RabbitMQ
             }
             catch (Exception ex)
             {
-                _diagnosticEventSink.Receive(
+                _diagnosticService.Emit(
                     new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQDeliveryError)
                     {
                         Exception = ex,

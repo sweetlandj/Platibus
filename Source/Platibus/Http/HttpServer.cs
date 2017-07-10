@@ -75,7 +75,8 @@ namespace Platibus.Http
 
         private bool _disposed;
         private readonly Uri _baseUri;
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
+        private readonly MetricsCollector _metricsCollector;
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
         private readonly IMessageQueueingService _messageQueueingService;
         private readonly IMessageJournal _messageJournal;
@@ -107,7 +108,11 @@ namespace Platibus.Http
         private HttpServer(IHttpServerConfiguration configuration)
         {
             _baseUri = configuration.BaseUri;
-            _diagnosticEventSink = configuration.DiagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+
+            _metricsCollector = new MetricsCollector();
+            _diagnosticService = configuration.DiagnosticService;
+            _diagnosticService.AddConsumer(_metricsCollector);
+
             _subscriptionTrackingService = configuration.SubscriptionTrackingService;
             _messageQueueingService = configuration.MessageQueueingService;
             _messageJournal = configuration.MessageJournal;
@@ -115,7 +120,9 @@ namespace Platibus.Http
             var endpoints = configuration.Endpoints;
             _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, 
                 _messageJournal, _subscriptionTrackingService,
-                configuration.BypassTransportLocalDestination, HandleMessage);
+                configuration.BypassTransportLocalDestination, 
+                HandleMessage,
+                _diagnosticService);
 
             _bus = new Bus(configuration, _baseUri, _transportService, _messageQueueingService);
 
@@ -124,7 +131,8 @@ namespace Platibus.Http
             {
                 {"message", new MessageController(_bus.HandleMessage, authorizationService)},
                 {"topic", new TopicController(_subscriptionTrackingService, configuration.Topics, authorizationService)},
-                {"journal", new JournalController(configuration.MessageJournal, configuration.AuthorizationService)}
+                {"journal", new JournalController(configuration.MessageJournal, configuration.AuthorizationService)},
+                {"metrics", new MetricsController(_metricsCollector)}
             };
             _httpListener = InitHttpListener(_baseUri, configuration.AuthenticationSchemes);
 
@@ -145,7 +153,7 @@ namespace Platibus.Http
         {
             if (_bus == null)
             {
-                await _diagnosticEventSink.ReceiveAsync(
+                await _diagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.BusNotInitialized)
                     {
                         Detail = "Unable to delivery message: bus not initialized",
@@ -181,7 +189,7 @@ namespace Platibus.Http
             
             _httpListener.Start();
 
-            await _diagnosticEventSink.ReceiveAsync(
+            await _diagnosticService.EmitAsync(
                 new HttpEventBuilder(this, HttpEventType.HttpServerStarted)
                 {
                     Detail = "HTTP listener started",
@@ -211,7 +219,7 @@ namespace Platibus.Http
                     var context = await contextReceived;
                     var request = context.Request;
                     var remote = request.RemoteEndPoint == null ? null : request.RemoteEndPoint.ToString();
-                    await _diagnosticEventSink.ReceiveAsync(
+                    await _diagnosticService.EmitAsync(
                         new HttpEventBuilder(this, HttpEventType.HttpRequestReceived)
                         {
                             Remote = remote,
@@ -250,7 +258,7 @@ namespace Platibus.Http
             }
             catch (Exception ex)
             {
-                var exceptionHandler = new HttpExceptionHandler(resourceRequest, resourceResponse, _diagnosticEventSink);
+                var exceptionHandler = new HttpExceptionHandler(resourceRequest, resourceResponse, _diagnosticService);
                 exceptionHandler.HandleException(ex);
             }
             finally
@@ -258,7 +266,7 @@ namespace Platibus.Http
                 context.Response.Close();
             }
 
-            await _diagnosticEventSink.ReceiveAsync(
+            await _diagnosticService.EmitAsync(
                 new HttpEventBuilder(this, HttpEventType.HttpResponseSent)
                 {
                     Remote = remote,
@@ -308,7 +316,7 @@ namespace Platibus.Http
             {
                 _httpListener.Close();
 
-                _diagnosticEventSink.Receive(
+                _diagnosticService.Emit(
                     new HttpEventBuilder(this, HttpEventType.HttpServerStopped)
                     {
                         Uri = _baseUri
@@ -316,7 +324,7 @@ namespace Platibus.Http
             }
             catch (Exception ex)
             {
-                _diagnosticEventSink.Receive(
+                _diagnosticService.Emit(
                     new HttpEventBuilder(this, HttpEventType.HttpServerError)
                     {
                         Detail = "Unexpected error closing HTTP listener",
@@ -346,6 +354,8 @@ namespace Platibus.Http
             {
                 disposableSubscriptionTrackingService.Dispose();
             }
+
+            _metricsCollector.Dispose();
         }
     }
 }

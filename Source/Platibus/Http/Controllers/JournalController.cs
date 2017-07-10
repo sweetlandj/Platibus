@@ -46,12 +46,7 @@ namespace Platibus.Http.Controllers
                 return;
             }
 
-            if (_messageJournal == null)
-            {
-                // Message journaling is not enabled
-                response.StatusCode = (int)HttpStatusCode.NotImplemented;
-                return;
-            }
+            
 
             await Get(request, response);
         }
@@ -60,6 +55,13 @@ namespace Platibus.Http.Controllers
         {
             if (request == null) throw new ArgumentNullException("request");
             if (response == null) throw new ArgumentNullException("response");
+
+            if (_messageJournal == null)
+            {
+                // Message journaling is not enabled
+                response.StatusCode = (int)HttpStatusCode.NotImplemented;
+                return;
+            }
 
             var authorized = _authorizationService == null ||
                              await _authorizationService.IsAuthorizedToQueryJournal(request.Principal);

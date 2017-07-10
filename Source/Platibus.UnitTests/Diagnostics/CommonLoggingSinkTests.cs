@@ -155,7 +155,7 @@ namespace Platibus.UnitTests.Diagnostics
 
         protected Task WhenReceivingEvent()
         {
-            return new CommonLoggingSink(Log).ReceiveAsync(Event);
+            return new CommonLoggingSink(Log).ConsumeAsync(Event);
         }
         
         protected void AssertMessageIsLogged()

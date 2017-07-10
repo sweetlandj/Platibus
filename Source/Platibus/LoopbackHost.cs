@@ -45,18 +45,15 @@ namespace Platibus
         /// <see cref="PlatibusConfigurationSection"/> to use to configure the </param>
         /// <param name="cancellationToken">(Optional) A cancellation token that can be
         /// used by the caller to cancel initialization of the loopback host</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// that handles diagnostic events</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
         /// <returns>Returns a task whose result will be an initialized loopback host</returns>
         public static async Task<LoopbackHost> Start(string configSectionName = "platibus",
             CancellationToken cancellationToken = default(CancellationToken),
-            IDiagnosticEventSink diagnosticEventSink = null)
+            IDiagnosticService diagnosticService = null)
         {
-            var configManager = new LoopbackConfigurationManager(diagnosticEventSink);
-            var configuration = new LoopbackConfiguration
-            {
-                DiagnosticEventSink = diagnosticEventSink
-            };
+            var configManager = new LoopbackConfigurationManager();
+            var configuration = new LoopbackConfiguration(diagnosticService);
             await configManager.Initialize(configuration, configSectionName);
             await configManager.FindAndProcessConfigurationHooks(configuration);
             return await Start(configuration, cancellationToken);

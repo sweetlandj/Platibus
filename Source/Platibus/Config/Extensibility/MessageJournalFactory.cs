@@ -11,16 +11,16 @@ namespace Platibus.Config.Extensibility
     /// </summary>
     public class MessageJournalFactory
     {
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
 
         /// <summary>
         /// Initializes a new <see cref="MessageJournalFactory"/>
         /// </summary>
-        /// <param name="diagnosticEventSink">(Optional) The event sink to which diagnostic events 
-        /// related to message journal initialization will be sent</param>
-        public MessageJournalFactory(IDiagnosticEventSink diagnosticEventSink = null)
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
+        public MessageJournalFactory(IDiagnosticService diagnosticService = null)
         {
-            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace Platibus.Config.Extensibility
             var myConfig = configuration ?? new JournalingElement();
             if (string.IsNullOrWhiteSpace(myConfig.Provider))
             {
-                await _diagnosticEventSink.ReceiveAsync(
+                await _diagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
                     {
                         Detail = "Message journal disabled"
@@ -53,7 +53,7 @@ namespace Platibus.Config.Extensibility
             var filteredMessageJournalingService = new FilteredMessageJournal(messageJournal, categories);
             messageJournal = filteredMessageJournalingService;
 
-            await _diagnosticEventSink.ReceiveAsync(
+            await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                 {
                     Detail = "Message journal initialized"

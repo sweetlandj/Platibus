@@ -114,15 +114,20 @@
     <Compile Include="Diagnostics\ConsoleLoggingSink.cs" />
     <Compile Include="Diagnostics\DiagnosticEvent.cs" />
     <Compile Include="Diagnostics\DiagnosticEventBuilder.cs" />
+    <Compile Include="Diagnostics\DiagnosticEventHandler.cs" />
     <Compile Include="Diagnostics\DiagnosticEventLevel.cs" />
     <Compile Include="Diagnostics\DiagnosticEventType.cs" />
+    <Compile Include="Diagnostics\DiagnosticSinkExceptionEventArgs.cs" />
+    <Compile Include="Diagnostics\DiagnosticSinkExceptionHandler.cs" />
     <Compile Include="Diagnostics\GelfLoggingSink.cs" />
     <Compile Include="Diagnostics\GelfMessage.cs" />
     <Compile Include="Diagnostics\GelfHttpLoggingSink.cs" />
     <Compile Include="Diagnostics\GelfTcpLoggingSink.cs" />
     <Compile Include="Diagnostics\GelfUdpLoggingSink.cs" />
     <Compile Include="Diagnostics\IDiagnosticEventSink.cs" />
-    <Compile Include="Diagnostics\NoopDiagnosticEventSink.cs" />
+    <Compile Include="Diagnostics\MetricsCollector.cs" />
+    <Compile Include="Diagnostics\IDiagnosticService.cs" />
+    <Compile Include="Diagnostics\DiagnosticService.cs" />
     <Compile Include="Diagnostics\TextLoggingSink.cs" />
     <Compile Include="Diagnostics\UnixTime.cs" />
     <Compile Include="EndpointAddressEqualityComparer.cs" />
@@ -134,6 +139,7 @@
     <Compile Include="Http\AuthenticationSchemesElementCollection.cs" />
     <Compile Include="Http\BasicAuthorizationService.cs" />
     <Compile Include="Http\Clients\HttpMessageJournalClient.cs" />
+    <Compile Include="Http\Controllers\MetricsController.cs" />
     <Compile Include="Http\HttpClientPool.cs" />
     <Compile Include="Config\InvalidSendRuleException.cs" />
     <Compile Include="Config\InvalidSubscriptionException.cs" />
@@ -146,6 +152,7 @@
     <Compile Include="Http\Models\MessageJournalEntryDataModel.cs" />
     <Compile Include="Http\Models\JournalGetResponseModel.cs" />
     <Compile Include="Http\Models\MessageJournalEntryModel.cs" />
+    <Compile Include="Http\Models\MetricsModel.cs" />
     <Compile Include="Journaling\FilteredMessageJournal.cs" />
     <Compile Include="Journaling\IMessageJournal.cs" />
     <Compile Include="Journaling\MessageJournalEntry.cs" />

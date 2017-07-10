@@ -34,17 +34,17 @@ namespace Platibus.SQLite
         private readonly object _syncRoot = new object();
         private readonly DbProviderFactory _dbProviderFactory;
         private readonly ConnectionStringSettings _connectionStringSettings;
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
 
         private volatile DbConnection _connection;
         private bool _disposed;
 
-        public SingletonConnectionProvider(ConnectionStringSettings connectionStringSettings, IDiagnosticEventSink diagnosticEventSink = null)
+        public SingletonConnectionProvider(ConnectionStringSettings connectionStringSettings, IDiagnosticService diagnosticService = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
             _dbProviderFactory = DbProviderFactories.GetFactory(connectionStringSettings.ProviderName);
             _connectionStringSettings = connectionStringSettings;
-            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
         public DbConnection GetConnection()
@@ -64,14 +64,14 @@ namespace Platibus.SQLite
                     {
                         myConnection.Close();
 
-                        _diagnosticEventSink.Receive(new SQLEventBuilder(this, SQLEventType.ConnectionClosed)
+                        _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.ConnectionClosed)
                         {
                             ConnectionName = _connectionStringSettings.Name
                         }.Build());
                     }
                     catch (Exception ex)
                     {
-                        _diagnosticEventSink.Receive(new SQLEventBuilder(this, SQLEventType.CommandError)
+                        _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.CommandError)
                         {
                             Detail = "Error closing singleton connection",
                             ConnectionName = _connectionStringSettings.Name,
@@ -94,7 +94,7 @@ namespace Platibus.SQLite
                 {
                     myConnection.Open();
 
-                    _diagnosticEventSink.Receive(new SQLEventBuilder(this, SQLEventType.ConnectionOpened)
+                    _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.ConnectionOpened)
                     {
                         ConnectionName = _connectionStringSettings.Name
                     }.Build());
@@ -137,7 +137,7 @@ namespace Platibus.SQLite
                 }
                 catch (Exception ex)
                 {
-                    _diagnosticEventSink.Receive(new SQLEventBuilder(this, SQLEventType.CommandError)
+                    _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.CommandError)
                     {
                         Detail = "Error closing singleton connection",
                         ConnectionName = _connectionStringSettings.Name,

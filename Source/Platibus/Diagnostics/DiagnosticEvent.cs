@@ -13,9 +13,9 @@ namespace Platibus.Diagnostics
         private readonly string _detail;
         private readonly Exception _exception;
         private readonly Message _message;
-        private readonly string _endpoint;
-        private readonly string _queue;
-        private readonly string _topic;
+        private readonly EndpointName _endpoint;
+        private readonly QueueName _queue;
+        private readonly TopicName _topic;
 
         /// <summary>
         /// The object that emitted the event
@@ -50,17 +50,17 @@ namespace Platibus.Diagnostics
         /// <summary>
         /// The name of the endpoint, if applicable
         /// </summary>
-        public string Endpoint { get { return _endpoint; } }
+        public EndpointName Endpoint { get { return _endpoint; } }
 
         /// <summary>
         /// The queue to which the message pertains, if applicable
         /// </summary>
-        public string Queue { get { return _queue; } }
+        public QueueName Queue { get { return _queue; } }
 
         /// <summary>
         /// The topic to which the message pertains, if applicable
         /// </summary>
-        public string Topic { get { return _topic; } }
+        public TopicName Topic { get { return _topic; } }
 
         /// <summary>
         /// Initializes a new <see cref="DiagnosticEvent"/>
@@ -73,7 +73,7 @@ namespace Platibus.Diagnostics
         /// <param name="endpoint">The name of the endpoint, if applicable</param>
         /// <param name="queue">The queue to which the event pertains, if applicable</param>
         /// <param name="topic">The topic to which the message pertains, if applicable</param>
-        public DiagnosticEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, string endpoint = null, string queue = null, TopicName topic = null)
+        public DiagnosticEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, EndpointName endpoint = null, QueueName queue = null, TopicName topic = null)
         {
             if (source == null) throw new ArgumentNullException("source");
             if (type == null) throw new ArgumentNullException("type");

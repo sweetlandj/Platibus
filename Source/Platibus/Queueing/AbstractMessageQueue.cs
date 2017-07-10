@@ -44,7 +44,7 @@ namespace Platibus.Queueing
         /// A data sink provided by the implementer that handles diagnostic events emitted from
         /// the message queue 
         /// </summary>
-        protected readonly IDiagnosticEventSink DiagnosticEventSink;
+        protected readonly IDiagnosticService DiagnosticService;
 
         private readonly IQueueListener _listener;
         private readonly CancellationTokenSource _cancellationTokenSource;
@@ -83,18 +83,18 @@ namespace Platibus.Queueing
         /// <param name="listener">The object that will be notified when messages are
         ///     added to the queue</param>
         /// <param name="options">(Optional) Settings that influence how the queue behaves</param>
-        /// <param name="diagnosticEventSink">(Optional) Data sink provided by the implementer to
-        /// handle diagnostic events related to message queueing</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/>, or 
         /// <paramref name="listener"/> are <c>null</c></exception>
-        protected AbstractMessageQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null, IDiagnosticEventSink diagnosticEventSink = null)
+        protected AbstractMessageQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null, IDiagnosticService diagnosticService = null)
         {
             if (queueName == null) throw new ArgumentNullException("queueName");
             if (listener == null) throw new ArgumentNullException("listener");
 
             QueueName = queueName;
             _listener = listener;
-            DiagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
 
             var myOptions = options ?? new QueueOptions();
 
@@ -139,7 +139,7 @@ namespace Platibus.Queueing
             foreach (var pendingMessage in pendingMessages)
             {
                 await _queuedMessages.SendAsync(pendingMessage, cancellationToken);
-                await DiagnosticEventSink.ReceiveAsync(
+                await DiagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.MessageRequeued)
                     {
                         Detail = "Existing message requeued",
@@ -187,7 +187,7 @@ namespace Platibus.Queueing
             await _queuedMessages.SendAsync(queuedMessage, cancellationToken);
             // TODO: handle accepted == false
 
-            await DiagnosticEventSink.ReceiveAsync(
+            await DiagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.MessageEnqueued)
                 {
                     Detail = "New message enqueued",
@@ -213,7 +213,7 @@ namespace Platibus.Queueing
             {
                 queuedMessage = queuedMessage.NextAttempt();
 
-                await DiagnosticEventSink.ReceiveAsync(
+                await DiagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.MessageEnqueued)
                     {
                         Detail = "Processing queued message (attempt " + queuedMessage.Attempts + " of " + _maxAttempts + ")",
@@ -235,7 +235,7 @@ namespace Platibus.Queueing
                 catch (Exception ex)
                 {
                     exception = ex;
-                    DiagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.UnhandledException)
+                    DiagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.UnhandledException)
                     {
                         Detail = "Unhandled exception handling queued message",
                         Message = message,
@@ -247,7 +247,7 @@ namespace Platibus.Queueing
                 var eventArgs = new MessageQueueEventArgs(QueueName, queuedMessage, exception);
                 if (context.Acknowledged)
                 {
-                    await DiagnosticEventSink.ReceiveAsync(
+                    await DiagnosticService.EmitAsync(
                         new DiagnosticEventBuilder(this, DiagnosticEventType.MessageAcknowledged)
                         {
                             Detail = "Message acknowledged",
@@ -263,7 +263,7 @@ namespace Platibus.Queueing
                     return;
                 }
 
-                await DiagnosticEventSink.ReceiveAsync(
+                await DiagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
                     {
                         Detail = "Message not acknowledged",
@@ -273,7 +273,7 @@ namespace Platibus.Queueing
 
                 if (queuedMessage.Attempts >= _maxAttempts)
                 {
-                    await DiagnosticEventSink.ReceiveAsync(
+                    await DiagnosticService.EmitAsync(
                         new DiagnosticEventBuilder(this, DiagnosticEventType.MaxAttemptsExceeded)
                         {
                             Detail = "Maximum attempts exceeded (" + _maxAttempts + ")",
@@ -296,7 +296,7 @@ namespace Platibus.Queueing
                     await AcknowledgementFailure(this, eventArgs);
                 }
 
-                await DiagnosticEventSink.ReceiveAsync(
+                await DiagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.QueuedMessageRetry)
                     {
                         Detail = "Message not acknowledged; retrying in " + _retryDelay,

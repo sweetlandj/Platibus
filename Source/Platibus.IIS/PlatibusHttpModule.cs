@@ -20,7 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-
 using System;
 using System.Threading.Tasks;
 using System.Web;
@@ -31,8 +30,9 @@ namespace Platibus.IIS
     /// <summary>
     /// HTTP module for routing Platibus resource requests
     /// </summary>
-    public class PlatibusHttpModule : IHttpModule
+    public class PlatibusHttpModule : IHttpModule, IDisposable
     {
+        private readonly MetricsCollector _metricsCollector = new MetricsCollector();
         private readonly Task<IIISConfiguration> _configuration;
         private readonly Task<Bus> _bus;
 
@@ -43,9 +43,8 @@ namespace Platibus.IIS
 		/// using any configuration hooks present in the app domain assemblies
 		/// </summary>
 		public PlatibusHttpModule()
+            : this(LoadConfiguration())
 		{
-		    _configuration = LoadConfiguration();
-            _bus = InitBus(_configuration);
         }
 
         /// <summary>
@@ -54,12 +53,9 @@ namespace Platibus.IIS
         /// </summary>
         /// <param name="configurationSectionName">(Optional) The name of the configuration
         /// section from which the bus configuration should be loaded</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// to handle diagnostic events</param>
-        public PlatibusHttpModule(string configurationSectionName = null, IDiagnosticEventSink diagnosticEventSink = null)
+        public PlatibusHttpModule(string configurationSectionName = null)
+            : this(LoadConfiguration(configurationSectionName))
         {
-            _configuration = LoadConfiguration(configurationSectionName, diagnosticEventSink);
-            _bus = InitBus(_configuration);
         }
 
         /// <summary>
@@ -67,30 +63,44 @@ namespace Platibus.IIS
         /// and any configuration hooks present in the app domain assemblies
         /// </summary>
         public PlatibusHttpModule(IIISConfiguration configuration)
+            : this (Task.FromResult(configuration))
 		{
 		    if (configuration == null) throw new ArgumentNullException("configuration");
-		    _configuration = Task.FromResult(configuration);
-		    _bus = InitBus(configuration);
 		}
 
-        private static async Task<IIISConfiguration> LoadConfiguration(string sectionName = null, IDiagnosticEventSink diagnosticEventSink = null)
+        /// <summary>
+        /// Initializes a new <see cref="PlatibusHttpModule"/> with the specified configuration
+        /// and any configuration hooks present in the app domain assemblies
+        /// </summary>
+        public PlatibusHttpModule(Task<IIISConfiguration> configuration)
         {
-            var configuration = new IISConfiguration
-            {
-                DiagnosticEventSink = diagnosticEventSink
-            };
-            var configManager = new IISConfigurationManager(diagnosticEventSink);
+            if (configuration == null) throw new ArgumentNullException("configuration");
+            _configuration = Configure(configuration);
+            _bus = InitBus(configuration);
+        }
+
+        private async Task<IIISConfiguration> Configure(Task<IIISConfiguration> loadConfiguration)
+        {
+            var configuration = await loadConfiguration;
+            configuration.DiagnosticService.AddConsumer(_metricsCollector);
+            return configuration;
+        }
+
+        private static async Task<IIISConfiguration> LoadConfiguration(string sectionName = null)
+        {
+            var configuration = new IISConfiguration();
+            var configManager = new IISConfigurationManager();
             await configManager.Initialize(configuration, sectionName);
             await configManager.FindAndProcessConfigurationHooks(configuration);
             return configuration;
         }
         
-        private async Task<Bus> InitBus(Task<IIISConfiguration> configuration)
+        private static async Task<Bus> InitBus(Task<IIISConfiguration> configuration)
         {
             return await InitBus(await configuration);
         }
 
-        private async Task<Bus> InitBus(IIISConfiguration configuration)
+        private static async Task<Bus> InitBus(IIISConfiguration configuration)
         {
             var managedBus = await BusManager.SingletonInstance.GetManagedBus(configuration);
             return await managedBus.GetBus();
@@ -163,6 +173,10 @@ namespace Platibus.IIS
 		/// </remarks>
 		protected virtual void Dispose(bool disposing)
         {
+            if (disposing)
+            {
+                _metricsCollector.Dispose();
+            }
 		}
 	}
 }

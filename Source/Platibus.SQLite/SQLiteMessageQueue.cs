@@ -50,13 +50,17 @@ namespace Platibus.SQLite
         /// <param name="queueName">The name of the queue</param>
         /// <param name="listener">The object that will process messages off of the queue</param>
         /// <param name="securityTokenService">(Optional) A service for issuing security tokens
-        /// that can be stored with queued messages to preserve the security context in which
-        /// they were enqueued</param>
+        ///     that can be stored with queued messages to preserve the security context in which
+        ///     they were enqueued</param>
         /// <param name="options">(Optional) Options for concurrency and retry limits</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// to handle diagnostic events related to SQL subscription tracking</param>
-        public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null, IDiagnosticEventSink diagnosticEventSink = null)
-            : base(InitConnectionProvider(baseDirectory, queueName, diagnosticEventSink), new SQLiteMessageQueueingCommandBuilders(), queueName, listener, securityTokenService, options)
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        ///     are reported and processed</param>
+        public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, 
+            IQueueListener listener, ISecurityTokenService securityTokenService, 
+            QueueOptions options = null, IDiagnosticService diagnosticService = null)
+            : base(InitConnectionProvider(baseDirectory, queueName, diagnosticService), 
+                  new SQLiteMessageQueueingCommandBuilders(), queueName, listener, 
+                  securityTokenService, options, diagnosticService)
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _operationQueue = new ActionBlock<ISQLiteOperation>(
@@ -68,8 +72,9 @@ namespace Platibus.SQLite
                 });
         }
 
-        private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory, QueueName queueName, IDiagnosticEventSink diagnosticEventSink)
+        private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory, QueueName queueName, IDiagnosticService diagnosticService)
         {
+            var myDiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
             var dbPath = Path.Combine(directory.FullName, queueName + ".db");
             var connectionStringSettings = new ConnectionStringSettings
             {
@@ -78,7 +83,7 @@ namespace Platibus.SQLite
                 ProviderName = "System.Data.SQLite"
             };
 
-            return new SingletonConnectionProvider(connectionStringSettings, diagnosticEventSink);
+            return new SingletonConnectionProvider(connectionStringSettings, myDiagnosticService);
         }
 
         /// <inheritdoc />

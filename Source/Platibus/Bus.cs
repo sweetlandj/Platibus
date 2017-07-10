@@ -46,7 +46,7 @@ namespace Platibus
         private readonly IMessageJournal _messageJournal;
         private readonly IMessageQueueingService _messageQueueingService;
 	    private readonly string _defaultContentType;
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
 
         private readonly MemoryCacheReplyHub _replyHub = new MemoryCacheReplyHub(TimeSpan.FromMinutes(5));
         private readonly IList<ISendRule> _sendRules;
@@ -96,8 +96,8 @@ namespace Platibus
             _handlingRules = configuration.HandlingRules.ToList();
             _subscriptions = configuration.Subscriptions.ToList();
 
-            _diagnosticEventSink = configuration.DiagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
-            _messageHandler = new MessageHandler(_messageNamingService, _serializationService, _diagnosticEventSink);
+            _diagnosticService = configuration.DiagnosticService;
+            _messageHandler = new MessageHandler(_messageNamingService, _serializationService, _diagnosticService);
         }
 
         /// <summary>
@@ -128,7 +128,7 @@ namespace Platibus
                     .FirstOrDefault();
 
                 var queueListener = new MessageHandlingListener(this, _messageNamingService,
-                    _serializationService, _diagnosticEventSink, handlers);
+                    _serializationService, handlers, _diagnosticService);
 
                 await _messageQueueingService.CreateQueue(queueName, queueListener, queueOptions, cancellationToken);
             }
@@ -147,7 +147,7 @@ namespace Platibus
                 _subscriptionTasks.Add(subscriptionTask);
             }
 
-            await _diagnosticEventSink.ReceiveAsync(
+            await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.BusInitialized).Build(),
                 cancellationToken);
         }
@@ -167,7 +167,7 @@ namespace Platibus
             }
             catch (Exception ex)
             {
-                _diagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSendFailed)
+                _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSendFailed)
                 {
                     Message = message,
                     Exception = ex
@@ -214,7 +214,7 @@ namespace Platibus
                 var addressedMessage = new Message(perEndpointHeaders, prototypicalMessage.Content);
                 sendTasks.Add(SendMessage(addressedMessage, credentials, cancellationToken));
 
-                await _diagnosticEventSink.ReceiveAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
+                await _diagnosticService.EmitAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
                 {
                     Message = addressedMessage,
                     Endpoint = endpointName
@@ -252,7 +252,7 @@ namespace Platibus
             var sentMessage = _replyHub.CreateSentMessage(message);
             await SendMessage(message, credentials, cancellationToken);
 
-            await _diagnosticEventSink.ReceiveAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
+            await _diagnosticService.EmitAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
             {
                 Message = message,
                 Endpoint = endpointName
@@ -302,7 +302,7 @@ namespace Platibus
             var sentMessage = _replyHub.CreateSentMessage(message);
             await SendMessage(message, credentials, cancellationToken);
 
-            await _diagnosticEventSink.ReceiveAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
+            await _diagnosticService.EmitAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
             {
                 Message = message
             }.Build(), cancellationToken);
@@ -340,6 +340,12 @@ namespace Platibus
             }
 
             await _transportService.PublishMessage(message, topic, cancellationToken);
+            await _diagnosticService.EmitAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.MessagePublished)
+                {
+                    Message = message,
+                    Topic = topic
+                }.Build(), cancellationToken);
         }
 
         private Message BuildMessage(object content, IMessageHeaders suppliedHeaders = null,

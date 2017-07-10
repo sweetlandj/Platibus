@@ -44,7 +44,7 @@ namespace Platibus.SQL
         /// <summary>
         /// A data sink provided by the implementer to handle diagnostic events
         /// </summary>
-        protected readonly IDiagnosticEventSink DiagnosticEventSink;
+        protected readonly IDiagnosticService DiagnosticService;
 
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly IMessageJournalingCommandBuilders _commandBuilders;
@@ -91,12 +91,12 @@ namespace Platibus.SQL
         /// string settings and dialect
         /// </summary>
         /// <param name="connectionStringSettings">The connection string settings to use to connect
-        /// to the SQL database</param>
+        ///     to the SQL database</param>
         /// <param name="commandBuilders">(Optional) A collection of factories capable of 
-        /// generating database commands for manipulating queued messages that conform to the SQL
-        /// syntax required by the underlying connection provider (if needed)</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer to
-        /// handle diagnostic events related to SQL message journaling</param>
+        ///     generating database commands for manipulating queued messages that conform to the SQL
+        ///     syntax required by the underlying connection provider (if needed)</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        ///     are reported and processed</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionStringSettings"/>
         /// is <c>null</c></exception>
         /// <remarks>
@@ -105,13 +105,15 @@ namespace Platibus.SQL
         /// </remarks>
         /// <seealso cref="CommandBuildersFactory.InitMessageJournalingCommandBuilders"/>
         /// <seealso cref="IMessageJournalingCommandBuildersProvider"/>
-        public SQLMessageJournal(ConnectionStringSettings connectionStringSettings, IMessageJournalingCommandBuilders commandBuilders = null, IDiagnosticEventSink diagnosticEventSink = null)
+        public SQLMessageJournal(ConnectionStringSettings connectionStringSettings, 
+            IMessageJournalingCommandBuilders commandBuilders = null, 
+            IDiagnosticService diagnosticService = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-            _connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
-            DiagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
-            _commandBuilders = commandBuilders ??
-                               new CommandBuildersFactory(connectionStringSettings, DiagnosticEventSink)
+            DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
+            _connectionProvider = new DefaultConnectionProvider(connectionStringSettings, DiagnosticService);
+           _commandBuilders = commandBuilders ??
+                               new CommandBuildersFactory(connectionStringSettings, DiagnosticService)
                                    .InitMessageJournalingCommandBuilders();
         }
 
@@ -120,20 +122,22 @@ namespace Platibus.SQL
         /// provider and dialect
         /// </summary>
         /// <param name="connectionProvider">The connection provider to use to connect to
-        /// the SQL database</param>
+        ///     the SQL database</param>
         /// <param name="commandBuilders">A set of commands that conform to the SQL syntax
-        /// required by the underlying connection provider</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer to
-        /// handle diagnostic events related to SQL message journaling</param>
+        ///     required by the underlying connection provider</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        ///     are reported and processed</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>
         /// or <paramref name="commandBuilders"/> is <c>null</c></exception>
-        public SQLMessageJournal(IDbConnectionProvider connectionProvider, IMessageJournalingCommandBuilders commandBuilders, IDiagnosticEventSink diagnosticEventSink = null)
+        public SQLMessageJournal(IDbConnectionProvider connectionProvider, 
+            IMessageJournalingCommandBuilders commandBuilders, 
+            IDiagnosticService diagnosticService = null)
         {
             if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
             if (commandBuilders == null) throw new ArgumentNullException("commandBuilders");
+            DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
             _connectionProvider = connectionProvider;
             _commandBuilders = commandBuilders;
-            DiagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
         }
 
         /// <inheritdoc />

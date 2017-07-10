@@ -51,7 +51,7 @@ namespace Platibus.Multicast
         /// <param name="node">The node to which the multicast event pertains</param>
         /// <param name="host">The node to which the multicast event pertains</param>
         /// <param name="port">The node to which the multicast event pertains</param>
-        public MulticastEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, string endpoint = null, string queue = null, string topic = null, string node = null, string host = null, int? port = null) 
+        public MulticastEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, EndpointName endpoint = null, QueueName queue = null, TopicName topic = null, string node = null, string host = null, int? port = null) 
             : base(source, type, detail, exception, message, endpoint, queue, topic)
         {
             _node = node;

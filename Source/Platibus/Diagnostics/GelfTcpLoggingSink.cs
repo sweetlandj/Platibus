@@ -8,7 +8,7 @@ using System.Threading.Tasks.Dataflow;
 namespace Platibus.Diagnostics
 {
     /// <summary>
-    /// A <see cref="IDiagnosticEventSink"/> that formats events in Graylog Extended Log Format
+    /// A <see cref="IDiagnosticService"/> that formats events in Graylog Extended Log Format
     /// (GELF) and posts them to Graylog via its TCP endpoint
     /// </summary>
     public class GelfTcpLoggingSink : GelfLoggingSink, IDisposable

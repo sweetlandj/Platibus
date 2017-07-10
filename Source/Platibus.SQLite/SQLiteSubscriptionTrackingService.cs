@@ -44,17 +44,18 @@ namespace Platibus.SQLite
         /// <summary>
         /// Initializes a new <see cref="SQLiteSubscriptionTrackingService"/>
         /// </summary>
-        /// <param name="baseDirectory">The directory in which the SQLite database files will
-        /// be created</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// to handle diagnostic events related to SQL subscription tracking</param>
+        /// <param name="baseDirectory">The directory in which the SQLite database files will be 
+        ///     created</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        ///     are reported and processed</param>
         /// <remarks>
         /// If a base directory is not specified then the base directory will default to a
         /// directory named <c>platibus\subscriptions</c> beneath the current app domain base 
         /// directory.  If the base directory does not exist it will be created.
         /// </remarks>
-        public SQLiteSubscriptionTrackingService(DirectoryInfo baseDirectory, IDiagnosticEventSink diagnosticEventSink = null)
-            : base(InitConnectionProvider(baseDirectory, diagnosticEventSink), new SQLiteSubscriptionTrackingCommandBuilders(), diagnosticEventSink)
+        public SQLiteSubscriptionTrackingService(DirectoryInfo baseDirectory, IDiagnosticService diagnosticService = null)
+            : base(InitConnectionProvider(baseDirectory, diagnosticService), 
+                  new SQLiteSubscriptionTrackingCommandBuilders(), diagnosticService)
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _operationQueue = new ActionBlock<ISQLiteOperation>(
@@ -66,8 +67,9 @@ namespace Platibus.SQLite
                 });
         }
 
-        private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory, IDiagnosticEventSink diagnosticEventSink)
+        private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory, IDiagnosticService diagnosticService)
         {
+            var myDiagnosticsService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
             if (directory == null)
             {
                 var appDomainDirectory = AppDomain.CurrentDomain.BaseDirectory;
@@ -88,7 +90,7 @@ namespace Platibus.SQLite
                 ProviderName = "System.Data.SQLite"
             };
 
-            return new SingletonConnectionProvider(connectionStringSettings, diagnosticEventSink);
+            return new SingletonConnectionProvider(connectionStringSettings, myDiagnosticsService);
         }
 
         /// <summary>

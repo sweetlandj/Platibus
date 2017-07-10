@@ -33,6 +33,7 @@ namespace Platibus.Owin
 {
     public class PlatibusMiddleware : IDisposable
     {
+        private readonly MetricsCollector _metricsCollector = new MetricsCollector();
         private readonly Task<IOwinConfiguration> _configuration;
         private readonly Task<Bus> _bus;
         private readonly Task<IHttpResourceRouter> _resourceRouter;
@@ -41,30 +42,37 @@ namespace Platibus.Owin
         private ISubscriptionTrackingService _subscriptionTrackingService;
         private IMessageQueueingService _messageQueueingService;
         private IMessageJournal _messageJournal;
-        private IDiagnosticEventSink _diagnosticEventSink = NoopDiagnosticEventSink.Instance;
 
         private bool _disposed;
 
         public Task<IOwinConfiguration> Configuration { get { return _configuration; } }
         public Task<Bus> Bus { get { return _bus; } }
 
-        public PlatibusMiddleware(string sectionName = null, IDiagnosticEventSink diagnosticEventSink = null)
-            : this(LoadConfiguration(sectionName, diagnosticEventSink))
+        public PlatibusMiddleware(string sectionName = null)
+            : this(LoadConfiguration(sectionName))
         {
         }
 
-        public PlatibusMiddleware(IOwinConfiguration configuration) : this(Task.FromResult(configuration))
+        public PlatibusMiddleware(IOwinConfiguration configuration) 
+            : this(Task.FromResult(configuration))
         {
         }
 
         public PlatibusMiddleware(Task<IOwinConfiguration> configuration)
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
-            _configuration = configuration;
+            _configuration = Configure(configuration);
             _bus = InitBus(_configuration);
             _resourceRouter = InitResourceRouter(_configuration, _bus);
         }
 
+        private async Task<IOwinConfiguration> Configure(Task<IOwinConfiguration> loadConfiguration)
+        {
+            var configuration = await loadConfiguration;
+            configuration.DiagnosticService.AddConsumer(_metricsCollector);
+            return configuration;
+        }
+        
         public async Task Invoke(IOwinContext context, Func<Task> next)
         {
             var configuration = await _configuration ?? new OwinConfiguration();
@@ -74,7 +82,7 @@ namespace Platibus.Owin
 
             if (IsPlatibusUri(context.Request.Uri, baseUri))
             {
-                await HandlePlatibusRequest(context);
+                await HandlePlatibusRequest(context, configuration.DiagnosticService);
             }
             else if (next != null)
             {
@@ -82,9 +90,9 @@ namespace Platibus.Owin
             }
         }
 
-        private async Task HandlePlatibusRequest(IOwinContext context)
+        private async Task HandlePlatibusRequest(IOwinContext context, IDiagnosticService diagnosticService)
         {
-            await _diagnosticEventSink.ReceiveAsync(
+            await diagnosticService.EmitAsync(
                 new HttpEventBuilder(this, HttpEventType.HttpRequestReceived)
                 {
                     Remote = context.Request.RemoteIpAddress,
@@ -102,11 +110,11 @@ namespace Platibus.Owin
             }
             catch (Exception ex)
             {
-                var exceptionHandler = new HttpExceptionHandler(resourceRequest, resourceResponse, _diagnosticEventSink);
+                var exceptionHandler = new HttpExceptionHandler(resourceRequest, resourceResponse, diagnosticService);
                 exceptionHandler.HandleException(ex);
             }
 
-            await _diagnosticEventSink.ReceiveAsync(
+            await diagnosticService.EmitAsync(
                 new HttpEventBuilder(this, HttpEventType.HttpResponseSent)
                 {
                     Remote = context.Request.RemoteIpAddress,
@@ -116,13 +124,10 @@ namespace Platibus.Owin
                 }.Build());
         }
 
-        private static async Task<IOwinConfiguration> LoadConfiguration(string sectionName, IDiagnosticEventSink diagnosticEventSink)
+        private static async Task<IOwinConfiguration> LoadConfiguration(string sectionName)
         {
-            var configManager = new OwinConfigurationManager(diagnosticEventSink);
-            var configuration = new OwinConfiguration
-            {
-                DiagnosticEventSink = diagnosticEventSink
-            };
+            var configManager = new OwinConfigurationManager();
+            var configuration = new OwinConfiguration();
             await configManager.Initialize(configuration, sectionName);
             await configManager.FindAndProcessConfigurationHooks(configuration);
             return configuration;
@@ -136,19 +141,18 @@ namespace Platibus.Owin
         private async Task<Bus> InitBus(IOwinConfiguration configuration)
         {
             var baseUri = configuration.BaseUri;
+            
             _subscriptionTrackingService = configuration.SubscriptionTrackingService;
             _messageQueueingService = configuration.MessageQueueingService;
             _messageJournal = configuration.MessageJournal;
-
-            if (configuration.DiagnosticEventSink != null)
-            {
-                _diagnosticEventSink = configuration.DiagnosticEventSink;
-            }
-
+            
             var endpoints = configuration.Endpoints;
-            _transportService = new HttpTransportService(baseUri, endpoints, _messageQueueingService,
+            _transportService = new HttpTransportService(baseUri, endpoints, 
+                _messageQueueingService,
                 _messageJournal, _subscriptionTrackingService,
-                configuration.BypassTransportLocalDestination, HandleMessage);
+                configuration.BypassTransportLocalDestination, 
+                HandleMessage, 
+                configuration.DiagnosticService);
 
             var bus = new Bus(configuration, baseUri, _transportService, _messageQueueingService);
 
@@ -158,12 +162,12 @@ namespace Platibus.Owin
             return bus;
         }
 
-        private static async Task<IHttpResourceRouter> InitResourceRouter(Task<IOwinConfiguration> configuration, Task<Bus> bus)
+        private async Task<IHttpResourceRouter> InitResourceRouter(Task<IOwinConfiguration> configuration, Task<Bus> bus)
         {
             return InitResourceRouter(await configuration, await bus);
         }
 
-        private static IHttpResourceRouter InitResourceRouter(IOwinConfiguration configuration, Bus bus)
+        private IHttpResourceRouter InitResourceRouter(IOwinConfiguration configuration, Bus bus)
         {
             var authorizationService = configuration.AuthorizationService;
             var subscriptionTrackingService = configuration.SubscriptionTrackingService;
@@ -171,7 +175,8 @@ namespace Platibus.Owin
             {
                 {"message", new MessageController(bus.HandleMessage, authorizationService)},
                 {"topic", new TopicController(subscriptionTrackingService, configuration.Topics, authorizationService)},
-                {"journal", new JournalController(configuration.MessageJournal, configuration.AuthorizationService)}
+                {"journal", new JournalController(configuration.MessageJournal, configuration.AuthorizationService)},
+                {"metrics", new MetricsController(_metricsCollector)},
             };
         }
 
@@ -223,6 +228,7 @@ namespace Platibus.Owin
 
             _bus.Dispose();
             _transportService.Dispose();
+            _metricsCollector.Dispose();
 
             var disposableMessageQueueingService = _messageQueueingService as IDisposable;
             if (disposableMessageQueueingService != null)

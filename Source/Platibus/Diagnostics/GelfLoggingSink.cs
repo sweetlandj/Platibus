@@ -9,7 +9,7 @@ using Platibus.Http;
 namespace Platibus.Diagnostics
 {
     /// <summary>
-    /// A base class for <see cref="IDiagnosticEventSink"/> implementations based on the Graylog
+    /// A base class for <see cref="IDiagnosticService"/> implementations based on the Graylog
     /// Extended Log Format (GELF)
     /// </summary>
     public abstract class GelfLoggingSink : IDiagnosticEventSink
@@ -21,7 +21,7 @@ namespace Platibus.Diagnostics
         };
 
         /// <inheritdoc />
-        public void Receive(DiagnosticEvent @event)
+        public void Consume(DiagnosticEvent @event)
         {
             try
             {
@@ -37,7 +37,7 @@ namespace Platibus.Diagnostics
         }
 
         /// <inheritdoc />
-        public async Task ReceiveAsync(DiagnosticEvent @event, CancellationToken cancellationToken = new CancellationToken())
+        public async Task ConsumeAsync(DiagnosticEvent @event, CancellationToken cancellationToken = new CancellationToken())
         {
             try
             {

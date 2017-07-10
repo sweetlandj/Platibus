@@ -384,8 +384,7 @@ namespace Platibus.Config
             Type handlerType, Func<object> handlerFactory = null, 
             QueueNameFactory queueNameFactory = null, QueueOptions queueOptions = null)
         {
-            var diagnosticEventSink = configuration.DiagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
-
+            var diagnosticService = configuration.DiagnosticService;
             var autoBindInterfaces = handlerType
                 .GetInterfaces()
                 .Where(i => i.IsGenericType && typeof(IMessageHandler<>).IsAssignableFrom(i.GetGenericTypeDefinition()));
@@ -421,7 +420,7 @@ namespace Platibus.Config
                         }
                         catch (Exception e)
                         {
-                            diagnosticEventSink.Receive(new DiagnosticEventBuilder(null, DiagnosticEventType.ConfigurationError)
+                            diagnosticService.Emit(new DiagnosticEventBuilder(null, DiagnosticEventType.ConfigurationError)
                             {
                                 Detail = "Error activiting instance of message handler " + handlerType,
                                 Exception = e

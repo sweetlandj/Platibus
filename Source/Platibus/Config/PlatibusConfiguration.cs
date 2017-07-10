@@ -39,11 +39,16 @@ namespace Platibus.Config
     /// </remarks>
     public class PlatibusConfiguration : IPlatibusConfiguration
     {
+        private readonly IDiagnosticService _diagnosticService;
+
         private readonly EndpointCollection _endpoints = new EndpointCollection();
         private readonly IList<IHandlingRule> _handlingRules = new List<IHandlingRule>();
         private readonly IList<ISendRule> _sendRules = new List<ISendRule>();
         private readonly IList<ISubscription> _subscriptions = new List<ISubscription>();
         private readonly IList<TopicName> _topics = new List<TopicName>();
+
+        /// <inheritdoc />
+        public IDiagnosticService DiagnosticService { get { return _diagnosticService; } }
 
         /// <inheritdoc />
         public TimeSpan ReplyTimeout { get; set; }
@@ -89,23 +94,26 @@ namespace Platibus.Config
 
         /// <inheritdoc />
         public string DefaultContentType { get; set; }
-
-        /// <inheritdoc />
-        public IDiagnosticEventSink DiagnosticEventSink { get; set; }
-
+        
         /// <summary>
-        /// Initializes a new <see cref="PlatibusConfiguration"/> instance with
-        /// the default message naming and serialization services.
+        /// Initializes a new <see cref="PlatibusConfiguration"/> with a preconfigured
+        /// <paramref name="diagnosticService"/>
         /// </summary>
-        /// <seealso cref="DefaultMessageNamingService"/>
-        /// <seealso cref="DefaultSerializationService"/>
-        public PlatibusConfiguration()
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
+        /// <remarks>
+        /// If a custom <paramref name="diagnosticService"/> is not specified, then the default
+        /// singleton instance <see cref="Diagnostics.DiagnosticService.DefaultInstance"/> will 
+        /// be used.
+        /// </remarks>
+        public PlatibusConfiguration(IDiagnosticService diagnosticService = null)
         {
             MessageNamingService = new DefaultMessageNamingService();
             SerializationService = new DefaultSerializationService();
-		    DefaultContentType = "application/json";
+            DefaultContentType = "application/json";
+            _diagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
         }
-
+        
         /// <summary>
         /// Adds a named endpoint to the configuration
         /// </summary>

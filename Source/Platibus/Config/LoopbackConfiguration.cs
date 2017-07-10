@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System;
+using Platibus.Diagnostics;
 
 namespace Platibus.Config
 {
@@ -45,10 +46,14 @@ namespace Platibus.Config
         /// </summary>
         public IMessageQueueingService MessageQueueingService { get; set; }
 
+
         /// <summary>
-        /// Initializes a new <see cref="LoopbackConfiguration"/>
+        /// Initializes a new <see cref="LoopbackConfiguration"/> with a preconfigured
+        /// <paramref name="diagnosticService"/>
         /// </summary>
-        public LoopbackConfiguration()
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
+        public LoopbackConfiguration(IDiagnosticService diagnosticService = null) : base(diagnosticService)
         {
             _loopbackEndpoint = new EndpointName("looback");
             _baseUri = new Uri("urn:localhost/loopback");

@@ -38,7 +38,7 @@ namespace Platibus.RabbitMQ
         private readonly Action<IModel, BasicDeliverEventArgs, CancellationToken> _consume;
         private readonly bool _autoAcknowledge;
         private readonly CancellationTokenSource _cancellationTokenSource;
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
         
         private volatile IConnection _connection;
         private volatile IModel _channel;
@@ -48,7 +48,7 @@ namespace Platibus.RabbitMQ
         public DurableConsumer(IConnection connection, string queueName, 
             Action<IModel, BasicDeliverEventArgs, CancellationToken> consume, 
             string consumerTag = null, int concurrencyLimit = 0,
-            bool autoAcknowledge = false, IDiagnosticEventSink diagnosticEventSink = null)
+            bool autoAcknowledge = false, IDiagnosticService diagnosticService = null)
         {
             if (string.IsNullOrWhiteSpace(queueName)) throw new ArgumentNullException("queueName");
             if (connection == null) throw new ArgumentNullException("connection");
@@ -63,7 +63,7 @@ namespace Platibus.RabbitMQ
 
             _autoAcknowledge = autoAcknowledge;
             _cancellationTokenSource = new CancellationTokenSource();
-            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
         public void Init()
@@ -79,7 +79,7 @@ namespace Platibus.RabbitMQ
                 }
                 catch (Exception ex)
                 {
-                    _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
+                    _diagnosticService.Emit(new RabbitMQEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
                     {
                         Detail = "Unhandled exception in consumer callback",
                         Exception = ex,
@@ -93,7 +93,7 @@ namespace Platibus.RabbitMQ
             };
 
             _channel.BasicConsume(_queueName, _autoAcknowledge, _consumerTag, consumer);
-            _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConsumerAdded)
+            _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConsumerAdded)
             {
                 ChannelNumber = _channel.ChannelNumber,
                 ConsumerTag = _consumerTag
@@ -109,7 +109,7 @@ namespace Platibus.RabbitMQ
                     var channel = _connection.CreateModel();
                     channel.BasicQos(0, _concurrencyLimit, false);
 
-                    _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQChannelCreated)
+                    _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQChannelCreated)
                     {
                         ChannelNumber = channel.ChannelNumber,
                         ConsumerTag = _consumerTag
@@ -120,7 +120,7 @@ namespace Platibus.RabbitMQ
                 catch (Exception ex)
                 {
                     var delay = TimeSpan.FromSeconds(5);
-                    _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQChannelCreationFailed)
+                    _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQChannelCreationFailed)
                     {
                         Detail = "Error creating RabbitMQ channel.  Retrying in " + delay,
                         Exception = ex,
@@ -141,7 +141,7 @@ namespace Platibus.RabbitMQ
             try
             {
                 myChannel.BasicCancel(_consumerTag);
-                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConsumerCanceled)
+                _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConsumerCanceled)
                 {
                     ChannelNumber = myChannel.ChannelNumber,
                     ConsumerTag = _consumerTag
@@ -149,7 +149,7 @@ namespace Platibus.RabbitMQ
             }
             catch (Exception ex)
             {
-                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConsumerCancelError)
+                _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConsumerCancelError)
                 {
                     ChannelNumber = myChannel.ChannelNumber,
                     ConsumerTag = _consumerTag,
@@ -167,7 +167,7 @@ namespace Platibus.RabbitMQ
             try
             {
                 myChannel.Close();
-                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQChannelClosed)
+                _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQChannelClosed)
                 {
                     ChannelNumber = myChannel.ChannelNumber,
                     ConsumerTag = _consumerTag
@@ -175,7 +175,7 @@ namespace Platibus.RabbitMQ
             }
             catch (Exception ex)
             {
-                _diagnosticEventSink.Receive(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQChannelCloseError)
+                _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQChannelCloseError)
                 {
                     ChannelNumber = myChannel.ChannelNumber,
                     ConsumerTag = _consumerTag,

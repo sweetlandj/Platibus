@@ -9,13 +9,19 @@ namespace Platibus.Diagnostics
     /// <remarks>
     /// Implementations of this interface must be threadsafe.
     /// </remarks>
-    public interface IDiagnosticEventSink
+    public interface IDiagnosticService
     {
         /// <summary>
-        /// Receives and handles a diagnostic event
+        /// Registers a data sink to receive a copy of each diagnostic event that is emitted
+        /// </summary>
+        /// <param name="sink"></param>
+        void AddConsumer(IDiagnosticEventSink sink);
+
+        /// <summary>
+        ///  Receives and handles a diagnostic event
         /// </summary>
         /// <param name="event">The diagnostic event to consume</param>
-        void Consume(DiagnosticEvent @event);
+        void Emit(DiagnosticEvent @event);
 
         /// <summary>
         /// Receives and handles a diagnostic event asynchronously
@@ -23,6 +29,6 @@ namespace Platibus.Diagnostics
         /// <param name="event">The diagnostic event to consume</param>
         /// <param name="cancellationToken">(Optional) A cancellation token that can be provided
         /// by the caller to interrupt processing of the diagnostic event</param>
-        Task ConsumeAsync(DiagnosticEvent @event, CancellationToken cancellationToken = default(CancellationToken));
+        Task EmitAsync(DiagnosticEvent @event, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

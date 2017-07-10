@@ -45,7 +45,7 @@ namespace Platibus.RabbitMQ
         private readonly IConnectionManager _connectionManager;
         private readonly ISecurityTokenService _securityTokenService;
         private readonly bool _disposeConnectionManager;
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
 
         private bool _disposed;
 
@@ -59,8 +59,8 @@ namespace Platibus.RabbitMQ
         /// message content to byte streams</param>
         /// <param name="securityTokenService">(Optional) The message security token
         /// service to use to issue and validate security tokens for persisted messages.</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink supplied by the implementor
-        /// to handle diagnostic events</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="uri"/> is
         /// <c>null</c></exception>
         /// <remarks>
@@ -70,7 +70,7 @@ namespace Platibus.RabbitMQ
         public RabbitMQMessageQueueingService(Uri uri, QueueOptions defaultQueueOptions = null, 
             IConnectionManager connectionManager = null, Encoding encoding = null, 
             ISecurityTokenService securityTokenService = null, 
-            IDiagnosticEventSink diagnosticEventSink = null)
+            IDiagnosticService diagnosticService = null)
         {
             if (uri == null) throw new ArgumentNullException("uri");
 
@@ -84,7 +84,7 @@ namespace Platibus.RabbitMQ
             _connectionManager = connectionManager;
             _encoding = encoding ?? Encoding.UTF8;
             _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
-            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace Platibus.RabbitMQ
             CheckDisposed();
             var connection = _connectionManager.GetConnection(_uri);
             var queue = new RabbitMQQueue(queueName, listener, connection, _securityTokenService,
-                _encoding, options ?? _defaultQueueOptions, _diagnosticEventSink);
+                _encoding, options ?? _defaultQueueOptions, _diagnosticService);
 
             if (!_queues.TryAdd(queueName, queue))
             {

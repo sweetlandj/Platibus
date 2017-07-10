@@ -34,28 +34,20 @@ namespace Platibus.Owin
     /// </summary>
     public class OwinConfigurationManager : PlatibusConfigurationManager<OwinConfiguration>
     {
-        /// <summary>
-        /// Initializes a new <see cref="OwinConfigurationManager"/>
-        /// </summary>
-        /// <param name="diagnosticEventSink">(Optional) A caller specified event sink that can
-        /// receive and process <see cref="DiagnosticEvent"/>s related to configuration</param>
-        public OwinConfigurationManager(IDiagnosticEventSink diagnosticEventSink = null) : base(diagnosticEventSink)
-        {
-        }
-
         public override async Task Initialize(OwinConfiguration configuration, string configSectionName = null)
         {
+            var diagnosticService = configuration.DiagnosticService;
             if (string.IsNullOrWhiteSpace(configSectionName))
             {
                 configSectionName = "platibus.owin";
-                await DiagnosticEventSink.ReceiveAsync(
+                await diagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
                     {
                         Detail = "Using default configuration section \"" + configSectionName + "\""
                     }.Build());
             }
 
-            var configSection = LoadConfigurationSection<OwinConfigurationSection>(configSectionName);
+            var configSection = LoadConfigurationSection<OwinConfigurationSection>(configSectionName, diagnosticService);
             await Initialize(configuration, configSection);
         }
         
@@ -73,11 +65,11 @@ namespace Platibus.Owin
             configuration.BaseUri = configSection.BaseUri;
             configuration.BypassTransportLocalDestination = configSection.BypassTransportLocalDestination;
 
-            var mqsFactory = new MessageQueueingServiceFactory(DiagnosticEventSink);
+            var mqsFactory = new MessageQueueingServiceFactory(configuration.DiagnosticService);
             var mqsConfig = configSection.Queueing;
             configuration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(mqsConfig);
 
-            var stsFactory = new SubscriptionTrackingServiceFactory(DiagnosticEventSink);
+            var stsFactory = new SubscriptionTrackingServiceFactory(configuration.DiagnosticService);
             var stsConfig = configSection.SubscriptionTracking;
             configuration.SubscriptionTrackingService = await stsFactory.InitSubscriptionTrackingService(stsConfig);
         }

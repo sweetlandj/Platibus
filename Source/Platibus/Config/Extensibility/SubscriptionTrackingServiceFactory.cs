@@ -9,16 +9,16 @@ namespace Platibus.Config.Extensibility
     /// </summary>
     public class SubscriptionTrackingServiceFactory
     {
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
 
         /// <summary>
         /// Initializes a new <see cref="SubscriptionTrackingServiceFactory"/>
         /// </summary>
-        /// <param name="diagnosticEventSink">(Optional) The event sink to which diagnostic events 
-        /// related to subscription tracking service initialization will be sent</param>
-        public SubscriptionTrackingServiceFactory(IDiagnosticEventSink diagnosticEventSink = null)
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
+        public SubscriptionTrackingServiceFactory(IDiagnosticService diagnosticService = null)
         {
-            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace Platibus.Config.Extensibility
             var myConfig = configuration ?? new SubscriptionTrackingElement();
             var provider = await GetProvider(myConfig.Provider);
 
-            await _diagnosticEventSink.ReceiveAsync(
+            await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                 {
                     Detail = "Initializing subscription tracking service"
@@ -40,7 +40,7 @@ namespace Platibus.Config.Extensibility
 
             var messageQueueingService = await provider.CreateSubscriptionTrackingService(myConfig);
 
-            await _diagnosticEventSink.ReceiveAsync(
+            await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                 {
                     Detail = "Subscription tracking service initialized"
@@ -53,7 +53,7 @@ namespace Platibus.Config.Extensibility
         {
             if (string.IsNullOrWhiteSpace(providerName))
             {
-                await _diagnosticEventSink.ReceiveAsync(
+                await _diagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
                     {
                         Detail = "Using default filesystem-based subscription tracking service provider"

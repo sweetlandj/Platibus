@@ -37,7 +37,7 @@ namespace Platibus.Filesystem
     {
         private readonly DirectoryInfo _baseDirectory;
         private readonly ISecurityTokenService _securityTokenService;
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
 
         /// <summary>
         /// Initializes a new <see cref="FilesystemMessageQueueingService"/> that will create
@@ -47,8 +47,8 @@ namespace Platibus.Filesystem
         /// will be stored</param>
         /// <param name="securityTokenService">(Optional) The message security token
         /// service to use to issue and validate security tokens for persisted messages.</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// to handle diagnostic events emitted from the message queueing service</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
         /// <remarks>
         /// <para>If a base directory is not specified then the base directory will default to a
         /// directory named <c>platibus\queues</c> beneath the current app domain base 
@@ -57,7 +57,7 @@ namespace Platibus.Filesystem
         /// <para>If a <paramref name="securityTokenService"/> is not specified then a
         /// default implementation based on unsigned JWTs will be used.</para>
         /// </remarks>
-        public FilesystemMessageQueueingService(DirectoryInfo baseDirectory = null, ISecurityTokenService securityTokenService = null, IDiagnosticEventSink diagnosticEventSink = null)
+        public FilesystemMessageQueueingService(DirectoryInfo baseDirectory = null, ISecurityTokenService securityTokenService = null, IDiagnosticService diagnosticService = null)
         {
             if (baseDirectory == null)
             {
@@ -66,7 +66,7 @@ namespace Platibus.Filesystem
             }
             _baseDirectory = baseDirectory;
             _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
-            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
         
         /// <inheritdoc />
@@ -74,7 +74,7 @@ namespace Platibus.Filesystem
             CancellationToken cancellationToken = new CancellationToken())
         {
             var queueDirectory = new DirectoryInfo(Path.Combine(_baseDirectory.FullName, queueName));
-            var queue = new FilesystemMessageQueue(queueDirectory, _securityTokenService, queueName, listener, options, _diagnosticEventSink);
+            var queue = new FilesystemMessageQueue(queueDirectory, _securityTokenService, queueName, listener, options, _diagnosticService);
             return Task.FromResult(queue);
         }
         

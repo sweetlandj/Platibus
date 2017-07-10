@@ -27,7 +27,7 @@ namespace Platibus.Filesystem
         /// <param name="queue">The queue to which the event pertains, if applicable</param>
         /// <param name="topic">The topic to which the message pertains, if applicable</param>
         /// <param name="path">The path of the file or directory to which the event pertains</param>
-        public FilesystemEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, string endpoint = null, string queue = null, string topic = null, string path = null) 
+        public FilesystemEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, EndpointName endpoint = null, QueueName queue = null, TopicName topic = null, string path = null) 
             : base(source, type, detail, exception, message, endpoint, queue, topic)
         {
             _path = path;

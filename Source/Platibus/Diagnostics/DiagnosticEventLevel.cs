@@ -2,7 +2,7 @@
 {
     /// <summary>
     /// Discrete levels of diagnostic events that can assist with handling logic in 
-    /// <see cref="IDiagnosticEventSink"/> implementations
+    /// <see cref="IDiagnosticService"/> implementations
     /// </summary>
     public enum DiagnosticEventLevel
     {

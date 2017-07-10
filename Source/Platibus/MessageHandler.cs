@@ -34,15 +34,15 @@ namespace Platibus
     {
         private readonly IMessageNamingService _messageNamingService;
         private readonly ISerializationService _serializationService;
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
 
-        public MessageHandler(IMessageNamingService messageNamingService, ISerializationService serializationService, IDiagnosticEventSink diagnosticEventSink = null)
+        public MessageHandler(IMessageNamingService messageNamingService, ISerializationService serializationService, IDiagnosticService diagnosticService = null)
         {
             if (messageNamingService == null) throw new ArgumentNullException("messageNamingService");
             if (serializationService == null) throw new ArgumentNullException("serializationService");
             _messageNamingService = messageNamingService;
             _serializationService = serializationService;
-            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
         public async Task HandleMessage(IEnumerable<IMessageHandler> messageHandlers, Message message,
@@ -50,7 +50,7 @@ namespace Platibus
         {
             if (message.Headers.Expires < DateTime.UtcNow)
             {
-                await _diagnosticEventSink.ReceiveAsync(
+                await _diagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.MessageExpired)
                     {
                         Detail = "Discarding message that expired " + message.Headers.Expires,

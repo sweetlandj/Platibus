@@ -23,7 +23,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Platibus.Diagnostics;
 using Platibus.Http;
 using Platibus.Journaling;
 
@@ -56,7 +55,7 @@ namespace Platibus.IIS
             await _initialization;
             return _bus;
         }
-        
+
         /// <summary>
         /// Initializes a new <see cref="ManagedBus"/> with the specified <paramref name="configuration"/>
         /// </summary>
@@ -72,11 +71,10 @@ namespace Platibus.IIS
             _messageJournal = _configuration.MessageJournal;
 
             var endpoints = _configuration.Endpoints;
-            var diagnosticEventSink = configuration.DiagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
             
             _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService,
                 _messageJournal, _subscriptionTrackingService, _configuration.BypassTransportLocalDestination,
-                HandleMessage, diagnosticEventSink);
+                HandleMessage, configuration.DiagnosticService);
 
             _initialization = Init();
         }

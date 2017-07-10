@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Web.Hosting;
+using Platibus.Diagnostics;
 
 namespace Platibus.IIS
 {
@@ -63,11 +64,13 @@ namespace Platibus.IIS
         /// from the configuration section with the specified <paramref name="sectionName"/>
         /// </summary>
         /// <param name="sectionName">The name of the configuration section</param>
+        /// <param name="diagnosticService">(Optional) A preconfigured diagnostic service through
+        /// which diagnostic events will be reported and processed</param>
         /// <returns>Returns a task whose result is the bus instance</returns>
-        public async Task<IBus> GetBus(string sectionName = null)
+        public async Task<IBus> GetBus(string sectionName = null, IDiagnosticService diagnosticService = null)
         {
             var configManager = new IISConfigurationManager();
-            var configuration = new IISConfiguration();
+            var configuration = new IISConfiguration(diagnosticService);
             await configManager.Initialize(configuration);
             await configManager.FindAndProcessConfigurationHooks(configuration);
             return await GetBus(configuration);
@@ -77,7 +80,7 @@ namespace Platibus.IIS
         /// Provides access to the IIS-hosted bus with the specified 
         /// <paramref name="configuration"/>.
         /// </summary>
-        /// <param name="configuration">The bus</param>
+        /// <param name="configuration">The bus configuration</param>
         /// <returns>Returns a task whose result is the bus instance</returns>
         public async Task<IBus> GetBus(IIISConfiguration configuration)
         {

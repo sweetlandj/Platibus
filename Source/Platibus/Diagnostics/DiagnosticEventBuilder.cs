@@ -35,17 +35,17 @@ namespace Platibus.Diagnostics
         /// <summary>
         /// The name of the endpoint, if applicable
         /// </summary>
-        public string Endpoint { get; set; }
+        public EndpointName Endpoint { get; set; }
 
         /// <summary>
         /// The queue to which the message pertains, if applicable
         /// </summary>
-        public string Queue { get; set; }
+        public QueueName Queue { get; set; }
 
         /// <summary>
         /// The topic to which the message pertains, if applicable
         /// </summary>
-        public string Topic { get; set; }
+        public TopicName Topic { get; set; }
 
         /// <summary>
         /// Initializes a new <see cref="DiagnosticEventBuilder"/> for the specified 

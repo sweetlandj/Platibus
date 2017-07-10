@@ -41,7 +41,7 @@ namespace Platibus.SQL
         /// <summary>
         /// A data sink provided by the implementer to handle diagnostic events
         /// </summary>
-        protected readonly IDiagnosticEventSink DiagnosticEventSink;
+        protected readonly IDiagnosticService DiagnosticService;
 
         private readonly IDbConnectionProvider _connectionProvider;
         private readonly IMessageQueueingCommandBuilders _commandBuilders;
@@ -50,48 +50,45 @@ namespace Platibus.SQL
         /// <summary>
         /// The connection provider used to obtain connections to the SQL database
         /// </summary>
-        public IDbConnectionProvider ConnectionProvider
-        {
-            get { return _connectionProvider; }
-        }
+        public IDbConnectionProvider ConnectionProvider { get { return _connectionProvider; } }
 
         /// <summary>
         /// The SQL dialect
         /// </summary>
-        public IMessageQueueingCommandBuilders CommandBuilders
-        {
-            get { return _commandBuilders; }
-        }
+        public IMessageQueueingCommandBuilders CommandBuilders { get { return _commandBuilders; } }
 
         /// <summary>
         /// Initializes a new <see cref="SQLMessageQueueingService"/> with the specified connection
         /// string settings and dialect
         /// </summary>
-        /// <param name="connectionStringSettings">The connection string settings to use to connect to
-        /// the SQL database</param>
+        /// <param name="connectionStringSettings">The connection string settings to use to connect
+        ///     to the SQL database</param>
         /// <param name="commandBuilders">(Optional) A collection of factories capable of 
-        /// generating database commands for manipulating queued messages that conform to the SQL
-        /// syntax required by the underlying connection provider (if needed)</param>
+        ///     generating database commands for manipulating queued messages that conform to the 
+        ///     SQL syntax required by the underlying connection provider (if needed)</param>
         /// <param name="securityTokenService">(Optional) The message security token
-        /// service to use to issue and validate security tokens for persisted messages.</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// to handle diagnostic events related to SQL message queueing</param>
+        ///     service to use to issue and validate security tokens for persisted messages.</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        ///     are reported and processed</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionStringSettings"/>
         /// is <c>null</c></exception>
         /// <remarks>
-        /// <para>If a SQL dialect is not specified, then one will be selected based on the supplied
-        /// connection string settings</para>
+        /// <para>If a SQL dialect is not specified, then one will be selected based on the 
+        /// supplied connection string settings</para>
         /// <para>If a <paramref name="securityTokenService"/> is not specified then a
         /// default implementation based on unsigned JWTs will be used.</para>
         /// </remarks>
         /// <seealso cref="IMessageQueueingCommandBuildersProvider"/>
-        public SQLMessageQueueingService(ConnectionStringSettings connectionStringSettings, IMessageQueueingCommandBuilders commandBuilders = null, ISecurityTokenService securityTokenService = null, IDiagnosticEventSink diagnosticEventSink = null)
+        public SQLMessageQueueingService(ConnectionStringSettings connectionStringSettings,
+            IMessageQueueingCommandBuilders commandBuilders = null,
+            ISecurityTokenService securityTokenService = null,
+            IDiagnosticService diagnosticService = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-            _connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
-            DiagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
+            _connectionProvider = new DefaultConnectionProvider(connectionStringSettings, DiagnosticService);
             _commandBuilders = commandBuilders ??
-                               new CommandBuildersFactory(connectionStringSettings, DiagnosticEventSink)
+                               new CommandBuildersFactory(connectionStringSettings, DiagnosticService)
                                    .InitMessageQueueingCommandBuilders();
             _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
         }
@@ -100,29 +97,32 @@ namespace Platibus.SQL
         /// Initializes a new <see cref="SQLMessageQueueingService"/> with the specified connection
         /// provider and dialect
         /// </summary>
-        /// <param name="connectionProvider">The connection provider to use to connect to
-        /// the SQL database</param>
+        /// <param name="connectionProvider">The connection provider to use to connect to the SQL 
+        ///     database</param>
         /// <param name="commandBuilders">A collection of factories capable of  generating database
-        /// commands for manipulating queued messages that conform to the SQL syntax required by 
-        /// the underlying connection provider</param>
+        ///     commands for manipulating queued messages that conform to the SQL syntax required 
+        ///     by the underlying connection provider</param>
         /// <param name="securityTokenService">(Optional) The message security token
-        /// service to use to issue and validate security tokens for persisted messages.</param>
-        /// <param name="diagnosticEventSink">(Optional) A data sink provided by the implementer
-        /// to handle diagnostic events related to SQL message queueing</param>
+        ///     service to use to issue and validate security tokens for persisted messages.</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        ///     are reported and processed</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>
-        /// or <paramref name="commandBuilders"/> is <c>null</c></exception>
+        ///     or <paramref name="commandBuilders"/> is <c>null</c></exception>
         /// <remarks>
         /// <para>If a <paramref name="securityTokenService"/> is not specified then a
-        /// default implementation based on unsigned JWTs will be used.</para>
+        ///     default implementation based on unsigned JWTs will be used.</para>
         /// </remarks>
-        public SQLMessageQueueingService(IDbConnectionProvider connectionProvider, IMessageQueueingCommandBuilders commandBuilders, ISecurityTokenService securityTokenService = null, IDiagnosticEventSink diagnosticEventSink = null)
+        public SQLMessageQueueingService(IDbConnectionProvider connectionProvider, 
+            IMessageQueueingCommandBuilders commandBuilders, 
+            ISecurityTokenService securityTokenService = null, 
+            IDiagnosticService diagnosticService = null)
         {
             if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
             if (commandBuilders == null) throw new ArgumentNullException("commandBuilders");
+            DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
             _connectionProvider = connectionProvider;
             _commandBuilders = commandBuilders;
             _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
-            DiagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
         }
 
         /// <summary>
@@ -147,11 +147,12 @@ namespace Platibus.SQL
         }
 
         /// <inheritdoc />
-        protected override Task<SQLMessageQueue> InternalCreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null,
+        protected override Task<SQLMessageQueue> InternalCreateQueue(QueueName queueName, IQueueListener listener,
+            QueueOptions options = null,
             CancellationToken cancellationToken = new CancellationToken())
         {
             var queue = new SQLMessageQueue(_connectionProvider, _commandBuilders, queueName, listener,
-                _securityTokenService, options, DiagnosticEventSink);
+                _securityTokenService, options, DiagnosticService);
 
             return Task.FromResult(queue);
         }
@@ -160,7 +161,7 @@ namespace Platibus.SQL
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            if(disposing)
+            if (disposing)
             {
                 // ReSharper disable once SuspiciousTypeConversion.Global
                 var disposableConnectionProvider = _connectionProvider as IDisposable;

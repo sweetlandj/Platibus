@@ -10,16 +10,16 @@ namespace Platibus.Config.Extensibility
     /// </summary>
     public class SecurityTokenServiceFactory
     {
-        private readonly IDiagnosticEventSink _diagnosticEventSink;
+        private readonly IDiagnosticService _diagnosticService;
 
         /// <summary>
         /// Initializes a new <see cref="SecurityTokenServiceFactory"/>
         /// </summary>
-        /// <param name="diagnosticEventSink">(Optional) The event sink to which diagnostic events 
-        /// related to security token service initialization will be sent</param>
-        public SecurityTokenServiceFactory(IDiagnosticEventSink diagnosticEventSink = null)
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
+        public SecurityTokenServiceFactory(IDiagnosticService diagnosticService = null)
         {
-            _diagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace Platibus.Config.Extensibility
             var provider = GetProvider(myConfig.Provider);
             if (string.IsNullOrWhiteSpace(myConfig.Provider))
             {
-                await _diagnosticEventSink.ReceiveAsync(
+                await _diagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
                     {
                         Detail = "Message journal disabled"
@@ -44,7 +44,7 @@ namespace Platibus.Config.Extensibility
 
             var messageJournal = await provider.CreateSecurityTokenService(myConfig);
 
-            await _diagnosticEventSink.ReceiveAsync(
+            await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
             {
                 Detail = "Message journal initialized"

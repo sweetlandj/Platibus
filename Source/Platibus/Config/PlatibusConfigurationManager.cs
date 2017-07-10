@@ -39,15 +39,6 @@ namespace Platibus.Config
     /// </summary>
     public class PlatibusConfigurationManager : PlatibusConfigurationManager<PlatibusConfiguration>
     {
-        /// <summary>
-        /// Initializes a new <see cref="PlatibusConfigurationManager"/>
-        /// </summary>
-        /// <param name="diagnosticEventSink">(Optional) A caller specified event sink that can
-        /// receive and process <see cref="DiagnosticEvent"/>s related to configuration</param>
-        public PlatibusConfigurationManager(IDiagnosticEventSink diagnosticEventSink = null) 
-            : base(diagnosticEventSink)
-        {
-        }
     }
     
     /// <summary>
@@ -57,39 +48,28 @@ namespace Platibus.Config
     public class PlatibusConfigurationManager<TConfiguration> where TConfiguration : PlatibusConfiguration
     {
         /// <summary>
-        /// An event sink that handles <see cref="DiagnosticEvent"/>s raised during initialization
-        /// </summary>
-        protected readonly IDiagnosticEventSink DiagnosticEventSink;
-
-        /// <summary>
-        /// Initializes a <see cref="PlatibusConfigurationManager"/>
-        /// </summary>
-        /// <param name="diagnosticEventSink">(Optional) A caller specified event sink that can
-        /// receive and process <see cref="DiagnosticEvent"/>s related to configuration</param>
-        protected PlatibusConfigurationManager(IDiagnosticEventSink diagnosticEventSink = null)
-        {
-            DiagnosticEventSink = diagnosticEventSink ?? NoopDiagnosticEventSink.Instance;
-        }
-
-        /// <summary>
         /// Loads the configuration section of the specified <typeparamref name="TConfigSection">
         /// type and name, appling defaults where appropriate</typeparamref>
         /// </summary>
         /// <typeparam name="TConfigSection">The type of configuration section to load</typeparam>
         /// <param name="configSectionName">The name of the configuration section</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
         /// <returns>Returns the loaded configuration section</returns>
-        protected TConfigSection LoadConfigurationSection<TConfigSection>(string configSectionName)
+        protected TConfigSection LoadConfigurationSection<TConfigSection>(string configSectionName, IDiagnosticService diagnosticService = null)
             where TConfigSection : ConfigurationSection, new()
         {
             if (string.IsNullOrWhiteSpace(configSectionName)) throw new ArgumentNullException("configSectionName");
+            var myDiagnosticsService = diagnosticService ?? DiagnosticService.DefaultInstance;
 
             var configSection = ConfigurationManager.GetSection(configSectionName);
             if (configSection == null)
             {
-                DiagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                myDiagnosticsService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
                 {
                     Detail = "Configuration section \"" + configSectionName + "\" not found; using default configuration"
                 }.Build());
+
                 configSection = new TConfigSection();
             }
 
@@ -100,10 +80,11 @@ namespace Platibus.Config
                                    "\": expected " + typeof(TConfigSection) + " but was " +
                                    configSection.GetType();
 
-                DiagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
+                myDiagnosticsService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
                 {
                     Detail = errorMessage
                 }.Build());
+
                 throw new ConfigurationErrorsException(errorMessage);
             }
 
@@ -126,16 +107,17 @@ namespace Platibus.Config
         {
             if (configuration == null) throw new ArgumentNullException("configuration");
 
+            var diagnosticService = configuration.DiagnosticService;
             if (string.IsNullOrWhiteSpace(configSectionName))
             {
                 configSectionName = "platibus";
-                DiagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
                 {
                     Detail = "Using default configuration section \"" + configSectionName + "\""
                 }.Build());
             }
 
-            var configSection = LoadConfigurationSection<PlatibusConfigurationSection>(configSectionName);
+            var configSection = LoadConfigurationSection<PlatibusConfigurationSection>(configSectionName, diagnosticService);
             return Initialize(configuration, configSection);
         }
 
@@ -151,6 +133,8 @@ namespace Platibus.Config
             if (configuration == null) throw new ArgumentNullException("configuration");
             if (configSection == null) throw new ArgumentNullException("configSection");
 
+            var diagnosticService = configuration.DiagnosticService;
+
             configuration.ReplyTimeout = configSection.ReplyTimeout;
             configuration.SerializationService = new DefaultSerializationService();
             configuration.MessageNamingService = new DefaultMessageNamingService();
@@ -161,7 +145,7 @@ namespace Platibus.Config
             InitializeSendRules(configuration, configSection);
             InitializeSubscriptions(configuration, configSection);
 
-            var messageJournalFactory = new MessageJournalFactory(DiagnosticEventSink);
+            var messageJournalFactory = new MessageJournalFactory(diagnosticService);
             configuration.MessageJournal = await messageJournalFactory.InitMessageJournal(configSection.Journaling);
         }
         
@@ -176,12 +160,13 @@ namespace Platibus.Config
         {
             if (configuration == null) return;
 
+            var diagnosticService = configuration.DiagnosticService;
             var hookTypes = ReflectionHelper.FindConcreteSubtypes<IConfigurationHook>();
             foreach (var hookType in hookTypes.Distinct())
             {
                 try
                 {
-                    await DiagnosticEventSink.ReceiveAsync(
+                    await diagnosticService.EmitAsync(
                         new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationHook)
                         {
                             Detail = "Found configuration hook " + hookType,
@@ -190,7 +175,7 @@ namespace Platibus.Config
                     var hook = (IConfigurationHook)Activator.CreateInstance(hookType);
                     hook.Configure(configuration);
 
-                    await DiagnosticEventSink.ReceiveAsync(
+                    await diagnosticService.EmitAsync(
                         new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationHook)
                         {
                             Detail = "Configuration hook " + hookType + " processed successfully"
@@ -198,7 +183,7 @@ namespace Platibus.Config
                 }
                 catch (Exception ex)
                 {
-                    DiagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
+                    diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
                     {
                         Detail = "Unhandled exception processing configuration hook " + hookType,
                         Exception = ex
@@ -211,7 +196,7 @@ namespace Platibus.Config
             {
                 try
                 {
-                    await DiagnosticEventSink.ReceiveAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationHook)
+                    await diagnosticService.EmitAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationHook)
                     {
                         Detail = "Found configuration hook " + hookType,
                     }.Build());
@@ -219,14 +204,14 @@ namespace Platibus.Config
                     var hook = (IAsyncConfigurationHook)Activator.CreateInstance(hookType);
                     await hook.Configure(configuration);
 
-                    await DiagnosticEventSink.ReceiveAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationHook)
+                    await diagnosticService.EmitAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationHook)
                     {
                         Detail = "Configuration hook " + hookType + " processed successfully"
                     }.Build());
                 }
                 catch (Exception ex)
                 {
-                    DiagnosticEventSink.Receive(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
+                    diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
                     {
                         Detail = "Unhandled exception processing configuration hook " + hookType,
                         Exception = ex

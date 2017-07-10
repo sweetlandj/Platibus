@@ -23,6 +23,7 @@
 using System;
 using System.Configuration;
 using Platibus.Config.Extensibility;
+using Platibus.Diagnostics;
 
 namespace Platibus.SQL.Commands
 {
@@ -51,7 +52,7 @@ namespace Platibus.SQL.Commands
         public static IMessageJournalingCommandBuilders GetMessageJournalingCommandBuilders(this ConnectionStringSettings connectionStringSettings)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-            return new CommandBuildersFactory(connectionStringSettings).InitMessageJournalingCommandBuilders();
+            return new CommandBuildersFactory(connectionStringSettings, new DiagnosticService()).InitMessageJournalingCommandBuilders();
         }
 
         /// <summary>
@@ -72,7 +73,7 @@ namespace Platibus.SQL.Commands
         public static IMessageQueueingCommandBuilders GetMessageQueueingCommandBuilders(this ConnectionStringSettings connectionStringSettings)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-            return new CommandBuildersFactory(connectionStringSettings).InitMessageQueueingCommandBuilders();
+            return new CommandBuildersFactory(connectionStringSettings, new DiagnosticService()).InitMessageQueueingCommandBuilders();
         }
 
         /// <summary>
@@ -93,7 +94,7 @@ namespace Platibus.SQL.Commands
         public static ISubscriptionTrackingCommandBuilders GetSubscriptionTrackingCommandBuilders(this ConnectionStringSettings connectionStringSettings)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-            return new CommandBuildersFactory(connectionStringSettings).InitSubscriptionTrackingCommandBuilders();
+            return new CommandBuildersFactory(connectionStringSettings, new DiagnosticService()).InitSubscriptionTrackingCommandBuilders();
         }
     }
 }
