@@ -61,7 +61,7 @@ namespace Platibus.Owin
             {
                 if (value != null)
                 {
-                    _parameters[CharsetAttributeName] = value.EncodingName;
+                    _parameters[CharsetAttributeName] = value.WebName;
                 }
                 else
                 {
