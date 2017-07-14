@@ -111,7 +111,7 @@ namespace Platibus.Http
 
             _metricsCollector = new MetricsCollector();
             _diagnosticService = configuration.DiagnosticService;
-            _diagnosticService.AddConsumer(_metricsCollector);
+            _diagnosticService.AddSink(_metricsCollector);
 
             _subscriptionTrackingService = configuration.SubscriptionTrackingService;
             _messageQueueingService = configuration.MessageQueueingService;

@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Linq;
+using System.Threading.Tasks;
 using Platibus.Diagnostics;
 using Xunit;
 
@@ -39,6 +41,44 @@ namespace Platibus.UnitTests.Diagnostics
         public GelfTcpLoggingSinkTests() 
             : base(new GelfTcpLoggingSink(Host, Port))
         {
+        }
+
+        [Fact]
+        public async Task MessagesCanBeHandledConcurrently()
+        {
+            const int count = 10;
+            var tasks = Enumerable
+                .Range(0, count)
+                .Select(async i =>
+                {
+                    var messageNumber = i + 1;
+                    var message = GenerateMessage();
+                    var detail = "Concurrent message (" + messageNumber + " of " + count + ")";
+                    var @event = GenerateDiagnosticEvent(this, TestExecuted, message, detail);
+
+                    await GelfLoggingSink.ConsumeAsync(@event);
+                });
+
+            await Task.WhenAll(tasks);
+        }
+
+        [Fact]
+        public async Task MessagesCanBeHandledConcurrentlyAsync()
+        {
+            const int count = 10;
+            var tasks = Enumerable
+                .Range(0, count)
+                .Select(i => Task.Run(() =>
+                {
+                    var messageNumber = i + 1;
+                    var message = GenerateMessage();
+                    var detail = "Concurrent message (" + messageNumber + " of " + count + ")";
+                    var @event = GenerateDiagnosticEvent(this, TestExecuted, message, detail);
+
+                    GelfLoggingSink.Consume(@event);
+                }));
+
+            await Task.WhenAll(tasks);
         }
     }
 }

@@ -20,14 +20,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Threading.Tasks;
+using Platibus.Config;
+using Platibus.Config.Extensibility;
+
 namespace Platibus.Diagnostics
 {
     /// <summary>
-    /// Delegate that handles events raised in response to unhandled exceptions thrown from 
-    /// <see cref="IDiagnosticEventSink"/> implementations while handling events
+    /// A <see cref="IDiagnosticEventSinkProvider"/> implementation that targets the console
     /// </summary>
-    /// <param name="sender">The object that raised the event</param>
-    /// <param name="e">The event arguments</param>
-    public delegate void DiagnosticSinkExceptionHandler(object sender, DiagnosticSinkExceptionEventArgs e);
-    
+    [Provider("Console")]
+    public class ConsoleLoggingSinkProvider : IDiagnosticEventSinkProvider
+    {
+        /// <inheritdoc />
+        public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(DiagnosticEventSinkElement configuration)
+        {
+            return Task.FromResult<IDiagnosticEventSink>(new ConsoleLoggingSink());
+        }
+    }
 }

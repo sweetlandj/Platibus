@@ -90,7 +90,12 @@
       <Link>Properties\Copyright.cs</Link>
     </Compile>
     <Compile Include="Config\ClientCredentialType.cs" />
+    <Compile Include="Config\DiagnosticEventSinkElement.cs" />
+    <Compile Include="Config\DiagnosticEventSinkElementCollection.cs" />
+    <Compile Include="Config\DiagnosticsElement.cs" />
     <Compile Include="Config\Extensibility\CommandBuildersFactory.cs" />
+    <Compile Include="Config\Extensibility\DiagnosticEventSinkFactory.cs" />
+    <Compile Include="Config\Extensibility\IDiagnosticEventSinkProvider.cs" />
     <Compile Include="Config\Extensibility\ISecurityTokenServiceProvider.cs" />
     <Compile Include="Config\Extensibility\MessageJournalFactory.cs" />
     <Compile Include="Config\Extensibility\MessageQueueingServiceFactory.cs" />
@@ -111,15 +116,17 @@
     <Compile Include="Config\SecurityTokensElement.cs" />
     <Compile Include="DataContractMessageNamingService.cs" />
     <Compile Include="Diagnostics\CommonLoggingSink.cs" />
+    <Compile Include="Diagnostics\CommonLoggingSinkProvider.cs" />
     <Compile Include="Diagnostics\ConsoleLoggingSink.cs" />
+    <Compile Include="Diagnostics\ConsoleLoggingSinkProvider.cs" />
     <Compile Include="Diagnostics\DiagnosticEvent.cs" />
     <Compile Include="Diagnostics\DiagnosticEventBuilder.cs" />
-    <Compile Include="Diagnostics\DiagnosticEventHandler.cs" />
     <Compile Include="Diagnostics\DiagnosticEventLevel.cs" />
     <Compile Include="Diagnostics\DiagnosticEventType.cs" />
     <Compile Include="Diagnostics\DiagnosticSinkExceptionEventArgs.cs" />
     <Compile Include="Diagnostics\DiagnosticSinkExceptionHandler.cs" />
     <Compile Include="Diagnostics\GelfLoggingSink.cs" />
+    <Compile Include="Diagnostics\GelfLoggingSinkProviders.cs" />
     <Compile Include="Diagnostics\GelfMessage.cs" />
     <Compile Include="Diagnostics\GelfHttpLoggingSink.cs" />
     <Compile Include="Diagnostics\GelfTcpLoggingSink.cs" />

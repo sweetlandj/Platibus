@@ -20,14 +20,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace Platibus.Diagnostics
+using System.Threading.Tasks;
+using Platibus.Diagnostics;
+
+namespace Platibus.Config.Extensibility
 {
     /// <summary>
-    /// Delegate that handles events raised in response to unhandled exceptions thrown from 
-    /// <see cref="IDiagnosticEventSink"/> implementations while handling events
+    /// A factory for initializing an <see cref="Platibus.Diagnostics.IDiagnosticEventSink"/>
+    /// during bus initialization.
     /// </summary>
-    /// <param name="sender">The object that raised the event</param>
-    /// <param name="e">The event arguments</param>
-    public delegate void DiagnosticSinkExceptionHandler(object sender, DiagnosticSinkExceptionEventArgs e);
-    
+    public interface IDiagnosticEventSinkProvider
+    {
+        /// <summary>
+        /// Creates an initializes a <see cref="IDiagnosticEventSink"/> based on the 
+        /// provided <paramref name="configuration"/>.
+        /// </summary>
+        /// <param name="configuration">The diagnostic event sink configuration element</param>
+        /// <returns>Returns a task whose result is an initialized
+        /// <see cref="IDiagnosticEventSink"/>.</returns>
+        Task<IDiagnosticEventSink> CreateDiagnosticEventSink(DiagnosticEventSinkElement configuration);
+    }
 }

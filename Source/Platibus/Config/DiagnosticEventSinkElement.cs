@@ -19,15 +19,38 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System.Configuration;
 
-namespace Platibus.Diagnostics
+namespace Platibus.Config
 {
     /// <summary>
-    /// Delegate that handles events raised in response to unhandled exceptions thrown from 
-    /// <see cref="IDiagnosticEventSink"/> implementations while handling events
+    /// Configuration element for a diagnostic event sink
     /// </summary>
-    /// <param name="sender">The object that raised the event</param>
-    /// <param name="e">The event arguments</param>
-    public delegate void DiagnosticSinkExceptionHandler(object sender, DiagnosticSinkExceptionEventArgs e);
-    
+    public class DiagnosticEventSinkElement : ExtensibleConfigurationElement
+    {
+        private const string NamePropertyName = "name";
+        private const string ProviderPropertyName = "provider";
+
+        /// <summary>
+        /// The name of the diagnostic event sink instance
+        /// </summary>
+        [ConfigurationProperty(NamePropertyName, IsRequired = true)]
+        public string Name
+        {
+            get { return (string)base[NamePropertyName]; }
+            set { base[NamePropertyName] = value; }
+        }
+
+        /// <summary>
+        /// The name of the diagnostic event sink provider
+        /// </summary>
+        /// <seealso cref="Platibus.Config.Extensibility.IDiagnosticEventSinkProvider"/>
+        /// <seealso cref="Platibus.Config.Extensibility.ProviderAttribute"/>
+        [ConfigurationProperty(ProviderPropertyName, IsRequired = true)]
+        public string Provider
+        {
+            get { return (string)base[ProviderPropertyName]; }
+            set { base[ProviderPropertyName] = value; }
+        }
+    }
 }

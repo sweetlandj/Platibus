@@ -1,4 +1,26 @@
-﻿using System;
+﻿// The MIT License (MIT)
+// 
+// Copyright (c) 2017 Jesse Sweetland
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Threading.Tasks;
@@ -71,6 +93,8 @@ namespace Platibus.Config
             if (configuration == null) throw new ArgumentNullException("configuration");
             if (configSection == null) throw new ArgumentNullException("configSection");
 
+            await InitializeDiagnostics(configuration, configSection);
+
             configuration.ReplyTimeout = configSection.ReplyTimeout;
             configuration.SerializationService = new DefaultSerializationService();
             configuration.MessageNamingService = new DefaultMessageNamingService();
@@ -83,6 +107,28 @@ namespace Platibus.Config
 
             var mqsFactory = new MessageQueueingServiceFactory(configuration.DiagnosticService);
             configuration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(configSection.Queueing);
+        }
+
+        /// <summary>
+        /// Initializes subscriptions in the supplied <paramref name="configuration"/> based on the
+        /// properties of the specified <paramref name="configSection"/>
+        /// </summary>
+        /// <param name="configuration">The configuration to initialize</param>
+        /// <param name="configSection">The configuration section containing the subscription
+        /// properties</param>
+        protected virtual async Task InitializeDiagnostics(LoopbackConfiguration configuration,
+            LoopbackConfigurationSection configSection)
+        {
+            var diagnosticsConfig = configSection.Diagnostics;
+            if (diagnosticsConfig == null) return;
+
+            var factory = new DiagnosticEventSinkFactory(configuration.DiagnosticService);
+            IEnumerable<DiagnosticEventSinkElement> sinkConfigs = diagnosticsConfig.Sinks;
+            foreach (var sinkConfig in sinkConfigs)
+            {
+                var sink = await factory.InitDiagnosticEventSink(sinkConfig);
+                configuration.DiagnosticService.AddSink(sink);
+            }
         }
 
         /// <summary>

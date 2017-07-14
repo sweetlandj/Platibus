@@ -133,8 +133,9 @@ namespace Platibus.Config
             if (configuration == null) throw new ArgumentNullException("configuration");
             if (configSection == null) throw new ArgumentNullException("configSection");
 
+            await InitializeDiagnostics(configuration, configSection);
             var diagnosticService = configuration.DiagnosticService;
-
+            
             configuration.ReplyTimeout = configSection.ReplyTimeout;
             configuration.SerializationService = new DefaultSerializationService();
             configuration.MessageNamingService = new DefaultMessageNamingService();
@@ -217,6 +218,28 @@ namespace Platibus.Config
                         Exception = ex
                     }.Build());
                 }
+            }
+        }
+
+        /// <summary>
+        /// Initializes subscriptions in the supplied <paramref name="configuration"/> based on the
+        /// properties of the specified <paramref name="configSection"/>
+        /// </summary>
+        /// <param name="configuration">The configuration to initialize</param>
+        /// <param name="configSection">The configuration section containing the subscription
+        /// properties</param>
+        protected virtual async Task InitializeDiagnostics(TConfiguration configuration,
+            PlatibusConfigurationSection configSection)
+        {
+            var diagnosticsConfig = configSection.Diagnostics;
+            if (diagnosticsConfig == null) return;
+
+            var factory = new DiagnosticEventSinkFactory(configuration.DiagnosticService);
+            IEnumerable<DiagnosticEventSinkElement> sinkConfigs = diagnosticsConfig.Sinks;
+            foreach (var sinkConfig in sinkConfigs)
+            {
+                var sink = await factory.InitDiagnosticEventSink(sinkConfig);
+                configuration.DiagnosticService.AddSink(sink);
             }
         }
 

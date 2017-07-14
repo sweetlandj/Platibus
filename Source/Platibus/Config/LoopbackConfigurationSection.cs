@@ -35,6 +35,7 @@ namespace Platibus.Config
         private const string TopicsPropertyName = "topics";
         private const string QueueingPropertyName = "queueing";
 		private const string DefaultContentTypePropertyName = "defaultContentType";
+        private const string DiagnosticsPropertName = "diagnostics";
 
         /// <summary>
         /// Initializes a new <see cref="PlatibusConfigurationSection"/> with defaults
@@ -42,6 +43,16 @@ namespace Platibus.Config
         public LoopbackConfigurationSection()
         {
             Topics = new TopicElementCollection();
+        }
+
+        /// <summary>
+        /// Configuration related to diagnostics
+        /// </summary>
+        [ConfigurationProperty(DiagnosticsPropertName, IsRequired = false, DefaultValue = null)]
+        public DiagnosticsElement Diagnostics
+        {
+            get { return (DiagnosticsElement)base[DiagnosticsPropertName]; }
+            set { base[DiagnosticsPropertName] = value; }
         }
 
         /// <summary>

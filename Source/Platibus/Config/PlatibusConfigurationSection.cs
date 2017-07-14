@@ -37,6 +37,7 @@ namespace Platibus.Config
         private const string SendRulesPropertyName = "sendRules";
         private const string SubscriptionsPropertyName = "subscriptions";
 		private const string DefaultContentTypePropertyName = "defaultContentType";
+        private const string DiagnosticsPropertName = "diagnostics";
 
         /// <summary>
         /// Initializes a new <see cref="PlatibusConfigurationSection"/> with defaults
@@ -46,6 +47,16 @@ namespace Platibus.Config
             Endpoints = new EndpointElementCollection();
             Topics = new TopicElementCollection();
             SendRules = new SendRuleElementCollection();
+        }
+
+        /// <summary>
+        /// Configuration related to diagnostics
+        /// </summary>
+        [ConfigurationProperty(DiagnosticsPropertName, IsRequired = false, DefaultValue = null)]
+        public DiagnosticsElement Diagnostics
+        {
+            get { return (DiagnosticsElement)base[DiagnosticsPropertName]; }
+            set { base[DiagnosticsPropertName] = value; }
         }
 
         /// <summary>

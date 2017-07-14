@@ -25,8 +25,8 @@ using System.Threading.Tasks;
 namespace Platibus.Config.Extensibility
 {
     /// <summary>
-    /// A factory for initializing a <see cref="ISubscriptionTrackingService"/>
-    /// during bus initialization.
+    /// A factory for initializing a <see cref="ISubscriptionTrackingService"/> during bus 
+    /// initialization.
     /// </summary>
     public interface ISubscriptionTrackingServiceProvider
     {
@@ -34,8 +34,8 @@ namespace Platibus.Config.Extensibility
         /// Creates an initializes a <see cref="ISubscriptionTrackingService"/>
         /// based on the provided <paramref name="configuration"/>.
         /// </summary>
-        /// <param name="configuration">The journaling configuration
-        /// element.</param>
+        /// <param name="configuration">The subscription tracking service configuration 
+        /// element</param>
         /// <returns>Returns a task whose result is an initialized
         /// <see cref="ISubscriptionTrackingService"/>.</returns>
         Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(SubscriptionTrackingElement configuration);

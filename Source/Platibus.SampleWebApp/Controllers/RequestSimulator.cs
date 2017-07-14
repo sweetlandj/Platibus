@@ -6,7 +6,7 @@ using Platibus.SampleMessages.Diagnostics;
 
 namespace Platibus.SampleWebApp.Controllers
 {
-    public class RequestSimulator
+    public class RequestSimulator : IDisposable
     {
         private readonly Random _rng = new Random();
         private readonly IBus _bus;
@@ -19,6 +19,8 @@ namespace Platibus.SampleWebApp.Controllers
         private readonly double _errorRate;
 
         private readonly CancellationTokenSource _cancellationTokenSource;
+
+        private bool _disposed;
 
         public RequestSimulator(IBus bus,
             int requests, int minTime, int maxTime, 
@@ -71,6 +73,27 @@ namespace Platibus.SampleWebApp.Controllers
             await Task.Delay(_rng.Next(10000), cancellationToken);
 
             await _bus.Send(request, null, cancellationToken);
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            Dispose(true);
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+        
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _cancellationTokenSource.Dispose();
+            }
+        }
+
+        ~RequestSimulator()
+        {
+            Dispose(false);
         }
     }
 }

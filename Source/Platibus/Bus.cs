@@ -498,7 +498,6 @@ namespace Platibus
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.MessageAcknowledged)
                 {
-                    Detail = "Unhandled exception in consumer callback",
                     Message = message
                 }.Build());
         }

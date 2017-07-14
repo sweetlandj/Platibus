@@ -1,3 +1,25 @@
+// The MIT License (MIT)
+// 
+// Copyright (c) 2017 Jesse Sweetland
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -23,33 +45,25 @@ namespace Platibus.Diagnostics
         /// <inheritdoc />
         public void Consume(DiagnosticEvent @event)
         {
-            try
-            {
-                var gelfMessage = new GelfMessage();
-                PopulateGelfMessage(gelfMessage, @event);
-                var json = JsonConvert.SerializeObject(gelfMessage, _jsonSerializerSettings);
-                Process(json);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine("Error processing GELF message: " + ex);
-            }
+            var gelfMessage = new GelfMessage();
+            PopulateGelfMessage(gelfMessage, @event);
+            var json = JsonConvert.SerializeObject(gelfMessage, _jsonSerializerSettings);
+            Process(json);
+
+            // Allow exceptions to propagate to the IDiagnosticService where they will be caught
+            // and handled by registered DiagnosticSinkExceptionHandlers 
         }
 
         /// <inheritdoc />
         public async Task ConsumeAsync(DiagnosticEvent @event, CancellationToken cancellationToken = new CancellationToken())
         {
-            try
-            {
-                var gelfMessage = new GelfMessage();
-                PopulateGelfMessage(gelfMessage, @event);
-                var json = JsonConvert.SerializeObject(gelfMessage, _jsonSerializerSettings);
-                await ProcessAsync(json, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine("Error processing GELF message: " + ex);
-            }
+            var gelfMessage = new GelfMessage();
+            PopulateGelfMessage(gelfMessage, @event);
+            var json = JsonConvert.SerializeObject(gelfMessage, _jsonSerializerSettings);
+            await ProcessAsync(json, cancellationToken);
+
+            // Allow exceptions to propagate to the IDiagnosticService where they will be caught
+            // and handled by registered DiagnosticSinkExceptionHandlers 
         }
 
         /// <summary>
@@ -107,6 +121,12 @@ namespace Platibus.Diagnostics
             else
             {
                 gelfMessage.ShortMessage = @event.Detail;
+            }
+
+            if (string.IsNullOrWhiteSpace(gelfMessage.ShortMessage))
+            {
+                // Short message is required.  Default to the event type.
+                gelfMessage.ShortMessage = @event.Type;
             }
 
             if (@event.Exception != null)

@@ -59,7 +59,7 @@ namespace Platibus.IIS
 
         static PlatibusHttpHandler()
         {
-            DiagnosticService.DefaultInstance.AddConsumer(SingletonMetricsCollector);
+            DiagnosticService.DefaultInstance.AddSink(SingletonMetricsCollector);
         }
 
         private readonly Task<IIISConfiguration> _configuration;

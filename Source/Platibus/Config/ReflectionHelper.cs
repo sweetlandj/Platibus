@@ -133,10 +133,10 @@ namespace Platibus.Config
             Func<TAttribute, object> attributeMember) where TAttribute : Attribute
         {
             return source.Select(t => new
-            {
-                Type = t,
-                Attribute = t.GetCustomAttribute<TAttribute>()
-            })
+                {
+                    Type = t,
+                    Attribute = t.GetCustomAttribute<TAttribute>()
+                })
                 .Where(x => x.Attribute != null)
                 .OrderByDescending(x => attributeMember(x.Attribute))
                 .Select(x => x.Type);
@@ -146,10 +146,10 @@ namespace Platibus.Config
             Func<TAttribute, TKey> attributeMember) where TAttribute : Attribute
         {
             return source.Select(t => new
-            {
-                Type = t,
-                Attribute = t.GetCustomAttribute<TAttribute>()
-            })
+                {
+                    Type = t,
+                    Attribute = t.GetCustomAttribute<TAttribute>()
+                })
                 .Where(x => x.Attribute != null)
                 .GroupBy(x => attributeMember(x.Attribute), x => x.Type);
         }

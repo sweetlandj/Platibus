@@ -31,8 +31,8 @@ namespace Platibus.UnitTests.Diagnostics
     [Trait("Dependency", "Graylog2")]
     public abstract class GelfLoggingSinkTests
     {
+        protected static readonly DiagnosticEventType TestExecuted = new DiagnosticEventType("TestExecuted", DiagnosticEventLevel.Info);
         protected GelfLoggingSink GelfLoggingSink;
-        protected DiagnosticEventType Test = new DiagnosticEventType("Test");
         protected Message Message;
         protected string Detail = "This is a test";
         protected Exception Exception;
@@ -60,11 +60,7 @@ namespace Platibus.UnitTests.Diagnostics
 
         protected void GivenMessage()
         {
-            var messageHeaders = new MessageHeaders
-            {
-                MessageId = MessageId.Generate()
-            };
-            Message = new Message(messageHeaders, "Hello, world!");
+            Message = GenerateMessage();
         }
 
         protected void GivenException()
@@ -81,19 +77,41 @@ namespace Platibus.UnitTests.Diagnostics
 
         protected void GivenDiagnosticEvent()
         {
-            Event = new DiagnosticEventBuilder(this, Test)
-            {
-                Message = Message,
-                Detail = Detail,
-                Exception = Exception,
-                Queue = Queue,
-                Topic = Topic
-            }.Build();
+            Event = GenerateDiagnosticEvent(this, TestExecuted, Message, Detail, Queue, Topic, Exception);
         }
 
         protected Task WhenReceivingEvent()
         {
             return GelfLoggingSink.ConsumeAsync(Event);
+        }
+
+        protected static DiagnosticEvent GenerateDiagnosticEvent(object source, DiagnosticEventType type, 
+            Message message = null, string detail = null, QueueName queue = null, TopicName topic = null, 
+            Exception ex = null)
+        {
+            return new DiagnosticEventBuilder(source, type)
+            {
+                Message = message,
+                Detail = detail,
+                Exception = ex,
+                Queue = queue,
+                Topic = topic
+            }.Build();
+        }
+
+        protected static Message GenerateMessage()
+        {
+            var messageHeaders = new MessageHeaders
+            {
+                MessageId = MessageId.Generate(),
+                Sent = DateTime.UtcNow.AddSeconds(-1),
+                Received = DateTime.UtcNow,
+                Origination = new Uri("http://localhost/platibus"),
+                Destination = new Uri("http://localhost:81/platibus"),
+                MessageName = "Test:TestMessage",
+                RelatedTo = MessageId.Generate()
+            };
+            return new Message(messageHeaders, "Hello, world!");
         }
     }
 }

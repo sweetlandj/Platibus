@@ -69,7 +69,7 @@ namespace Platibus.Owin
         private async Task<IOwinConfiguration> Configure(Task<IOwinConfiguration> loadConfiguration)
         {
             var configuration = await loadConfiguration;
-            configuration.DiagnosticService.AddConsumer(_metricsCollector);
+            configuration.DiagnosticService.AddSink(_metricsCollector);
             return configuration;
         }
         

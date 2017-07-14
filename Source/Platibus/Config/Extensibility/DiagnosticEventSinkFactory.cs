@@ -21,64 +21,71 @@
 // THE SOFTWARE.
 
 using System;
+using System.Configuration;
 using System.Threading.Tasks;
 using Platibus.Diagnostics;
-using Platibus.Security;
 
 namespace Platibus.Config.Extensibility
 {
     /// <summary>
-    /// Initializes a <see cref="ISecurityTokenService"/> based on the supplied configuration
+    /// Factory class for initializing diagnostic event sinks
     /// </summary>
-    public class SecurityTokenServiceFactory
+    public class DiagnosticEventSinkFactory
     {
         private readonly IDiagnosticService _diagnosticService;
 
         /// <summary>
-        /// Initializes a new <see cref="SecurityTokenServiceFactory"/>
+        /// Initializes a new <see cref="DiagnosticEventSinkFactory"/>
         /// </summary>
         /// <param name="diagnosticService">(Optional) The service through which diagnostic events
         /// are reported and processed</param>
-        public SecurityTokenServiceFactory(IDiagnosticService diagnosticService = null)
+        public DiagnosticEventSinkFactory(IDiagnosticService diagnosticService)
         {
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
         /// <summary>
-        /// Initializes a security token service based on the supplied
+        /// Initializes a subscription tracking service based on the supplied
         /// <paramref name="configuration"/>
         /// </summary>
-        /// <param name="configuration">The message queue configuration</param>
-        /// <returns>Returns a task whose result is the initialized security token service</returns>
-        public async Task<ISecurityTokenService> InitSecurityTokenService(SecurityTokensElement configuration)
+        /// <param name="configuration">The subscription tracking configuration</param>
+        /// <returns>Returns a task whose result is the initialized subscription tracking service</returns>
+        public async Task<IDiagnosticEventSink> InitDiagnosticEventSink(DiagnosticEventSinkElement configuration)
         {
-            var myConfig = configuration ?? new SecurityTokensElement();
+            var myConfig = configuration ?? new DiagnosticEventSinkElement();
             var provider = GetProvider(myConfig.Provider);
-            if (string.IsNullOrWhiteSpace(myConfig.Provider))
+            if (provider == null)
             {
+                var message = "Provider not specified for diagnostic event sink '" + myConfig.Name + "'";
                 await _diagnosticService.EmitAsync(
-                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
                     {
-                        Detail = "Message journal disabled"
+                        Detail = message
                     }.Build());
-                return null;
+                throw new ConfigurationErrorsException(message);
             }
-
-            var messageJournal = await provider.CreateSecurityTokenService(myConfig);
 
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
-            {
-                Detail = "Message journal initialized"
-            }.Build());
+                {
+                    Detail = "Initializing diagnostic event sink '" + myConfig.Name + "'"
+                }.Build());
 
-            return messageJournal;
+            var messageQueueingService = await provider.CreateDiagnosticEventSink(myConfig);
+
+            await _diagnosticService.EmitAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
+                {
+                    Detail = "Diagnostic event sink '" + myConfig.Name + "' initialized"
+                }.Build());
+
+            return messageQueueingService;
         }
 
-        private ISecurityTokenServiceProvider GetProvider(string providerName)
+        private static IDiagnosticEventSinkProvider GetProvider(string providerName)
         {
             if (string.IsNullOrWhiteSpace(providerName)) throw new ArgumentNullException("providerName");
-            return ProviderHelper.GetProvider<ISecurityTokenServiceProvider>(providerName);
+            return ProviderHelper.GetProvider<IDiagnosticEventSinkProvider>(providerName);
         }
     }
 }

@@ -82,7 +82,7 @@ namespace Platibus.IIS
         private async Task<IIISConfiguration> Configure(Task<IIISConfiguration> loadConfiguration)
         {
             var configuration = await loadConfiguration;
-            configuration.DiagnosticService.AddConsumer(_metricsCollector);
+            configuration.DiagnosticService.AddSink(_metricsCollector);
             return configuration;
         }
 

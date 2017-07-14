@@ -1,4 +1,26 @@
-﻿using System;
+﻿// The MIT License (MIT)
+// 
+// Copyright (c) 2017 Jesse Sweetland
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -26,11 +48,14 @@ namespace Platibus.Diagnostics
 
         private readonly ConcurrentBag<IDiagnosticEventSink> _consumers = new ConcurrentBag<IDiagnosticEventSink>();
 
+        /// <inheritdoc />
+        public event DiagnosticSinkExceptionHandler Exception;
+
         /// <summary>
         /// Registers a data sink to receive a copy of each diagnostic event that is emitted
         /// </summary>
         /// <param name="sink"></param>
-        public void AddConsumer(IDiagnosticEventSink sink)
+        public void AddSink(IDiagnosticEventSink sink)
         {
             if (sink != null) _consumers.Add(sink);
         }
@@ -44,8 +69,9 @@ namespace Platibus.Diagnostics
                 {
                     sink.Consume(@event);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    RaiseExceptionEvent(@event, sink, ex);
                 }
             }
         }
@@ -55,13 +81,52 @@ namespace Platibus.Diagnostics
         {
             try
             {
-                var receiveTasks = _consumers.Select(sink => sink.ConsumeAsync(@event, cancellationToken));
+                var receiveTasks = _consumers.Select(async sink =>
+                {
+                    try
+                    {
+                        await sink.ConsumeAsync(@event, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        RaiseExceptionEvent(@event, sink, ex);
+                    }
+                });
                 return Task.WhenAll(receiveTasks);
             }
             catch (Exception)
             {
+                // Ignored
             }
             return Task.FromResult(0);
+        }
+        
+        /// <summary>
+        /// Safely raises the <see cref="Exception"/> event to invoke registered 
+        /// <see cref="DiagnosticSinkExceptionHandler"/> delegates
+        /// </summary>
+        /// <remarks>
+        /// Exceptions thrown from <see cref="DiagnosticSinkExceptionHandler"/> delegates are 
+        /// swallowed and ignored.
+        /// </remarks>
+        /// <param name="event">The diagnostic event that was being consumed at the time the
+        /// exception occurred</param>
+        /// <param name="sink">The sink from which the unhandled exception was caught</param>
+        /// <param name="ex">The unhandled exception</param>
+        protected void RaiseExceptionEvent(DiagnosticEvent @event, IDiagnosticEventSink sink, Exception ex)
+        {
+            try
+            {
+                var handlers = Exception;
+                if (handlers == null) return;
+
+                var args = new DiagnosticSinkExceptionEventArgs(@event, sink, ex);
+                handlers(this, args);
+            }
+            catch (Exception)
+            {
+                // Ignored
+            }
         }
 
         /// <inheritdoc />
