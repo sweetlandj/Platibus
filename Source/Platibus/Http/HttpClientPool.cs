@@ -62,11 +62,12 @@ namespace Platibus.Http
         {
             CheckDisposed();
 
+            var newHandler = false;
             var key = new PoolKey(uri, credentials);
             HttpClientHandler clientHandler;
             if (_pool.TryGetValue(key, out clientHandler))
             {
-                return CreateClient(clientHandler, uri, credentials);
+                return CreateClient(clientHandler, uri, credentials, newHandler);
             }
 
             await _poolSync.WaitAsync(cancellationToken);
@@ -74,6 +75,7 @@ namespace Platibus.Http
             {
                 if (!_pool.TryGetValue(key, out clientHandler))
                 {
+                    newHandler = true;
                     clientHandler = new HttpClientHandler
                     {
                         AllowAutoRedirect = true,
@@ -92,10 +94,10 @@ namespace Platibus.Http
                 _poolSync.Release();
             }
 
-            return CreateClient(clientHandler, uri, credentials);
+            return CreateClient(clientHandler, uri, credentials, newHandler);
         }
 
-        private static HttpClient CreateClient(HttpClientHandler clientHandler, Uri baseAddress, IEndpointCredentials credentials)
+        private static HttpClient CreateClient(HttpClientHandler clientHandler, Uri baseAddress, IEndpointCredentials credentials, bool newHandler)
         {
             var client = new HttpClient(clientHandler, false)
             {
@@ -104,7 +106,7 @@ namespace Platibus.Http
 
             if (credentials != null)
             {
-                credentials.Accept(new HttpEndpointCredentialsVisitor(clientHandler, client));
+                credentials.Accept(new HttpEndpointCredentialsVisitor(clientHandler, client, newHandler));
             }
             return client;
         }
