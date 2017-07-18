@@ -32,12 +32,14 @@ namespace Platibus.Http
     {
         private readonly HttpClientHandler _clientHandler;
         private readonly HttpClient _client;
+        private readonly bool _newHandler;
 
-        public HttpEndpointCredentialsVisitor(HttpClientHandler clientHandler, HttpClient client)
+        public HttpEndpointCredentialsVisitor(HttpClientHandler clientHandler, HttpClient client, bool newHandler = false)
         {
             if (client == null) throw new ArgumentNullException("client");
             _clientHandler = clientHandler;
             _client = client;
+            _newHandler = newHandler;
         }
 
         public void Visit(BasicAuthCredentials credentials)
@@ -52,7 +54,12 @@ namespace Platibus.Http
 
         public void Visit(DefaultCredentials credentials)
         {
-            _clientHandler.UseDefaultCredentials = true;
+            if (_newHandler)
+            {
+                // We can only modify the handler if it has not started (i.e. no requests have
+                // been sent)
+                _clientHandler.UseDefaultCredentials = true;
+            }
         }
 
         public void Visit(BearerCredentials credentials)

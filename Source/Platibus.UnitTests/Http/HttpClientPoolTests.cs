@@ -22,6 +22,8 @@
 
 using System;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Xunit;
 using Platibus.Http;
@@ -76,6 +78,66 @@ namespace Platibus.UnitTests.Http
             clientPool.Dispose();
 
             Assert.Equal(3, finalSize - initialSize);
+        }
+
+        [Fact]
+        public async Task MultipleRequestsToSameEndpointWithNtlmShouldNotFail()
+        {
+            var uri = new Uri("http://localhost:52179/platibus/");
+            var clientPool = new HttpClientPool();
+            var cancellationSource = new TaskCompletionSource<int>();
+            var cancellation = cancellationSource.Task;
+            var httpListener = new HttpListener
+            {
+                AuthenticationSchemes = AuthenticationSchemes.Ntlm,
+                Prefixes = { uri.ToString() }
+            };
+
+            Task httpLoopEnded = null;
+            try
+            {
+                httpListener.Start();
+                httpLoopEnded = Task.Run(async () =>
+                {
+                    while (httpListener.IsListening && !cancellation.IsCompleted)
+                    {
+                        var contextReceipt = httpListener.GetContextAsync();
+                        if (await Task.WhenAny(cancellation, contextReceipt) == cancellation)
+                        {
+                            break;
+                        }
+                        var context = await contextReceipt;
+                        await context.Request.InputStream.CopyToAsync(context.Response.OutputStream);
+                        context.Response.StatusCode = 200;
+                        context.Response.Close();
+                    }
+                });
+
+                var clientTasks = Enumerable.Range(1, 10)
+                    .Select(i => Task.Run(async () =>
+                    {
+                        // ReSharper disable once AccessToDisposedClosure
+                        using (var client = await clientPool.GetClient(uri, new DefaultCredentials()))
+                        {
+                            var content = "test" + (i + 1);
+                            var response1 = await client.PostAsync("test", new StringContent(content));
+                            Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
+                            Assert.Equal(content, await response1.Content.ReadAsStringAsync());
+                        }
+                    }));
+
+                await Task.WhenAll(clientTasks);
+            }
+            finally
+            {
+                if (httpLoopEnded != null)
+                {
+                    cancellationSource.TrySetResult(0);
+                    httpLoopEnded.Wait(TimeSpan.FromSeconds(5));
+                }
+                httpListener.Stop();
+                clientPool.Dispose();
+            }
         }
     }
 }
