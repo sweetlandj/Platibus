@@ -235,8 +235,9 @@ namespace Platibus.Http
                             Message = message,
                             Uri = endpointBaseUri
                         }.Build(), cancellationToken);
-
+                    
                     await _handleMessage(message, cancellationToken);
+                    delivered = true;
                     return;
                 }
 
@@ -254,14 +255,6 @@ namespace Platibus.Http
 
                 HandleHttpErrorResponse(httpResponseMessage);
                 delivered = true;
-                await _diagnosticService.EmitAsync(
-                    new HttpEventBuilder(this, DiagnosticEventType.MessageDelivered)
-                    {
-                        Message = message,
-                        Method = HttpMethod.Post.ToString(),
-                        Uri = postUri,
-                        Status = status
-                    }.Build(), cancellationToken);
             }
             catch (TransportException ex)
             {
@@ -324,17 +317,22 @@ namespace Platibus.Http
             }
             finally
             {
-                if (httpClient != null) httpClient.Dispose();
-                if (!delivered)
+                var eventType = delivered
+                    ? DiagnosticEventType.MessageDelivered
+                    : DiagnosticEventType.MessageDeliveryFailed;
+
+                _diagnosticService.Emit(
+                    new HttpEventBuilder(this, eventType)
+                    {
+                        Message = message,
+                        Method = HttpMethod.Post.ToString(),
+                        Uri = postUri,
+                        Status = status
+                    }.Build());
+
+                if (httpClient != null)
                 {
-                    _diagnosticService.Emit(
-                        new HttpEventBuilder(this, DiagnosticEventType.MessageDeliveryFailed)
-                        {
-                            Message = message,
-                            Method = HttpMethod.Post.ToString(),
-                            Uri = postUri,
-                            Status = status
-                        }.Build());
+                    httpClient.Dispose();
                 }
             }
         }
