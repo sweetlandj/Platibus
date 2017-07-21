@@ -87,6 +87,7 @@ namespace Platibus.Diagnostics
         public IDictionary<string, string> Tags
         {
             get { return _tags ?? (_tags = new Dictionary<string, string>()); }
+            set { _tags = value; }
         }
 
         /// <summary>

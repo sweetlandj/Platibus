@@ -139,5 +139,28 @@ namespace Platibus.Diagnostics
         {
             return !Equals(left, right);
         }
+
+        /// <summary>
+        /// Returns the <see cref="InfluxDBPrecision"/> instance corresponding to the specified
+        /// <paramref name="name"/>
+        /// </summary>
+        /// <param name="name">The precision name (e.g. "ns", "u", "ms", "s", "m", "h")</param>
+        /// <returns>Returns the <see cref="InfluxDBPrecision"/> instance corresponding to the specified
+        /// <paramref name="name"/></returns>
+        public static InfluxDBPrecision Parse(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
+            switch (name.Trim().ToLower())
+            {
+                case "ns": return Nanosecond;
+                case "u": return Microsecond;
+                case "ms": return Millisecond;
+                case "s": return Second;
+                case "m": return Minute;
+                case "h": return Hour;
+                default:
+                    throw new ArgumentOutOfRangeException("name", name, "Unsupported precision");
+            }
+        }
     }
 }

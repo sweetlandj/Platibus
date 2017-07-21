@@ -134,6 +134,7 @@
     <Compile Include="Diagnostics\IDiagnosticEventSink.cs" />
     <Compile Include="Diagnostics\InfluxDBOptions.cs" />
     <Compile Include="Diagnostics\InfluxDBPrecision.cs" />
+    <Compile Include="Diagnostics\InfluxDBSinkProvider.cs" />
     <Compile Include="Http\HttpMetricsCollector.cs" />
     <Compile Include="Diagnostics\IDiagnosticService.cs" />
     <Compile Include="Diagnostics\DiagnosticService.cs" />

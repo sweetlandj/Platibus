@@ -49,7 +49,8 @@ namespace Platibus.Diagnostics
                 var enableCompression = configuration.GetBool("compress");
 
                 if (string.IsNullOrWhiteSpace(host)) throw new ConfigurationErrorsException("'host' attribute is required");
-                if (string.IsNullOrWhiteSpace(host)) throw new ConfigurationErrorsException("'port' attribute is required");
+                if (port == 0) throw new ConfigurationErrorsException("'port' attribute is required");
+                if (port < 0 || port > 65535) throw new ConfigurationErrorsException("Invalid port");
                 return Task.FromResult<IDiagnosticEventSink>(new GelfUdpLoggingSink(host, port, enableCompression));
             }
         }
@@ -68,7 +69,8 @@ namespace Platibus.Diagnostics
                 var port = configuration.GetInt("port");
 
                 if (string.IsNullOrWhiteSpace(host)) throw new ConfigurationErrorsException("'host' attribute is required");
-                if (string.IsNullOrWhiteSpace(host)) throw new ConfigurationErrorsException("'port' attribute is required");
+                if (port == 0) throw new ConfigurationErrorsException("'port' attribute is required");
+                if (port < 0 || port > 65535) throw new ConfigurationErrorsException("Invalid port");
                 return Task.FromResult<IDiagnosticEventSink>(new GelfTcpLoggingSink(host, port));
             }
         }
