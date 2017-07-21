@@ -28,7 +28,7 @@ namespace Platibus.Diagnostics
     /// <summary>
     /// Represents a Unix time value
     /// </summary>
-    [DebuggerDisplay("{_value,nq}")]
+    [DebuggerDisplay("{_seconds,nq}")]
     public struct UnixTime : IEquatable<UnixTime>
     {
         /// <summary>
@@ -48,12 +48,27 @@ namespace Platibus.Diagnostics
             }
         }
 
-        private readonly double _value;
+        private readonly double _seconds;
 
         /// <summary>
         /// Returns the seconds elapsed since the <see cref="Epoch"/>
         /// </summary>
-        public double Value { get { return _value; } }
+        public double Seconds { get { return _seconds; } }
+
+        /// <summary>
+        /// Returns the milliseconds elapsed since the <see cref="Epoch"/>
+        /// </summary>
+        public double Milliseconds { get { return _seconds * 1e+3; } }
+
+        /// <summary>
+        /// Returns the microseconds elapsed since the <see cref="Epoch"/>
+        /// </summary>
+        public double Microseconds { get { return _seconds * 1e+6; } }
+
+        /// <summary>
+        /// Returns the nanoseconds elapsed since the <see cref="Epoch"/>
+        /// </summary>
+        public double Nanoseconds { get { return _seconds * 1e+9; } }
 
         /// <summary>
         /// Initializes a new <see cref="UnixTime"/> from the specified .NET <see cref="DateTime"/>
@@ -64,14 +79,14 @@ namespace Platibus.Diagnostics
         {
             var utcTimestamp = timestamp.ToUniversalTime();
 
-            // Round to millisecond precision
-            _value = Math.Round((utcTimestamp - Epoch).TotalSeconds, 3);
+            // Round to nanosecond precision
+            _seconds = (utcTimestamp - Epoch).TotalSeconds;
         }
 
         /// <inheritdoc />
         public override string ToString()
         {
-            return _value.ToString("F");
+            return _seconds.ToString("F");
         }
 
         /// <summary>
@@ -80,24 +95,24 @@ namespace Platibus.Diagnostics
         /// <returns>Returns the .NET <see cref="DateTime"/> representation of the Unix time value</returns>
         public DateTime ToDateTime()
         {
-            return Epoch + TimeSpan.FromSeconds(_value);
+            return Epoch + TimeSpan.FromSeconds(_seconds);
         }
         
         /// <summary>
-        /// Initializes a new <see cref="UnixTime"/> from the specified <paramref name="value"/>
+        /// Initializes a new <see cref="UnixTime"/> from the specified <paramref name="seconds"/>
         /// expressed as the number of seconds elapsed since the <see cref="Epoch"/>
         /// value
         /// </summary>
-        /// <param name="value">The number of seconds elapsed since the <see cref="Epoch"/></param>
-        public UnixTime(double value)
+        /// <param name="seconds">The number of seconds elapsed since the <see cref="Epoch"/></param>
+        public UnixTime(double seconds)
         {
-            _value = value;
+            _seconds = seconds;
         }
 
         /// <inheritdoc />
         public bool Equals(UnixTime other)
         {
-            return _value.Equals(other._value);
+            return _seconds.Equals(other._seconds);
         }
 
         /// <inheritdoc />
@@ -110,9 +125,19 @@ namespace Platibus.Diagnostics
         /// <inheritdoc />
         public override int GetHashCode()
         {
-            return _value.GetHashCode();
+            return _seconds.GetHashCode();
         }
-
+        
+        /// <summary>
+        /// Returns the <see cref="UnixTime"/> corresponding to the specified number of 
+        /// <paramref name="seconds"/> since the <see cref="Epoch"/>
+        /// </summary>
+        /// <param name="seconds">The number of seconds elapsed since the Epoch</param>
+        public static UnixTime FromSeconds(double seconds)
+        {
+            return new UnixTime(seconds);
+        }
+        
         /// <summary>
         /// Overloads the <c>==</c> operator to determine the equality of two Unix times based on
         /// their respective values rather than instance equality
@@ -168,16 +193,6 @@ namespace Platibus.Diagnostics
             return new UnixTime(value);
         }
 
-        /// <summary>
-        /// Implicitly casts a floating point value representing the number of seconds elapsed
-        /// since the <see cref="Epoch"/> to a <see cref="UnixTime"/>
-        /// </summary>
-        /// <param name="value">The number of seconds elapsed since the Epoch</param>
-        public static implicit operator UnixTime(double value)
-        {
-            return new UnixTime(value);
-        }
-        
         /// <summary>
         /// Implicitly casts a <see cref="UnixTime"/> to a .NET <see cref="DateTime"/>
         /// </summary>

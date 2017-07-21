@@ -170,7 +170,7 @@ namespace Platibus.Diagnostics
         protected byte[] NewMessageId()
         {
             var messageId = new byte[8];
-            var unixTimeBytes = BitConverter.GetBytes((int)UnixTime.Current.Value);
+            var unixTimeBytes = BitConverter.GetBytes((int)UnixTime.Current.Seconds);
             var randomBytes = BitConverter.GetBytes(RNG.Next());
             if (BitConverter.IsLittleEndian)
             {

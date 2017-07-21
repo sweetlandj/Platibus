@@ -24,6 +24,7 @@ using System;
 using System.Threading.Tasks;
 using System.Web;
 using Platibus.Diagnostics;
+using Platibus.Http;
 
 namespace Platibus.IIS
 {
@@ -32,7 +33,7 @@ namespace Platibus.IIS
     /// </summary>
     public class PlatibusHttpModule : IHttpModule, IDisposable
     {
-        private readonly MetricsCollector _metricsCollector = new MetricsCollector();
+        private readonly HttpMetricsCollector _metricsCollector = new HttpMetricsCollector();
         private readonly Task<IIISConfiguration> _configuration;
         private readonly Task<Bus> _bus;
 

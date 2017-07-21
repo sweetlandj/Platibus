@@ -33,7 +33,7 @@ namespace Platibus.Owin
 {
     public class PlatibusMiddleware : IDisposable
     {
-        private readonly MetricsCollector _metricsCollector = new MetricsCollector();
+        private readonly HttpMetricsCollector _metricsCollector = new HttpMetricsCollector();
         private readonly Task<IOwinConfiguration> _configuration;
         private readonly Task<Bus> _bus;
         private readonly Task<IHttpResourceRouter> _resourceRouter;

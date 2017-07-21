@@ -15,13 +15,13 @@ namespace Platibus.Http.Controllers
     public class MetricsController : IHttpResourceController
     {
         private readonly NewtonsoftJsonSerializer _serializer = new NewtonsoftJsonSerializer();
-        private readonly MetricsCollector _metricsCollector;
+        private readonly HttpMetricsCollector _metricsCollector;
 
         /// <summary>
         /// Initializes a new <see cref="MetricsController"/>
         /// </summary>
         /// <param name="metricsCollector">The data sink from which metrics can be sampled</param>
-        public MetricsController(MetricsCollector metricsCollector)
+        public MetricsController(HttpMetricsCollector metricsCollector)
         {
             _metricsCollector = metricsCollector; 
         }

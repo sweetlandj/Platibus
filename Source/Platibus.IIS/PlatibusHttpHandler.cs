@@ -44,7 +44,7 @@ namespace Platibus.IIS
         /// HTTP handlers to exist at the same time.  In order to aggregate metrics across all
         /// of these handlers, a static singleton metrics collector is needed.
         /// </remarks>
-        private static readonly MetricsCollector SingletonMetricsCollector = new MetricsCollector();
+        private static readonly HttpMetricsCollector SingletonMetricsCollector = new HttpMetricsCollector();
 
         /// <summary>
         /// Configuration cache

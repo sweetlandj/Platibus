@@ -52,7 +52,7 @@ namespace Platibus.UnitTests.Diagnostics
             GivenException();
             GivenLengthyDetailMessage();
             GivenDiagnosticEvent();
-            await WhenReceivingEvent();
+            await WhenConsumingEvent();
         }
 
         [Fact]
@@ -64,7 +64,7 @@ namespace Platibus.UnitTests.Diagnostics
             GivenLengthyDetailMessage();
             GivenDiagnosticEvent();
             GivenCompressionEnabled();
-            await WhenReceivingEvent();
+            await WhenConsumingEvent();
         }
 
         protected void GivenLengthyDetailMessage()

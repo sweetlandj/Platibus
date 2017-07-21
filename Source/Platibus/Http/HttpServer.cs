@@ -76,7 +76,7 @@ namespace Platibus.Http
         private bool _disposed;
         private readonly Uri _baseUri;
         private readonly IDiagnosticService _diagnosticService;
-        private readonly MetricsCollector _metricsCollector;
+        private readonly HttpMetricsCollector _metricsCollector;
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
         private readonly IMessageQueueingService _messageQueueingService;
         private readonly IMessageJournal _messageJournal;
@@ -109,7 +109,7 @@ namespace Platibus.Http
         {
             _baseUri = configuration.BaseUri;
 
-            _metricsCollector = new MetricsCollector();
+            _metricsCollector = new HttpMetricsCollector();
             _diagnosticService = configuration.DiagnosticService;
             _diagnosticService.AddSink(_metricsCollector);
 

@@ -24,15 +24,16 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Platibus.Http;
+using Platibus.Diagnostics;
 
-namespace Platibus.Diagnostics
+namespace Platibus.Http
 {
     /// <summary>
     /// A <see cref="IDiagnosticService"/> implementation that tracks key metrics to report on
-    /// the activity and health of the instance
+    /// the activity and health of the instance through the 
+    /// <see cref="Platibus.Http.Controllers.MetricsController"/>
     /// </summary>
-    public class MetricsCollector : IDiagnosticEventSink, IDisposable
+    public class HttpMetricsCollector : IDiagnosticEventSink, IDisposable
     {
         private readonly TimeSpan _sampleRate;
         private readonly Timer _sampleTimer;
@@ -85,20 +86,19 @@ namespace Platibus.Diagnostics
         }
 
         /// <summary>
-        /// Initializes a new <see cref="MetricsCollector"/>
+        /// Initializes a new <see cref="HttpMetricsCollector"/>
         /// </summary>
         /// <param name="sampleRate">(Optional) The rate at which samples should be taken</param>
         /// <remarks>
         /// The default sample rate is 5 seconds
         /// </remarks>
-        public MetricsCollector(TimeSpan sampleRate = default(TimeSpan))
+        public HttpMetricsCollector(TimeSpan sampleRate = default(TimeSpan))
         {
-            if (sampleRate <= TimeSpan.Zero)
-            {
-                sampleRate = TimeSpan.FromSeconds(5);
-            }
-            _sampleRate = sampleRate;
-            _sampleTimer = new Timer(_ => TakeSample(), null, TimeSpan.FromSeconds(1), _sampleRate);
+            _sampleRate = sampleRate <= TimeSpan.Zero
+                ? TimeSpan.FromSeconds(5)
+                : sampleRate;
+
+            _sampleTimer = new Timer(_ => TakeSample(), null, _sampleRate, _sampleRate);
         }
         
         /// <inheritdoc />
@@ -208,7 +208,7 @@ namespace Platibus.Diagnostics
         }
 
         /// <inheritdoc />
-        ~MetricsCollector()
+        ~HttpMetricsCollector()
         {
             Dispose(false);
         }

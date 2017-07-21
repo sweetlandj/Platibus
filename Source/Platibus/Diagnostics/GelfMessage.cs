@@ -69,8 +69,8 @@ namespace Platibus.Diagnostics
         [JsonProperty("timestamp")]
         public double GelfTimestamp
         {
-            get { return _timestamp.Value; }
-            set { _timestamp = value; }
+            get { return Math.Round(_timestamp.Seconds, 3); } 
+            set { _timestamp = UnixTime.FromSeconds(value); }
         }
     
         /// <summary>

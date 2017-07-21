@@ -45,7 +45,13 @@ namespace Platibus.UnitTests.Diagnostics
             var unixTime = UnixTime.Current;
             var dateTime = unixTime.ToDateTime();
             var roundTripUnixTime = new UnixTime(dateTime);
-            Assert.Equal(unixTime, roundTripUnixTime);
+
+            var milliseconds = unixTime.Milliseconds;
+            var roundTrimeMilliseconds = roundTripUnixTime.Milliseconds;
+            var difference = Math.Abs(milliseconds - roundTrimeMilliseconds);
+
+            // Within 1 millisecond (to account for rounding errors)
+            Assert.True(difference <= 1);
         }
     }
 }

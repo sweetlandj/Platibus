@@ -50,7 +50,7 @@ namespace Platibus.UnitTests.Diagnostics
         {
             GivenMessage();
             GivenDiagnosticEvent();
-            await WhenReceivingEvent();
+            await WhenConsumingEvent();
         }
 
         protected void GivenNoMessage()
@@ -80,7 +80,7 @@ namespace Platibus.UnitTests.Diagnostics
             Event = GenerateDiagnosticEvent(this, TestExecuted, Message, Detail, Queue, Topic, Exception);
         }
 
-        protected Task WhenReceivingEvent()
+        protected Task WhenConsumingEvent()
         {
             return GelfLoggingSink.ConsumeAsync(Event);
         }
