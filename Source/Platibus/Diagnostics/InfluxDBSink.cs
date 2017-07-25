@@ -179,7 +179,7 @@ namespace Platibus.Diagnostics
                            + ",delivered=" + fields.Delivered
                            + ",delivery_failures=" + fields.DeliveryFailures
                            + ",errors=" + fields.Errors
-                           + ",errors=" + fields.Warnings;
+                           + ",warnings=" + fields.Warnings;
 
             var point = string.Join(",", _measurement, _tagSet) + " " + fieldSet + " " + timestamp;
             var response = _client.PostAsync("", new StringContent(point)).Result;
