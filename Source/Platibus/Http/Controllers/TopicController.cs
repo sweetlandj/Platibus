@@ -162,7 +162,7 @@ namespace Platibus.Http.Controllers
 
                 await _subscriptionTrackingService.AddSubscription(topic, subscriber, ttl);
             }
-            response.StatusCode = 202;
+            response.StatusCode = 200;
         }
     }
 }
