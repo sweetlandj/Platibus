@@ -108,12 +108,14 @@
     <Compile Include="Http\AuthenticationSchemeElement.cs" />
     <Compile Include="Http\AuthenticationSchemesElementCollection.cs" />
     <Compile Include="Http\BasicAuthorizationService.cs" />
+    <Compile Include="Http\BasicHttpClientFactory.cs" />
     <Compile Include="Http\Clients\HttpMessageJournalClient.cs" />
     <Compile Include="Http\HttpClientPool.cs" />
     <Compile Include="Config\InvalidSendRuleException.cs" />
     <Compile Include="Config\InvalidSubscriptionException.cs" />
     <Compile Include="Http\Controllers\JournalController.cs" />
     <Compile Include="Http\HttpSubscriptionMetadata.cs" />
+    <Compile Include="Http\IHttpClientFactory.cs" />
     <Compile Include="Http\Models\ErrorModel.cs" />
     <Compile Include="Http\Models\MessageJournalEntryDataModel.cs" />
     <Compile Include="Http\Models\JournalGetResponseModel.cs" />

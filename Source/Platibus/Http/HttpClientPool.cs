@@ -32,7 +32,7 @@ namespace Platibus.Http
     /// <summary>
     /// A collection of long-lived HTTP clients pooled according to endpoint URI and credentials
     /// </summary>
-    public class HttpClientPool : IDisposable
+    public class HttpClientPool : IDisposable, IHttpClientFactory
     {
         private readonly SemaphoreSlim _poolSync = new SemaphoreSlim(1);
         private readonly IDictionary<PoolKey, HttpClientHandler> _pool = new Dictionary<PoolKey, HttpClientHandler>();
@@ -60,7 +60,6 @@ namespace Platibus.Http
         /// </returns>
         public async Task<HttpClient> GetClient(Uri uri, IEndpointCredentials credentials, CancellationToken cancellationToken = default(CancellationToken))
         {
-            CheckDisposed();
 
             var newHandler = false;
             var key = new PoolKey(uri, credentials);

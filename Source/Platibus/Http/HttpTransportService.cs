@@ -51,7 +51,7 @@ namespace Platibus.Http
         private readonly Func<Message, CancellationToken, Task> _handleMessage;
         private readonly QueueName _outboundQueueName;
 
-        private readonly HttpClientPool _clientPool;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         private bool _disposed;
 
@@ -96,7 +96,7 @@ namespace Platibus.Http
             _handleMessage = handleMessage;
             _outboundQueueName = "Outbound";
 
-            _clientPool = new HttpClientPool();
+            _httpClientFactory = new BasicHttpClientFactory();
         }
 
         /// <summary>
@@ -207,6 +207,7 @@ namespace Platibus.Http
         private async Task TransportMessage(Message message, IEndpointCredentials credentials, CancellationToken cancellationToken = default(CancellationToken))
         {
             HttpClient httpClient = null;
+            HttpResponseMessage httpResponseMessage = null;
             try
             {
                 if (_messageJournal != null)
@@ -225,13 +226,13 @@ namespace Platibus.Http
                 var httpContent = new StringContent(message.Content);
                 WriteHttpContentHeaders(message, httpContent);
                 
-                httpClient = await _clientPool.GetClient(endpointBaseUri, credentials, cancellationToken);
+                httpClient = await _httpClientFactory.GetClient(endpointBaseUri, credentials, cancellationToken);
                 var messageId = message.Headers.MessageId;
                 var urlEncodedMessageId = HttpUtility.UrlEncode(messageId);
                 var relativeUri = string.Format("message/{0}", urlEncodedMessageId);
                 var postUri = new Uri(endpointBaseUri, relativeUri);
                 Log.DebugFormat("POSTing content of message ID {0} to URI {1}...", message.Headers.MessageId, postUri);
-                var httpResponseMessage = await httpClient.PostAsync(relativeUri, httpContent, cancellationToken);
+                httpResponseMessage = await httpClient.PostAsync(relativeUri, httpContent, cancellationToken);
                 Log.DebugFormat("Received HTTP response code {0} {1} for POST request {2}...",
                     (int) httpResponseMessage.StatusCode,
                     httpResponseMessage.StatusCode.ToString("G"),
@@ -266,7 +267,8 @@ namespace Platibus.Http
             }
             finally
             {
-                httpClient.TryDispose();
+                if (httpResponseMessage != null) httpResponseMessage.Dispose();
+                if (httpClient != null) httpClient.Dispose();
             }
         }
 
@@ -377,10 +379,11 @@ namespace Platibus.Http
             var ttl = subscriptionMetadata.TTL;
 
             HttpClient httpClient = null;
+            HttpResponseMessage httpResponseMessage = null;
             try
             {
                 var endpointBaseUri = endpoint.Address.WithTrailingSlash();
-                httpClient = await _clientPool.GetClient(endpointBaseUri, endpoint.Credentials, cancellationToken);
+                httpClient = await _httpClientFactory.GetClient(endpointBaseUri, endpoint.Credentials, cancellationToken);
 
                 var urlSafeTopicName = HttpUtility.UrlEncode(topic);
                 var relativeUri = string.Format("topic/{0}/subscriber?uri={1}", urlSafeTopicName, _baseUri);
@@ -389,7 +392,7 @@ namespace Platibus.Http
                     relativeUri += "&ttl=" + ttl.TotalSeconds;
                 }
 
-                var httpResponseMessage = await httpClient.PostAsync(relativeUri, new StringContent(""), cancellationToken);
+                httpResponseMessage = await httpClient.PostAsync(relativeUri, new StringContent(""), cancellationToken);
                 HandleHttpErrorResponse(httpResponseMessage);
             }
             catch (TransportException)
@@ -412,7 +415,8 @@ namespace Platibus.Http
             }
             finally
             {
-                httpClient.TryDispose();
+                if (httpResponseMessage != null) httpResponseMessage.Dispose();
+                if (httpClient != null) httpClient.Dispose();
             }
         }
 
@@ -512,7 +516,7 @@ namespace Platibus.Http
         {
             if (disposing)
             {
-                _clientPool.TryDispose();
+                _httpClientFactory.TryDispose();
             }
         }
         
