@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Platibus.Owin;
 
@@ -47,6 +48,14 @@ namespace Platibus.IntegrationTests.OwinMiddleware
 
         public static async Task<OwinSelfHost> Start(string configSectionName)
         {
+            var serverPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, configSectionName);
+            var serverDirectory = new DirectoryInfo(serverPath);
+            serverDirectory.Refresh();
+            if (serverDirectory.Exists)
+            {
+                serverDirectory.Delete(true);
+            }
+
             var middleware = new PlatibusMiddleware(configSectionName);
             var configuration = await middleware.Configuration;
             var baseUri = configuration.BaseUri;
