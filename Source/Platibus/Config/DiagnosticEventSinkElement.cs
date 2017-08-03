@@ -19,7 +19,10 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
+using System.ComponentModel;
 using System.Configuration;
+using Platibus.Diagnostics;
 
 namespace Platibus.Config
 {
@@ -30,6 +33,8 @@ namespace Platibus.Config
     {
         private const string NamePropertyName = "name";
         private const string ProviderPropertyName = "provider";
+        private const string MinLevelPropertyName = "minLevel";
+        private const string MaxLevelPropertyName = "maxLevel";
 
         /// <summary>
         /// The name of the diagnostic event sink instance
@@ -52,5 +57,27 @@ namespace Platibus.Config
             get { return (string)base[ProviderPropertyName]; }
             set { base[ProviderPropertyName] = value; }
         }
+
+        /// <summary>
+        /// The minimum diagnostic event level of events to pass to this sink
+        /// </summary>
+        [ConfigurationProperty(MinLevelPropertyName, IsRequired = false, DefaultValue = DiagnosticEventLevel.Debug)]
+        public DiagnosticEventLevel MinLevel
+        {
+            get { return (DiagnosticEventLevel)base[MinLevelPropertyName]; }
+            set { base[MinLevelPropertyName] = value; }
+        }
+
+        /// <summary>
+        /// The maximum diagnostic event level of events to pass to this sink
+        /// </summary>
+        [ConfigurationProperty(MaxLevelPropertyName, IsRequired = false, DefaultValue = DiagnosticEventLevel.Error)]
+        public DiagnosticEventLevel MaxLevel
+        {
+            get { return (DiagnosticEventLevel)base[MaxLevelPropertyName]; }
+            set { base[MaxLevelPropertyName] = value; }
+        }
+
+
     }
 }

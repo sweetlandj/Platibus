@@ -199,7 +199,7 @@ namespace Platibus.Config
                 {
                     await diagnosticService.EmitAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationHook)
                     {
-                        Detail = "Found configuration hook " + hookType,
+                        Detail = "Found async configuration hook " + hookType,
                     }.Build());
 
                     var hook = (IAsyncConfigurationHook)Activator.CreateInstance(hookType);
@@ -207,14 +207,14 @@ namespace Platibus.Config
 
                     await diagnosticService.EmitAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationHook)
                     {
-                        Detail = "Configuration hook " + hookType + " processed successfully"
+                        Detail = "Async configuration hook " + hookType + " processed successfully"
                     }.Build());
                 }
                 catch (Exception ex)
                 {
                     diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
                     {
-                        Detail = "Unhandled exception processing configuration hook " + hookType,
+                        Detail = "Unhandled exception processing async configuration hook " + hookType,
                         Exception = ex
                     }.Build());
                 }

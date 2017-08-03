@@ -23,7 +23,6 @@
 using System;
 using System.Threading.Tasks;
 using System.Web;
-using Platibus.Diagnostics;
 using Platibus.Http;
 
 namespace Platibus.IIS

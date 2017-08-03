@@ -49,7 +49,7 @@ namespace Platibus.Diagnostics
         /// <summary>
         /// Emitted when a configuration hook is processed
         /// </summary>
-        public static readonly DiagnosticEventType ConfigurationHook = new DiagnosticEventType("ConfigurationHook", DiagnosticEventLevel.Error);
+        public static readonly DiagnosticEventType ConfigurationHook = new DiagnosticEventType("ConfigurationHook", DiagnosticEventLevel.Info);
 
         /// <summary>
         /// Emitted whenever a bus instance is initialized

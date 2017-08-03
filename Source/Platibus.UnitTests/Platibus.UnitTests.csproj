@@ -154,7 +154,9 @@
     <Compile Include="DataContractMessageNamingServiceTests.cs" />
     <Compile Include="DateTimeExtensions.cs" />
     <Compile Include="Diagnostics\CommonLoggingSinkTests.cs" />
+    <Compile Include="Diagnostics\DiagnosticEventLevelSpecificationTests.cs" />
     <Compile Include="Diagnostics\DiagnosticFakes.cs" />
+    <Compile Include="Diagnostics\FilteringSinkTests.cs" />
     <Compile Include="Diagnostics\GelfLoggingSinkTests.cs" />
     <Compile Include="Diagnostics\GelfTcpLoggingSinkTests.cs" />
     <Compile Include="Diagnostics\GelfUdpLoggingSinkTests.cs" />

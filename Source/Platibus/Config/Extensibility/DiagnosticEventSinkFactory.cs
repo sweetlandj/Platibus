@@ -71,7 +71,9 @@ namespace Platibus.Config.Extensibility
                     Detail = "Initializing diagnostic event sink '" + myConfig.Name + "'"
                 }.Build());
 
-            var messageQueueingService = await provider.CreateDiagnosticEventSink(myConfig);
+            var sink = await provider.CreateDiagnosticEventSink(myConfig);
+            var filterSpec = new DiagnosticEventLevelSpecification(myConfig.MinLevel, myConfig.MaxLevel);
+            var filterSink = new FilteringSink(sink, filterSpec);
 
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
@@ -79,7 +81,7 @@ namespace Platibus.Config.Extensibility
                     Detail = "Diagnostic event sink '" + myConfig.Name + "' initialized"
                 }.Build());
 
-            return messageQueueingService;
+            return filterSink;
         }
 
         private static IDiagnosticEventSinkProvider GetProvider(string providerName)
