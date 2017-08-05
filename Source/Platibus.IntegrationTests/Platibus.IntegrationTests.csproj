@@ -149,8 +149,12 @@
     <Compile Include="HttpServer\HttpServerBasicAuthFixture.cs" />
     <Compile Include="HttpServer\HttpServerCollection.cs" />
     <Compile Include="HttpServer\HttpServerFixture.cs" />
+    <Compile Include="HttpServer\HttpServerLoadTestCollection.cs" />
+    <Compile Include="HttpServer\HttpServerLoadTestFixture.cs" />
     <Compile Include="HttpServer\HttpServerPubSubTests.cs" />
+    <Compile Include="HttpServer\HttpServerSendAndReplyLoadTests.cs" />
     <Compile Include="HttpServer\HttpServerSendAndReplyTests.cs" />
+    <Compile Include="SendAndReplyLoadTests.cs" />
     <Compile Include="LoopbackHost\LoopbackHostCollection.cs" />
     <Compile Include="LoopbackHost\LoopbackHostFixture.cs" />
     <Compile Include="LoopbackHost\LoopbackPubSubTests.cs" />

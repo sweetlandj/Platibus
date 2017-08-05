@@ -39,20 +39,45 @@ namespace Platibus
         /// <param name="timeout">The maximum amount of time to wait for a reply</param>
         /// <returns>Returns a task whose result will be the deserialized content of the 
         /// reply message</returns>
-        public static async Task<object> GetReply(this ISentMessage sentMessage, TimeSpan timeout = default(TimeSpan))
+        public static Task<object> GetReply(this ISentMessage sentMessage, TimeSpan timeout = default(TimeSpan))
         {
-            object reply = null;
-            using (var replyReceivedEvent = new ManualResetEvent(false))
-            using (sentMessage.ObserveReplies().Subscribe(r =>
+            var cts = timeout >= TimeSpan.Zero
+                ? new CancellationTokenSource(timeout)
+                : new CancellationTokenSource();
+
+            var ct = cts.Token;
+
+            // ReSharper disable once MethodSupportsCancellation
+            return sentMessage.GetReply(ct).ContinueWith(t =>
             {
-                reply = r;
-                // ReSharper disable once AccessToDisposedClosure
-                replyReceivedEvent.Set();
-            }))
+                cts.Dispose();
+                return t.Result;
+            });
+        }
+
+        /// <summary>
+        /// Observes the sent message replies until the first reply is received
+        /// or a timeout occurs
+        /// </summary>
+        /// <param name="sentMessage">The sent message</param>
+        /// <param name="cancellationToken">(Optional) A token that can be provided by the caller
+        /// to interrupt the reply wait</param>
+        /// <returns>Returns a task whose result will be the deserialized content of the 
+        /// reply message</returns>
+        public static Task<object> GetReply(this ISentMessage sentMessage, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var tcs = new TaskCompletionSource<object>(cancellationToken);
+            var replyTask = tcs.Task;
+            var subscription = sentMessage.ObserveReplies().Subscribe(r =>
             {
-                await replyReceivedEvent.WaitOneAsync(timeout);    
-            }
-            return reply;
+                tcs.TrySetResult(r);
+            });
+
+            return replyTask.ContinueWith(t =>
+            {
+                subscription.Dispose();
+                return t.Result;
+            }, cancellationToken);
         }
     }
 }

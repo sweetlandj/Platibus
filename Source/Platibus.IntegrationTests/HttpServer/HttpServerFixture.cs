@@ -43,12 +43,16 @@ namespace Platibus.IntegrationTests.HttpServer
             get { return _receivingHttpServer.ContinueWith(serverTask => serverTask.Result.Bus); }
         }
 
-        public HttpServerFixture()
+        public HttpServerFixture() : this("platibus.http0", "platibus.http1")
         {
-            _sendingHttpServer = StartHttpServer("platibus.http0");
-            _receivingHttpServer = StartHttpServer("platibus.http1");
         }
-        
+
+        public HttpServerFixture(string senderConfigSectionName, string receiverConfigSectionName)
+        {
+            _sendingHttpServer = StartHttpServer(senderConfigSectionName);
+            _receivingHttpServer = StartHttpServer(receiverConfigSectionName);
+        }
+
         private static Task<Http.HttpServer> StartHttpServer(string configSectionName)
         {
             var serverPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, configSectionName);
