@@ -16,7 +16,7 @@ namespace Platibus.Http.Clients
     /// </summary>
     public class HttpMessageJournalClient : IDisposable
     {
-        private readonly HttpClient _httpClient;
+        private readonly Task<HttpClient> _httpClient;
         private bool _disposed;
 
         /// <summary>
@@ -30,18 +30,7 @@ namespace Platibus.Http.Clients
         public HttpMessageJournalClient(Uri baseUri, IEndpointCredentials credentials = null)
         {
             if (baseUri == null) throw new ArgumentNullException("baseUri");
-
-            var httpClientHandler = new HttpClientHandler();
-            _httpClient = new HttpClient(httpClientHandler, true)
-            {
-                BaseAddress = baseUri
-            };
-
-            if (credentials != null)
-            {
-                var visitor = new HttpEndpointCredentialsVisitor(httpClientHandler, _httpClient);
-                credentials.Accept(visitor);
-            }
+            _httpClient = new BasicHttpClientFactory().GetClient(baseUri, credentials);
         }
         
         /// <summary>
@@ -58,10 +47,13 @@ namespace Platibus.Http.Clients
         public async Task<MessageJournalReadResult> Read(string start, int count, MessageJournalFilter filter = null,
             CancellationToken cancellationToken = default(CancellationToken))
         {
+            var httpClient = await _httpClient;
             var relativeUri = new Uri("journal?" + BuildQuery(start, count, filter), UriKind.Relative);
-            var responseMessage = await _httpClient.GetAsync(relativeUri, cancellationToken);
-            responseMessage.EnsureSuccessStatusCode();
-            return await ParseResponseContent(responseMessage);
+            using (var responseMessage = await httpClient.GetAsync(relativeUri, cancellationToken))
+            {
+                responseMessage.EnsureSuccessStatusCode();
+                return await ParseResponseContent(responseMessage);
+            }
         }
 
         private static string BuildQuery(string start, int count, MessageJournalFilter filter)
