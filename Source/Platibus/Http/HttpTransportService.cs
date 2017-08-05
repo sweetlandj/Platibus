@@ -50,7 +50,7 @@ namespace Platibus.Http
         private readonly IDiagnosticService _diagnosticService;
         private readonly QueueName _outboundQueueName;
 
-        private readonly HttpClientPool _clientPool;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         private bool _disposed;
 
@@ -103,7 +103,7 @@ namespace Platibus.Http
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
             _outboundQueueName = "Outbound";
             
-            _clientPool = new HttpClientPool();
+            _httpClientFactory = new BasicHttpClientFactory();
         }
 
         /// <summary>
@@ -219,6 +219,7 @@ namespace Platibus.Http
             Uri postUri = null;
             int? status = null;
             var delivered = false;
+            HttpResponseMessage httpResponseMessage = null;
             try
             {
                 if (_messageJournal != null)
@@ -249,8 +250,8 @@ namespace Platibus.Http
                 var httpContent = new StringContent(message.Content);
                 WriteHttpContentHeaders(message, httpContent);
                 
-                httpClient = await _clientPool.GetClient(endpointBaseUri, credentials, cancellationToken);
-                var httpResponseMessage = await httpClient.PostAsync(relativeUri, httpContent, cancellationToken);
+                httpClient = await _httpClientFactory.GetClient(endpointBaseUri, credentials, cancellationToken);
+                httpResponseMessage = await httpClient.PostAsync(relativeUri, httpContent, cancellationToken);
                 status = (int)httpResponseMessage.StatusCode;
 
                 HandleHttpErrorResponse(httpResponseMessage);
@@ -320,7 +321,7 @@ namespace Platibus.Http
                 var eventType = delivered
                     ? DiagnosticEventType.MessageDelivered
                     : DiagnosticEventType.MessageDeliveryFailed;
-
+                
                 _diagnosticService.Emit(
                     new HttpEventBuilder(this, eventType)
                     {
@@ -329,6 +330,11 @@ namespace Platibus.Http
                         Uri = postUri,
                         Status = status
                     }.Build());
+
+                if (httpResponseMessage != null)
+                {
+                    httpResponseMessage.Dispose();
+                }
 
                 if (httpClient != null)
                 {
@@ -492,10 +498,11 @@ namespace Platibus.Http
             var ttl = subscriptionMetadata.TTL;
             
             HttpClient httpClient = null;
+            HttpResponseMessage httpResponseMessage = null;
             try
             {
                 var endpointBaseUri = endpoint.Address.WithTrailingSlash();
-                httpClient = await _clientPool.GetClient(endpointBaseUri, endpoint.Credentials, cancellationToken);
+                httpClient = await _httpClientFactory.GetClient(endpointBaseUri, endpoint.Credentials, cancellationToken);
 
                 var urlSafeTopicName = HttpUtility.UrlEncode(topic);
                 var relativeUri = string.Format("topic/{0}/subscriber?uri={1}", urlSafeTopicName, _baseUri);
@@ -505,7 +512,7 @@ namespace Platibus.Http
                 }
 
                 var postUri = new Uri(endpointBaseUri, relativeUri);
-                var httpResponseMessage = await httpClient.PostAsync(relativeUri, new StringContent(""), cancellationToken);
+                httpResponseMessage = await httpClient.PostAsync(relativeUri, new StringContent(""), cancellationToken);
                 var status = (int?)httpResponseMessage.StatusCode;
 
                 await _diagnosticService.EmitAsync(
@@ -537,6 +544,7 @@ namespace Platibus.Http
             }
             finally
             {
+                if (httpResponseMessage != null) httpResponseMessage.Dispose();
                 if (httpClient != null) httpClient.Dispose();
             }
         }
@@ -637,7 +645,11 @@ namespace Platibus.Http
         {
             if (disposing)
             {
-                _clientPool.Dispose();
+                var disposableClientFactory = _httpClientFactory as IDisposable;
+                if (disposableClientFactory != null)
+                {
+                    disposableClientFactory.Dispose();
+                }
             }
         }
         

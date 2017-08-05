@@ -35,22 +35,13 @@ namespace Platibus.IntegrationTests.HttpServer
     [Collection(HttpServerCollection.Name)]
     public class HttpServerPubSubTests : PubSubTests
     {
-        private readonly HttpClientPool _httpClientPool = new HttpClientPool();
+        private readonly IHttpClientFactory _httpClientFactory = new BasicHttpClientFactory();
 
         public HttpServerPubSubTests(HttpServerFixture fixture)
             : base(fixture.Sender, fixture.Receiver)
         {
         }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                _httpClientPool.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
+        
         [Fact]
         public async Task TopicsCanBeQueriedOverHttp()
         {
@@ -69,25 +60,29 @@ namespace Platibus.IntegrationTests.HttpServer
         {
             // From the platibus.http0 configuration section of app.config
             var publisherBaseUri = new Uri("http://localhost:52180/platibus0/");
-            var messageJournalClient = new HttpMessageJournalClient(publisherBaseUri);
-            var result = await messageJournalClient.Read(null, 100);
-            Assert.NotNull(result);
+            using (var messageJournalClient = new HttpMessageJournalClient(publisherBaseUri))
+            {
+                var result = await messageJournalClient.Read(null, 100);
+                Assert.NotNull(result);
 
-            var messages = result.Entries.Select(e => e.Data);
-            var messageContent = messages.Select(DeserializeMessageContent);
-            Assert.Contains(Publication, messageContent);
+                var messages = result.Entries.Select(e => e.Data);
+                var messageContent = messages.Select(DeserializeMessageContent);
+                Assert.Contains(Publication, messageContent);
+            }
         }
 
         protected async Task AssertTopicsCanBeRetrievedByHttpClient()
         {
             // From the platibus.http0 configuration section of app.config
             var publisherBaseUri = new Uri("http://localhost:52180/platibus0/");
-            var httpClient = await _httpClientPool.GetClient(publisherBaseUri, null);
-            var responseMessage = await httpClient.GetAsync("topic");
-            Assert.True(responseMessage.IsSuccessStatusCode, "HTTP Status " + responseMessage.StatusCode + " " + responseMessage.ReasonPhrase);
-            var responseContent = await responseMessage.Content.ReadAsStringAsync();
-            var topicArray = JsonConvert.DeserializeObject<string[]>(responseContent);
-            Assert.Contains((string)Topic, topicArray);
+            using (var httpClient = await _httpClientFactory.GetClient(publisherBaseUri, null))
+            using (var responseMessage = await httpClient.GetAsync("topic"))
+            {
+                Assert.True(responseMessage.IsSuccessStatusCode, "HTTP Status " + responseMessage.StatusCode + " " + responseMessage.ReasonPhrase);
+                var responseContent = await responseMessage.Content.ReadAsStringAsync();
+                var topicArray = JsonConvert.DeserializeObject<string[]>(responseContent);
+                Assert.Contains((string)Topic, topicArray);
+            }
         }
 
         private static object DeserializeMessageContent(Message message)

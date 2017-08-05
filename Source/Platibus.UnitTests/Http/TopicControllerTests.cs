@@ -137,7 +137,7 @@ namespace Platibus.UnitTests.Http
 
             await controller.Process(mockRequest.Object, mockResponse.Object, new[] { "topic-1", "subscriber", encodedSubscriberUri });
 
-            mockResponse.VerifySet(r => r.StatusCode = 202);
+            mockResponse.VerifySet(r => r.StatusCode = 200);
             mockSubscriptionTrackingService.Verify(ts => ts.AddSubscription(
                 "topic-1", new Uri("http://example.com/platibus"), TimeSpan.FromSeconds(3600),
                 It.IsAny<CancellationToken>()));
@@ -176,7 +176,7 @@ namespace Platibus.UnitTests.Http
 
             await controller.Process(mockRequest.Object, mockResponse.Object, new[] { "topic-1", "subscriber", encodedSubscriberUri });
 
-            mockResponse.VerifySet(r => r.StatusCode = 202);
+            mockResponse.VerifySet(r => r.StatusCode = 200);
             mockSubscriptionTrackingService.Verify(ts => ts.RemoveSubscription(
                 "topic-1", new Uri("http://example.com/platibus"), It.IsAny<CancellationToken>()));
         }
