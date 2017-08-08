@@ -44,7 +44,7 @@ namespace Platibus.UnitTests
         [Fact]
         public void UriValuesCanBeSetAndRetrieved()
         {
-            var expected = new Uri("http://user:pass@localhost:8080/platibus");
+            var expected = new Uri("http://user:pass@localhost:8080/platibus/");
             MessageHeaders.SetUri("TestUri", expected);
             var actual = MessageHeaders.GetUri("TestUri");
             Assert.Equal(expected, actual);
@@ -103,7 +103,7 @@ namespace Platibus.UnitTests
         [Fact]
         public void DestinationCanBeSetAndRetrieved()
         {
-            var expected = new Uri("http://localhost/platibus");
+            var expected = new Uri("http://localhost/platibus/");
             MessageHeaders.Destination = expected;
             var actual = MessageHeaders.Destination;
             Assert.Equal(expected, actual);
@@ -113,7 +113,7 @@ namespace Platibus.UnitTests
         [Fact]
         public void OriginationCanBeSetAndRetrieved()
         {
-            var expected = new Uri("http://localhost/platibus");
+            var expected = new Uri("http://localhost/platibus/");
             MessageHeaders.Origination = expected;
             var actual = MessageHeaders.Origination;
             Assert.Equal(expected, actual);
@@ -123,7 +123,7 @@ namespace Platibus.UnitTests
         [Fact]
         public void ReplyToCanBeSetAndRetrieved()
         {
-            var expected = new Uri("http://localhost/platibus");
+            var expected = new Uri("http://localhost/platibus/");
             MessageHeaders.ReplyTo = expected;
             var actual = MessageHeaders.ReplyTo;
             Assert.Equal(expected, actual);

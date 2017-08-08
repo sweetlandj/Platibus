@@ -65,6 +65,7 @@ BEGIN
         [Origination] VARCHAR(500) NULL,
         [Destination] VARCHAR(500) NULL,                            
         [ReplyTo] VARCHAR(500) NULL,
+        [RelatedTo] UNIQUEIDENTIFIER NULL,
         [ContentType] VARCHAR(100) NULL,
         [Headers] VARCHAR(MAX),
         [MessageContent] TEXT,
@@ -80,6 +81,15 @@ BEGIN
 
     CREATE INDEX [PB_MessageJournal_IX_Category] 
         ON [PB_MessageJournal]([Category])
+
+    CREATE INDEX [PB_MessageJournal_IX_RelatedTo] 
+        ON [PB_MessageJournal]([RelatedTo])
+
+    CREATE INDEX [PB_MessageJournal_IX_Origination] 
+        ON [PB_MessageJournal]([Origination])
+
+    CREATE INDEX [PB_MessageJournal_IX_Destination] 
+        ON [PB_MessageJournal]([Destination])
 END
 
 IF NOT EXISTS (SELECT * FROM [sys].[columns] 
@@ -102,6 +112,17 @@ BEGIN
     
     CREATE INDEX [PB_MessageJournal_IX_TopicName] 
         ON [PB_MessageJournal]([TopicName])
+END
+
+IF NOT EXISTS (SELECT * FROM [sys].[columns] 
+           WHERE [object_id] = OBJECT_ID(N'[PB_MessageJournal]') 
+           AND [name] = 'RelatedTo')
+BEGIN
+    ALTER TABLE [PB_MessageJournal]
+    ADD [RelatedTo] UNIQUEIDENTIFIER
+    
+    CREATE INDEX [PB_MessageJournal_IX_RelatedTo] 
+        ON [PB_MessageJournal]([RelatedTo])
 END
 ";
             }

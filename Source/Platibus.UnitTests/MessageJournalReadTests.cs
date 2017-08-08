@@ -36,7 +36,8 @@ namespace Platibus.UnitTests
         protected MessageJournalPosition Start;
         protected int Count;
         protected MessageJournalFilter Filter;
-
+        protected MessageId FirstCommandMessageId = MessageId.Generate();
+        
         protected IList<MessageJournalReadResult> Pages = new List<MessageJournalReadResult>();
 
         protected MessageJournalReadTests(IMessageJournal messageJournal)
@@ -88,7 +89,7 @@ namespace Platibus.UnitTests
             await GivenSampleSet();
             await GivenAtBeginningOfJournal();
             GivenPageSize(10);
-            GivenCategoryFilter(category);
+            GivenFilter(f => f.Categories.Add(category));
             await WhenReadingToEndOfJournal();
 
             var actual = Pages.SelectMany(p => p.Entries).ToList();
@@ -106,7 +107,7 @@ namespace Platibus.UnitTests
             await GivenSampleSet();
             await GivenAtBeginningOfJournal();
             GivenPageSize(10);
-            GivenTopicFilter(topic);
+            GivenFilter(f => f.Topics.Add(topic));
             await WhenReadingToEndOfJournal();
 
             var actual = Pages.SelectMany(p => p.Entries).ToList();
@@ -123,14 +124,96 @@ namespace Platibus.UnitTests
             await GivenSampleSet();
             await GivenAtBeginningOfJournal();
             GivenPageSize(10);
-            GivenCategoryFilter(category);
-            GivenTopicFilter(topic);
+            GivenFilter(f =>
+            {
+                f.Categories.Add(category);
+                f.Topics.Add(topic);
+            });
             await WhenReadingToEndOfJournal();
 
             var actual = Pages.SelectMany(p => p.Entries).ToList();
             Assert.Equal(expectedCount, actual.Count);
 
             AssertTopic(actual, topic);
+        }
+
+        [Theory]
+        [InlineData("http://localhost/platibus0", 8)]
+        [InlineData("http://localhost/platibus1", 24)]
+        [InlineData("http://LocalHost/platibus0", 8)]
+        [InlineData("http://LOCALHOST/platibus1", 24)]
+        [InlineData("http://LocalHost/platibus0/", 8)]
+        [InlineData("http://LOCALHOST/platibus1/", 24)]
+        protected async Task ReadResultsCanBeFilteredByOrigination(string origination, int expectedCount)
+        {
+            await GivenSampleSet();
+            await GivenAtBeginningOfJournal();
+            GivenPageSize(10);
+            GivenFilter(f => f.Origination = new Uri(origination));
+            await WhenReadingToEndOfJournal();
+
+            var actual = Pages.SelectMany(p => p.Entries).ToList();
+            Assert.Equal(expectedCount, actual.Count);
+
+            var expectedOrigination = new Uri(origination).WithTrailingSlash();
+            AssertOrigination(actual, expectedOrigination);
+        }
+        
+        [Theory]
+        [InlineData("http://localhost/platibus0", 16)]
+        [InlineData("http://localhost/platibus1", 8)]
+        [InlineData("http://LocalHost/platibus0", 16)]
+        [InlineData("http://LOCALHOST/platibus1", 8)]
+        [InlineData("http://LocalHost/platibus0/", 16)]
+        [InlineData("http://LOCALHOST/platibus1/", 8)]
+        protected async Task ReadResultsCanBeFilteredByDestination(string destination, int expectedCount)
+        {
+            await GivenSampleSet();
+            await GivenAtBeginningOfJournal();
+            GivenPageSize(10);
+            GivenFilter(f => f.Destination = new Uri(destination));
+            await WhenReadingToEndOfJournal();
+
+            var actual = Pages.SelectMany(p => p.Entries).ToList();
+            Assert.Equal(expectedCount, actual.Count);
+
+            var expectedDestination = new Uri(destination).WithTrailingSlash();
+            AssertDestination(actual, expectedDestination);
+        }
+
+        [Fact]
+        protected async Task ReadResultsCanBeFilteredByRelatedTo()
+        {
+            await GivenSampleSet();
+            await GivenAtBeginningOfJournal();
+            GivenPageSize(10);
+            GivenFilter(f => f.RelatedTo = FirstCommandMessageId);
+            await WhenReadingToEndOfJournal();
+
+            var actual = Pages.SelectMany(p => p.Entries).ToList();
+            Assert.Equal(2, actual.Count); // Journaled as "Sent" and as "Received"
+
+            AssertRelatedTo(actual, FirstCommandMessageId);
+        }
+
+        [Theory]
+        [InlineData("Foo", 8)]
+        [InlineData("BarRequest", 2)]
+        [InlineData("Response", 8)]
+        [InlineData("Complete", 6)]
+        [InlineData("Fail", 2)]
+        protected async Task ReadResultsCanBeFilteredByMessageName(string messageName, int expectedCount)
+        {
+            await GivenSampleSet();
+            await GivenAtBeginningOfJournal();
+            GivenPageSize(10);
+            GivenFilter(f => f.MessageName = messageName);
+            await WhenReadingToEndOfJournal();
+
+            var actual = Pages.SelectMany(p => p.Entries).ToList();
+            Assert.Equal(expectedCount, actual.Count);
+
+            AssertMessageName(actual, messageName);
         }
 
         protected async Task GivenSampleSet()
@@ -144,39 +227,41 @@ namespace Platibus.UnitTests
             //  4 Messages with topic "FooEvents"
             //  4 Messages with topic "BarEvents"
             //  8 Messages with topic "BazEvents"
-        
-            await GivenJournaledSentMessage("FooRequest:1");
-            await GivenJournaledReceivedMessage("FooRequest:1");
-            await GivenJournaledPublication("FooStarted:1", "FooEvents");
-            await GivenJournaledReceivedPublication("FooStarted:1", "FooEvents");
-            await GivenJournaledPublication("FooCompleted:1", "FooEvents");
-            await GivenJournaledReceivedPublication("FooCompleted:1", "FooEvents");
-            await GivenJournaledSentMessage("FooResponse:1");
-            await GivenJournaledReceivedMessage("FooResponse:1");
-            await GivenJournaledSentMessage("BarRequest:1");
-            await GivenJournaledReceivedMessage("BarRequest:1");
-            await GivenJournaledPublication("BarStarted:1", "BarEvents");
-            await GivenJournaledPublication("BarCompleted:1", "BarEvents");
-            await GivenJournaledSentMessage("BarResponse:1");
-            await GivenJournaledReceivedPublication("BarStarted:1", "BarEvents");
-            await GivenJournaledSentMessage("BazRequest:1");
-            await GivenJournaledReceivedMessage("BarResponse:1");
-            await GivenJournaledReceivedMessage("BazRequest:1");
-            await GivenJournaledReceivedPublication("BarCompleted:1", "BarEvents");
-            await GivenJournaledPublication("BazStarted:1", "BazEvents");
-            await GivenJournaledReceivedPublication("BazStarted:1", "BazEvents");
-            await GivenJournaledPublication("BazFailed:1", "BazEvents");
-            await GivenJournaledSentMessage("BazResponse:1");
-            await GivenJournaledReceivedMessage("BazResponse:1");
-            await GivenJournaledReceivedPublication("BazFailed:1", "BazEvents");
-            await GivenJournaledSentMessage("BazRequest:2");
-            await GivenJournaledReceivedMessage("BazRequest:2");
-            await GivenJournaledPublication("BazStarted:2", "BazEvents");
-            await GivenJournaledReceivedPublication("BazStarted:2", "BazEvents");
-            await GivenJournaledPublication("BazCompleted:2", "BazEvents");
-            await GivenJournaledReceivedPublication("BazCompleted:2", "BazEvents");
-            await GivenJournaledSentMessage("BazResponse:2");
-            await GivenJournaledReceivedMessage("BazResponse:2");
+            //  8 Messages with origination "http://localhost/platibus0" (commands)
+            // 24 Messages with origination "http://localhost/platibus1" (publications & replies)
+
+            var fooRequest1 = await GivenJournaledSentMessage("FooRequest", "FooRequest:1", FirstCommandMessageId);
+            await GivenJournaledReceivedMessage("FooRequest", "FooRequest:1");
+            await GivenJournaledPublication("FooStarted", "FooStarted:1", "FooEvents");
+            await GivenJournaledReceivedPublication("FooStarted", "FooStarted:1", "FooEvents");
+            await GivenJournaledPublication("FooCompleted", "FooCompleted:1", "FooEvents");
+            await GivenJournaledReceivedPublication("FooCompleted", "FooCompleted:1", "FooEvents");
+            await GivenJournaledSentReply("FooResponse", "FooResponse:1", fooRequest1.Headers.MessageId);
+            await GivenJournaledReceivedReply("FooResponse", "FooResponse:1", fooRequest1.Headers.MessageId);
+            var barRequest1 = await GivenJournaledSentMessage("BarRequest", "BarRequest:1");
+            await GivenJournaledReceivedMessage("BarRequest", "BarRequest:1");
+            await GivenJournaledPublication("BarStarted", "BarStarted:1", "BarEvents");
+            await GivenJournaledPublication("BarCompleted", "BarCompleted:1", "BarEvents");
+            await GivenJournaledSentReply("BarResponse", "BarResponse:1", barRequest1.Headers.MessageId);
+            await GivenJournaledReceivedPublication("BarStarted", "BarStarted:1", "BarEvents");
+            var bazRequest1 = await GivenJournaledSentMessage("BazRequest", "BazRequest:1");
+            await GivenJournaledReceivedReply("BarResponse", "BarResponse:1", barRequest1.Headers.MessageId);
+            await GivenJournaledReceivedMessage("BazRequest", "BazRequest:1");
+            await GivenJournaledReceivedPublication("BarCompleted", "BarCompleted:1", "BarEvents");
+            await GivenJournaledPublication("BazStarted", "BazStarted:1", "BazEvents");
+            await GivenJournaledReceivedPublication("BazStarted", "BazStarted:1", "BazEvents");
+            await GivenJournaledPublication("BazFailed", "BazFailed:1", "BazEvents");
+            await GivenJournaledSentReply("BazResponse", "BazResponse:1", bazRequest1.Headers.MessageId);
+            await GivenJournaledReceivedReply("BazResponse", "BazResponse:1", bazRequest1.Headers.MessageId);
+            await GivenJournaledReceivedPublication("BazFailed", "BazFailed:1", "BazEvents");
+            var bazRequest2 = await GivenJournaledSentMessage("BazRequest", "BazRequest:2");
+            await GivenJournaledReceivedMessage("BazRequest", "BazRequest:2");
+            await GivenJournaledPublication("BazStarted", "BazStarted:2", "BazEvents");
+            await GivenJournaledReceivedPublication("BazStarted", "BazStarted:2", "BazEvents");
+            await GivenJournaledPublication("BazCompleted", "BazCompleted:2", "BazEvents");
+            await GivenJournaledReceivedPublication("BazCompleted", "BazCompleted:2", "BazEvents");
+            await GivenJournaledSentReply("BazResponse", "BazResponse:2", bazRequest2.Headers.MessageId);
+            await GivenJournaledReceivedReply("BazResponse", "BazResponse:2", bazRequest2.Headers.MessageId);
         }
 
         protected async Task GivenAtBeginningOfJournal()
@@ -189,38 +274,74 @@ namespace Platibus.UnitTests
             Count = count;
         }
 
-        protected async Task GivenJournaledSentMessage(string content)
+        protected async Task<Message> GivenJournaledSentMessage(string messageName, string content, MessageId messageId = default(MessageId))
+        {
+            var myMessageId = messageId == default(MessageId) ? MessageId.Generate() : messageId;
+            var messageHeaders = new MessageHeaders
+            {
+                MessageId = myMessageId,
+                Sent = DateTime.UtcNow,
+                Origination = new Uri("http://localhost/platibus0"),
+                Destination = new Uri("http://localhost/platibus1"),
+                MessageName = messageName,
+                ContentType = "text/plain"
+            };
+            var message = new Message(messageHeaders, content);
+            await MessageJournal.Append(message, MessageJournalCategory.Sent);
+            return message;
+        }
+
+        protected async Task<Message> GivenJournaledSentReply(string messageName, string content, MessageId relatedTo = default(MessageId))
         {
             var messageHeaders = new MessageHeaders
             {
                 MessageId = MessageId.Generate(),
                 Sent = DateTime.UtcNow,
-                Origination = new Uri("urn:localhost/platibus0"),
-                Destination = new Uri("urn:localhost/platibus1"),
-                MessageName = "Sent",
+                Origination = new Uri("http://localhost/platibus1"),
+                Destination = new Uri("http://localhost/platibus0"),
+                RelatedTo = relatedTo,
+                MessageName = messageName,
                 ContentType = "text/plain"
             };
             var message = new Message(messageHeaders, content);
             await MessageJournal.Append(message, MessageJournalCategory.Sent);
+            return message;
         }
 
-        protected async Task GivenJournaledReceivedMessage(string content)
+        protected async Task GivenJournaledReceivedMessage(string messageName, string content)
         {
             var messageHeaders = new MessageHeaders
             {
                 MessageId = MessageId.Generate(),
                 Sent = DateTime.UtcNow.AddSeconds(-1),
                 Received = DateTime.UtcNow,
-                Origination = new Uri("urn:localhost/platibus0"),
-                Destination = new Uri("urn:localhost/platibus1"),
-                MessageName = "Received",
+                Origination = new Uri("http://localhost/platibus0"),
+                Destination = new Uri("http://localhost/platibus1"),
+                MessageName = messageName,
                 ContentType = "text/plain"
             };
             var message = new Message(messageHeaders, content);
             await MessageJournal.Append(message, MessageJournalCategory.Received);
         }
 
-        protected async Task GivenJournaledReceivedPublication(string content, TopicName topic)
+        protected async Task GivenJournaledReceivedReply(string messageName, string content, MessageId relatedTo = default(MessageId))
+        {
+            var messageHeaders = new MessageHeaders
+            {
+                MessageId = MessageId.Generate(),
+                Sent = DateTime.UtcNow.AddSeconds(-1),
+                Received = DateTime.UtcNow,
+                Origination = new Uri("http://localhost/platibus1"),
+                Destination = new Uri("http://localhost/platibus0"),
+                RelatedTo = relatedTo,
+                MessageName = messageName,
+                ContentType = "text/plain"
+            };
+            var message = new Message(messageHeaders, content);
+            await MessageJournal.Append(message, MessageJournalCategory.Received);
+        }
+
+        protected async Task GivenJournaledReceivedPublication(string messageName, string content, TopicName topic)
         {
             var published = DateTime.UtcNow.AddSeconds(-1);
             var messageHeaders = new MessageHeaders
@@ -229,47 +350,38 @@ namespace Platibus.UnitTests
                 Sent = published,
                 Published = published,
                 Received = DateTime.UtcNow,
-                Origination = new Uri("urn:localhost/platibus0"),
-                Destination = new Uri("urn:localhost/platibus1"),
+                Origination = new Uri("http://localhost/platibus1"),
+                Destination = new Uri("http://localhost/platibus0"),
                 Topic = topic,
-                MessageName = "Received",
+                MessageName = messageName,
                 ContentType = "text/plain"
             };
             var message = new Message(messageHeaders, content);
             await MessageJournal.Append(message, MessageJournalCategory.Received);
         }
 
-        protected async Task GivenJournaledPublication(string content, TopicName topic)
+        protected async Task GivenJournaledPublication(string messageName, string content, TopicName topic)
         {
             var messageHeaders = new MessageHeaders
             {
                 MessageId = MessageId.Generate(),
                 Published = DateTime.UtcNow,
-                Origination = new Uri("urn:localhost/platibus0"),
-                MessageName = "Published",
+                Origination = new Uri("http://localhost/platibus1"),
+                MessageName = messageName,
                 ContentType = "text/plain",
                 Topic = topic
             };
             var message = new Message(messageHeaders, content);
             await MessageJournal.Append(message, MessageJournalCategory.Published);
         }
-
-        protected void GivenCategoryFilter(MessageJournalCategory category)
+        
+        protected void GivenFilter(Action<MessageJournalFilter> apply)
         {
             if (Filter == null)
             {
                 Filter = new MessageJournalFilter();
             }
-            Filter.Categories = new[] {category};
-        }
-
-        protected void GivenTopicFilter(TopicName topic)
-        {
-            if (Filter == null)
-            {
-                Filter = new MessageJournalFilter();
-            }
-            Filter.Topics = new[] { topic };
+            apply(Filter);
         }
 
         protected async Task WhenReadingToEndOfJournal()
@@ -298,6 +410,55 @@ namespace Platibus.UnitTests
             foreach (var journaledMessage in journaledMessages)
             {
                 Assert.Equal(expectedTopic, journaledMessage.Data.Headers.Topic);
+            }
+        }
+
+        protected void AssertTimestampFrom(IEnumerable<MessageJournalEntry> journaledMessages,
+            DateTime from)
+        {
+            foreach (var journaledMessage in journaledMessages)
+            {
+                Assert.True(from <= journaledMessage.Timestamp);
+            }
+        }
+
+        protected void AssertOrigination(
+            IEnumerable<MessageJournalEntry> journaledMessages,
+            Uri expectedOrigination)
+        {
+            foreach (var journaledMessage in journaledMessages)
+            {
+                Assert.Equal(expectedOrigination, journaledMessage.Data.Headers.Origination);
+            }
+        }
+
+        protected void AssertDestination(
+            IEnumerable<MessageJournalEntry> journaledMessages,
+            Uri expectedDestination)
+        {
+            foreach (var journaledMessage in journaledMessages)
+            {
+                Assert.Equal(expectedDestination, journaledMessage.Data.Headers.Destination);
+            }
+        }
+
+        protected void AssertMessageName(
+            IEnumerable<MessageJournalEntry> journaledMessages,
+            string partial)
+        {
+            foreach (var journaledMessage in journaledMessages)
+            {
+                Assert.Contains(partial, journaledMessage.Data.Headers.MessageName);
+            }
+        }
+
+        protected void AssertRelatedTo(
+            IEnumerable<MessageJournalEntry> journaledMessages,
+            MessageId expectedMessageId)
+        {
+            foreach (var journaledMessage in journaledMessages)
+            {
+                Assert.Equal(expectedMessageId, journaledMessage.Data.Headers.RelatedTo);
             }
         }
 

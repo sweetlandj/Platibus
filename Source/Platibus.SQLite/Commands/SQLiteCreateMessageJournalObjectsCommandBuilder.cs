@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS [PB_MessageJournal]
     [Origination] TEXT NULL,
     [Destination] TEXT NULL,
     [ReplyTo] TEXT NULL,
+    [RelatedTo] TEXT NULL,
     [Expires] TEXT NULL,
     [ContentType] TEXT NULL,
     [Headers] TEXT,
@@ -79,7 +80,17 @@ CREATE INDEX IF NOT EXISTS [PB_MessageJournal_IX_Timestamp]
     ON [PB_MessageJournal]([Timestamp]);
 
 CREATE INDEX IF NOT EXISTS [PB_MessageJournal_IX_Category] 
-    ON [PB_MessageJournal]([Category]);";
+    ON [PB_MessageJournal]([Category]);
+
+CREATE INDEX IF NOT EXISTS [PB_MessageJournal_IX_Origination] 
+    ON [PB_MessageJournal]([Origination]);
+
+CREATE INDEX IF NOT EXISTS [PB_MessageJournal_IX_Destination] 
+    ON [PB_MessageJournal]([Destination]);
+
+CREATE INDEX IF NOT EXISTS [PB_MessageJournal_IX_RelatedTo] 
+    ON [PB_MessageJournal]([RelatedTo]);";
+
             }
         }
     }

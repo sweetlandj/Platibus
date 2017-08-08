@@ -34,7 +34,7 @@ namespace Platibus.MongoDB
         [BsonIgnoreIfDefault]
         public ObjectId Id { get; set; }
 
-        [BsonElement("timestmap")]
+        [BsonElement("timestamp")]
         public DateTime Timestamp { get; set; }
 
         [BsonElement("category")]
@@ -55,5 +55,14 @@ namespace Platibus.MongoDB
 
         [BsonElement("content")]
         public string Content { get; set; }
+
+        [BsonElement("origination")]
+        public string Origination { get; set; }
+
+        [BsonElement("destination")]
+        public string Destination { get; set; }
+
+        [BsonElement("relatedTo")]
+        public string RelatedTo { get; set; }
     }
 }

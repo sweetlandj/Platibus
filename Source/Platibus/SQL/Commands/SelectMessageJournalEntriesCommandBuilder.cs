@@ -69,13 +69,33 @@ namespace Platibus.SQL.Commands
         /// Constrains results to entries whose timestamp is greater than or equal to the
         /// specified date/time.
         /// </summary>
-        public DateTime From { get; set; }
+        public DateTime? From { get; set; }
 
         /// <summary>
         /// Constrains results to entries whose timestamp is less than the specified date/time.
         /// </summary>
-        public DateTime To { get; set; }
+        public DateTime? To { get; set; }
 
+        /// <summary>
+        /// Constrains results to entries originating from the specified base URI.
+        /// </summary>
+        public Uri Origination { get; set; }
+
+        /// <summary>
+        /// Constrains results to entries addressed to the specified base URI.
+        /// </summary>
+        public Uri Destination { get; set; }
+
+        /// <summary>
+        /// Constrains results to entries with message names containing the specified substring.
+        /// </summary>
+        public string MessageName { get; set; }
+
+        /// <summary>
+        /// Constrains results to entries that are related to to the specified message ID.
+        /// </summary>
+        public Guid? RelatedTo { get; set; }
+        
         /// <summary>
         /// Initializes and returns a new query <see cref="DbCommand"/> with the configured
         /// parameters
@@ -95,9 +115,11 @@ namespace Platibus.SQL.Commands
             command.SetParameter("@Count", Count);
             command.SetParameter("@Start", Start);
 
-            ApppendTimestampFilterConditions(command);
+            AppendTimestampFilterConditions(command);
             AppendTopicFilterConditions(command);
             AppendCategoryFilterConditions(command);
+            AppendRoutingFilterConditions(command);
+            AppendMessageNameFilterConditions(command);
             AppendSort(command);
 
             return command;
@@ -145,18 +167,60 @@ WHERE [Id] >= @Start"; }
         /// <param name="command">The command</param>
         /// <exception cref="ArgumentNullException">Thrown if <c>command</c> is <c>null</c></exception>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
-        public virtual void ApppendTimestampFilterConditions(DbCommand command)
+        public virtual void AppendTimestampFilterConditions(DbCommand command)
         {
-            if (From != default(DateTime))
+            if (From != null)
             {
                 command.CommandText += " AND [Timestamp] >= @From";
                 command.SetParameter("@From", From);
             }
 
-            if (To != default(DateTime))
+            if (To != null)
             {
                 command.CommandText += " AND [Timestamp] < @To";
                 command.SetParameter("@To", To);
+            }
+        }
+
+        /// <summary>
+        /// Appends origination and destination filter criteria to a command 
+        /// </summary>
+        /// <param name="command">The command</param>
+        /// <exception cref="ArgumentNullException">Thrown if <c>command</c> is <c>null</c></exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
+        public virtual void AppendRoutingFilterConditions(DbCommand command)
+        {
+            if (Origination != null)
+            {
+                command.CommandText += " AND [Origination] = @Origination";
+                command.SetParameter("@Origination", Origination.WithTrailingSlash().ToString());
+            }
+
+            if (Destination != null)
+            {
+                command.CommandText += " AND [Destination] = @Destination";
+                command.SetParameter("@Destination", Destination.WithTrailingSlash().ToString());
+            }
+
+            if (RelatedTo != null)
+            {
+                command.CommandText += " AND [RelatedTo] = @RelatedTo";
+                command.SetParameter("@RelatedTo", RelatedTo);
+            }
+        }
+
+        /// <summary>
+        /// Appends message name filter criteria to a command 
+        /// </summary>
+        /// <param name="command">The command</param>
+        /// <exception cref="ArgumentNullException">Thrown if <c>command</c> is <c>null</c></exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
+        public virtual void AppendMessageNameFilterConditions(DbCommand command)
+        {
+            if (!string.IsNullOrWhiteSpace(MessageName))
+            {
+                command.CommandText += " AND [MessageName] LIKE @MessageName";
+                command.SetParameter("@MessageName", "%" + MessageName + "%");
             }
         }
 

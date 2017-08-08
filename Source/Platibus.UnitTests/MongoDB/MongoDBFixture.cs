@@ -23,6 +23,8 @@
 using System;
 using System.Configuration;
 using Mongo2Go;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using Platibus.MongoDB;
 
 namespace Platibus.UnitTests.MongoDB
@@ -75,6 +77,18 @@ namespace Platibus.UnitTests.MongoDB
             _messageJournal = new MongoDBMessageJournal(_connectionStringSettings, DatabaseName);
         }
 
+        public void DeleteJournaledMessages()
+        {
+            var db = MongoDBHelper.Connect(_connectionStringSettings, DatabaseName);
+            var journal = db.GetCollection<BsonDocument>(MongoDBMessageJournal.DefaultCollectionName);
+            journal.DeleteMany(Builders<BsonDocument>.Filter.Empty);
+        }
+
+        ~MongoDBFixture()
+        {
+            Dispose(false);
+        }
+
         public void Dispose()
         {
             if (_disposed) return;
@@ -87,9 +101,9 @@ namespace Platibus.UnitTests.MongoDB
         {
             if (disposing)
             {
-                _messageQueueingService.Dispose();
                 _mongoDbRunner.Dispose();
             }
+            _mongoDbRunner.Dispose();
         }
     }
 }

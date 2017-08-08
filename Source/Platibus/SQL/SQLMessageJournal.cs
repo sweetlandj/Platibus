@@ -166,13 +166,14 @@ namespace Platibus.SQL
                 commandBuilder.MessageName = headers.MessageName;
                 commandBuilder.Origination = headers.Origination == null
                     ? null
-                    : headers.Origination.ToString();
+                    : headers.Origination.WithTrailingSlash().ToString();
                 commandBuilder.Destination = headers.Destination == null
                     ? null
-                    : headers.Destination.ToString();
+                    : headers.Destination.WithTrailingSlash().ToString();
                 commandBuilder.ReplyTo = headers.ReplyTo == null 
                     ? null 
                     : headers.ReplyTo.ToString();
+                commandBuilder.RelatedTo = headers.RelatedTo;
                 commandBuilder.ContentType = headers.ContentType;
                 commandBuilder.Headers = SerializeHeaders(headers);
                 commandBuilder.Content = message.Content;
@@ -205,6 +206,12 @@ namespace Platibus.SQL
                 var commandBuilder = _commandBuilders.NewSelectJournaledMessagesCommandBuilder();
                 commandBuilder.Categories = myFilter.Categories.Select(c => (string) c).ToList();
                 commandBuilder.Topics = myFilter.Topics.Select(t => (string) t).ToList();
+                commandBuilder.From = myFilter.From;
+                commandBuilder.To = myFilter.To;
+                commandBuilder.Origination = myFilter.Origination;
+                commandBuilder.Destination = myFilter.Destination;
+                commandBuilder.RelatedTo = myFilter.RelatedTo;
+                commandBuilder.MessageName = myFilter.MessageName;
                 commandBuilder.Start = ((SQLMessageJournalPosition) start).Id;
                 commandBuilder.Count = count + 1;
 

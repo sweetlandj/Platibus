@@ -70,6 +70,11 @@ namespace Platibus.SQL.Commands
         public string Destination { get; set; }
 
         /// <summary>
+        /// The ID of the message to which this message is related (e.g. reply)
+        /// </summary>
+        public Guid RelatedTo { get; set; }
+
+        /// <summary>
         /// The URI of the instance to which replies to the message should be addressed
         /// </summary>
         public string ReplyTo { get; set; }
@@ -113,6 +118,7 @@ namespace Platibus.SQL.Commands
             command.SetParameter("@Origination", Origination);
             command.SetParameter("@Destination", Destination);
             command.SetParameter("@ReplyTo", ReplyTo);
+            command.SetParameter("@RelatedTo", RelatedTo);
             command.SetParameter("@ContentType", ContentType);
             command.SetParameter("@Headers", Headers);
             command.SetParameter("@MessageContent", Content);
@@ -136,7 +142,8 @@ INSERT INTO [PB_MessageJournal] (
     [MessageName], 
     [Origination], 
     [Destination], 
-    [ReplyTo], 
+    [ReplyTo],
+    [RelatedTo], 
     [ContentType], 
     [Headers], 
     [MessageContent])
@@ -149,6 +156,7 @@ VALUES (
     @Origination, 
     @Destination, 
     @ReplyTo, 
+    @RelatedTo,
     @ContentType, 
     @Headers, 
     @MessageContent)";

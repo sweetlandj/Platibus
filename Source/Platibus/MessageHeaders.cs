@@ -225,7 +225,7 @@ namespace Platibus
             var value = this[headerName];
             return string.IsNullOrWhiteSpace(value) 
                 ? null 
-                : new Uri(value, UriKind.Absolute);
+                : new Uri(value, UriKind.Absolute).WithTrailingSlash();
         }
 
         /// <inheritdoc/>
