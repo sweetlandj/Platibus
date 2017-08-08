@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -14,8 +15,19 @@ namespace Platibus.Http.Controllers
     /// <summary>
     /// An HTTP resource controller for querying the message journal
     /// </summary>
-    public class JournalController : IHttpResourceController
+    public class  JournalController : IHttpResourceController
     {
+        private static readonly string[] DateFormats =
+        {
+            "yyyy-MM-dd",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm:ss.fff"
+        };
+
+        private const DateTimeStyles DateStyles = DateTimeStyles.AssumeUniversal |
+                                                  DateTimeStyles.AllowWhiteSpaces |
+                                                  DateTimeStyles.AdjustToUniversal;
+
         private readonly NewtonsoftJsonSerializer _serializer = new NewtonsoftJsonSerializer();
         private readonly IAuthorizationService _authorizationService;
         private readonly IMessageJournal _messageJournal;
@@ -169,7 +181,82 @@ namespace Platibus.Http.Controllers
                     .ToList();
             }
 
+            filter.From = GetDateTime("from", request, errors);
+            filter.To = GetDateTime("to", request, errors);
+            filter.Origination = GetUri("origination", request, errors);
+            filter.Destination = GetUri("destination", request, errors);
+            filter.MessageName = request.QueryString["messageName"];
+            filter.RelatedTo = GetMessageId("relatedTo", request, errors);
+
             return filter;
         }
+
+        private static DateTime? GetDateTime(string parameter, IHttpResourceRequest request,
+            ICollection<ErrorModel> errors)
+        {
+            var value = request.QueryString[parameter];
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                DateTime dateValue;
+                if (!TryParseDate(value, out dateValue))
+                {
+                    errors.Add(new ErrorModel("Invalid date/time: " + value, parameter));
+                }
+                else
+                {
+                    return dateValue;
+                }
+            }
+            return null;
+        }
+
+        private static Uri GetUri(string parameter, IHttpResourceRequest request,
+            ICollection<ErrorModel> errors)
+        {
+            var value = request.QueryString[parameter];
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                Uri uri;
+                if (!Uri.TryCreate(value, UriKind.Absolute, out uri))
+                {
+                    errors.Add(new ErrorModel("Invalid URI: " + value, parameter));
+                }
+                else
+                {
+                    return uri;
+                }
+            }
+            return null;
+        }
+
+        private static bool TryParseDate(string value, out DateTime date)
+        {
+            return DateTime.TryParseExact(
+                value, 
+                DateFormats, 
+                CultureInfo.InvariantCulture, 
+                DateStyles,
+                out date);
+        }
+
+        private static MessageId GetMessageId(string parameter, IHttpResourceRequest request,
+            ICollection<ErrorModel> errors)
+        {
+            var value = request.QueryString[parameter];
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                Guid guid;
+                if (!Guid.TryParse(value, out guid))
+                {
+                    errors.Add(new ErrorModel("Invalid message ID: " + value, parameter));
+                }
+                else
+                {
+                    return new MessageId(guid);
+                }
+            }
+            return null;
+        }
+
     }
 }

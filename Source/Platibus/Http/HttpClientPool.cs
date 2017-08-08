@@ -60,13 +60,12 @@ namespace Platibus.Http
         /// </returns>
         public async Task<HttpClient> GetClient(Uri uri, IEndpointCredentials credentials, CancellationToken cancellationToken = default(CancellationToken))
         {
-
             var newHandler = false;
             var key = new PoolKey(uri, credentials);
             HttpClientHandler clientHandler;
             if (_pool.TryGetValue(key, out clientHandler))
             {
-                return CreateClient(clientHandler, uri, credentials, newHandler);
+                return CreateClient(clientHandler, uri, credentials, false);
             }
 
             await _poolSync.WaitAsync(cancellationToken);
@@ -87,13 +86,12 @@ namespace Platibus.Http
                     var sp = ServicePointManager.FindServicePoint(uri);
                     sp.ConnectionLeaseTimeout = (int)TimeSpan.FromMinutes(5).TotalMilliseconds;
                 }
+                return CreateClient(clientHandler, uri, credentials, newHandler);
             }
             finally
             {
                 _poolSync.Release();
             }
-
-            return CreateClient(clientHandler, uri, credentials, newHandler);
         }
 
         private static HttpClient CreateClient(HttpClientHandler clientHandler, Uri baseAddress, IEndpointCredentials credentials, bool newHandler)

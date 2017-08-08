@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Platibus.Diagnostics;
 using Platibus.Serialization;
 
 namespace Platibus.Http.Controllers

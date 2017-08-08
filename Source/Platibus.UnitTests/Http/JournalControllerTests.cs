@@ -114,21 +114,40 @@ namespace Platibus.UnitTests.Http
                 {"start", "20"},
                 {"count", "10"},
                 {"topic", "FooEvents, BarEvents"},
-                {"category", "Received, Published"}
+                {"category", "Received, Published"},
+                {"from", "2017-08-09T15:31:11.012"},
+                {"to", "2017-08-10"},
+                {"origination", "http://localhost:8089/platibus"},
+                {"destination", "http://localhost:8090/platibus"},
+                {"messageName", "event"},
+                {"relatedTo", "{637D88F6-48AC-4521-BD45-EA0965022AEC}"}
             });
+
             await WhenProcessingGetRequest();
             AssertSuccess();
 
             var expectedStart = new MessageJournalStub.Position(20);
-            mockMessageJournal.Verify(x => x.Read(expectedStart, 10, 
-                It.Is<MessageJournalFilter>(mf =>
-                    mf.Topics.Count == 2 &&
-                    mf.Categories.Count == 2 &&
-                    mf.Topics.Contains("FooEvents") && 
-                    mf.Topics.Contains("BarEvents") &&
-                    mf.Categories.Contains("Received") &&
-                    mf.Categories.Contains("Published")
-                ), It.IsAny<CancellationToken>()));
+            mockMessageJournal.Verify(x => x.Read(expectedStart, 10,
+                It.Is<MessageJournalFilter>(mf => IsExpectedFilter(mf)),
+                It.IsAny<CancellationToken>()));
+        }
+
+        private static bool IsExpectedFilter(MessageJournalFilter mf)
+        {
+            Assert.Equal(2, mf.Topics.Count);
+            Assert.Equal(2, mf.Categories.Count);
+            Assert.Contains((TopicName) "FooEvents", mf.Topics);
+            Assert.Contains((TopicName) "BarEvents", mf.Topics);
+            Assert.Contains((MessageJournalCategory) "Received", mf.Categories);
+            Assert.Contains((MessageJournalCategory) "Received", mf.Categories);
+            Assert.Equal(new DateTime(2017, 8, 9, 15, 31, 11, DateTimeKind.Utc).AddMilliseconds(12), mf.From);
+            Assert.Equal(new DateTime(2017, 8, 10, 0, 0, 0, DateTimeKind.Utc), mf.To);
+            Assert.Equal(new Uri("http://localhost:8089/platibus"), mf.Origination);
+            Assert.Equal(new Uri("http://localhost:8090/platibus"), mf.Destination);
+            Assert.Equal("event", mf.MessageName);
+            Assert.Equal(new Guid("{637D88F6-48AC-4521-BD45-EA0965022AEC}"), mf.RelatedTo);
+
+            return true;
         }
 
         [Fact]
