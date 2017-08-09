@@ -101,7 +101,7 @@ namespace Platibus.UnitTests.MongoDB
         {
             if (disposing)
             {
-                _mongoDbRunner.Dispose();
+                _messageQueueingService.Dispose();
             }
             _mongoDbRunner.Dispose();
         }

@@ -22,7 +22,6 @@
 
 using System;
 using System.Configuration;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -69,7 +68,7 @@ namespace Platibus.SQLite
                     MaxDegreeOfParallelism = 1
                 });
         }
-
+        
         private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory, IDiagnosticService diagnosticService)
         {
             if (directory == null)
@@ -149,7 +148,6 @@ namespace Platibus.SQLite
         /// </summary>
         /// <param name="disposing">Indicates whether this method is called from the 
         /// <see cref="Dispose()"/> method (<c>true</c>) or from the finalizer (<c>false</c>)</param>
-        [SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_cancellationTokenSource")]
         protected virtual void Dispose(bool disposing)
         {
             _cancellationTokenSource.Cancel();
