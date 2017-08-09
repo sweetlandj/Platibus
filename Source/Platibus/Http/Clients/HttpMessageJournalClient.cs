@@ -75,9 +75,38 @@ namespace Platibus.Http.Clients
                 {
                     queryParameters["category"] = string.Join(",", filter.Categories);
                 }
+                if (filter.From != null)
+                {
+                    queryParameters["from"] = FormatDate(filter.From);
+                }
+                if (filter.To != null)
+                {
+                    queryParameters["to"] = FormatDate(filter.To);
+                }
+                if (filter.Origination != null)
+                {
+                    queryParameters["origination"] = filter.Origination.ToString();
+                }
+                if (filter.Destination != null)
+                {
+                    queryParameters["destination"] = filter.Destination.ToString();
+                }
+                if (!string.IsNullOrWhiteSpace(filter.MessageName))
+                {
+                    queryParameters["messageName"] = filter.MessageName;
+                }
+                if (filter.RelatedTo != null)
+                {
+                    queryParameters["relatedTo"] = filter.RelatedTo;
+                }
             }
             return string.Join("&", queryParameters
                 .Select(p => p.Key + "=" + HttpUtility.UrlEncode(p.Value)));
+        }
+
+        private static string FormatDate(DateTime? date)
+        {
+            return date.GetValueOrDefault().ToString("yyyy-MM-dd'T'HH:mm:ss.fff");
         }
 
         private static async Task<MessageJournalReadResult> ParseResponseContent(HttpResponseMessage responseMessage)

@@ -239,7 +239,7 @@ namespace Platibus.Http.Controllers
                 out date);
         }
 
-        private static MessageId GetMessageId(string parameter, IHttpResourceRequest request,
+        private static MessageId? GetMessageId(string parameter, IHttpResourceRequest request,
             ICollection<ErrorModel> errors)
         {
             var value = request.QueryString[parameter];
@@ -257,6 +257,5 @@ namespace Platibus.Http.Controllers
             }
             return null;
         }
-
     }
 }

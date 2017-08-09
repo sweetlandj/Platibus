@@ -177,6 +177,7 @@
     <Compile Include="Journaling\MessageJournalCategory.cs" />
     <Compile Include="Journaling\MessageJournalFilter.cs" />
     <Compile Include="Journaling\MessageJournalReadResult.cs" />
+    <Compile Include="Journaling\SanitizedMessageJournal.cs" />
     <Compile Include="Multicast\ByteUtils.cs" />
     <Compile Include="Multicast\MulticastEventBuilder.cs" />
     <Compile Include="Multicast\MulticastEventType.cs" />
@@ -212,6 +213,7 @@
     <Compile Include="Security\ISecurityTokenService.cs" />
     <Compile Include="Security\JwtSecurityTokenService.cs" />
     <Compile Include="Security\JwtSecurityTokenServiceProvider.cs" />
+    <Compile Include="Security\MessageHeaderSanitizationExtensions.cs" />
     <Compile Include="Security\SecurityTokenExtensions.cs" />
     <Compile Include="Security\HexEncodedSecurityKey.cs" />
     <Compile Include="Security\SecurityTokenServiceExtensions.cs" />

@@ -42,6 +42,7 @@
     <Compile Include="ResponseDocument.cs" />
     <Compile Include="Widgets\WidgetAttributes.cs" />
     <Compile Include="Widgets\WidgetCreationCommand.cs" />
+    <Compile Include="Widgets\WidgetCreationReply.cs" />
     <Compile Include="Widgets\WidgetEvent.cs" />
     <Compile Include="Widgets\WidgetResource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

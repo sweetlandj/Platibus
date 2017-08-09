@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Web.Mvc;
 using Platibus.Journaling;
@@ -41,6 +42,24 @@ namespace Platibus.SampleWebApp.Models
             get { return _categories ?? (_categories = new List<string>()); }
             set { _categories = value; }
         }
+
+        [Display(Name = "From")]
+        public DateTime? FilterFrom { get; set; }
+
+        [Display(Name = "To")]
+        public DateTime? FilterTo { get; set; }
+
+        [Display(Name = "Origination")]
+        public Uri FilterOrigination { get; set; }
+
+        [Display(Name = "Destination")]
+        public Uri FilterDestination { get; set; }
+
+        [Display(Name = "Related To")]
+        public Guid? FilterRelatedTo { get; set; }
+
+        [Display(Name = "Message Name")]
+        public string FilterMessageName { get; set; }
 
         public MessageJournalReadResult Result { get; set; }
        

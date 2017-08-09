@@ -81,7 +81,7 @@ namespace Platibus.Config.Extensibility
                     Detail = "Message journal initialized"
                 }.Build());
 
-            return messageJournal;
+            return new SanitizedMessageJournal(messageJournal);
         }
 
         private static IMessageJournalProvider GetProvider(string providerName)

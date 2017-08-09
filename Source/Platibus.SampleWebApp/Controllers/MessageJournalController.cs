@@ -33,7 +33,7 @@ namespace Platibus.SampleWebApp.Controllers
                         MessageJournalCategory.Received,
                         MessageJournalCategory.Published,
                     }
-                    .Select(c => new SelectListItem { Text = c, Value = c })
+                    .Select(c => new SelectListItem {Text = c, Value = c})
                     .ToList()
             };
 
@@ -65,6 +65,12 @@ namespace Platibus.SampleWebApp.Controllers
             updatedModel.Count = model.Count;
             updatedModel.FilterCategories = model.FilterCategories;
             updatedModel.FilterTopics = model.FilterTopics;
+            updatedModel.FilterFrom = model.FilterFrom;
+            updatedModel.FilterTo = model.FilterTo;
+            updatedModel.FilterOrigination = model.FilterOrigination;
+            updatedModel.FilterDestination = model.FilterDestination;
+            updatedModel.FilterRelatedTo = model.FilterRelatedTo;
+            updatedModel.FilterMessageName = model.FilterMessageName;
             updatedModel.ReadAttempted = true;
 
             var accessToken = GetAccessToken();
@@ -75,6 +81,12 @@ namespace Platibus.SampleWebApp.Controllers
                 {
                     Topics = model.FilterTopics.Select(t => (TopicName)t).ToList(),
                     Categories = model.FilterCategories.Select(c => (MessageJournalCategory)c).ToList(),
+                    From = model.FilterFrom,
+                    To = model.FilterTo,
+                    Origination = model.FilterOrigination,
+                    Destination = model.FilterDestination,
+                    MessageName = model.FilterMessageName,
+                    RelatedTo = model.FilterRelatedTo
                 };
                 var readResult = await journalClient.Read(model.Start, model.Count, filter);
                 updatedModel.Result = readResult;
@@ -82,8 +94,9 @@ namespace Platibus.SampleWebApp.Controllers
             return View(updatedModel);
         }
 
-        public async Task<ActionResult> Details(string position)
+        public async Task<ActionResult> Details(string id)
         {
+            var position = id;
             var accessToken = GetAccessToken();
             var credentials = new BearerCredentials(accessToken);
             using (var journalClient = new HttpMessageJournalClient(ApiBaseUri, credentials))

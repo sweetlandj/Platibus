@@ -40,6 +40,50 @@
                 </div>
             </div>
         </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.FilterFrom)
+                    @Html.EditorFor(model => model.FilterFrom, new { htmlAttributes = new { @class = "form-control", placeholder = "yyyy-MM-dd'T'HH:mm:ss.fff" } })
+                    @Html.ValidationMessageFor(model => model.FilterFrom, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.FilterTo)
+                    @Html.EditorFor(model => model.FilterTo, new { htmlAttributes = new { @class = "form-control", placeholder = "yyyy-MM-dd'T'HH:mm:ss.fff" } })
+                    @Html.ValidationMessageFor(model => model.FilterTo, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.FilterOrigination)
+                    @Html.EditorFor(model => model.FilterOrigination, new { htmlAttributes = new { @class = "form-control", placeholder = "http://host:80/platibus/" } })
+                    @Html.ValidationMessageFor(model => model.FilterOrigination, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.FilterDestination)
+                    @Html.EditorFor(model => model.FilterDestination, new { htmlAttributes = new { @class = "form-control", placeholder = "http://host:80/platibus/" } })
+                    @Html.ValidationMessageFor(model => model.FilterDestination, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.FilterRelatedTo)
+                    @Html.EditorFor(model => model.FilterRelatedTo, new { htmlAttributes = new { @class = "form-control", placeholder = "00000000-0000-0000-0000-000000000000" } })
+                    @Html.ValidationMessageFor(model => model.FilterRelatedTo, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="col-md-6">
+               
+            </div>
+        </div>
         <div class="form-group">
             <input type="submit" value="Get Entries" class="btn btn-primary" />
         </div>
