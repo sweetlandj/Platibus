@@ -1,1 +1,2 @@
 assembly-informational-format: '{LegacySemVerPadded}'
+mode: ContinuousDeployment
