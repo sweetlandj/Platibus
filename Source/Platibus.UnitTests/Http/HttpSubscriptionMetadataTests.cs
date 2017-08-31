@@ -60,7 +60,7 @@ namespace Platibus.UnitTests.Http
         }
 
         [Fact]
-        public void TTLAlwaysBeGreaterThanOrEqualToMinTTL()
+        public void TTLAlwaysNeverLessThanMinTTL()
         {
             GivenEndpoint();
             GivenTopic();
@@ -71,7 +71,7 @@ namespace Platibus.UnitTests.Http
         }
 
         [Fact]
-        public void RenewalIntervalAlwaysLessThanMaxRenewalInterval()
+        public void RenewalIntervalNeverExceedsMaxRenewalInterval()
         {
             GivenEndpoint();
             GivenTopic();
@@ -82,7 +82,7 @@ namespace Platibus.UnitTests.Http
         }
 
         [Fact]
-        public void RetrIntervalAlwaysLessThanMaxRetryInterval()
+        public void RetryIntervalNeverExceedsMaxRetryInterval()
         {
             GivenEndpoint();
             GivenTopic();
@@ -90,6 +90,21 @@ namespace Platibus.UnitTests.Http
             WhenInitializingMetadata();
 
             Assert.Equal(HttpSubscriptionMetadata.MaxRetryInterval, Metadata.RetryInterval);
+        }
+
+        [Theory]
+        [InlineData("00:00:00")]
+        [InlineData("00:00:01")]
+        [InlineData("00:00:00.001")]
+        public void RetryIntervalNeverLessThanMinRetryInterval(string ttl)
+        {
+            GivenEndpoint();
+            GivenTopic();
+            GivenTTL(TimeSpan.Parse(ttl));
+            WhenInitializingMetadata();
+
+            Assert.Equal(HttpSubscriptionMetadata.MinRetryInterval, Metadata.RetryInterval);
+            Assert.True(Metadata.RetryInterval > TimeSpan.Zero);
         }
 
         protected void GivenEndpoint()
@@ -105,6 +120,11 @@ namespace Platibus.UnitTests.Http
         protected void GivenTTL()
         {
             TTL = TimeSpan.FromHours(1);
+        }
+
+        protected void GivenTTL(TimeSpan ttl)
+        {
+            TTL = ttl;
         }
 
         protected void GivenNegativeTTL()

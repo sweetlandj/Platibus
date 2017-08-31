@@ -12,7 +12,12 @@ namespace Platibus.Http
         /// the TTL on the subscription
         /// </summary>
         public static readonly TimeSpan MaxRenewalInterval = TimeSpan.FromMinutes(5);
-        
+
+        /// <summary>
+        /// The minimum amount of time that can elapse before retrying a failed subscription request
+        /// </summary>
+        public static readonly TimeSpan MinRetryInterval = TimeSpan.FromSeconds(5);
+
         /// <summary>
         /// The maximum amount of time that can elapse before retrying a failed subscription request
         /// </summary>
@@ -91,7 +96,7 @@ namespace Platibus.Http
             if (ttl > TimeSpan.Zero)
             {
                 _ttl = ttl > MinTTL ? ttl : MinTTL;
-                _expires = true;
+                _expires = true;    
             }
 
             // Attempt to renew after half of the TTL or 5 minutes (whichever is less)
@@ -109,6 +114,13 @@ namespace Platibus.Http
             if (_retryInterval > MaxRetryInterval)
             {
                 _retryInterval = MaxRetryInterval;
+            }
+
+            // Ensure a minimum amount of time elapses between retries to avoid overloading
+            // both the subscriber and publisher with requests
+            if (_retryInterval < MinRetryInterval)
+            {
+                _retryInterval = MinRetryInterval;
             }
         }
     }
