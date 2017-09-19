@@ -97,7 +97,6 @@ namespace Platibus.Diagnostics
         /// <param name="topic">The topic to which the message pertains, if applicable</param>
         public DiagnosticEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, EndpointName endpoint = null, QueueName queue = null, TopicName topic = null)
         {
-            if (source == null) throw new ArgumentNullException("source");
             if (type == null) throw new ArgumentNullException("type");
             _timestamp = DateTime.UtcNow;
             _source = source;

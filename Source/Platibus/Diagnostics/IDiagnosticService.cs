@@ -41,8 +41,14 @@ namespace Platibus.Diagnostics
         /// <summary>
         /// Registers a data sink to receive a copy of each diagnostic event that is emitted
         /// </summary>
-        /// <param name="sink"></param>
+        /// <param name="sink">The sink to add</param>
         void AddSink(IDiagnosticEventSink sink);
+
+        /// <summary>
+        /// Deregisters a previously registered data sink
+        /// </summary>
+        /// <param name="sink">The sink to remove</param>
+        void RemoveSink(IDiagnosticEventSink sink);
 
         /// <summary>
         ///  Receives and handles a diagnostic event

@@ -37,7 +37,8 @@ namespace Platibus.UnitTests.RabbitMQ
 
         public RabbitMQFixture()
         {
-            _uri = new Uri("amqp://test:test@localhost:5672/test");
+            // docker run --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+            _uri = new Uri("amqp://guest:guest@localhost:5672");
             _messageQueueingService = new RabbitMQMessageQueueingService(_uri, new QueueOptions
             {
                 IsDurable = false

@@ -22,7 +22,6 @@
 
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -30,13 +29,16 @@ using System.Threading.Tasks;
 
 namespace Platibus.Diagnostics
 {
+    /// <inheritdoc cref="IDiagnosticService" />
     /// <summary>
-    /// A <see cref="IDiagnosticService"/> that passes a copy of every
-    /// <see cref="DiagnosticEvent"/> it receives to a list of other registered
-    /// <see cref="IDiagnosticEventSink"/>s
+    /// A <see cref="T:Platibus.Diagnostics.IDiagnosticService" /> that passes a copy of every
+    /// <see cref="T:Platibus.Diagnostics.DiagnosticEvent" /> it receives to a list of other registered
+    /// <see cref="T:Platibus.Diagnostics.IDiagnosticEventSink" />s
     /// </summary>
     public class DiagnosticService : IDiagnosticService, IEnumerable<IDiagnosticEventSink>
     {
+        private readonly object _syncRoot = new object();
+
         /// <summary>
         /// The default diagnostics service to which events will be reported
         /// </summary>
@@ -46,24 +48,38 @@ namespace Platibus.Diagnostics
         /// </remarks>
         public static readonly IDiagnosticService DefaultInstance = new DiagnosticService();
 
-        private readonly ConcurrentBag<IDiagnosticEventSink> _consumers = new ConcurrentBag<IDiagnosticEventSink>();
-
-        /// <inheritdoc />
-        public event DiagnosticSinkExceptionHandler Exception;
+        private volatile IList<IDiagnosticEventSink> _consumers = new List<IDiagnosticEventSink>();
 
         /// <summary>
-        /// Registers a data sink to receive a copy of each diagnostic event that is emitted
+        /// Event raised when an unhandled exception is caught from one of the registered sinks
         /// </summary>
-        /// <param name="sink"></param>
+        public event DiagnosticSinkExceptionHandler Exception;
+
+        /// <inheritdoc />
         public void AddSink(IDiagnosticEventSink sink)
         {
-            if (sink != null) _consumers.Add(sink);
+            if (sink == null) return;
+            lock(_syncRoot)
+            {
+                _consumers = new List<IDiagnosticEventSink>(_consumers) {sink};
+            }
+        }
+
+        /// <inheritdoc />
+        public void RemoveSink(IDiagnosticEventSink sink)
+        {
+            if (sink == null) return;
+            lock (_syncRoot)
+            {
+                _consumers = _consumers.Where(c => c != sink).ToList();
+            }
         }
 
         /// <inheritdoc />
         public void Emit(DiagnosticEvent @event)
         {
-            foreach (var sink in _consumers)
+            var myConsumers = _consumers;
+            foreach (var sink in myConsumers)
             {
                 try
                 {

@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Moq;
+using Platibus.Config;
+using Platibus.Diagnostics;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Moq;
-using Platibus.Config;
 using Xunit;
 
 namespace Platibus.UnitTests.Config
@@ -11,222 +12,183 @@ namespace Platibus.UnitTests.Config
     [Trait("Category", "UnitTests")]
     public class PlatibusConfigurationExtensionsTests
     {
-        private class TestMessageNamingService : IMessageNamingService
-        {
-            public MessageName GetNameForType(Type messageType)
-            {
-                return messageType == typeof(A) ? "A" : "B";
-            }
+        protected Mock<IDiagnosticService> MockDiagnosticService;
+        protected PlatibusConfiguration Configuration;
+        protected Exception Exception;
 
-            public Type GetTypeForName(MessageName messageName)
-            {
-                return messageName == "A" ? typeof(A) : typeof(B);
-            }
-        }
-
-        private class A
+        public PlatibusConfigurationExtensionsTests()
         {
-        }
+            MockDiagnosticService = new Mock<IDiagnosticService>();
+            MockDiagnosticService
+                .Setup(x => x.EmitAsync(It.IsAny<DiagnosticEvent>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(0));
 
-        private class B
-        {
-        }
-        
-        private class H : IMessageHandler<A>, IMessageHandler<B>
-        {
-            async Task IMessageHandler<A>.HandleMessage(A content, IMessageContext messageContext, CancellationToken cancellationToken)
+            Configuration = new PlatibusConfiguration(MockDiagnosticService.Object)
             {
-                await messageContext.SendReply("A", cancellationToken: cancellationToken);
-            }
-
-            async Task IMessageHandler<B>.HandleMessage(B content, IMessageContext messageContext, CancellationToken cancellationToken)
-            {
-                await messageContext.SendReply("B", cancellationToken: cancellationToken);
-            }
+                MessageNamingService = new TestMessageNamingService()
+            };
         }
 
         [Fact]
         public async Task HandlingRuleAddedForImplicitNamePatterns()
         {
-            var configuration = new PlatibusConfiguration
-            {
-                MessageNamingService = new TestMessageNamingService()
-            };
             var aHandler = new H() as IMessageHandler<A>;
-            configuration.AddHandlingRule("^A$", aHandler);
+            Configuration.AddHandlingRule("^A$", aHandler);
 
             var bHandler = new H() as IMessageHandler<B>;
-            configuration.AddHandlingRule("^B$", bHandler);
-            await AssertRulesAdded(configuration);
+            Configuration.AddHandlingRule("^B$", bHandler);
+            await AssertRulesAdded();
         }
 
         [Fact]
         public async Task HandlingRuleAddedForImplicitNamePatternsWithExplicitQueueNames()
         {
-            var configuration = new PlatibusConfiguration
-            {
-                MessageNamingService = new TestMessageNamingService()
-            };
             var aHandler = new H() as IMessageHandler<A>;
-            configuration.AddHandlingRule("^A$", aHandler, "QHA");
+            Configuration.AddHandlingRule("^A$", aHandler, "QHA");
 
             var bHandler = new H() as IMessageHandler<B>;
-            configuration.AddHandlingRule("^B$", bHandler, "QHB");
+            Configuration.AddHandlingRule("^B$", bHandler, "QHB");
 
-            await AssertRulesAdded(configuration);
-            AssertExplicitQueueNames(configuration);
+            await AssertRulesAdded();
+            AssertExplicitQueueNames();
         }
 
         [Fact]
         public async Task HandlingRuleAddedForImplicitNamePatternsWithPerInstanceHandlerFactories()
         {
-            var configuration = new PlatibusConfiguration
-            {
-                MessageNamingService = new TestMessageNamingService()
-            };
-            configuration.AddHandlingRule("^A$", () => new H() as IMessageHandler<A>);
-            configuration.AddHandlingRule("^B$", () => new H() as IMessageHandler<B>);
+            Configuration.AddHandlingRule("^A$", () => new H() as IMessageHandler<A>);
+            Configuration.AddHandlingRule("^B$", () => new H() as IMessageHandler<B>);
 
-            await AssertRulesAdded(configuration);
+            await AssertRulesAdded();
         }
 
         [Fact]
         public async Task HandlingRuleAddedForImplicitNamePatternsWithSingletonHandlerFactories()
         {
-            var configuration = new PlatibusConfiguration
-            {
-                MessageNamingService = new TestMessageNamingService()
-            };
             var aHandler = new H() as IMessageHandler<A>;
-            configuration.AddHandlingRule("^A$", () => aHandler);
+            Configuration.AddHandlingRule("^A$", () => aHandler);
 
             var bHandler = new H() as IMessageHandler<B>;
-            configuration.AddHandlingRule("^B$", () => bHandler);
+            Configuration.AddHandlingRule("^B$", () => bHandler);
 
-            await AssertRulesAdded(configuration);
+            await AssertRulesAdded();
         }
 
         [Fact]
         public async Task HandlingRuleAddedForImplicitNamePatternsWithHandlerFactoriesAndExplicitQueueNames()
         {
-            var configuration = new PlatibusConfiguration
-            {
-                MessageNamingService = new TestMessageNamingService()
-            };
             var aHandler = new H() as IMessageHandler<A>;
-            configuration.AddHandlingRule("^A$", () => aHandler, "QHA");
+            Configuration.AddHandlingRule("^A$", () => aHandler, "QHA");
 
             var bHandler = new H() as IMessageHandler<B>;
-            configuration.AddHandlingRule("^B$", () => bHandler, "QHB");
+            Configuration.AddHandlingRule("^B$", () => bHandler, "QHB");
 
-            await AssertRulesAdded(configuration);
+            await AssertRulesAdded();
         }
 
         [Fact]
         public async Task HandlingRulesAddedForMessageHandlerInterfaceImplementationsOfGenericTypeParameter()
         {
-            var configuration = new PlatibusConfiguration
-            {
-                MessageNamingService = new TestMessageNamingService()
-            };
-            configuration.AddHandlingRules<H>();
-            await AssertRulesAdded(configuration);
+            Configuration.AddHandlingRules<H>();
+            await AssertRulesAdded();
         }
 
         [Fact]
         public async Task QueueNameFactoryIsUsedToGenerateAssignQueueNamesForHandlers()
         {
-            var configuration = new PlatibusConfiguration
-            {
-                MessageNamingService = new TestMessageNamingService()
-            };
+            Configuration.AddHandlingRules<H>(queueNameFactory: (ht, mt) => "Q" + ht.Name + mt.Name);
 
-            configuration.AddHandlingRules<H>(queueNameFactory: (ht, mt) => "Q" + ht.Name + mt.Name);
-
-            await AssertRulesAdded(configuration);
-            AssertExplicitQueueNames(configuration);
+            await AssertRulesAdded();
+            AssertExplicitQueueNames();
         }
 
         [Fact]
         public async Task HandlingRulesAddedForMessageHandlerInterfaceImplementationsOfDelegateReturnType()
         {
-            var configuration = new PlatibusConfiguration
-            {
-                MessageNamingService = new TestMessageNamingService()
-            };
-            configuration.AddHandlingRules(() => new H());
-
-            await AssertRulesAdded(configuration);
+            Configuration.AddHandlingRules(() => new H());
+            await AssertRulesAdded();
         }
 
         [Fact]
         public async Task HandlingRulesAddedForMessageHandlerInterfaceImplementationsOfDelegateReturnType2()
         {
-            var configuration = new PlatibusConfiguration
-            {
-                MessageNamingService = new TestMessageNamingService()
-            };
-
             var h = new H();
-            configuration.AddHandlingRules(() => h);
-
-            await AssertRulesAdded(configuration);
+            Configuration.AddHandlingRules(() => h);
+            await AssertRulesAdded();
         }
 
         [Fact]
         public async Task HandlingRulesAddedForMessageHandlerInterfaceImplementationsOfInstanceType()
         {
-            var configuration = new PlatibusConfiguration
-            {
-                MessageNamingService = new TestMessageNamingService()
-            };
-
             var h = new H();
-            configuration.AddHandlingRules(h);
-
-            await AssertRulesAdded(configuration);
+            Configuration.AddHandlingRules(h);
+            await AssertRulesAdded();
         }
 
         [Fact]
         public async Task HandlingRulesAddedForMessageHandlerInterfaceImplementationsOfType()
         {
-            var configuration = new PlatibusConfiguration
-            {
-                MessageNamingService = new TestMessageNamingService()
-            };
-            configuration.AddHandlingRulesForType(typeof(H));
-
-            await AssertRulesAdded(configuration);
+            Configuration.AddHandlingRulesForType(typeof(H));
+            await AssertRulesAdded();
         }
 
         [Fact]
         public async Task HandlingRulesAddedForMessageHandlerInterfaceImplementationsOfTypeWithFactory()
         {
-            var configuration = new PlatibusConfiguration
-            {
-                MessageNamingService = new TestMessageNamingService()
-            };
-            configuration.AddHandlingRulesForType(typeof(H), () => new H());
-
-            await AssertRulesAdded(configuration);
+            Configuration.AddHandlingRulesForType(typeof(H), () => new H());
+            await AssertRulesAdded();
         }
 
         [Fact]
         public async Task HandlingRulesAddedForMessageHandlerInterfaceImplementationsOfTypeWithFactory2()
         {
-            var configuration = new PlatibusConfiguration
-            {
-                MessageNamingService = new TestMessageNamingService()
-            };
             var h = new H();
-            configuration.AddHandlingRulesForType(typeof(H), () => h);
-
-            await AssertRulesAdded(configuration);
+            Configuration.AddHandlingRulesForType(typeof(H), () => h);
+            await AssertRulesAdded();
         }
 
-        private static async Task AssertRulesAdded(IPlatibusConfiguration configuration)
+        [Fact]
+        public async Task HandlerResolutionErrorsEmitDiagnosticEvents()
         {
-            var handlingRules = configuration.HandlingRules.ToList();
+            Configuration.AddHandlingRulesForType(typeof(H), () =>
+            {
+                throw new Exception();
+            });
+
+            await WhenHandlerResolutionErrorsOccur();
+            AssertDiagnosticEventEmitted();
+        }
+
+        private async Task WhenHandlerResolutionErrorsOccur()
+        {
+            try
+            {
+                await AssertRulesAdded();
+            }
+            catch (Exception e)
+            {
+                Exception = e;
+            }
+        }
+
+        private void AssertDiagnosticEventEmitted()
+        {
+            Assert.NotNull(Exception);
+            MockDiagnosticService.Verify(x => x.Emit(It.Is<DiagnosticEvent>(e => IsHandlerResolutionError(e))), Times.AtLeastOnce);
+        }
+
+        private bool IsHandlerResolutionError(DiagnosticEvent e)
+        {
+            Assert.NotNull(e);
+            Assert.Equal(DiagnosticEventType.ConfigurationError, e.Type);
+            Assert.Equal(Exception, e.Exception);
+            Assert.StartsWith("Error activiting instance of message handler ", e.Detail);
+            return true;
+        }
+
+        private async Task AssertRulesAdded()
+        {
+            var handlingRules = Configuration.HandlingRules.ToList();
             Assert.Equal(2, handlingRules.Count);
             
             var expectedASpec = new MessageNamePatternSpecification(@"^A$");
@@ -248,9 +210,9 @@ namespace Platibus.UnitTests.Config
             mockContext.Verify();
         }
 
-        private static void AssertExplicitQueueNames(IPlatibusConfiguration configuration)
+        private void AssertExplicitQueueNames()
         {
-            var handlingRules = configuration.HandlingRules.ToList();
+            var handlingRules = Configuration.HandlingRules.ToList();
             Assert.Equal(2, handlingRules.Count);
 
             var expectedASpec = new MessageNamePatternSpecification(@"^A$");
@@ -263,5 +225,40 @@ namespace Platibus.UnitTests.Config
             Assert.Equal(1, bRules.Count);
             Assert.Equal((QueueName)"QHB", bRules[0].QueueName);
         }
+
+        private class TestMessageNamingService : IMessageNamingService
+        {
+            public MessageName GetNameForType(Type messageType)
+            {
+                return messageType == typeof(A) ? "A" : "B";
+            }
+
+            public Type GetTypeForName(MessageName messageName)
+            {
+                return messageName == "A" ? typeof(A) : typeof(B);
+            }
+        }
+
+        private class A
+        {
+        }
+
+        private class B
+        {
+        }
+
+        private class H : IMessageHandler<A>, IMessageHandler<B>
+        {
+            async Task IMessageHandler<A>.HandleMessage(A content, IMessageContext messageContext, CancellationToken cancellationToken)
+            {
+                await messageContext.SendReply("A", cancellationToken: cancellationToken);
+            }
+
+            async Task IMessageHandler<B>.HandleMessage(B content, IMessageContext messageContext, CancellationToken cancellationToken)
+            {
+                await messageContext.SendReply("B", cancellationToken: cancellationToken);
+            }
+        }
+
     }
 }
