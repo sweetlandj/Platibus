@@ -110,7 +110,7 @@ namespace Platibus.Http
 
             // HTTP 500: Unknown error
             _response.StatusCode = 500;
-            _diagnosticService.Emit(new HttpEventBuilder(_source, DiagnosticEventType.AccessDenied)
+            _diagnosticService.Emit(new HttpEventBuilder(_source, DiagnosticEventType.UnhandledException)
             {
                 Detail = "Unexpected error",
                 Uri = _request.Url,
