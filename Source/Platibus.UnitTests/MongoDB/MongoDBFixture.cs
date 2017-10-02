@@ -66,12 +66,18 @@ namespace Platibus.UnitTests.MongoDB
         {
             var dbPath = FileUtil.NewTempTestPath();
             _mongoDbRunner = MongoDbRunner.Start(dbPath);
-
             _connectionStringSettings = new ConnectionStringSettings
             {
-                ConnectionString = _mongoDbRunner.ConnectionString + "?maxpoolsize=1000"
+                Name = "MongoDBFixture",
+                ConnectionString = _mongoDbRunner.ConnectionString + DatabaseName + "?maxpoolsize=1000"
             };
-            
+
+            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            config.ConnectionStrings.ConnectionStrings.Remove(_connectionStringSettings.Name);
+            config.ConnectionStrings.ConnectionStrings.Add(_connectionStringSettings);
+            config.Save();
+            ConfigurationManager.RefreshSection("connectionStrings");
+
             _subscriptionTrackingService = new MongoDBSubscriptionTrackingService(_connectionStringSettings, DatabaseName);
             _messageQueueingService = new MongoDBMessageQueueingService(_connectionStringSettings, databaseName: DatabaseName);
             _messageJournal = new MongoDBMessageJournal(_connectionStringSettings, DatabaseName);
@@ -101,7 +107,10 @@ namespace Platibus.UnitTests.MongoDB
         {
             if (disposing)
             {
-                _messageQueueingService.Dispose();
+                if (_messageQueueingService != null)
+                {
+                    _messageQueueingService.Dispose();
+                }
             }
             _mongoDbRunner.Dispose();
         }

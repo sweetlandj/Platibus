@@ -20,12 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Configuration;
-using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
 using Platibus.Journaling;
 using Platibus.Multicast;
+using System.Configuration;
+using System.Threading.Tasks;
 
 namespace Platibus.MongoDB
 {
@@ -42,9 +42,23 @@ namespace Platibus.MongoDB
             if (string.IsNullOrWhiteSpace(connectionName))
             {
                 throw new ConfigurationErrorsException(
-                    "Attribute 'connectionName' is required for SQL message queueing service");
+                    "Attribute 'connectionName' is required for MongoDB message queueing service");
             }
 
+            QueueCollectionNameFactory collectionNameFactory = null;
+            var databaseName = configuration.GetString("database");
+            var collectionName = configuration.GetString("collection");
+            var collectionPerQueue = configuration.GetBool("collectionPerQueue");
+            if (!string.IsNullOrWhiteSpace(collectionName))
+            {
+                collectionNameFactory = _ => collectionName;
+            }
+            else if (collectionPerQueue)
+            {
+                var collectionPrefix = (configuration.GetString("collectionPrefix") ?? "").Trim();
+                collectionNameFactory = queueName => (collectionPrefix + queueName).Trim();
+            }
+          
             var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
             if (connectionStringSettings == null)
             {
@@ -55,8 +69,10 @@ namespace Platibus.MongoDB
             var securitTokenConfig = configuration.SecurityTokens;
             var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securitTokenConfig);
 
-            var sqlMessageQueueingService = new MongoDBMessageQueueingService(connectionStringSettings, securityTokenService);
-            return sqlMessageQueueingService;
+            var messageQueueingService = new MongoDBMessageQueueingService(connectionStringSettings, 
+                securityTokenService, databaseName, collectionNameFactory);
+
+            return messageQueueingService;
         }
 
         /// <inheritdoc />
@@ -66,7 +82,7 @@ namespace Platibus.MongoDB
             if (string.IsNullOrWhiteSpace(connectionName))
             {
                 throw new ConfigurationErrorsException(
-                    "Attribute 'connectionName' is required for SQL subscription tracking service");
+                    "Attribute 'connectionName' is required for MongoDB subscription tracking service");
             }
 
             var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
@@ -74,16 +90,19 @@ namespace Platibus.MongoDB
             {
                 throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
             }
-            var sqlSubscriptionTrackingService = new MongoDBSubscriptionTrackingService(connectionStringSettings);
+
+            var databaseName = configuration.GetString("database");
+            var collectionName = configuration.GetString("collection");
+            var subscriptionTrackingService = new MongoDBSubscriptionTrackingService(connectionStringSettings, databaseName, collectionName);
 
             var multicast = configuration.Multicast;
             if (multicast == null || !multicast.Enabled)
             {
-                return Task.FromResult<ISubscriptionTrackingService>(sqlSubscriptionTrackingService);
+                return Task.FromResult<ISubscriptionTrackingService>(subscriptionTrackingService);
             }
 
             var multicastTrackingService = new MulticastSubscriptionTrackingService(
-                sqlSubscriptionTrackingService, multicast.Address, multicast.Port);
+                subscriptionTrackingService, multicast.Address, multicast.Port);
 
             return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
         }
@@ -95,7 +114,7 @@ namespace Platibus.MongoDB
             if (string.IsNullOrWhiteSpace(connectionName))
             {
                 throw new ConfigurationErrorsException(
-                    "Attribute 'connectionName' is required for SQL message journal");
+                    "Attribute 'connectionName' is required for MongoDB message journal");
             }
 
             var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
@@ -103,7 +122,10 @@ namespace Platibus.MongoDB
             {
                 throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
             }
-            var sqlMessageJournalingService = new MongoDBMessageJournal(connectionStringSettings);
+
+            var databaseName = configuration.GetString("database");
+            var collectionName = configuration.GetString("collection");
+            var sqlMessageJournalingService = new MongoDBMessageJournal(connectionStringSettings, databaseName, collectionName);
             return Task.FromResult<IMessageJournal>(sqlMessageJournalingService);
         }
     }

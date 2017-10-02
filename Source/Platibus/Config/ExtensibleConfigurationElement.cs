@@ -186,13 +186,23 @@ namespace Platibus.Config
         /// <param name="name">The name of the unrecognized attribute.</param><param name="value">The value of the unrecognized attribute.</param>
         protected override bool OnDeserializeUnrecognizedAttribute(string name, string value)
         {
+            SetAttribute(name, value);
+            return true;
+        }
+
+        /// <summary>
+        /// Programmatically sets an extended attribute on the configuration element
+        /// </summary>
+        /// <param name="name">The attribute name</param>
+        /// <param name="value">The attribute value</param>
+        public void SetAttribute(string name, string value)
+        {
             if (!Properties.Contains(name))
             {
-                Properties.Add(new ConfigurationProperty(name, typeof (string), null));
+                Properties.Add(new ConfigurationProperty(name, typeof(string), null));
             }
 
             this[name] = value;
-            return true;
         }
     }
 }

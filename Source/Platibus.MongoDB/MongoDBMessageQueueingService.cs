@@ -43,31 +43,46 @@ namespace Platibus.MongoDB
 
         private readonly IMongoDatabase _database;
         private readonly ISecurityTokenService _securityTokenService;
+        private readonly QueueCollectionNameFactory _collectionNameFactory;
 
         /// <summary>
-        /// Initializes a new <see cref="MongoDBMessageQueueingService"/>
+        ///     Initializes a new <see cref="MongoDBMessageQueueingService"/>
         /// </summary>
-        /// <param name="connectionStringSettings">The connection string to use to connect to the
-        /// MongoDB database</param>
-        /// <param name="securityTokenService">(Optional) The message security token
-        /// service to use to issue and validate security tokens for persisted messages.</param>
-        /// <param name="databaseName">(Optional) The name of the database to use.  If omitted,
-        /// the default database identified in the <paramref name="connectionStringSettings"/>
-        /// will be used</param>
-        /// <exception cref="ArgumentNullException">Thrown if 
-        /// <paramref name="connectionStringSettings"/> is <c>null</c></exception>
-        public MongoDBMessageQueueingService(ConnectionStringSettings connectionStringSettings, ISecurityTokenService securityTokenService = null, string databaseName = null)
+        /// <param name="connectionStringSettings">
+        ///     The connection string to use to connect to the MongoDB database
+        /// </param>
+        /// <param name="securityTokenService">
+        ///     (Optional) The message security token  service to use to issue and validate
+        ///     security tokens for persisted messages.
+        /// </param>
+        /// <param name="databaseName">
+        ///     (Optional) The name of the database to use.  If omitted, the default database
+        ///     identified in the <paramref name="connectionStringSettings"/> will be used
+        /// </param>
+        /// <param name="collectionNameFactory">
+        ///     (Optional) A factory method used to generate a collection name corresponding 
+        ///     to the specified queue.  The default is a single collection for all queues 
+        ///     with a <see cref="DefaultCollectionName"/>.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown if  <paramref name="connectionStringSettings"/> is <c>null</c>
+        /// </exception>
+        public MongoDBMessageQueueingService(ConnectionStringSettings connectionStringSettings, 
+            ISecurityTokenService securityTokenService = null, 
+            string databaseName = null, QueueCollectionNameFactory collectionNameFactory = null)
         {
             if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
             _database = MongoDBHelper.Connect(connectionStringSettings, databaseName);
             _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
+            _collectionNameFactory = collectionNameFactory ?? (_ => DefaultCollectionName);
         }
 
         /// <inheritdoc />
-        protected override Task<MongoDBMessageQueue> InternalCreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null,
-            CancellationToken cancellationToken = new CancellationToken())
+        protected override Task<MongoDBMessageQueue> InternalCreateQueue(QueueName queueName, IQueueListener listener, 
+            QueueOptions options = null, CancellationToken cancellationToken = new CancellationToken())
         {
-            var queue = new MongoDBMessageQueue(_database, queueName, listener, _securityTokenService, options, DefaultCollectionName);
+            var collectionName = _collectionNameFactory(queueName);
+            var queue = new MongoDBMessageQueue(_database, queueName, listener, _securityTokenService, options, collectionName);
             return Task.FromResult(queue);
         }
     }

@@ -169,6 +169,9 @@
     <Compile Include="MongoDB\MongoDBMessageJournalTests.cs" />
     <Compile Include="MongoDB\MongoDBMessageQueueingServiceTests.cs" />
     <Compile Include="MongoDB\MongoDBMessageQueueInspector.cs" />
+    <Compile Include="MongoDB\MongoDBServicesProviderMessageJournalTests.cs" />
+    <Compile Include="MongoDB\MongoDBServicesProviderMessageQueueingServiceTests.cs" />
+    <Compile Include="MongoDB\MongoDBServicesProviderSubscriptionTrackingServiceTests.cs" />
     <Compile Include="MongoDB\MongoDBSubscriptionTrackingServiceTests.cs" />
     <Compile Include="MongoDB\MongoDBCollection.cs" />
     <Compile Include="MongoDB\MongoDBFixture.cs" />
