@@ -97,7 +97,7 @@ namespace Platibus.UnitTests
             foreach (var entry in readResult.Entries)
             {
                 Assert.Equal(entry.Category, MessageJournalCategory.Sent);
-                Assert.Equal(entry.Data.Headers.Sent, entry.Timestamp, new TruncateMillisDateTimeEqualityComparer());
+                Assert.Equal(entry.Data.Headers.Sent, entry.Timestamp, new NearestSecondDateTimeEqualityComparer());
             }
         }
 
@@ -136,7 +136,7 @@ namespace Platibus.UnitTests
             foreach (var entry in readResult.Entries)
             {
                 Assert.Equal(entry.Category, MessageJournalCategory.Received);
-                Assert.Equal(entry.Data.Headers.Received, entry.Timestamp, new TruncateMillisDateTimeEqualityComparer());
+                Assert.Equal(entry.Data.Headers.Received, entry.Timestamp, new NearestSecondDateTimeEqualityComparer());
             }
         }
 
@@ -175,7 +175,7 @@ namespace Platibus.UnitTests
             foreach (var entry in readResult.Entries)
             {
                 Assert.Equal(entry.Category, MessageJournalCategory.Published);
-                Assert.Equal(entry.Data.Headers.Published, entry.Timestamp, new TruncateMillisDateTimeEqualityComparer());
+                Assert.Equal(entry.Data.Headers.Published, entry.Timestamp, new NearestSecondDateTimeEqualityComparer());
             }
         }
     }

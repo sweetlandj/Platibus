@@ -8,5 +8,15 @@ namespace Platibus.UnitTests
         {
             return new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, dt.Kind);
         }
+
+        public static DateTime ToNearestSecond(this DateTime dt)
+        {
+            var rounded = new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, dt.Kind);
+            if (dt.Millisecond >= 500)
+            {
+                rounded = rounded.AddSeconds(1);
+            }
+            return rounded;
+        }
     }
 }

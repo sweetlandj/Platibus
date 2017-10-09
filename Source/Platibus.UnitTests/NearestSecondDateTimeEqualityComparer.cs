@@ -29,21 +29,16 @@ namespace Platibus.UnitTests
     /// Rounds date time to precision supported by SQL server to ensure equality assertions
     /// pass where expected
     /// </summary>
-    internal class TruncateMillisDateTimeEqualityComparer : IEqualityComparer<DateTime>
+    internal class NearestSecondDateTimeEqualityComparer : IEqualityComparer<DateTime>
     {
         public bool Equals(DateTime x, DateTime y)
         {
-            return TruncateMillis(x).Equals(TruncateMillis(y));
+            return x.ToNearestSecond().Equals(y.ToNearestSecond());
         }
 
         public int GetHashCode(DateTime obj)
         {
-            return TruncateMillis(obj).GetHashCode();
-        }
-
-        protected virtual DateTime TruncateMillis(DateTime dt)
-        {
-            return dt.TruncateMillis();
+            return obj.ToNearestSecond().GetHashCode();
         }
     }
 }

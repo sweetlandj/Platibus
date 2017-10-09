@@ -176,6 +176,7 @@
     <Compile Include="MongoDB\MongoDBCollection.cs" />
     <Compile Include="MongoDB\MongoDBFixture.cs" />
     <Compile Include="FileUtil.cs" />
+    <Compile Include="NearestSecondDateTimeEqualityComparer.cs" />
     <Compile Include="Serialization\DataContractJsonSerializerAdapterTests.cs" />
     <Compile Include="Serialization\DataContractSerializerAdapterTests.cs" />
     <Compile Include="Serialization\NestedDataContractMessage.cs" />
@@ -183,7 +184,6 @@
     <Compile Include="Serialization\SerializerTests.cs" />
     <Compile Include="Serialization\DataContractMessage.cs" />
     <Compile Include="Serialization\XmlSerializerAdapterTests.cs" />
-    <Compile Include="TruncateMillisDateTimeEqualityComparer.cs" />
     <Compile Include="DefaultMessageNamingServiceTests.cs" />
     <Compile Include="EndpointAddressEqualityComparerTests.cs" />
     <Compile Include="Filesystem\FilesystemCollection.cs" />
@@ -234,6 +234,7 @@
     <Compile Include="Stubs\SubscriptionRemovedEventHandler.cs" />
     <Compile Include="Stubs\SubscriptionTrackingServiceStub.cs" />
     <Compile Include="SubscriptionTrackingServiceTests.cs" />
+    <Compile Include="TestOutputHelperSink.cs" />
     <Compile Include="UnitTestLoggingCategories.cs" />
     <Compile Include="Http\TopicControllerTests.cs" />
   </ItemGroup>
