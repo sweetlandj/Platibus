@@ -214,7 +214,7 @@ namespace Platibus.Queueing
                 queuedMessage = queuedMessage.NextAttempt();
 
                 await DiagnosticService.EmitAsync(
-                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageEnqueued)
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.QueuedMessageAttempt)
                     {
                         Detail = "Processing queued message (attempt " + queuedMessage.Attempts + " of " + _maxAttempts + ")",
                         Message = message,
