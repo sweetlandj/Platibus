@@ -21,6 +21,9 @@
 // THE SOFTWARE.
 
 using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Platibus.IntegrationTests.RabbitMQHost
@@ -44,8 +47,27 @@ namespace Platibus.IntegrationTests.RabbitMQHost
 
         public RabbitMQHostFixture()
         {
+            // docker run --rm--name rabbitmq -p 5672:5672 - p 15672:15672 rabbitmq: 3 - management
+
+            CreateVHosts();
+            
             _sendingHost = RabbitMQ.RabbitMQHost.Start("platibus.rabbitmq0");
             _receivingHost = RabbitMQ.RabbitMQHost.Start("platibus.rabbitmq1");
+        }
+
+        private static void CreateVHosts()
+        {
+            var baseAddress = new Uri("http://localhost:15672/api/");
+            var basicAuthCreds = Convert.ToBase64String(Encoding.UTF8.GetBytes("guest:guest"));
+            var adminPerms = "{\"configure\":\".*\",\"write\":\".*\",\"read\":\".*\"}";
+            using (var httpClient = new HttpClient{BaseAddress = baseAddress})
+            {
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", basicAuthCreds);
+                var response1 = httpClient.PutAsync("vhosts/platibus0", new StringContent("")).Result;
+                var response2 = httpClient.PutAsync("permissions/platibus0/guest", new StringContent(adminPerms)).Result;
+                var response3 = httpClient.PutAsync("vhosts/platibus1", new StringContent("")).Result;
+                var response4 = httpClient.PutAsync("permissions/platibus1/guest", new StringContent(adminPerms)).Result;
+            }
         }
 
         public void Dispose()
