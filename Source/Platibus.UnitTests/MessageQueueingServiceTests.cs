@@ -204,6 +204,51 @@ namespace Platibus.UnitTests
             await AssertMessageStillQueuedForRetry(queue, message);
         }
 
+        [Fact]
+        public async Task OtherMessagesCanBeProcessedDuringRetryDelay()
+        {
+            var queue = GivenUniqueQueueName();
+            var failedMessage = GivenSampleMessage();
+            var subsequentMessage = GivenSampleMessage();
+
+            var subsequentMessageHandled = new TaskCompletionSource<bool>();
+            var listener = new QueueListenerStub((m, c) =>
+            {
+                if (m.Headers.MessageId == failedMessage.Headers.MessageId)
+                {
+                    throw new Exception("Test");
+                }
+
+                if (m.Headers.MessageId == subsequentMessage.Headers.MessageId)
+                {
+                    subsequentMessageHandled.TrySetResult(true);
+                }
+            });
+
+            listener.CancellationToken.Register(() => subsequentMessageHandled.TrySetCanceled());
+
+            var autoAcknowledgeOptions = new QueueOptions
+            {
+                AutoAcknowledge = true,
+                IsDurable = false,
+                ConcurrencyLimit = 1,
+                RetryDelay = TimeSpan.FromSeconds(30),
+                MaxAttempts = 10
+            };
+
+            await MessageQueueingService.CreateQueue(queue, listener, autoAcknowledgeOptions);
+            await MessageQueueingService.EnqueueMessage(queue, failedMessage, Principal);
+            await MessageQueueingService.EnqueueMessage(queue, subsequentMessage, Principal);
+            await listener.Completed;
+            var wasSubsequentMessageHandled = await subsequentMessageHandled.Task;
+            listener.Dispose();
+
+            await QueueOperationCompletion();
+            Assert.True(wasSubsequentMessageHandled);
+            await AssertMessageStillQueuedForRetry(queue, failedMessage);
+            await AssertMessageNoLongerQueued(queue, subsequentMessage);
+        }
+
         protected abstract Task GivenExistingQueuedMessage(QueueName queueName, Message message, IPrincipal principal);
 
         protected abstract Task<bool> MessageQueued(QueueName queueName, Message message);
@@ -308,6 +353,11 @@ namespace Platibus.UnitTests
             public Task Completed
             {
                 get { return _taskCompletionSource.Task; }
+            }
+
+            public CancellationToken CancellationToken
+            {
+                get { return _cancellationTokenSource.Token; }
             }
 
             public Message Message { get; private set; }
