@@ -102,6 +102,12 @@ namespace Platibus.UnitTests
             {
                 message += " (" + fieldsStr + ")";
             }
+
+            if (@event.Exception != null)
+            {
+                message += ", Exception: " + @event.Exception;
+            }
+
             return message;
         }
     }

@@ -248,8 +248,8 @@ namespace Platibus.RabbitMQ
             try
             {
                 // Put on the thread pool to avoid deadlock
-                var result = Task.Run(async () => await DispatchToListener(delivery, cancellationToken), cancellationToken).Result;
-                if (result.Acknowledged || _autoAcknowledge)
+                var result = Task.Run(async () => await DispatchToListener(delivery, cancellationToken), cancellationToken).Result;          
+                if (result.Acknowledged)
                 {
                     _diagnosticService.Emit(
                         new RabbitMQEventBuilder(this, DiagnosticEventType.MessageAcknowledged)
@@ -343,9 +343,11 @@ namespace Platibus.RabbitMQ
                     }.Build());
 
                 // Due to the complexity of managing retry counts and delays in
-                // RabbitMQ, retries are handled in the HandleDelivery method.
-                // Therefore if we get to this point, we've done the best we
-                // could.
+                // RabbitMQ, listener exceptions are caught and handled in the
+                // DispatchToListener method and publication to the retry
+                // exchange is performed within the try block above.  If that
+                // fails then there is no other option but to nack the
+                // message.
                 channel.BasicNack(delivery.DeliveryTag, false, false);
             }
         }
@@ -381,7 +383,7 @@ namespace Platibus.RabbitMQ
                     var context = new RabbitMQQueuedMessageContext(headers, principal);
                     Thread.CurrentPrincipal = context.Principal;
                     await _listener.MessageReceived(message, context, cancellationToken);
-                    acknowledged = context.Acknowledged;
+                    acknowledged = context.Acknowledged || _autoAcknowledge;
                 }
             }
             catch (OperationCanceledException)
@@ -393,6 +395,7 @@ namespace Platibus.RabbitMQ
                     new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQDeliveryError)
                     {
                         Detail = "Message body could not be parsed",
+                        Message = message,
                         Exception = ex,
                         Queue = _queueName,
                         ConsumerTag = delivery.ConsumerTag,
@@ -404,6 +407,7 @@ namespace Platibus.RabbitMQ
                 _diagnosticService.Emit(
                     new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQDeliveryError)
                     {
+                        Message = message,
                         Exception = ex,
                         Queue = _queueName,
                         ConsumerTag = delivery.ConsumerTag,
