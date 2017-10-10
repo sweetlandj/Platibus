@@ -25,6 +25,7 @@ using System.Collections.Generic;
 
 namespace Platibus
 {
+    /// <inheritdoc />
     /// <summary>
     /// Interface providing access to the metadata transmitted with the
     /// message content
@@ -115,7 +116,16 @@ namespace Platibus
         /// <summary>
         /// Returns the importance of the message
         /// </summary>
+        /// <see cref="Synchronous"/>
+        [Obsolete("Use Synchronous to override asynchronous queueing behavior")]
         MessageImportance Importance { get; }
+
+        /// <summary>
+        ///     Directives for the receiver regarding whether the sender would like 
+        ///     the default asynchronous behavior to be overridden and the message
+        ///     to be processed synchronously if possible.
+        /// </summary>
+        bool Synchronous { get; }
 
         /// <summary>
         /// Returns a security token capturing the claims of the current principal from which the

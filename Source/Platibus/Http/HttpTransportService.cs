@@ -162,13 +162,13 @@ namespace Platibus.Http
             if (message == null) throw new ArgumentNullException("message");
             if (message.Headers.Destination == null) throw new ArgumentException("Message has no destination");
 
-            if (message.Headers.Importance == MessageImportance.Critical)
+            if (message.Headers.Synchronous)
             {
-                await _messageQueueingService.EnqueueMessage(_outboundQueueName, message, Thread.CurrentPrincipal, cancellationToken);
+                await TransportMessage(message, credentials, cancellationToken);
                 return;
             }
 
-            await TransportMessage(message, credentials, cancellationToken);
+            await _messageQueueingService.EnqueueMessage(_outboundQueueName, message, Thread.CurrentPrincipal, cancellationToken);
         }
 
         /// <summary>
@@ -201,13 +201,13 @@ namespace Platibus.Http
                 };
 
                 var addressedMessage = new Message(perEndpointHeaders, message.Content);
-                if (addressedMessage.Headers.Importance == MessageImportance.Critical)
+                if (addressedMessage.Headers.Synchronous)
                 {
-                    await _messageQueueingService.EnqueueMessage(_outboundQueueName, addressedMessage, null, cancellationToken);
+                    transportTasks.Add(TransportMessage(addressedMessage, subscriberCredentials, cancellationToken));
                     continue;
                 }
 
-                transportTasks.Add(TransportMessage(addressedMessage, subscriberCredentials, cancellationToken));
+                await _messageQueueingService.EnqueueMessage(_outboundQueueName, addressedMessage, null, cancellationToken);
             }
 
             await Task.WhenAll(transportTasks);

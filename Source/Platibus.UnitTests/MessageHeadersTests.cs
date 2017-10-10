@@ -131,6 +131,7 @@ namespace Platibus.UnitTests
         }
 
         [Fact]
+        [Obsolete]
         public void ImportanceCanBeSetAndRetrieved()
         {
             var expected = MessageImportance.Critical;
@@ -138,6 +139,16 @@ namespace Platibus.UnitTests
             var actual = MessageHeaders.Importance;
             Assert.Equal(expected, actual);
             AssertSingleHeaderExists(HeaderName.Importance);
+        }
+
+        [Fact]
+        public void SynchronousCanBeSetAndRetrieved()
+        {
+            const bool expected = true;
+            MessageHeaders.Synchronous = expected;
+            var actual = MessageHeaders.Synchronous;
+            Assert.Equal(expected, actual);
+            AssertSingleHeaderExists(HeaderName.Synchronous);
         }
 
         [Fact]

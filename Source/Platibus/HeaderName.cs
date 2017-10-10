@@ -107,7 +107,16 @@ namespace Platibus
         ///     Directives for the receiver regarding how the sender would like the
         ///     message to be processed.
         /// </summary>
+        /// <see cref="Synchronous"/>
+        [Obsolete("Use Synchronous to override asynchronous queueing behavior")]
         public static readonly HeaderName Importance = "Platibus-Importance";
+
+        /// <summary>
+        ///     Directives for the receiver regarding whether the sender would like 
+        ///     the default asynchronous behavior to be overridden and the message
+        ///     to be processed synchronously if possible.
+        /// </summary>
+        public static readonly HeaderName Synchronous = "Platibus-Synchronous";
 
         /// <summary>
         ///     Security token capturing the claims associated with the principal from which the

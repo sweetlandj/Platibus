@@ -180,6 +180,7 @@ namespace Platibus
         }
 
         /// <inheritdoc/>
+        [Obsolete("Use Synchronous to override asynchronous queueing behavior")]
         public MessageImportance Importance
         {
             get { return GetInt(HeaderName.Importance); }
@@ -187,10 +188,30 @@ namespace Platibus
         }
 
         /// <inheritdoc/>
+        public bool Synchronous
+        {
+            get { return GetBool(HeaderName.Synchronous); }
+            set { SetBool(HeaderName.Synchronous, value); }
+        }
+
+        /// <inheritdoc/>
         public string SecurityToken
         {
             get { return this[HeaderName.SecurityToken]; }
             set { this[HeaderName.SecurityToken] = value; }
+        }
+
+        /// <summary>
+        /// Returns the specified header value as a boolean value
+        /// </summary>
+        /// <param name="headerName">The name of the header</param>
+        /// <returns>The specified header value as a boolean value, or false if the header 
+        /// does not exist or could not be parsed as a boolean value.</returns>
+        public bool GetBool(HeaderName headerName)
+        {
+            var value = this[headerName];
+            return !string.IsNullOrWhiteSpace(value) &&
+                   "true".Equals(value.Trim(), StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -248,6 +269,16 @@ namespace Platibus
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        /// <summary>
+        /// Sets the value of a header
+        /// </summary>
+        /// <param name="headerName">The name of the header</param>
+        /// <param name="boolValue">The header value</param>
+        public void SetBool(HeaderName headerName, bool boolValue)
+        {
+            this[headerName] = boolValue.ToString();
         }
 
         /// <summary>

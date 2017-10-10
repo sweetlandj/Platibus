@@ -76,7 +76,7 @@ namespace Platibus.IntegrationTests
         protected async Task WhenMessageSent()
         {
             var sender = await Sender;
-            SentMessage = await sender.Send(Message);
+            SentMessage = await sender.Send(Message, new SendOptions {Synchronous = true});
         }
 
         protected async Task AssertReplyReceived()

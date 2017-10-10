@@ -320,20 +320,10 @@ namespace Platibus
             var prototypicalHeaders = new MessageHeaders
             {
                 Topic = topic,
-                Published = DateTime.UtcNow,
-                Importance = MessageImportance.Critical
+                Published = DateTime.UtcNow
             };
 
-            // All publications are set to critical importance to ensure
-            // that they are queued on the sending side rather than
-            // waiting for all subscribers to receive the messages
-            // successfully
-            var sendOptions = new SendOptions
-            {
-                Importance = MessageImportance.Critical
-            };
-
-            var message = BuildMessage(content, prototypicalHeaders, sendOptions);
+            var message = BuildMessage(content, prototypicalHeaders);
             if (_messageJournal != null)
             {
                 await _messageJournal.Append(message, MessageJournalCategory.Published, cancellationToken);
@@ -358,7 +348,7 @@ namespace Platibus
                 MessageId = MessageId.Generate(),
                 MessageName = messageName,
                 Origination = _baseUri,
-                Importance = options == null ? default(MessageImportance) : options.Importance
+                Synchronous = options != null && options.Synchronous
             };
 
             var contentType = options == null ? null : options.ContentType;
@@ -448,16 +438,17 @@ namespace Platibus
                 }.Build());
 
             var tasks = new List<Task>();
-            var isPublication = message.Headers.Topic != null;
             var isReply = message.Headers.RelatedTo != default(MessageId);
             if (isReply)
             {
                 tasks.Add(NotifyReplyReceived(message));
             }
 
-            var importance = message.Headers.Importance;
-            var queueMessage = isPublication || isReply || importance.RequiresQueueing;
-            if (queueMessage)
+            if (message.Headers.Synchronous)
+            {
+                tasks.Add(HandleMessageImmediately(message, principal));
+            }
+            else
             {
                 // Message expiration handled in MessageHandlingListener
                 tasks.AddRange(_handlingRules
@@ -465,10 +456,6 @@ namespace Platibus
                     .Select(rule => rule.QueueName)
                     .Distinct()
                     .Select(q => _messageQueueingService.EnqueueMessage(q, message, principal)));
-            }
-            else
-            {
-                tasks.Add(HandleMessageImmediately(message, principal));
             }
 
             await Task.WhenAll(tasks);

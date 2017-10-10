@@ -102,7 +102,8 @@ namespace Platibus.UnitTests.Http
             {
                 {HeaderName.ContentType, "text/plain"},
                 {HeaderName.MessageId, Guid.NewGuid().ToString()},
-                {HeaderName.Destination, endpoint.ToString()}
+                {HeaderName.Destination, endpoint.ToString()},
+                {HeaderName.Synchronous, "true"}
             }, "Hello, world!");
 
             await Assert.ThrowsAsync<ConnectionRefusedException>(() => transportService.SendMessage(message));
@@ -125,7 +126,8 @@ namespace Platibus.UnitTests.Http
             {
                 {HeaderName.ContentType, "text/plain"},
                 {HeaderName.MessageId, Guid.NewGuid().ToString()},
-                {HeaderName.Destination, endpoint.ToString()}
+                {HeaderName.Destination, endpoint.ToString()},
+                {HeaderName.Synchronous, "true"}
             }, "Hello, world!");
 
             await Assert.ThrowsAsync<NameResolutionFailedException>(() => transportService.SendMessage(message));

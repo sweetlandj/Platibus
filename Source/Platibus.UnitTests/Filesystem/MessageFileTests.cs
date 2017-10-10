@@ -108,7 +108,6 @@ namespace Platibus.UnitTests.Filesystem
                 MessageId = MessageId.Generate(),
                 Origination = new Uri("http://localhost/platibus0"),
                 Destination = new Uri("http://localhost/platibus1"),
-                Importance = MessageImportance.High,
                 ContentType = "text/plain",
                 Expires = DateTime.UtcNow.AddMinutes(5),
                 MessageName = "http://example.com/ns/test",

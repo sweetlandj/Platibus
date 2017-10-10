@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -16,7 +15,7 @@ namespace Platibus.IntegrationTests
         protected readonly Task<IBus> Sender;
         protected int Count;
         protected TimeSpan Timeout;
-        protected SendOptions SendOptions;
+        protected SendOptions SendOptions = new SendOptions {Synchronous = true};
 
         protected SendAndReplyLoadTests(Task<IBus> sender, ITestOutputHelper output)
         {
@@ -61,7 +60,7 @@ namespace Platibus.IntegrationTests
         {
             SendOptions = new SendOptions
             {
-                Importance = MessageImportance.Critical
+                Synchronous = false
             };
         }
 

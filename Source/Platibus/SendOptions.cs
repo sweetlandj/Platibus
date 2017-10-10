@@ -60,7 +60,22 @@ namespace Platibus
         /// on both sides and every attempt will be made to deliver and handle
         /// them at least once.
         /// </remarks>
-        public MessageImportance Importance { get; set; }
+        /// <see cref="Synchronous"/>
+        [Obsolete("Use Synchronous property to specify synchronous processing." +
+                  "Messages now default to queueing on both the sending and" +
+                  "receiving sides (Critical importance)")]
+        public MessageImportance Importance
+        {
+            get { return Synchronous ? MessageImportance.Normal : MessageImportance.Critical; }
+            set { Synchronous = value < MessageImportance.Critical; }
+        }
+
+        /// <summary>
+        /// Requests that the default asynchronous queueing behavior be
+        /// overridden and that the request should be process synchronously
+        /// if possible.
+        /// </summary>
+        public bool Synchronous { get; set; }
 
         /// <summary>
         /// Credentials to use when sending the message

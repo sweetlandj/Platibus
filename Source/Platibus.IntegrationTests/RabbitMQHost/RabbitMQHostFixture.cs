@@ -39,7 +39,7 @@ namespace Platibus.IntegrationTests.RabbitMQHost
         {
             get { return _sendingHost.ContinueWith(hostTask => (IBus) hostTask.Result.Bus); }
         }
-
+        
         public Task<IBus> Receiver
         {
             get { return _receivingHost.ContinueWith(hostTask => (IBus) hostTask.Result.Bus); }
