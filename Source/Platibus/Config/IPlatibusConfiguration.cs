@@ -97,5 +97,11 @@ namespace Platibus.Config
         /// The default content type for messages sent by this instance
         /// </summary>
         string DefaultContentType { get; }
+
+        /// <summary>
+        /// Optional defaults to apply when sending messages without explicitly
+        /// specified send options
+        /// </summary>
+        SendOptions DefaultSendOptions { get; }
     }
 }

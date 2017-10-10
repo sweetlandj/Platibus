@@ -46,6 +46,7 @@ namespace Platibus
         private readonly IMessageJournal _messageJournal;
         private readonly IMessageQueueingService _messageQueueingService;
 	    private readonly string _defaultContentType;
+        private readonly SendOptions _defaultSendOptions;
         private readonly IDiagnosticService _diagnosticService;
 
         private readonly MemoryCacheReplyHub _replyHub = new MemoryCacheReplyHub(TimeSpan.FromMinutes(5));
@@ -85,6 +86,8 @@ namespace Platibus
             _defaultContentType = string.IsNullOrWhiteSpace(configuration.DefaultContentType)
                 ? "application/json"
                 : configuration.DefaultContentType;
+
+            _defaultSendOptions = configuration.DefaultSendOptions ?? new SendOptions();
 
             _messageJournal = configuration.MessageJournal;
             _messageNamingService = configuration.MessageNamingService;
@@ -184,8 +187,9 @@ namespace Platibus
 
             if (content == null) throw new ArgumentNullException("content");
 
+            var myOptions = options ?? _defaultSendOptions;
             var sent = DateTime.UtcNow;
-            var prototypicalMessage = BuildMessage(content, options: options);
+            var prototypicalMessage = BuildMessage(content, null, myOptions);
             var endpoints = GetEndpointsForSend(prototypicalMessage);
 
             var sendTasks = new List<Task>();
@@ -200,9 +204,9 @@ namespace Platibus
                 var endpointName = kvp.Key;
                 var endpoint = kvp.Value;
                 var credentials = endpoint.Credentials;
-                if (options != null && options.Credentials != null)
+                if (myOptions.Credentials != null)
                 {
-                    credentials = options.Credentials;
+                    credentials = myOptions.Credentials;
                 }
 
                 var perEndpointHeaders = new MessageHeaders(prototypicalMessage.Headers)
@@ -233,11 +237,12 @@ namespace Platibus
             if (content == null) throw new ArgumentNullException("content");
             if (endpointName == null) throw new ArgumentNullException("endpointName");
 
+            var myOptions = options ?? _defaultSendOptions;
             var endpoint = _endpoints[endpointName];
             var credentials = endpoint.Credentials;
-            if (options != null && options.Credentials != null)
+            if (myOptions.Credentials != null)
             {
-                credentials = options.Credentials;
+                credentials = myOptions.Credentials;
             }
 
             var headers = new MessageHeaders
@@ -245,7 +250,7 @@ namespace Platibus
                 Destination = endpoint.Address,
                 Sent = DateTime.UtcNow
             };
-            var message = BuildMessage(content, headers, options);
+            var message = BuildMessage(content, headers, myOptions);
 
             // Create the sent message before transporting it in order to ensure that the
             // reply stream is cached before any replies arrive.
@@ -282,14 +287,15 @@ namespace Platibus
             if (content == null) throw new ArgumentNullException("content");
             if (endpointAddress == null) throw new ArgumentNullException("endpointAddress");
 
+            var myOptions = options ?? _defaultSendOptions;
             var headers = new MessageHeaders
             {
                 Destination = endpointAddress,
                 Sent = DateTime.UtcNow
             };
 
-            var message = BuildMessage(content, headers, options);
-            var credentials = options == null ? null : options.Credentials;
+            var message = BuildMessage(content, headers, myOptions);
+            var credentials = myOptions.Credentials;
 
             IEndpoint knownEndpoint;
             if (credentials == null && _endpoints.TryGetEndpointByAddress(endpointAddress, out knownEndpoint))
@@ -323,7 +329,7 @@ namespace Platibus
                 Published = DateTime.UtcNow
             };
 
-            var message = BuildMessage(content, prototypicalHeaders);
+            var message = BuildMessage(content, prototypicalHeaders, null);
             if (_messageJournal != null)
             {
                 await _messageJournal.Append(message, MessageJournalCategory.Published, cancellationToken);
@@ -338,11 +344,11 @@ namespace Platibus
                 }.Build(), cancellationToken);
         }
 
-        private Message BuildMessage(object content, IMessageHeaders suppliedHeaders = null,
-            SendOptions options = null)
+        private Message BuildMessage(object content, IMessageHeaders suppliedHeaders, SendOptions options)
         {
             if (content == null) throw new ArgumentNullException("content");
             var messageName = _messageNamingService.GetNameForType(content.GetType());
+
             var headers = new MessageHeaders(suppliedHeaders)
             {
                 MessageId = MessageId.Generate(),
@@ -350,6 +356,11 @@ namespace Platibus
                 Origination = _baseUri,
                 Synchronous = options != null && options.Synchronous
             };
+
+            if (options != null && options.TTL > TimeSpan.Zero)
+            {
+                headers.Expires = DateTime.UtcNow.Add(options.TTL);
+            }
 
             var contentType = options == null ? null : options.ContentType;
             if (string.IsNullOrWhiteSpace(contentType))

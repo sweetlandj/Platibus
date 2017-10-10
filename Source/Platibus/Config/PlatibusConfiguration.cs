@@ -94,7 +94,10 @@ namespace Platibus.Config
 
         /// <inheritdoc />
         public string DefaultContentType { get; set; }
-        
+
+        /// <inheritdoc />
+        public SendOptions DefaultSendOptions { get; set; }
+
         /// <summary>
         /// Initializes a new <see cref="PlatibusConfiguration"/> with a preconfigured
         /// <paramref name="diagnosticService"/>

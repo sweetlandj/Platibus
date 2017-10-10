@@ -32,6 +32,7 @@ namespace Platibus.UnitTests.Diagnostics
     /// the target log collector service.
     /// </summary>
     [Trait("Category", "UnitTests")]
+    [Trait("Category", "Explicit")]
     [Trait("Dependency", "Graylog2")]
     public class GelfTcpLoggingSinkTests : GelfLoggingSinkTests
     {
