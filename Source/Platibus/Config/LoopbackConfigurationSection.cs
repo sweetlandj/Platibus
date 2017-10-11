@@ -25,6 +25,7 @@ using System.Configuration;
 
 namespace Platibus.Config
 {
+    /// <inheritdoc />
     /// <summary>
     /// Configuration section for hosting a loopback Platibus instance
     /// </summary>
@@ -36,9 +37,11 @@ namespace Platibus.Config
         private const string QueueingPropertyName = "queueing";
 		private const string DefaultContentTypePropertyName = "defaultContentType";
         private const string DiagnosticsPropertName = "diagnostics";
+        private const string DefaultSendOptionsPropertyName = "defaultSendOptions";
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="PlatibusConfigurationSection"/> with defaults
+        /// Initializes a new <see cref="T:Platibus.Config.PlatibusConfigurationSection" /> with defaults
         /// </summary>
         public LoopbackConfigurationSection()
         {
@@ -107,5 +110,15 @@ namespace Platibus.Config
 			get { return (string)base[DefaultContentTypePropertyName]; }
 			set { base[DefaultContentTypePropertyName] = value; }
 		}
+
+        /// <summary>
+        /// Default send options
+        /// </summary>
+        [ConfigurationProperty(DefaultSendOptionsPropertyName)]
+        public SendOptionsElement DefaultSendOptions
+        {
+            get { return (SendOptionsElement)base[DefaultSendOptionsPropertyName]; }
+            set { base[DefaultSendOptionsPropertyName] = value; }
+        }
     }
 }

@@ -100,6 +100,16 @@ namespace Platibus.Config
             configuration.MessageNamingService = new DefaultMessageNamingService();
             configuration.DefaultContentType = configSection.DefaultContentType;
 
+            if (configSection.DefaultSendOptions != null)
+            {
+                configuration.DefaultSendOptions = new SendOptions
+                {
+                    ContentType = configSection.DefaultSendOptions.ContentType,
+                    TTL = configSection.DefaultSendOptions.TTL,
+                    Synchronous = configSection.DefaultSendOptions.Synchronous
+                };
+            }
+
             InitializeTopics(configuration, configSection);
 
             var messageJournalFactory = new MessageJournalFactory(configuration.DiagnosticService);

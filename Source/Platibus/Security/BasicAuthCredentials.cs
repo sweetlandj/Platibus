@@ -20,12 +20,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
+
 namespace Platibus.Security
 {
+    /// <inheritdoc cref="IEndpointCredentials"/>
+    /// <inheritdoc cref="IEquatable{T}"/>
     /// <summary>
     /// Endpoint crentials consisting of a basic username and password
     /// </summary>
-    public sealed class BasicAuthCredentials : IEndpointCredentials
+    public sealed class BasicAuthCredentials : IEndpointCredentials, IEquatable<BasicAuthCredentials>
     {
         private readonly string _username;
         private readonly string _password;
@@ -61,6 +65,40 @@ namespace Platibus.Security
         void IEndpointCredentials.Accept(IEndpointCredentialsVisitor visitor)
         {
             visitor.Visit(this);
+        }
+
+        /// <inheritdoc />
+        public bool Equals(BasicAuthCredentials other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return string.Equals(_username, other._username) && string.Equals(_password, other._password);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            return ReferenceEquals(this, obj) || Equals(obj as BasicAuthCredentials);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return ((_username != null ? _username.GetHashCode() : 0) * 397) ^ (_password != null ? _password.GetHashCode() : 0);
+            }
+        }
+
+        public static bool operator ==(BasicAuthCredentials left, BasicAuthCredentials right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(BasicAuthCredentials left, BasicAuthCredentials right)
+        {
+            return !Equals(left, right);
         }
     }
 }

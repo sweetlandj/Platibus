@@ -20,12 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.ComponentModel;
-using System.Configuration;
 using Platibus.Diagnostics;
+using System.Configuration;
 
 namespace Platibus.Config
 {
+    /// <inheritdoc />
     /// <summary>
     /// Configuration element for a diagnostic event sink
     /// </summary>

@@ -114,6 +114,7 @@
     <Compile Include="Config\PlatibusConfigurationValidationExtensions.cs" />
     <Compile Include="Config\QueueNameFactory.cs" />
     <Compile Include="Config\SecurityTokensElement.cs" />
+    <Compile Include="Config\SendOptionsElement.cs" />
     <Compile Include="DataContractMessageNamingService.cs" />
     <Compile Include="Diagnostics\CommonLoggingSink.cs" />
     <Compile Include="Diagnostics\CommonLoggingSinkProvider.cs" />

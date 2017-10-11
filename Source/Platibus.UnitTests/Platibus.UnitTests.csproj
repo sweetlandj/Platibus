@@ -149,6 +149,7 @@
     <Compile Include="BusInitTests.cs" />
     <Compile Include="BusSendTests.cs" />
     <Compile Include="Config\ConfigurationValidationTests.cs" />
+    <Compile Include="Http\HttpServerConfigurationManagerTests.cs" />
     <Compile Include="Config\SendRuleValidationTests.cs" />
     <Compile Include="Config\SubscriptionRuleValidationTests.cs" />
     <Compile Include="DataContractMessageNamingServiceTests.cs" />

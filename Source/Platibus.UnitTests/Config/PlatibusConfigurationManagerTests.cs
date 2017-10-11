@@ -1,6 +1,6 @@
-﻿using System.Linq;
+﻿using Platibus.Config;
+using System.Linq;
 using System.Threading.Tasks;
-using Platibus.Config;
 using Xunit;
 
 namespace Platibus.UnitTests.Config
@@ -39,7 +39,7 @@ namespace Platibus.UnitTests.Config
             Assert.Equal(".*(?i)example.*", namePatternSpec.NameRegex.ToString());
             Assert.IsType<MessageHandlerStub>(handlingRules[0].MessageHandler);
         }
-
+        
         public class TestConfigurationHook : IConfigurationHook
         {
             public void Configure(PlatibusConfiguration configuration)

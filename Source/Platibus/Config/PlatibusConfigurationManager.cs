@@ -141,6 +141,8 @@ namespace Platibus.Config
             configuration.MessageNamingService = new DefaultMessageNamingService();
             configuration.DefaultContentType = configSection.DefaultContentType;
 
+            InitializeDefaultSendOptions(configuration, configSection);
+
             InitializeEndpoints(configuration, configSection);
             InitializeTopics(configuration, configSection);
             InitializeSendRules(configuration, configSection);
@@ -149,7 +151,33 @@ namespace Platibus.Config
             var messageJournalFactory = new MessageJournalFactory(diagnosticService);
             configuration.MessageJournal = await messageJournalFactory.InitMessageJournal(configSection.Journaling);
         }
-        
+
+        private static void InitializeDefaultSendOptions(TConfiguration configuration,
+            PlatibusConfigurationSection configSection)
+        {
+            if (configSection.DefaultSendOptions == null) return;
+
+            configuration.DefaultSendOptions = new SendOptions
+            {
+                ContentType = configSection.DefaultSendOptions.ContentType,
+                TTL = configSection.DefaultSendOptions.TTL,
+                Synchronous = configSection.DefaultSendOptions.Synchronous
+            };
+
+            switch (configSection.DefaultSendOptions.CredentialType)
+            {
+                case ClientCredentialType.Basic:
+                    var un = configSection.DefaultSendOptions.Username;
+                    var pw = configSection.DefaultSendOptions.Password;
+                    configuration.DefaultSendOptions.Credentials = new BasicAuthCredentials(un, pw);
+                    break;
+                case ClientCredentialType.Windows:
+                case ClientCredentialType.NTLM:
+                    configuration.DefaultSendOptions.Credentials = new DefaultCredentials();
+                    break;
+            }
+        }
+
         /// <summary>
         /// Uses reflection to locate, initialize, and invoke all types inheriting from
         /// <see cref="IConfigurationHook"/> or <see cref="IAsyncConfigurationHook"/> found in the 
