@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Platibus.UnitTests.Diagnostics
 {
+    [Trait("Category", "UnitTests")]
     public class FilteringSinkTests
     {
         protected Mock<IDiagnosticEventSink> Inner;

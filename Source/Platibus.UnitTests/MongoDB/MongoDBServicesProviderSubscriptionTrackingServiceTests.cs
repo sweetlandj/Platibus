@@ -9,6 +9,8 @@ using Xunit;
 
 namespace Platibus.UnitTests.MongoDB
 {
+    [Trait("Category", "UnitTests")]
+    [Trait("Dependency", "MongoDB")]
     [Collection(MongoDBCollection.Name)]
     public class MongoDBServicesProviderSubscriptionTrackingServiceTests
     {

@@ -3,6 +3,7 @@ using Xunit;
 
 namespace Platibus.UnitTests.Diagnostics
 {
+    [Trait("Category", "UnitTests")]
     public class DiagnosticEventLevelSpecificationTests
     {
         protected DiagnosticEvent Event;
