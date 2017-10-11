@@ -53,10 +53,21 @@ namespace Platibus.Config.Extensibility
         public async Task<IDiagnosticEventSink> InitDiagnosticEventSink(DiagnosticEventSinkElement configuration)
         {
             var myConfig = configuration ?? new DiagnosticEventSinkElement();
+            if (string.IsNullOrWhiteSpace(myConfig.Provider))
+            {
+                var message = "Provider not specified for diagnostic event sink '" + myConfig.Name + "'";
+                await _diagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
+                    {
+                        Detail = message
+                    }.Build());
+                throw new ConfigurationErrorsException(message);
+            }
+
             var provider = GetProvider(myConfig.Provider);
             if (provider == null)
             {
-                var message = "Provider not specified for diagnostic event sink '" + myConfig.Name + "'";
+                var message = "Unknown provider '" + myConfig.Provider + "' specified for diagnostic event sink '" + myConfig.Name + "'";
                 await _diagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
                     {

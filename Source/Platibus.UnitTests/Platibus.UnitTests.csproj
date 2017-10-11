@@ -149,6 +149,11 @@
     <Compile Include="BusInitTests.cs" />
     <Compile Include="BusSendTests.cs" />
     <Compile Include="Config\ConfigurationValidationTests.cs" />
+    <Compile Include="Config\Extensibility\CommandBuildersFactoryTests.cs" />
+    <Compile Include="Config\Extensibility\DiagnosticEventSinkFactoryTests.cs" />
+    <Compile Include="Config\Extensibility\IFakeProvider.cs" />
+    <Compile Include="Config\Extensibility\ProviderFakes.cs" />
+    <Compile Include="Config\Extensibility\ProviderHelperTests.cs" />
     <Compile Include="Http\HttpServerConfigurationManagerTests.cs" />
     <Compile Include="Config\SendRuleValidationTests.cs" />
     <Compile Include="Config\SubscriptionRuleValidationTests.cs" />

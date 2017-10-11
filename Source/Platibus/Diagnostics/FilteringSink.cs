@@ -15,6 +15,14 @@ namespace Platibus.Diagnostics
         private readonly IDiagnosticEventSpecification _specification;
 
         /// <summary>
+        /// The wrapped sink
+        /// </summary>
+        public IDiagnosticEventSink Inner
+        {
+            get { return _inner; }
+        }
+
+        /// <summary>
         /// Initializes a new <see cref="FilteringSink"/> that wraps the specified 
         /// <paramref name="inner"/> sink and only forwards events that match the supplied
         /// <paramref name="specification"/>

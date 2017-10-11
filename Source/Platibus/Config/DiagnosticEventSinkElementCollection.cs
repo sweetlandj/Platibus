@@ -44,5 +44,14 @@ namespace Platibus.Config
             var sendRuleElement = (DiagnosticEventSinkElement) element;
             return sendRuleElement.Name;
         }
+
+        /// <summary>
+        /// Adds a new diagnostic sink configuration element to the collection
+        /// </summary>
+        /// <param name="element">The element to add</param>
+        public void Add(DiagnosticEventSinkElement element)
+        {
+            BaseAdd(element);
+        }
     }
 }
