@@ -138,7 +138,6 @@ namespace Platibus.IIS
             if (IsPlatibusUri(request.Url, baseUri))
             {
                 var bus = context.GetBus() as Bus ?? await _bus;
-                context.Items["Platibus.Bus"] = bus;
                 context.Handler = new PlatibusHttpHandler(bus, configuration);
             }
 		}
