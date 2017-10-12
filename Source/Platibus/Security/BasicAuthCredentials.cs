@@ -91,11 +91,27 @@ namespace Platibus.Security
             }
         }
 
+        /// <summary>
+        /// Determines equality of two <see cref="BasicAuthCredentials"/> objects based on
+        /// their respective values rather than reference
+        /// </summary>
+        /// <param name="left">The left operand</param>
+        /// <param name="right">The right operand</param>
+        /// <returns>Returns <c>true</c> if the left and right operands contain the same
+        /// values, <c>false</c> otherwise</returns>
         public static bool operator ==(BasicAuthCredentials left, BasicAuthCredentials right)
         {
             return Equals(left, right);
         }
 
+        /// <summary>
+        /// Determines inequality of two <see cref="BasicAuthCredentials"/> objects based on
+        /// their respective values rather than reference
+        /// </summary>
+        /// <param name="left">The left operand</param>
+        /// <param name="right">The right operand</param>
+        /// <returns>Returns <c>true</c> if the left and right operands contain different
+        /// values, <c>false</c> otherwise</returns>
         public static bool operator !=(BasicAuthCredentials left, BasicAuthCredentials right)
         {
             return !Equals(left, right);
