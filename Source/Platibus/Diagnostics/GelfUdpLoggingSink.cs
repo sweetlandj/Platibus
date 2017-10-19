@@ -105,17 +105,12 @@ namespace Platibus.Diagnostics
         protected virtual byte[] Compress(byte[] bytes)
         {
             var compressByteStream = new MemoryStream();
-            var zipStream = new GZipStream(compressByteStream, CompressionMode.Compress);
-            try
+            using (var zipStream = new GZipStream(compressByteStream, CompressionMode.Compress, true))
             {
                 zipStream.Write(bytes, 0, bytes.Length);
                 zipStream.Flush();
-                return compressByteStream.ToArray();
             }
-            finally
-            {
-                zipStream.Close();
-            }
+            return compressByteStream.ToArray();
         }
 
         /// <summary>
