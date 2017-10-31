@@ -26,7 +26,7 @@ namespace Platibus.IntegrationTests
         [Theory]
         [InlineData(1000, 3)]
         [InlineData(2000, 5)]
-        [InlineData(5000, 10)]
+        [InlineData(5000, 15)]
         public void RepliesToConcurrentMessagesAreReceivedWithinAlottedTime(int count, int timeoutInSeconds)
         {
             GivenMessageCount(count);
