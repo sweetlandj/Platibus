@@ -32,8 +32,9 @@ using Platibus.Diagnostics;
 
 namespace Platibus.Security
 {
+    /// <inheritdoc />
     /// <summary>
-    /// An implementation of the <see cref="ISecurityTokenService"/> based on JSON Web
+    /// An implementation of the <see cref="T:Platibus.Security.ISecurityTokenService" /> based on JSON Web
     /// Tokens (JWT)
     /// </summary>
     public class JwtSecurityTokenService : ISecurityTokenService
@@ -46,40 +47,42 @@ namespace Platibus.Security
         private readonly string _signingAlgorithm = "http://www.w3.org/2001/04/xmldsig-more#hmac-sha256";
         private readonly string _digestAlgorithm = "http://www.w3.org/2001/04/xmlenc#sha256";
         private readonly IDiagnosticService _diagnosticService;
+        private readonly TimeSpan _defaultTtl;
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="JwtSecurityTokenService"/> that issues unsigned tokens
+        /// Initializes a new <see cref="T:Platibus.Security.JwtSecurityTokenService" /> that issues unsigned tokens
         /// </summary>
-        public JwtSecurityTokenService()
+        public JwtSecurityTokenService() : this (new JwtSecurityTokenServiceOptions())
         {
-            _diagnosticService = DiagnosticService.DefaultInstance;
         }
 
         /// <summary>
-        /// Initializes a new <see cref="JwtSecurityTokenService"/>
+        /// Initializes a new <see cref="JwtSecurityTokenService"/> with the specified options
         /// </summary>
-        /// <param name="diagnosticService">The diagnostic service to use</param>
-        /// <param name="signingKey">(Optional) The key used to sign and verify tokens</param>
-        /// <param name="fallbackSigningKey">(Optional) A fallback key used to verify previously
-        /// issued tokens.  (Used for key rotation.)</param>
-        public JwtSecurityTokenService(IDiagnosticService diagnosticService = null, SecurityKey signingKey = null, SecurityKey fallbackSigningKey = null)
+        public JwtSecurityTokenService(JwtSecurityTokenServiceOptions options)
         {
-            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
-            _signingKey = signingKey;
-            _fallbackSigningKey = fallbackSigningKey;
+            var myOptions = options ?? new JwtSecurityTokenServiceOptions();
+            _diagnosticService = myOptions.DiagnosticService ?? DiagnosticService.DefaultInstance;
+            _signingKey = myOptions.SigningKey;
+            _fallbackSigningKey = myOptions.FallbackSigningKey;
+            _defaultTtl = myOptions.DefaultTTL <= TimeSpan.Zero 
+                ? TimeSpan.FromDays(3) 
+                : myOptions.DefaultTTL;
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="JwtSecurityTokenService"/>
+        /// Initializes a new <see cref="T:Platibus.Security.JwtSecurityTokenService" />
         /// </summary>
         /// <param name="signingKey">(Optional) The key used to sign and verify tokens</param>
         /// <param name="fallbackSigningKey">(Optional) A fallback key used to verify previously
         /// issued tokens.  (Used for key rotation.)</param>
+        /// <see cref="JwtSecurityTokenService(JwtSecurityTokenServiceOptions)"/>
+        [Obsolete("Use JwtSecurityTokenService(JwtSecurityTokenServiceOptions)")]
         public JwtSecurityTokenService(SecurityKey signingKey = null, SecurityKey fallbackSigningKey = null)
+            : this(new JwtSecurityTokenServiceOptions { SigningKey = signingKey, FallbackSigningKey = fallbackSigningKey})
         {
-            _diagnosticService = DiagnosticService.DefaultInstance;
-            _signingKey = signingKey;
-            _fallbackSigningKey = fallbackSigningKey;
         }
 
         /// <inheritdoc />
@@ -90,7 +93,12 @@ namespace Platibus.Security
                 throw new ArgumentNullException("principal");
             }
 
-            var myExpires = expires > MaxExpires ? null : expires;
+            var myExpires = expires ?? DateTime.UtcNow.Add(_defaultTtl);
+            if (myExpires > MaxExpires)
+            {
+                myExpires = MaxExpires;
+            }
+
             var identity = principal.Identity;
             var claimsIdentity = identity as ClaimsIdentity ?? new ClaimsIdentity(identity);
             var lifetime = new Lifetime(DateTime.UtcNow, myExpires);
@@ -163,7 +171,7 @@ namespace Platibus.Security
                     Exception = ex
                 }.Build());
             }
-            return Task.FromResult<IPrincipal>(principal);
+            return Task.FromResult(principal);
         }
     }
 }

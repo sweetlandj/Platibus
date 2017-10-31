@@ -4,8 +4,9 @@ using Platibus.Config.Extensibility;
 
 namespace Platibus.Security
 {
+    /// <inheritdoc />
     /// <summary>
-    /// Provides implementation of <see cref="ISecurityTokenService"/> based on 
+    /// Provides implementation of <see cref="T:Platibus.Security.ISecurityTokenService" /> based on 
     /// JSON Web Tokens (JWT)
     /// </summary>
     [Provider("JWT")]
@@ -16,7 +17,14 @@ namespace Platibus.Security
         {
             var signingKey = (HexEncodedSecurityKey)configuration.GetString("signingKey");
             var fallbackSigningKey = (HexEncodedSecurityKey)configuration.GetString("fallbackSigningKey");
-            var securityTokenService = new JwtSecurityTokenService(signingKey, fallbackSigningKey);
+            var defaultTtl = configuration.GetTimeSpan("defaultTtl");
+            var options = new JwtSecurityTokenServiceOptions
+            {
+                SigningKey = signingKey,
+                FallbackSigningKey = fallbackSigningKey,
+                DefaultTTL = defaultTtl
+            };
+            var securityTokenService = new JwtSecurityTokenService(options);
             return Task.FromResult<ISecurityTokenService>(securityTokenService);
         }
     }

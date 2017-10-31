@@ -23,8 +23,10 @@
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens;
+using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Threading.Tasks;
 using Xunit;
 using Platibus.Security;
@@ -36,11 +38,13 @@ namespace Platibus.UnitTests.Security
     {
         private static readonly RNGCryptoServiceProvider RNG = new RNGCryptoServiceProvider();
 
-        protected SecurityKey SigningKey;
-        protected SecurityKey FallbackSigningKey;
+        protected JwtSecurityTokenServiceOptions Options = new JwtSecurityTokenServiceOptions();
         protected ClaimsPrincipal Principal;
         protected DateTime? Expiration;
         protected string IssuedToken;
+        protected bool TokenValid;
+        protected IPrincipal ValidatedPrincipal;
+        protected SecurityToken SecurityToken;
 
         [Fact]
         public async Task SignedMessageSecurityTokenCanBeValidated()
@@ -50,7 +54,37 @@ namespace Platibus.UnitTests.Security
             await WhenATokenIsIssued();
             // Output for testing/verification on jwt.io
             Console.Out.WriteLine("Authorization: Bearer " + IssuedToken);
-            await AssertIssuedTokenIsValid();
+            AssertIssuedTokenIsValid();
+        }
+
+        [Fact]
+        public async Task TokensExpireAfterDefaultTTL()
+        {
+            GivenSigningKey();
+            GivenClaimsPrincipal();
+
+            var ttl = TimeSpan.FromMinutes(5);
+            GivenDefaultTTL(ttl);
+
+            await WhenATokenIsIssued();
+            // Output for testing/verification on jwt.io
+            Console.Out.WriteLine("Authorization: Bearer " + IssuedToken);
+            AssertExpiresAtOrAround(DateTime.UtcNow.Add(ttl));
+        }
+
+        [Fact]
+        public async Task TokensExpireAtExplicitExpirationDate()
+        {
+            GivenSigningKey();
+            GivenClaimsPrincipal();
+
+            Expiration = DateTime.UtcNow.AddMinutes(5);
+
+            await WhenATokenIsIssued();
+            // Output for testing/verification on jwt.io
+            Console.Out.WriteLine("Authorization: Bearer " + IssuedToken);
+
+            AssertExpiresAtOrAround(Expiration.GetValueOrDefault());
         }
 
         [Fact]
@@ -61,7 +95,7 @@ namespace Platibus.UnitTests.Security
             await WhenATokenIsIssued();
             // Output for testing/verification on jwt.io
             Console.Out.WriteLine("Authorization: Bearer " + IssuedToken);
-            await AssertIssuedTokenIsValid();
+            AssertIssuedTokenIsValid();
         }
 
         [Fact]
@@ -73,7 +107,7 @@ namespace Platibus.UnitTests.Security
             WhenSigningKeyIsUpdated();
             // Output for testing/verification on jwt.io
             Console.Out.WriteLine("Authorization: Bearer " + IssuedToken);
-            await AssertIssuedTokenIsValid();
+            AssertIssuedTokenIsValid();
         }
 
         protected SecurityKey GenerateSecurityKey()
@@ -87,19 +121,24 @@ namespace Platibus.UnitTests.Security
 
         protected void GivenNoSigningKey()
         {
-            SigningKey = null;
-            FallbackSigningKey = null;
+            Options.SigningKey = null;
+            Options.FallbackSigningKey = null;
         }
 
         protected void GivenSigningKey()
         {
-            SigningKey = GenerateSecurityKey();
+            Options.SigningKey = GenerateSecurityKey();
         }
 
         protected void WhenSigningKeyIsUpdated()
         {
-            FallbackSigningKey = SigningKey;
-            SigningKey = GenerateSecurityKey();
+            Options.FallbackSigningKey = Options.SigningKey;
+            Options.SigningKey = GenerateSecurityKey();
+        }
+
+        protected void GivenDefaultTTL(TimeSpan ttl)
+        {
+            Options.DefaultTTL = ttl;
         }
         
         protected void GivenClaimsPrincipal()
@@ -120,21 +159,21 @@ namespace Platibus.UnitTests.Security
 
         protected async Task WhenATokenIsIssued()
         {
-            var securityTokenService = new JwtSecurityTokenService(SigningKey, FallbackSigningKey);
+            var securityTokenService = new JwtSecurityTokenService(Options);
             IssuedToken = await securityTokenService.Issue(Principal, Expiration);
+            ValidateIssuedToken();
         }
 
-        protected async Task AssertIssuedTokenIsValid()
+        public void AssertIssuedTokenIsValid()
         {
             Assert.NotNull(IssuedToken);
-            var securityTokenService = new JwtSecurityTokenService(SigningKey, FallbackSigningKey);
-            var validatedPrincipal = await securityTokenService.Validate(IssuedToken);
-            Assert.NotNull(validatedPrincipal);
+            Assert.True(TokenValid);
+            Assert.NotNull(ValidatedPrincipal);
 
-            Assert.True(validatedPrincipal.IsInRole("test"));
-            Assert.True(validatedPrincipal.IsInRole("example"));
+            Assert.True(ValidatedPrincipal.IsInRole("test"));
+            Assert.True(ValidatedPrincipal.IsInRole("example"));
 
-            var validatedClaimsPrincipal = validatedPrincipal as ClaimsPrincipal;
+            var validatedClaimsPrincipal = ValidatedPrincipal as ClaimsPrincipal;
             Assert.NotNull(validatedClaimsPrincipal);
 
             var validatedIdentity = validatedClaimsPrincipal.Identity;
@@ -144,6 +183,60 @@ namespace Platibus.UnitTests.Security
             foreach (var claim in Principal.Claims)
             {
                 Assert.True(validatedClaimsPrincipal.HasClaim(claim.Type, claim.Value));
+            }
+        }
+
+        public void AssertExpiresAtOrAround(DateTime date)
+        {
+            AssertExpiresBetween(date.AddMinutes(-1), date.AddMinutes(1));
+        }
+
+        public void AssertExpiresBetween(DateTime start, DateTime end)
+        {
+            Assert.NotNull(SecurityToken);
+            Assert.True(start <= SecurityToken.ValidTo);
+            Assert.True(end >= SecurityToken.ValidTo);
+        }
+
+        private void ValidateIssuedToken()
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+
+            var signingKeys = new List<SecurityKey>();
+            if (Options.SigningKey != null)
+            {
+                signingKeys.Add(Options.SigningKey);
+            }
+
+            if (Options.FallbackSigningKey != null)
+            {
+                signingKeys.Add(Options.FallbackSigningKey);
+            }
+
+            var parameters = new TokenValidationParameters
+            {
+                ValidateIssuer = false,
+                ValidateAudience = false
+            };
+
+            if (signingKeys.Any())
+            {
+                parameters.IssuerSigningKeys = signingKeys;
+                parameters.RequireSignedTokens = true;
+            }
+            else
+            {
+                parameters.RequireSignedTokens = false;
+            }
+
+            try
+            {
+                ValidatedPrincipal = tokenHandler.ValidateToken(IssuedToken, parameters, out SecurityToken);
+                TokenValid = true;
+            }
+            catch (Exception)
+            {
+                TokenValid = false;
             }
         }
     }

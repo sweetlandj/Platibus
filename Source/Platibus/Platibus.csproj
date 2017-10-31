@@ -213,6 +213,7 @@
     <Compile Include="ReadOnlyEndpointCollection.cs" />
     <Compile Include="Security\ISecurityTokenService.cs" />
     <Compile Include="Security\JwtSecurityTokenService.cs" />
+    <Compile Include="Security\JwtSecurityTokenServiceOptions.cs" />
     <Compile Include="Security\JwtSecurityTokenServiceProvider.cs" />
     <Compile Include="Security\MessageHeaderSanitizationExtensions.cs" />
     <Compile Include="Security\SecurityTokenExtensions.cs" />

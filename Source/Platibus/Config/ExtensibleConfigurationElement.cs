@@ -178,6 +178,51 @@ namespace Platibus.Config
         }
 
         /// <summary>
+        /// Returns the property with the specified <paramref name="name"/>
+        /// as a <see cref="TimeSpan"/>.
+        /// </summary>
+        /// <remarks>
+        /// If the property value cannot be cast to a <see cref="TimeSpan"/> 
+        /// then the <see cref="TimeSpan.TryParse(string,out System.TimeSpan)"/> 
+        /// method is used to try to parse the string representation as a 
+        /// <see cref="TimeSpan"/>.  If that fails, then <see cref="int.Parse(string)"/>
+        /// is used to attempt to parse the value as an integer, which will
+        /// then be interpreted as a count of seconds that can be converted into
+        /// a <see cref="TimeSpan"/> via the <see cref="TimeSpan.FromSeconds"/> method.
+        /// </remarks>
+        /// <param name="name">The name of the property</param>
+        /// <returns>Returns the property value as an int</returns>
+        /// <exception cref="InvalidCastException">If the property value
+        /// cannot be cast or converted to an int</exception>
+        /// <exception cref="FormatException">If the property value
+        /// cannot be cast or converted to an int</exception>
+        public TimeSpan GetTimeSpan(string name)
+        {
+            var val = GetObject(name);
+            if (val == null) return default(TimeSpan);
+
+            if (val is TimeSpan)
+            {
+                return (TimeSpan)val;
+            }
+
+            var str = val.ToString();
+            TimeSpan timeSpan;
+            if (TimeSpan.TryParse(str, out timeSpan))
+            {
+                return timeSpan;
+            }
+
+            int seconds;
+            if (int.TryParse(str, out seconds))
+            {
+                return TimeSpan.FromSeconds(seconds);
+            }
+            throw new FormatException("Invalid timespan: " + val);
+        }
+
+        /// <inheritdoc />
+        /// <summary>
         /// Gets a value indicating whether an unknown attribute is encountered during deserialization.
         /// </summary>
         /// <returns>
