@@ -37,6 +37,12 @@ namespace Platibus.Diagnostics
         public static readonly DiagnosticEventType ComponentInitialization = new DiagnosticEventType("ComponentInitialization", DiagnosticEventLevel.Info);
 
         /// <summary>
+        /// Emitted when an error occurs during component or service initialization
+        /// </summary>
+        public static readonly DiagnosticEventType ComponentInitializationError = new DiagnosticEventType("ComponentInitializationError", DiagnosticEventLevel.Error);
+
+
+        /// <summary>
         /// Emitted when a default configuration is used
         /// </summary>
         public static readonly DiagnosticEventType ConfigurationDefault = new DiagnosticEventType("ConfigurationDefault", DiagnosticEventLevel.Info);

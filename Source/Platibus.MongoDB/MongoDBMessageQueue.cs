@@ -200,6 +200,7 @@ namespace Platibus.MongoDB
             return _queuedMessages.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Returns messages in the queue that are pending
         /// </summary>
@@ -216,10 +217,23 @@ namespace Platibus.MongoDB
             var queuedMessages = new List<QueuedMessage>();
             foreach (var queuedMessage in existingMessages)
             {
-                var messageHeaders = new MessageHeaders(queuedMessage.Headers);
-                var principal = await _securityTokenService.NullSafeValidate(messageHeaders.SecurityToken);
-                var message = new Message(messageHeaders, queuedMessage.Content).WithoutSecurityToken();
-                queuedMessages.Add(new QueuedMessage(message, principal, queuedMessage.Attempts));
+                try
+                {
+                    var messageHeaders = new MessageHeaders(queuedMessage.Headers);
+                    var principal = await _securityTokenService.NullSafeValidate(messageHeaders.SecurityToken);
+                    var message = new Message(messageHeaders, queuedMessage.Content).WithoutSecurityToken();
+                    queuedMessages.Add(new QueuedMessage(message, principal, queuedMessage.Attempts));
+                }
+                catch (Exception ex)
+                {
+                    DiagnosticService.Emit(new MongoDBEventBuilder(this, MongoDBEventType.MessageDocumentFormatError)
+                    {
+                        Detail = "Error reading previously queued message document ID " + queuedMessage.Id + "; skipping",
+                        CollectionName = _queuedMessages.CollectionNamespace.CollectionName,
+                        DatabaseName = _queuedMessages.Database.DatabaseNamespace.DatabaseName,
+                        Exception = ex
+                    }.Build());
+                }
             }
             return queuedMessages;
         }

@@ -16,5 +16,11 @@ namespace Platibus.MongoDB
         /// Thrown when an index creation operation fails
         /// </summary>
         public static readonly DiagnosticEventType IndexCreationFailed = new DiagnosticEventType("IndexCreationFailed", DiagnosticEventLevel.Warn);
+
+        /// <summary>
+        /// Emitted when message headers or content cannot be read from the database
+        /// </summary>
+        public static readonly DiagnosticEventType MessageDocumentFormatError = new DiagnosticEventType("MessageDocumentFormatError", DiagnosticEventLevel.Error);
+
     }
 }

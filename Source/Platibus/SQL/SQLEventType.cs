@@ -31,5 +31,11 @@ namespace Platibus.SQL
         /// Emitted when there is an error opening or closing a connection
         /// </summary>
         public static readonly DiagnosticEventType CommandError = new DiagnosticEventType("CommandError", DiagnosticEventLevel.Error);
+
+        /// <summary>
+        /// Emitted when message headers or content cannot be read from the database
+        /// </summary>
+        public static readonly DiagnosticEventType MessageRecordFormatError = new DiagnosticEventType("MessageFormatError", DiagnosticEventLevel.Error);
+
     }
 }

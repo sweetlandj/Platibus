@@ -30,6 +30,7 @@ using Platibus.Diagnostics;
 
 namespace Platibus.Queueing
 {
+    /// <inheritdoc />
     /// <summary>
     /// An abstract base class for implementing message queues
     /// </summary>
@@ -123,7 +124,19 @@ namespace Platibus.Queueing
         {
             if (Interlocked.Exchange(ref _initialized, 1) == 0)
             {
-                await EnqueueExistingMessages(cancellationToken);
+                try
+                {
+                    await EnqueueExistingMessages(cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    DiagnosticService.Emit(
+                        new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitializationError)
+                        {
+                            Detail = "Error enqueueing previously queued message(s)",
+                            Exception = ex
+                        }.Build());
+                }
             }
         }
 

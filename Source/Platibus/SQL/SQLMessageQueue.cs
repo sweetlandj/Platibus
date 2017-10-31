@@ -148,16 +148,27 @@ namespace Platibus.SQL
                         {
                             while (await reader.ReadAsync(cancellationToken))
                             {
-                                var record = commandBuilder.BuildQueuedMessageRecord(reader);
-                                var messageContent = record.Content;
-                                var headers = DeserializeHeaders(record.Headers);
+                                try
+                                {
+                                    var record = commandBuilder.BuildQueuedMessageRecord(reader);
+                                    var messageContent = record.Content;
+                                    var headers = DeserializeHeaders(record.Headers);
 #pragma warning disable 612
-                                var principal = await ResolvePrincipal(headers, record.SenderPrincipal);
+                                    var principal = await ResolvePrincipal(headers, record.SenderPrincipal);
 #pragma warning restore 612
-                                var message = new Message(headers, messageContent).WithoutSecurityToken();
-                                var attempts = record.Attempts;
-                                var queuedMessage = new QueuedMessage(message, principal, attempts);
-                                queuedMessages.Add(queuedMessage);
+                                    var message = new Message(headers, messageContent).WithoutSecurityToken();
+                                    var attempts = record.Attempts;
+                                    var queuedMessage = new QueuedMessage(message, principal, attempts);
+                                    queuedMessages.Add(queuedMessage);
+                                }
+                                catch (Exception ex)
+                                {
+                                    DiagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.MessageRecordFormatError)
+                                    {
+                                        Detail = "Error reading previously queued message record; skipping",
+                                        Exception = ex
+                                    }.Build());
+                                }
                             }
                         }
                     }
