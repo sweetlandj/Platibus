@@ -194,7 +194,12 @@ namespace Platibus.Diagnostics
         /// Emitted when an unexpected exception is caught
         /// </summary>
         public static readonly DiagnosticEventType UnhandledException = new DiagnosticEventType("UnhandledException", DiagnosticEventLevel.Error);
-        
+
+        /// <summary>
+        /// Emitted when a security token cannot be validated
+        /// </summary>
+        public static readonly DiagnosticEventType InvalidSecurityToken = new DiagnosticEventType("InvalidSecurityToken", DiagnosticEventLevel.Error);
+
         private readonly string _name;
         private readonly DiagnosticEventLevel _level;
 

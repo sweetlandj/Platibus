@@ -28,6 +28,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
+using Platibus.Diagnostics;
 
 namespace Platibus.Security
 {
@@ -44,7 +45,30 @@ namespace Platibus.Security
         private readonly SecurityKey _fallbackSigningKey;
         private readonly string _signingAlgorithm = "http://www.w3.org/2001/04/xmldsig-more#hmac-sha256";
         private readonly string _digestAlgorithm = "http://www.w3.org/2001/04/xmlenc#sha256";
-        
+        private readonly IDiagnosticService _diagnosticService;
+
+        /// <summary>
+        /// Initializes a new <see cref="JwtSecurityTokenService"/> that issues unsigned tokens
+        /// </summary>
+        public JwtSecurityTokenService()
+        {
+            _diagnosticService = DiagnosticService.DefaultInstance;
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="JwtSecurityTokenService"/>
+        /// </summary>
+        /// <param name="diagnosticService">The diagnostic service to use</param>
+        /// <param name="signingKey">(Optional) The key used to sign and verify tokens</param>
+        /// <param name="fallbackSigningKey">(Optional) A fallback key used to verify previously
+        /// issued tokens.  (Used for key rotation.)</param>
+        public JwtSecurityTokenService(IDiagnosticService diagnosticService = null, SecurityKey signingKey = null, SecurityKey fallbackSigningKey = null)
+        {
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+            _signingKey = signingKey;
+            _fallbackSigningKey = fallbackSigningKey;
+        }
+
         /// <summary>
         /// Initializes a new <see cref="JwtSecurityTokenService"/>
         /// </summary>
@@ -53,6 +77,7 @@ namespace Platibus.Security
         /// issued tokens.  (Used for key rotation.)</param>
         public JwtSecurityTokenService(SecurityKey signingKey = null, SecurityKey fallbackSigningKey = null)
         {
+            _diagnosticService = DiagnosticService.DefaultInstance;
             _signingKey = signingKey;
             _fallbackSigningKey = fallbackSigningKey;
         }
@@ -123,9 +148,21 @@ namespace Platibus.Security
             {
                 parameters.RequireSignedTokens = false;
             }
-            
-            SecurityToken token;
-            var principal = tokenHandler.ValidateToken(securityToken, parameters, out token);
+
+            IPrincipal principal;
+            try
+            {
+                SecurityToken token;
+                principal = tokenHandler.ValidateToken(securityToken, parameters, out token);
+            }
+            catch (Exception ex)
+            {
+                principal = null;
+                _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.InvalidSecurityToken)
+                {
+                    Exception = ex
+                }.Build());
+            }
             return Task.FromResult<IPrincipal>(principal);
         }
     }

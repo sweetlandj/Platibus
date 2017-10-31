@@ -89,6 +89,25 @@ namespace Platibus.UnitTests
         }
 
         [Fact]
+        public async Task MessagesWithExpiredSecurityTokensAreHandledWithNullPrincipals()
+        {
+            const string expiredSecurityToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJ1bmlxdWVfbmFtZSI6InRlc3QiLCJleHAiOjE1MDkzODAzMjgsIm5iZiI6MTUwOTM3NjcyOCwicm9sZSI6WyJ1c2VyIl19.b7fnci1J9mhSzQphst71whua0SUuhJLcD4YLsq4zmVI";
+            var queue = GivenUniqueQueueName();
+            var message = GivenSampleMessage(headers =>
+            {
+                headers.SecurityToken = expiredSecurityToken;
+            });
+            await GivenExistingQueuedMessage(queue, message, null);
+            var listener = new QueueListenerStub();
+            await MessageQueueingService.CreateQueue(queue, listener);
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            await listener.Completed;
+            listener.Dispose();
+            AssertMessageHandled(message, listener.Message);
+            Assert.Null(listener.Context.Principal);
+        }
+
+        [Fact]
         public async Task MessageIsRemovedFromQueueWhenAcknowledged()
         {
             var queue = GivenUniqueQueueName();
@@ -325,7 +344,7 @@ namespace Platibus.UnitTests
             Assert.False(await MessageDead(queue, message));
         }
 
-        protected static Message GivenSampleMessage()
+        protected static Message GivenSampleMessage(Action<MessageHeaders> setCustomHeaders = null)
         {
             var headers = new MessageHeaders
             {
@@ -337,6 +356,11 @@ namespace Platibus.UnitTests
                 MessageName = "http://example.com/ns/test",
                 Sent = DateTime.UtcNow
             };
+
+            if (setCustomHeaders != null)
+            {
+                setCustomHeaders(headers);
+            }
 
             return new Message(headers, "Hello, world!");
         }
