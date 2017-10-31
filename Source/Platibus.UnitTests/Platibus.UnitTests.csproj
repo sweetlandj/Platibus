@@ -243,6 +243,7 @@
     <Compile Include="TestOutputHelperSink.cs" />
     <Compile Include="UnitTestLoggingCategories.cs" />
     <Compile Include="Http\TopicControllerTests.cs" />
+    <Compile Include="VerificationSink.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

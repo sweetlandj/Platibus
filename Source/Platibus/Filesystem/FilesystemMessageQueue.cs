@@ -95,16 +95,28 @@ namespace Platibus.Filesystem
             var files = _directory.EnumerateFiles("*.pmsg");
             foreach (var file in files)
             {
-                var messageFile = new MessageFile(file);
-                var message = await messageFile.ReadMessage(cancellationToken);
-                var principal = await messageFile.ReadPrincipal(cancellationToken);
-                if (!string.IsNullOrWhiteSpace(message.Headers.SecurityToken))
+                try
                 {
-                    principal = await _securityTokenService.NullSafeValidate(message.Headers.SecurityToken);
-                }
+                    var messageFile = new MessageFile(file);
+                    var message = await messageFile.ReadMessage(cancellationToken);
+                    var principal = await messageFile.ReadPrincipal(cancellationToken);
+                    if (!string.IsNullOrWhiteSpace(message.Headers.SecurityToken))
+                    {
+                        principal = await _securityTokenService.NullSafeValidate(message.Headers.SecurityToken);
+                    }
 
-                var queuedMessage = new QueuedMessage(message, principal);
-                pendingMessages.Add(queuedMessage);
+                    var queuedMessage = new QueuedMessage(message, principal);
+                    pendingMessages.Add(queuedMessage);
+                }
+                catch (Exception ex)
+                {
+                    DiagnosticService.Emit(new FilesystemEventBuilder(this, FilesystemEventType.MessageFileFormatError)
+                    {
+                        Detail = "Error reading previously queued message file; skipping",
+                        Path = file.FullName,
+                        Exception = ex
+                    }.Build());
+                }
             }
             return pendingMessages;
         }

@@ -1,8 +1,10 @@
-﻿using System.IO;
+﻿using Platibus.Diagnostics;
+using Platibus.Filesystem;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Threading.Tasks;
-using Platibus.Filesystem;
 using Xunit;
 
 namespace Platibus.UnitTests.Filesystem
@@ -19,10 +21,47 @@ namespace Platibus.UnitTests.Filesystem
             _baseDirectory = fixture.BaseDirectory;
         }
 
+        [Fact]
+        public async Task MalformedMessageFilesShouldPreventQueueCreation()
+        {
+            var queue = GivenUniqueQueueName();
+            var path = GivenExistingMalformedMessage(queue);
+
+            var sink = new VerificationSink();
+            DiagnosticService.DefaultInstance.AddSink(sink);
+            try
+            {
+                var listener = new QueueListenerStub();
+                await MessageQueueingService.CreateQueue(queue, listener);
+            }
+            finally
+            {
+                DiagnosticService.DefaultInstance.RemoveSink(sink);
+            }
+
+            sink.VerifyEmitted<FilesystemEvent>(
+                FilesystemEventType.MessageFileFormatError, 
+                e => e.Path == path && e.Exception != null);
+        }
+
         protected override async Task GivenExistingQueuedMessage(QueueName queueName, Message message, IPrincipal principal)
         {
             var queueDirectory = QueueDirectory(queueName);
             await MessageFile.Create(queueDirectory, message);
+        }
+
+        protected string GivenExistingMalformedMessage(QueueName queueName)
+        {
+            var rng = new RNGCryptoServiceProvider();
+            var randomBytes = new byte[1000];
+            rng.GetBytes(randomBytes);
+
+            var messageId = MessageId.Generate();
+            var queueDirectory = QueueDirectory(queueName);
+            var filename = messageId + ".pmsg";
+            var path = Path.Combine(queueDirectory.FullName, filename);
+            File.WriteAllBytes(path, randomBytes);
+            return path;
         }
 
         protected override Task<bool> MessageQueued(QueueName queueName, Message message)
