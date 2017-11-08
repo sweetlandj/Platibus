@@ -38,6 +38,11 @@ namespace Platibus.Multicast
         public static readonly DiagnosticEventType DatagramBroadcast = new DiagnosticEventType("DatagramBroadcast", DiagnosticEventLevel.Trace);
 
         /// <summary>
+        /// Emitted when there is an error broadcasting a datagram to the multicast group
+        /// </summary>
+        public static readonly DiagnosticEventType DatagramBroadcastError = new DiagnosticEventType("DatagramBroadcastError", DiagnosticEventLevel.Warn);
+        
+        /// <summary>
         /// Emitted when a the received datagram is not correctly formatted
         /// </summary>
         public static readonly DiagnosticEventType MalformedDatagram = new DiagnosticEventType("MalformedDatagram", DiagnosticEventLevel.Trace);

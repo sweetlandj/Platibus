@@ -126,8 +126,10 @@ namespace Platibus.Multicast
                     }
 
                     var receiveResult = await received;
-                    await _diagnosticService.EmitAsync(new MulticastEventBuilder(this, MulticastEventType.ListenerStarted)
+                    var bytesReceived = receiveResult.Buffer == null ? 0 : receiveResult.Buffer.Length;
+                    await _diagnosticService.EmitAsync(new MulticastEventBuilder(this, MulticastEventType.DatagramReceived)
                     {
+                        Detail = bytesReceived + " byte(s) received",
                         Node = _nodeId.ToString(),
                         Host = receiveResult.RemoteEndPoint.Address.ToString(),
                         Port = receiveResult.RemoteEndPoint.Port
@@ -198,7 +200,7 @@ namespace Platibus.Multicast
                 var bytes = datagram.Encode();
                 var endpoint = new IPEndPoint(_groupAddress, _port);
                 await _broadcastClient.SendAsync(bytes, bytes.Length, endpoint);
-                await _diagnosticService.EmitAsync(new MulticastEventBuilder(this, MulticastEventType.MalformedDatagram)
+                await _diagnosticService.EmitAsync(new MulticastEventBuilder(this, MulticastEventType.DatagramBroadcast)
                 {
                     Node = _nodeId.ToString(),
                     Host = _groupAddress.ToString(),
@@ -207,7 +209,7 @@ namespace Platibus.Multicast
             }
             catch (Exception e)
             {
-                _diagnosticService.Emit(new MulticastEventBuilder(this, MulticastEventType.MalformedDatagram)
+                _diagnosticService.Emit(new MulticastEventBuilder(this, MulticastEventType.DatagramBroadcastError)
                 {
                     Detail = "Error broadcasting datagram",
                     Node = _nodeId.ToString(),
