@@ -37,7 +37,6 @@ namespace Platibus.Diagnostics
         /// </summary>
         public static readonly InfluxDBPrecision Hour = new InfluxDBPrecision("h", () => (long)UnixTime.Current.Seconds / 3600);
 
-        private readonly string _name;
         private readonly Func<long> _timestampFunction;
 
         /// <summary>
@@ -72,7 +71,7 @@ namespace Platibus.Diagnostics
         /// </item>
         /// </list>
         /// </remarks>
-        public string Name { get { return _name; } }
+        public string Name { get; }
 
         /// <summary>
         /// Returns the current timetamp at this level of precision
@@ -81,23 +80,22 @@ namespace Platibus.Diagnostics
 
         private InfluxDBPrecision(string name, Func<long> timestampFunction)
         {
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
-            if (timestampFunction == null) throw new ArgumentNullException("timestampFunction");
-            _name = name;
-            _timestampFunction = timestampFunction;
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException(nameof(name));
+            Name = name;
+            _timestampFunction = timestampFunction ?? throw new ArgumentNullException(nameof(timestampFunction));
         }
 
         /// <inheritdoc />
         public override string ToString()
         {
-            return _name;
+            return Name;
         }
 
         /// <inheritdoc />
         public bool Equals(InfluxDBPrecision other)
         {
             if (ReferenceEquals(null, other)) return false;
-            return ReferenceEquals(this, other) || string.Equals(_name, other._name);
+            return ReferenceEquals(this, other) || string.Equals(Name, other.Name);
         }
 
         /// <inheritdoc />
@@ -111,7 +109,7 @@ namespace Platibus.Diagnostics
         /// <inheritdoc />
         public override int GetHashCode()
         {
-            return (_name != null ? _name.GetHashCode() : 0);
+            return (Name != null ? Name.GetHashCode() : 0);
         }
 
         /// <summary>
@@ -149,7 +147,7 @@ namespace Platibus.Diagnostics
         /// <paramref name="name"/></returns>
         public static InfluxDBPrecision Parse(string name)
         {
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException(nameof(name));
             switch (name.Trim().ToLower())
             {
                 case "ns": return Nanosecond;
@@ -159,7 +157,7 @@ namespace Platibus.Diagnostics
                 case "m": return Minute;
                 case "h": return Hour;
                 default:
-                    throw new ArgumentOutOfRangeException("name", name, "Unsupported precision");
+                    throw new ArgumentOutOfRangeException(nameof(name), name, "Unsupported precision");
             }
         }
     }

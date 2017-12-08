@@ -42,8 +42,8 @@ namespace Platibus.SQL.Commands
         /// </summary>
         public IList<string> Categories
         {
-            get { return _categories ?? (_categories = new List<string>()); }
-            set { _categories = value; }
+            get => _categories ?? (_categories = new List<string>());
+            set => _categories = value;
         }
 
         /// <summary>
@@ -51,8 +51,8 @@ namespace Platibus.SQL.Commands
         /// </summary>
         public IList<string> Topics
         {
-            get { return _topics ?? (_topics = new List<string>()); }
-            set { _topics = value; }
+            get => _topics ?? (_topics = new List<string>());
+            set => _topics = value;
         }
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace Platibus.SQL.Commands
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public virtual DbCommand BuildDbCommand(DbConnection connection)
         {
-            if (connection == null) throw new ArgumentNullException("connection");
+            if (connection == null) throw new ArgumentNullException(nameof(connection));
 
             var command = connection.CreateCommand();
             command.CommandType = CommandType.Text;
@@ -148,9 +148,7 @@ namespace Platibus.SQL.Commands
         /// <summary>
         /// The default command text (Transact-SQL syntax)
         /// </summary>
-        public virtual string CommandText
-        {
-            get { return @"
+        public virtual string CommandText => @"
 SELECT TOP (@Count)
     [Id],
     [Category],
@@ -158,8 +156,7 @@ SELECT TOP (@Count)
     [Headers], 
     [MessageContent]
 FROM [PB_MessageJournal]
-WHERE [Id] >= @Start"; }
-        }
+WHERE [Id] >= @Start";
 
         /// <summary>
         /// Appends timestamp based filter criteria to a command 
@@ -232,7 +229,7 @@ WHERE [Id] >= @Start"; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public virtual void AppendTopicFilterConditions(DbCommand command)
         {
-            if (command == null) throw new ArgumentNullException("command");
+            if (command == null) throw new ArgumentNullException(nameof(command));
             if (Topics == null) return;
 
             if (Topics.Any())
@@ -258,7 +255,7 @@ WHERE [Id] >= @Start"; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public virtual void AppendCategoryFilterConditions(DbCommand command)
         {
-            if (command == null) throw new ArgumentNullException("command");
+            if (command == null) throw new ArgumentNullException(nameof(command));
             if (Categories == null) return;
             
             if (Categories.Any())
@@ -284,7 +281,7 @@ WHERE [Id] >= @Start"; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public virtual void AppendSort(DbCommand command)
         {
-            if (command == null) throw new ArgumentNullException("command");
+            if (command == null) throw new ArgumentNullException(nameof(command));
             command.CommandText += " ORDER BY [Id]";
         }
     }

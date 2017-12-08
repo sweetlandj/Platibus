@@ -8,18 +8,15 @@ namespace Platibus.SQL
     /// </summary>
     public class SQLEvent : DiagnosticEvent
     {
-        private readonly string _connectionName;
-        private readonly string _commandText;
-
         /// <summary>
         /// The name of the connection, if applicable
         /// </summary>
-        public string ConnectionName { get { return _connectionName; } }
+        public string ConnectionName { get; }
 
         /// <summary>
         /// The query or command text, if applicable
         /// </summary>
-        public string CommandText { get { return _commandText; } }
+        public string CommandText { get; }
 
         /// <summary>
         /// Initializes a new SQL diagnostic event
@@ -37,8 +34,8 @@ namespace Platibus.SQL
         public SQLEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, EndpointName endpoint = null, QueueName queue = null, TopicName topic = null, string connectionName = null, string commandText = null) 
             : base(source, type, detail, exception, message, endpoint, queue, topic)
         {
-            _connectionName = connectionName;
-            _commandText = commandText;
+            ConnectionName = connectionName;
+            CommandText = commandText;
         }
     }
 }

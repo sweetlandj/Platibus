@@ -21,7 +21,9 @@
 // THE SOFTWARE.
 
 using System;
+#if NET452
 using System.Configuration;
+#endif
 using Platibus.Diagnostics;
 using Platibus.SQL;
 using Platibus.SQL.Commands;
@@ -45,8 +47,7 @@ namespace Platibus.Config.Extensibility
         /// are reported and processed</param>
         public CommandBuildersFactory(ConnectionStringSettings connectionStringSettings, IDiagnosticService diagnosticService = null)
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-            _connectionStringSettings = connectionStringSettings;
+            _connectionStringSettings = connectionStringSettings ?? throw new ArgumentNullException(nameof(connectionStringSettings));
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 

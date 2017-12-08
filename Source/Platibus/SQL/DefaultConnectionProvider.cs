@@ -21,9 +21,14 @@
 // THE SOFTWARE.
 
 using System;
+#if NET452
 using System.Configuration;
+#endif
 using System.Data;
 using System.Data.Common;
+#if NETSTANDARD2_0
+using Platibus.Config;
+#endif
 using Platibus.Diagnostics;
 
 namespace Platibus.SQL
@@ -34,25 +39,17 @@ namespace Platibus.SQL
     /// </summary>
     public class DefaultConnectionProvider : IDbConnectionProvider
     {
-        private readonly ConnectionStringSettings _connectionStringSettings;
-        private readonly DbProviderFactory _providerFactory;
         private readonly IDiagnosticService _diagnosticService;
 
         /// <summary>
         /// The connection string settings for this connection provider
         /// </summary>
-        protected ConnectionStringSettings ConnectionStringSettings
-        {
-            get { return _connectionStringSettings; }
-        }
+        protected ConnectionStringSettings ConnectionStringSettings { get; }
 
         /// <summary>
         /// The ADO.NET provider factory
         /// </summary>
-        protected DbProviderFactory ProviderFactory
-        {
-            get { return _providerFactory; }
-        }
+        protected DbProviderFactory ProviderFactory { get; }
 
         /// <summary>
         /// Initializes a new <see cref="DefaultConnectionProvider"/> with the specified
@@ -66,12 +63,12 @@ namespace Platibus.SQL
         /// is <c>null</c></exception>
         public DefaultConnectionProvider(ConnectionStringSettings connectionStringSettings, IDiagnosticService diagnosticService = null)
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
-            _connectionStringSettings = connectionStringSettings;
+            ConnectionStringSettings = connectionStringSettings ?? throw new ArgumentNullException(nameof(connectionStringSettings));
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
-            _providerFactory = DbProviderFactories.GetFactory(connectionStringSettings.ProviderName);
+            ProviderFactory = DbProviderFactories.GetFactory(connectionStringSettings.ProviderName);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Produces a database connection
         /// </summary>
@@ -83,7 +80,7 @@ namespace Platibus.SQL
         /// </remarks>
         public virtual DbConnection GetConnection()
         {
-            var connection = _providerFactory.CreateConnection();
+            var connection = ProviderFactory.CreateConnection();
 
             // The abstract DbProviderFactory class specifies a virtual CreateConnection method
             // whose default implementation returns null.  There is a possibility that this method
@@ -92,12 +89,12 @@ namespace Platibus.SQL
             // to set the connection string or open the connection.
             if (connection != null)
             {
-                connection.ConnectionString = _connectionStringSettings.ConnectionString;
+                connection.ConnectionString = ConnectionStringSettings.ConnectionString;
                 connection.Open(); 
 
                 _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.ConnectionOpened)
                 {
-                    ConnectionName = _connectionStringSettings.Name
+                    ConnectionName = ConnectionStringSettings.Name
                 }.Build());
             }
             return connection;
@@ -116,7 +113,7 @@ namespace Platibus.SQL
                     connection.Close();
                     _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.ConnectionClosed)
                     {
-                        ConnectionName = _connectionStringSettings.Name
+                        ConnectionName = ConnectionStringSettings.Name
                     }.Build());
                 }
                 catch (Exception ex)
@@ -124,7 +121,7 @@ namespace Platibus.SQL
                     _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.CommandError)
                     {
                         Detail = "Error closing connection",
-                        ConnectionName = _connectionStringSettings.Name,
+                        ConnectionName = ConnectionStringSettings.Name,
                         Exception = ex
                     }.Build());
                 }

@@ -36,17 +36,17 @@ namespace Platibus.Owin
 
         public int StatusCode
         {
-            set { _response.StatusCode = value; }
+            set => _response.StatusCode = value;
         }
 
         public string StatusDescription
         {
-            set { _response.ReasonPhrase = value; }
+            set => _response.ReasonPhrase = value;
         }
 
         public string ContentType
         {
-            get { return _contentType == null ? null : _contentType.Type; }
+            get => _contentType == null ? null : _contentType.Type;
             set
             {
                 if (value == null)
@@ -67,7 +67,7 @@ namespace Platibus.Owin
 
         public Encoding ContentEncoding
         {
-            get { return _contentEncoding; }
+            get => _contentEncoding;
             set
             {
                 _contentEncoding = value;
@@ -79,15 +79,11 @@ namespace Platibus.Owin
             }
         }
 
-        public Stream OutputStream
-        {
-            get { return _response.Body; }
-        }
+        public Stream OutputStream => _response.Body;
 
         public OwinResponseAdapter(IOwinResponse response)
         {
-            if (response == null) throw new ArgumentNullException("response");
-            _response = response;
+            _response = response ?? throw new ArgumentNullException(nameof(response));
             _contentType = response.ContentType;
             _contentEncoding = _contentType == null ? null : _contentType.CharsetEncoding;
         }

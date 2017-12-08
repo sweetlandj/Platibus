@@ -67,8 +67,7 @@ namespace Platibus.Config
         /// is <c>null</c></exception>
         public GenericMessageHandlerAdapter(IMessageHandler<TContent> genericMessageHandler)
         {
-            if (genericMessageHandler == null) throw new ArgumentNullException("genericMessageHandler");
-            _genericMessageHandler = genericMessageHandler;
+            _genericMessageHandler = genericMessageHandler ?? throw new ArgumentNullException(nameof(genericMessageHandler));
         }
 
         /// <summary>

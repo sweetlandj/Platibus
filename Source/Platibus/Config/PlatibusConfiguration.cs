@@ -39,8 +39,6 @@ namespace Platibus.Config
     /// </remarks>
     public class PlatibusConfiguration : IPlatibusConfiguration
     {
-        private readonly IDiagnosticService _diagnosticService;
-
         private readonly EndpointCollection _endpoints = new EndpointCollection();
         private readonly IList<IHandlingRule> _handlingRules = new List<IHandlingRule>();
         private readonly IList<ISendRule> _sendRules = new List<ISendRule>();
@@ -48,7 +46,7 @@ namespace Platibus.Config
         private readonly IList<TopicName> _topics = new List<TopicName>();
 
         /// <inheritdoc />
-        public IDiagnosticService DiagnosticService { get { return _diagnosticService; } }
+        public IDiagnosticService DiagnosticService { get; }
 
         /// <inheritdoc />
         public TimeSpan ReplyTimeout { get; set; }
@@ -63,34 +61,19 @@ namespace Platibus.Config
         public IMessageJournal MessageJournal { get; set; }
 
         /// <inheritdoc />
-        public IEndpointCollection Endpoints
-        {
-            get { return _endpoints; }
-        }
+        public IEndpointCollection Endpoints => _endpoints;
 
         /// <inheritdoc />
-        public IEnumerable<TopicName> Topics
-        {
-            get { return _topics; }
-        }
+        public IEnumerable<TopicName> Topics => _topics;
 
         /// <inheritdoc />
-        public IEnumerable<ISendRule> SendRules
-        {
-            get { return _sendRules; }
-        }
+        public IEnumerable<ISendRule> SendRules => _sendRules;
 
         /// <inheritdoc />
-        public IEnumerable<IHandlingRule> HandlingRules
-        {
-            get { return _handlingRules; }
-        }
+        public IEnumerable<IHandlingRule> HandlingRules => _handlingRules;
 
         /// <inheritdoc />
-        public IEnumerable<ISubscription> Subscriptions
-        {
-            get { return _subscriptions; }
-        }
+        public IEnumerable<ISubscription> Subscriptions => _subscriptions;
 
         /// <inheritdoc />
         public string DefaultContentType { get; set; }
@@ -114,7 +97,7 @@ namespace Platibus.Config
             MessageNamingService = new DefaultMessageNamingService();
             SerializationService = new DefaultSerializationService();
             DefaultContentType = "application/json";
-            _diagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
+            DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
         }
         
         /// <summary>
@@ -130,8 +113,8 @@ namespace Platibus.Config
         /// is <c>null</c></exception>
         public virtual void AddEndpoint(EndpointName name, IEndpoint endpoint)
         {
-            if (name == null) throw new ArgumentNullException("name");
-            if (endpoint == null) throw new ArgumentNullException("endpoint");
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            if (endpoint == null) throw new ArgumentNullException(nameof(endpoint));
             _endpoints.Add(name, endpoint);
         }
 
@@ -144,7 +127,7 @@ namespace Platibus.Config
         /// </remarks>
         public virtual void AddTopic(TopicName topic)
         {
-            if (topic == null) throw new ArgumentNullException("topic");
+            if (topic == null) throw new ArgumentNullException(nameof(topic));
             if (_topics.Contains(topic)) throw new TopicAlreadyExistsException(topic);
             _topics.Add(topic);
         }
@@ -155,7 +138,7 @@ namespace Platibus.Config
         /// <param name="sendRule">The send rule</param>
         public virtual void AddSendRule(ISendRule sendRule)
         {
-            if (sendRule == null) throw new ArgumentNullException("sendRule");
+            if (sendRule == null) throw new ArgumentNullException(nameof(sendRule));
             _sendRules.Add(sendRule);
         }
 
@@ -166,7 +149,7 @@ namespace Platibus.Config
         /// <param name="handlingRule">The handling rule</param>
         public virtual void AddHandlingRule(IHandlingRule handlingRule)
         {
-            if (handlingRule == null) throw new ArgumentNullException("handlingRule");
+            if (handlingRule == null) throw new ArgumentNullException(nameof(handlingRule));
             _handlingRules.Add(handlingRule);
         }
 
@@ -176,7 +159,7 @@ namespace Platibus.Config
         /// <param name="subscription">The subscription</param>
         public virtual void AddSubscription(ISubscription subscription)
         {
-            if (subscription == null) throw new ArgumentNullException("subscription");
+            if (subscription == null) throw new ArgumentNullException(nameof(subscription));
             _subscriptions.Add(subscription);
         }
     }

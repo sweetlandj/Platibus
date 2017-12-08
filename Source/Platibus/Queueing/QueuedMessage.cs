@@ -30,30 +30,20 @@ namespace Platibus.Queueing
     /// </summary>
     public class QueuedMessage
     {
-        private readonly Message _message;
-        private readonly IPrincipal _principal;
-        private readonly int _attempts;
-
         /// <summary>
         /// The queued message
         /// </summary>
-        public Message Message
-        {
-            get { return _message; }
-        }
+        public Message Message { get; }
 
         /// <summary>
         /// The principal represending the message sender
         /// </summary>
-        public IPrincipal Principal
-        {
-            get { return _principal; }
-        }
+        public IPrincipal Principal { get; }
 
         /// <summary>
         /// The number of attempts that have been made so far to handle the message
         /// </summary>
-        public int Attempts { get { return _attempts; } }
+        public int Attempts { get; }
 
         /// <summary>
         /// Initializes a new <see cref="QueuedMessage"/>
@@ -62,9 +52,8 @@ namespace Platibus.Queueing
         /// <param name="principal">(Optional) The principal representing the message sender</param>
         public QueuedMessage(Message message, IPrincipal principal)
         {
-            if (message == null) throw new ArgumentNullException("message");
-            _message = message;
-            _principal = principal;
+            Message = message ?? throw new ArgumentNullException(nameof(message));
+            Principal = principal;
         }
 
         /// <summary>
@@ -76,10 +65,9 @@ namespace Platibus.Queueing
         ///     queued message</param>
         public QueuedMessage(Message message, IPrincipal principal, int attempts)
         {
-            if (message == null) throw new ArgumentNullException("message");
-            _message = message;
-            _principal = principal;
-            _attempts = attempts;
+            Message = message ?? throw new ArgumentNullException(nameof(message));
+            Principal = principal;
+            Attempts = attempts;
         }
 
         /// <summary>
@@ -90,7 +78,7 @@ namespace Platibus.Queueing
         /// <see cref="Attempts"/> value</returns>
         public QueuedMessage NextAttempt()
         {
-            return new QueuedMessage(_message, _principal, _attempts + 1);
+            return new QueuedMessage(Message, Principal, Attempts + 1);
         }
     }
 }

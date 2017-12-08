@@ -65,7 +65,7 @@ namespace Platibus.IIS
         public PlatibusHttpModule(IIISConfiguration configuration)
             : this (Task.FromResult(configuration))
 		{
-		    if (configuration == null) throw new ArgumentNullException("configuration");
+		    if (configuration == null) throw new ArgumentNullException(nameof(configuration));
 		}
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace Platibus.IIS
         /// </summary>
         public PlatibusHttpModule(Task<IIISConfiguration> configuration)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             _configuration = Configure(configuration);
             _bus = InitBus(configuration);
         }

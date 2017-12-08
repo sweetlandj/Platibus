@@ -31,15 +31,11 @@ namespace Platibus.Config
     public class LoopbackConfiguration : PlatibusConfiguration, ILoopbackConfiguration
     {
         private readonly EndpointName _loopbackEndpoint;
-        private readonly Uri _baseUri;
 
         /// <summary>
         /// The base URI of the loopback bus instance
         /// </summary>
-        public Uri BaseUri
-        {
-            get { return _baseUri; }
-        }
+        public Uri BaseUri { get; }
 
         /// <summary>
         /// The message queueing service to use
@@ -56,8 +52,8 @@ namespace Platibus.Config
         public LoopbackConfiguration(IDiagnosticService diagnosticService = null) : base(diagnosticService)
         {
             _loopbackEndpoint = new EndpointName("looback");
-            _baseUri = new Uri("urn:localhost/loopback");
-            base.AddEndpoint(_loopbackEndpoint, new Endpoint(_baseUri));
+            BaseUri = new Uri("urn:localhost/loopback");
+            base.AddEndpoint(_loopbackEndpoint, new Endpoint(BaseUri));
             var allMessages = new MessageNamePatternSpecification(".*");
             base.AddSendRule(new SendRule(allMessages, _loopbackEndpoint));
         }

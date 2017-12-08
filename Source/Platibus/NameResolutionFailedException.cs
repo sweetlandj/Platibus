@@ -33,15 +33,13 @@ namespace Platibus
     [Serializable]
     public class NameResolutionFailedException : TransportException
     {
-        private readonly string _hostname;
-
         /// <summary>
         /// Initializes a new <see cref="NameResolutionFailedException"/> with
         /// the specified <paramref name="hostname"/>
         /// </summary>
         /// <param name="hostname">The hostname that failed to resolve</param>
         public NameResolutionFailedException(string hostname)
-            : base(string.Format("Failed to resolve hostname: {0}", hostname))
+            : base($"Failed to resolve hostname: {hostname}")
         {
         }
 
@@ -54,16 +52,13 @@ namespace Platibus
         public NameResolutionFailedException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _hostname = info.GetString("Hostname");
+            Hostname = info.GetString("Hostname");
         }
 
         /// <summary>
         /// The hostname that failed to resolve
         /// </summary>
-        public string Hostname
-        {
-            get { return _hostname; }
-        }
+        public string Hostname { get; }
 
         /// <summary>
         /// When overridden in a derived class, sets the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> with information about the exception.
@@ -73,7 +68,7 @@ namespace Platibus
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("Hostname", _hostname);
+            info.AddValue("Hostname", Hostname);
         }
     }
 }

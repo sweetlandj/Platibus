@@ -34,7 +34,7 @@ namespace Platibus
     /// <see cref="IMessageNamingService"/>.
     /// </remarks>
     /// <seealso cref="IMessageNamingService"/>
-    [DebuggerDisplay("{_value,nq}")]
+    [DebuggerDisplay("{" + nameof(_value) + ",nq}")]
     public class MessageName : IEquatable<MessageName>
     {
         private readonly string _value;
@@ -48,7 +48,7 @@ namespace Platibus
         /// is <c>null</c> or whitespace</exception>
         public MessageName(string value)
         {
-            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException("value");
+            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException(nameof(value));
             _value = value.Trim();
         }
 

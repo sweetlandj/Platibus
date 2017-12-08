@@ -42,8 +42,7 @@ namespace Platibus.RabbitMQ
 
         public MessageReader(TextReader reader, bool leaveOpen = false)
         {
-            if (reader == null) throw new ArgumentNullException("reader");
-            _reader = reader;
+            _reader = reader ?? throw new ArgumentNullException("reader");
             _leaveOpen = leaveOpen;
         }
 

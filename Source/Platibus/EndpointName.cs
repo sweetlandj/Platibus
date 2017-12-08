@@ -28,7 +28,7 @@ namespace Platibus
     /// <summary>
     /// An amplified value type that provides equality semantics for endpoint names
     /// </summary>
-    [DebuggerDisplay("{_value,nq}")]
+    [DebuggerDisplay("{" + nameof(_value) + ",nq}")]
     public class EndpointName : IEquatable<EndpointName>
     {
         private readonly string _value;
@@ -46,7 +46,7 @@ namespace Platibus
         /// </remarks>
         public EndpointName(string value)
         {
-            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException("value");
+            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException(nameof(value));
             _value = value.Trim();
         }
 

@@ -41,27 +41,19 @@ namespace Platibus.SQL
     /// </summary>
     public class SQLMessageQueue : AbstractMessageQueue
     {
-        private readonly IDbConnectionProvider _connectionProvider;
-        private readonly IMessageQueueingCommandBuilders _commandBuilders;
         private readonly ISecurityTokenService _securityTokenService;
         
         /// <summary>
         /// The connection provider
         /// </summary>
-        public IDbConnectionProvider ConnectionProvider
-        {
-            get { return _connectionProvider; }
-        }
+        public IDbConnectionProvider ConnectionProvider { get; }
 
         /// <summary>
         /// A collection of factories capable of  generating database commands for manipulating 
         /// queued messages that conform to the SQL syntax required by the underlying connection 
         /// provider
         /// </summary>
-        public IMessageQueueingCommandBuilders CommandBuilders
-        {
-            get { return _commandBuilders; }
-        }
+        public IMessageQueueingCommandBuilders CommandBuilders { get; }
 
         /// <summary>
         /// Initializes a new <see cref="SQLMessageQueue"/> with the specified values
@@ -87,15 +79,12 @@ namespace Platibus.SQL
             QueueOptions options = null, IDiagnosticService diagnosticService = null)
             : base(queueName, listener, options, diagnosticService)
         {
-            if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
-            if (commandBuilders == null) throw new ArgumentNullException("commandBuilders");
-            if (queueName == null) throw new ArgumentNullException("queueName");
-            if (listener == null) throw new ArgumentNullException("listener");
-            if (securityTokenService == null) throw new ArgumentNullException("securityTokenService");
+            if (queueName == null) throw new ArgumentNullException(nameof(queueName));
+            if (listener == null) throw new ArgumentNullException(nameof(listener));
 
-            _connectionProvider = connectionProvider;
-            _commandBuilders = commandBuilders;
-            _securityTokenService = securityTokenService;
+            ConnectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
+            CommandBuilders = commandBuilders ?? throw new ArgumentNullException(nameof(commandBuilders));
+            _securityTokenService = securityTokenService ?? throw new ArgumentNullException(nameof(securityTokenService));
 
             MessageEnqueued += OnMessageEnqueued;
             MessageAcknowledged += OnMessageAcknowledged;
@@ -134,10 +123,10 @@ namespace Platibus.SQL
         protected override async Task<IEnumerable<QueuedMessage>> GetPendingMessages(CancellationToken cancellationToken = default(CancellationToken))
         {
             var queuedMessages = new List<QueuedMessage>();
-            var connection = _connectionProvider.GetConnection();
+            var connection = ConnectionProvider.GetConnection();
             try
             {
-                var commandBuilder = _commandBuilders.NewSelectPendingMessagesCommandBuilder();
+                var commandBuilder = CommandBuilders.NewSelectPendingMessagesCommandBuilder();
                 commandBuilder.QueueName = QueueName;
 
                 using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
@@ -177,7 +166,7 @@ namespace Platibus.SQL
             }
             finally
             {
-                _connectionProvider.ReleaseConnection(connection);
+                ConnectionProvider.ReleaseConnection(connection);
             }
 
             // SQL calls are not async to avoid the need for TransactionAsyncFlowOption
@@ -197,13 +186,13 @@ namespace Platibus.SQL
             var message = queuedMessage.Message;
             var principal = queuedMessage.Principal;
             var expires = message.Headers.Expires;
-            var connection = _connectionProvider.GetConnection();
+            var connection = ConnectionProvider.GetConnection();
             var securityToken = await _securityTokenService.NullSafeIssue(principal, expires);
             var messageWithSecurityToken = message.WithSecurityToken(securityToken);
             try
             {
                 var headers = messageWithSecurityToken.Headers;
-                var commandBuilder = _commandBuilders.NewInsertQueuedMessageCommandBuilder();
+                var commandBuilder = CommandBuilders.NewInsertQueuedMessageCommandBuilder();
                 commandBuilder.MessageId = headers.MessageId;
                 commandBuilder.QueueName = QueueName;
                 commandBuilder.Origination = headers.Origination == null ? null : headers.Origination.ToString();
@@ -225,7 +214,7 @@ namespace Platibus.SQL
             }
             finally
             {
-                _connectionProvider.ReleaseConnection(connection);
+                ConnectionProvider.ReleaseConnection(connection);
             }
         }
 
@@ -238,12 +227,12 @@ namespace Platibus.SQL
         /// <returns>Returns a task that completes when the delete operation completes</returns>
         protected virtual async Task DeleteQueuedMessage(QueuedMessage queuedMessage, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var connection = _connectionProvider.GetConnection();
+            var connection = ConnectionProvider.GetConnection();
             try
             {
                 var message = queuedMessage.Message;
                 var headers = message.Headers;
-                var commandBuilder = _commandBuilders.NewDeleteQueuedMessageCommandBuilder();
+                var commandBuilder = CommandBuilders.NewDeleteQueuedMessageCommandBuilder();
                 commandBuilder.MessageId = headers.MessageId;
                 commandBuilder.QueueName = QueueName;
 
@@ -258,7 +247,7 @@ namespace Platibus.SQL
             }
             finally
             {
-                _connectionProvider.ReleaseConnection(connection);
+                ConnectionProvider.ReleaseConnection(connection);
             }
         }
         
@@ -270,10 +259,10 @@ namespace Platibus.SQL
         protected virtual async Task<IEnumerable<QueuedMessage>> GetDeadMessages(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = new CancellationToken())
         {
             var queuedMessages = new List<QueuedMessage>();
-            var connection = _connectionProvider.GetConnection();
+            var connection = ConnectionProvider.GetConnection();
             try
             {
-                var commandBuilder = _commandBuilders.NewSelectDeadMessagesCommandBuilder();
+                var commandBuilder = CommandBuilders.NewSelectDeadMessagesCommandBuilder();
                 commandBuilder.QueueName = QueueName;
                 commandBuilder.StartDate = startDate;
                 commandBuilder.EndDate = endDate;
@@ -304,7 +293,7 @@ namespace Platibus.SQL
             }
             finally
             {
-                _connectionProvider.ReleaseConnection(connection);
+                ConnectionProvider.ReleaseConnection(connection);
             }
             return queuedMessages.AsEnumerable();
         }
@@ -319,12 +308,12 @@ namespace Platibus.SQL
         /// <returns>Returns a task that completes when the update operation completes</returns>
         protected virtual async Task UpdateQueuedMessage(QueuedMessage queuedMessage, DateTime? abandoned, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var connection = _connectionProvider.GetConnection();
+            var connection = ConnectionProvider.GetConnection();
             try
             {
                 var message = queuedMessage.Message;
                 var headers = message.Headers;
-                var commandBuilder = _commandBuilders.NewUpdateQueuedMessageCommandBuilder();
+                var commandBuilder = CommandBuilders.NewUpdateQueuedMessageCommandBuilder();
                 commandBuilder.MessageId = headers.MessageId;
                 commandBuilder.QueueName = QueueName;
                 commandBuilder.Abandoned = abandoned;
@@ -341,7 +330,7 @@ namespace Platibus.SQL
             }
             finally
             {
-                _connectionProvider.ReleaseConnection(connection);
+                ConnectionProvider.ReleaseConnection(connection);
             }
         }
         
@@ -499,16 +488,13 @@ namespace Platibus.SQL
                     var separatorPos = currentLine.IndexOf(':');
                     if (separatorPos < 0)
                     {
-                        throw new FormatException(string.Format("Invalid header on line {0}:  Character ':' expected",
-                            lineNumber));
+                        throw new FormatException($"Invalid header on line {lineNumber}:  Character ':' expected");
                     }
 
                     if (separatorPos == 0)
                     {
                         throw new FormatException(
-                            string.Format(
-                                "Invalid header on line {0}:  Character ':' found at position 0 (missing header name)",
-                                lineNumber));
+                            $"Invalid header on line {lineNumber}:  Character ':' found at position 0 (missing header name)");
                     }
 
                     currentHeaderName = currentLine.Substring(0, separatorPos);

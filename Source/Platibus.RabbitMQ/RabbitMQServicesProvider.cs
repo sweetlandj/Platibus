@@ -23,17 +23,24 @@
 using System;
 using System.Text;
 using System.Threading.Tasks;
-using Platibus.Config;
 using Platibus.Config.Extensibility;
+#if NET452
+using Platibus.Config;
+#endif
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Platibus.RabbitMQ
 {
+    /// <inheritdoc />
     /// <summary>
     /// Provider for services based on RabbitMQ
     /// </summary>
     [Provider("RabbitMQ")]
     public class RabbitMQServicesProvider : IMessageQueueingServiceProvider
     {
+#if NET452
         /// <summary>
         /// Creates an initializes a <see cref="IMessageQueueingService"/>
         /// based on the provided <paramref name="configuration"/>
@@ -60,6 +67,36 @@ namespace Platibus.RabbitMQ
             var messageQueueingService = new RabbitMQMessageQueueingService(uri, encoding: encoding, securityTokenService: securityTokenService);
             return messageQueueingService;
         }
+#endif
+#if NETSTANDARD2_0
+        /// <summary>
+        /// Creates an initializes a <see cref="IMessageQueueingService"/>
+        /// based on the provided <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="configuration">The journaling configuration
+        /// element</param>
+        /// <returns>Returns a task whose result is an initialized
+        /// <see cref="IMessageQueueingService"/></returns>
+        public async Task<IMessageQueueingService> CreateMessageQueueingService(IConfiguration configuration)
+        {
+            var securityTokenServiceFactory = new SecurityTokenServiceFactory();
+            var securityTokensSection = configuration?.GetSection("securityTokens");
+            var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securityTokensSection);
+
+            var defaultUri = new Uri("amqp://localhost:5672");
+            var uri = configuration?.GetValue("uri", defaultUri) ?? defaultUri;
+
+            var encodingName = configuration?["encoding"];
+            if (string.IsNullOrWhiteSpace(encodingName))
+            {
+                encodingName = "UTF-8";
+            }
+
+            var encoding = ParseEncoding(encodingName);
+            var messageQueueingService = new RabbitMQMessageQueueingService(uri, encoding: encoding, securityTokenService: securityTokenService);
+            return messageQueueingService;
+        }
+#endif
 
         private static Encoding ParseEncoding(string encodingName)
         {

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿#if NET452
+using System.ComponentModel;
 using System.Configuration;
 using System.Net;
 
@@ -22,8 +23,8 @@ namespace Platibus.Config
         [ConfigurationProperty(EnabledPropertyName, DefaultValue = false)]
         public bool Enabled
         {
-            get { return (bool)base[EnabledPropertyName]; }
-            set { base[EnabledPropertyName] = value; }
+            get => (bool)base[EnabledPropertyName];
+            set => base[EnabledPropertyName] = value;
         }
 
         /// <summary>
@@ -33,8 +34,8 @@ namespace Platibus.Config
         [TypeConverter(typeof(IPAddressConverter))]
         public IPAddress Address
         {
-            get { return (IPAddress)base[AddressPropertyName]; }
-            set { base[AddressPropertyName] = value; }
+            get => (IPAddress)base[AddressPropertyName];
+            set => base[AddressPropertyName] = value;
         }
 
         /// <summary>
@@ -43,8 +44,10 @@ namespace Platibus.Config
         [ConfigurationProperty(PortPropertyName, DefaultValue = DefaultPort)]
         public int Port
         {
-            get { return (int)base[PortPropertyName]; }
-            set { base[PortPropertyName] = value; }
+            get => (int)base[PortPropertyName];
+            set => base[PortPropertyName] = value;
         }
     }
 }
+
+#endif

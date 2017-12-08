@@ -29,60 +29,50 @@ namespace Platibus.Diagnostics
     /// </summary>
     public class DiagnosticEvent
     {
-        private readonly object _source;
-        private readonly DateTime _timestamp;
-        private readonly DiagnosticEventType _type;
-        private readonly string _detail;
-        private readonly Exception _exception;
-        private readonly Message _message;
-        private readonly EndpointName _endpoint;
-        private readonly QueueName _queue;
-        private readonly TopicName _topic;
-
         /// <summary>
         /// The object that emitted the event
         /// </summary>
-        public object Source { get { return _source; } }
+        public object Source { get; }
 
         /// <summary>
         /// The date and time the event was emitted
         /// </summary>
-        public DateTime Timestamp { get { return _timestamp; } }
+        public DateTime Timestamp { get; }
 
         /// <summary>
         /// The type of diagnostic event
         /// </summary>
-        public DiagnosticEventType Type { get { return _type; } }
+        public DiagnosticEventType Type { get; }
 
         /// <summary>
         /// Specific details regarding this instance of the event
         /// </summary>
-        public string Detail { get { return _detail; } }
+        public string Detail { get; }
 
         /// <summary>
         /// The exception related to the event, if applicable
         /// </summary>
-        public Exception Exception { get { return _exception; } }
+        public Exception Exception { get; }
 
         /// <summary>
         /// The message to which the event pertains, if applicable
         /// </summary>
-        public Message Message { get { return _message; } }
+        public Message Message { get; }
 
         /// <summary>
         /// The name of the endpoint, if applicable
         /// </summary>
-        public EndpointName Endpoint { get { return _endpoint; } }
+        public EndpointName Endpoint { get; }
 
         /// <summary>
         /// The queue to which the message pertains, if applicable
         /// </summary>
-        public QueueName Queue { get { return _queue; } }
+        public QueueName Queue { get; }
 
         /// <summary>
         /// The topic to which the message pertains, if applicable
         /// </summary>
-        public TopicName Topic { get { return _topic; } }
+        public TopicName Topic { get; }
 
         /// <summary>
         /// Initializes a new <see cref="DiagnosticEvent"/>
@@ -97,16 +87,16 @@ namespace Platibus.Diagnostics
         /// <param name="topic">The topic to which the message pertains, if applicable</param>
         public DiagnosticEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, EndpointName endpoint = null, QueueName queue = null, TopicName topic = null)
         {
-            if (type == null) throw new ArgumentNullException("type");
-            _timestamp = DateTime.UtcNow;
-            _source = source;
-            _type = type;
-            _detail = detail;
-            _exception = exception;
-            _message = message;
-            _endpoint = endpoint;
-            _queue = queue;
-            _topic = topic;
+            if (type == null) throw new ArgumentNullException(nameof(type));
+            Timestamp = DateTime.UtcNow;
+            Source = source;
+            Type = type;
+            Detail = detail;
+            Exception = exception;
+            Message = message;
+            Endpoint = endpoint;
+            Queue = queue;
+            Topic = topic;
         }
     }
 }

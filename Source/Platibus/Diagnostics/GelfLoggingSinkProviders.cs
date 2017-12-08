@@ -20,8 +20,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Configuration;
+#if NET452
+using System.Configuration;    
+#endif
+using System;
 using System.Threading.Tasks;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 using Platibus.Config;
 using Platibus.Config.Extensibility;
 using Platibus.Security;
@@ -41,6 +47,7 @@ namespace Platibus.Diagnostics
         [Provider("GelfUdp")]
         public class Udp : IDiagnosticEventSinkProvider
         {
+#if NET452
             /// <inheritdoc />
             public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(DiagnosticEventSinkElement configuration)
             {
@@ -53,6 +60,20 @@ namespace Platibus.Diagnostics
                 if (port < 0 || port > 65535) throw new ConfigurationErrorsException("Invalid port");
                 return Task.FromResult<IDiagnosticEventSink>(new GelfUdpLoggingSink(host, port, enableCompression));
             }
+#else
+            /// <inheritdoc />
+            public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(IConfiguration configuration)
+            {
+                var host = configuration?["host"];
+                var port = configuration?.GetValue<int>("port") ?? 0;
+                var enableCompression = configuration?.GetValue<bool>("compress") ?? false;
+
+                if (string.IsNullOrWhiteSpace(host)) throw new ConfigurationErrorsException("'host' attribute is required");
+                if (port == 0) throw new ConfigurationErrorsException("'port' attribute is required");
+                if (port < 0 || port > 65535) throw new ConfigurationErrorsException("Invalid port");
+                return Task.FromResult<IDiagnosticEventSink>(new GelfUdpLoggingSink(host, port, enableCompression));
+            }
+#endif
         }
 
         /// <summary>
@@ -62,6 +83,7 @@ namespace Platibus.Diagnostics
         [Provider("GelfTcp")]
         public class Tcp : IDiagnosticEventSinkProvider
         {
+#if NET452
             /// <inheritdoc />
             public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(DiagnosticEventSinkElement configuration)
             {
@@ -73,6 +95,19 @@ namespace Platibus.Diagnostics
                 if (port < 0 || port > 65535) throw new ConfigurationErrorsException("Invalid port");
                 return Task.FromResult<IDiagnosticEventSink>(new GelfTcpLoggingSink(host, port));
             }
+#else
+            /// <inheritdoc />
+            public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(IConfiguration configuration)
+            {
+                var host = configuration?["host"];
+                var port = configuration?.GetValue<int>("port") ?? 0;
+
+                if (string.IsNullOrWhiteSpace(host)) throw new ConfigurationErrorsException("'host' attribute is required");
+                if (port == 0) throw new ConfigurationErrorsException("'port' attribute is required");
+                if (port < 0 || port > 65535) throw new ConfigurationErrorsException("Invalid port");
+                return Task.FromResult<IDiagnosticEventSink>(new GelfTcpLoggingSink(host, port));
+            }
+#endif
         }
 
         /// <summary>
@@ -82,6 +117,7 @@ namespace Platibus.Diagnostics
         [Provider("GelfHttp")]
         public class Http : IDiagnosticEventSinkProvider
         {
+#if NET452
             /// <inheritdoc />
             public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(DiagnosticEventSinkElement configuration)
             {
@@ -96,6 +132,22 @@ namespace Platibus.Diagnostics
                 if (uri == null) throw new ConfigurationErrorsException("'uri' attribute is required");
                 return Task.FromResult<IDiagnosticEventSink>(new GelfHttpLoggingSink(uri, credentials));
             }
+#else
+            /// <inheritdoc />
+            public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(IConfiguration configuration)
+            {
+                var uri = configuration?.GetValue<Uri>("uri");
+                var username = configuration?["username"];
+                var password = configuration?["password"];
+
+                var credentials = string.IsNullOrWhiteSpace(username)
+                    ? null
+                    : new BasicAuthCredentials(username, password);
+
+                if (uri == null) throw new ConfigurationErrorsException("'uri' attribute is required");
+                return Task.FromResult<IDiagnosticEventSink>(new GelfHttpLoggingSink(uri, credentials));
+            }
+#endif
         }
     }
 }

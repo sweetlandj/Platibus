@@ -24,6 +24,7 @@ using System;
 
 namespace Platibus.Config.Extensibility
 {
+    /// <inheritdoc />
     /// <summary>
     /// Associates the decorated type with a provider name.
     /// </summary>
@@ -38,61 +39,61 @@ namespace Platibus.Config.Extensibility
     /// <description>Description</description>
     /// </listheader>
     /// <item>
-    /// <term><see cref="IMessageJournalProvider"/></term>
+    /// <term><see cref="T:Platibus.Config.Extensibility.IMessageJournalProvider" /></term>
     /// <description>Indicates that the decorated type provides a
-    /// <see cref="Journaling.IMessageJournal"/>.  The <see cref="Name"/> 
-    /// specified in <see cref="ProviderAttribute"/> corresponds to the value of 
-    /// the <see cref="JournalingElement.Provider"/> property in a
-    /// <see cref="JournalingElement"/>.</description>
+    /// <see cref="T:Platibus.Journaling.IMessageJournal" />.  The <see cref="P:Platibus.Config.Extensibility.ProviderAttribute.Name" /> 
+    /// specified in <see cref="T:Platibus.Config.Extensibility.ProviderAttribute" /> corresponds to the value of 
+    /// the <c>provider</c> property in a journaling configuration section
+    /// </description>
     /// </item>
     /// <item>
-    /// <term><see cref="IMessageQueueingServiceProvider"/></term>
+    /// <term><see cref="T:Platibus.Config.Extensibility.IMessageQueueingServiceProvider" /></term>
     /// <description>Indicates that the decorated type provides a
-    /// <see cref="IMessageQueueingService"/>.  The <see cref="Name"/> 
-    /// specified in <see cref="ProviderAttribute"/> corresponds to the value of 
-    /// the <see cref="QueueingElement.Provider"/> property in a
-    /// <see cref="QueueingElement"/>.</description>
+    /// <see cref="T:Platibus.IMessageQueueingService" />.  The <see cref="P:Platibus.Config.Extensibility.ProviderAttribute.Name" /> 
+    /// specified in <see cref="T:Platibus.Config.Extensibility.ProviderAttribute" /> corresponds to the value of 
+    /// the <c>provider</c> property in a queueing configuration section
+    /// </description>
     /// </item>
     /// <item>
-    /// <term><see cref="ISecurityTokenServiceProvider"/></term>
+    /// <term><see cref="T:Platibus.Config.Extensibility.ISecurityTokenServiceProvider" /></term>
     /// <description>Indicates that the decorated type provides a
-    /// <see cref="Platibus.Security.ISecurityTokenService"/>.  The <see cref="Name"/> 
-    /// specified in <see cref="ProviderAttribute"/> corresponds to the value of 
-    /// the <see cref="QueueingElement.Provider"/> property in a
-    /// <see cref="SecurityTokensElement"/>.</description>
+    /// <see cref="T:Platibus.Security.ISecurityTokenService" />.  The <see cref="P:Platibus.Config.Extensibility.ProviderAttribute.Name" /> 
+    /// specified in <see cref="T:Platibus.Config.Extensibility.ProviderAttribute" /> corresponds to the value of 
+    /// the <c>provider</c> property in a security tokens configuration section
+    /// </description>
     /// </item>
     /// <item>
-    /// <term><see cref="ISubscriptionTrackingServiceProvider"/></term>
+    /// <term><see cref="T:Platibus.Config.Extensibility.ISubscriptionTrackingServiceProvider" /></term>
     /// <description>Indicates that the decorated type provides a
-    /// <see cref="ISubscriptionTrackingService"/>.  The <see cref="Name"/> 
-    /// specified in <see cref="ProviderAttribute"/> corresponds to the value of 
-    /// the <see cref="QueueingElement.Provider"/> property in a
-    /// <see cref="QueueingElement"/>.</description>
+    /// <see cref="T:Platibus.ISubscriptionTrackingService" />.  The <see cref="P:Platibus.Config.Extensibility.ProviderAttribute.Name" /> 
+    /// specified in <see cref="T:Platibus.Config.Extensibility.ProviderAttribute" /> corresponds to the value of 
+    /// the <c>provider</c> property in a subscription tracking configuration
+    /// section</description>
     /// </item>
     /// <item>
-    /// <term><see cref="IMessageQueueingCommandBuildersProvider"/></term>
+    /// <term><see cref="T:Platibus.Config.Extensibility.IMessageQueueingCommandBuildersProvider" /></term>
     /// <description>Indicates that the decorated type provides a set of
-    /// <see cref="SQL.Commands.IMessageQueueingCommandBuilders"/> for use with the 
-    /// <see cref="SQL.SQLMessageQueueingService"/> and its derivatives.  The <see cref="Name"/> 
-    /// specified in <see cref="ProviderAttribute"/> corresponds to the name of
+    /// <see cref="T:Platibus.SQL.Commands.IMessageQueueingCommandBuilders" /> for use with the 
+    /// <see cref="T:Platibus.SQL.SQLMessageQueueingService" /> and its derivatives.  The <see cref="P:Platibus.Config.Extensibility.ProviderAttribute.Name" /> 
+    /// specified in <see cref="T:Platibus.Config.Extensibility.ProviderAttribute" /> corresponds to the name of
     /// the ADO.NET provider specified in the connection string settings.
     /// </description>
     /// </item>
     /// <item>
-    /// <term><see cref="IMessageJournalingCommandBuildersProvider"/></term>
+    /// <term><see cref="T:Platibus.Config.Extensibility.IMessageJournalingCommandBuildersProvider" /></term>
     /// <description>Indicates that the decorated type provides a set of
-    /// <see cref="SQL.Commands.IMessageJournalingCommandBuilders"/> for use with the 
-    /// <see cref="SQL.SQLMessageJournal"/> and its derivatives.  The <see cref="Name"/> 
-    /// specified in <see cref="ProviderAttribute"/> corresponds to the name of
+    /// <see cref="T:Platibus.SQL.Commands.IMessageJournalingCommandBuilders" /> for use with the 
+    /// <see cref="T:Platibus.SQL.SQLMessageJournal" /> and its derivatives.  The <see cref="P:Platibus.Config.Extensibility.ProviderAttribute.Name" /> 
+    /// specified in <see cref="T:Platibus.Config.Extensibility.ProviderAttribute" /> corresponds to the name of
     /// the ADO.NET provider specified in the connection string settings.
     /// </description>
     /// </item>
     /// <item>
-    /// <term><see cref="ISubscriptionTrackingCommandBuildersProvider"/></term>
+    /// <term><see cref="T:Platibus.Config.Extensibility.ISubscriptionTrackingCommandBuildersProvider" /></term>
     /// <description>Indicates that the decorated type provides a set of
-    /// <see cref="SQL.Commands.ISubscriptionTrackingCommandBuilders"/> for use with the 
-    /// <see cref="SQL.SQLSubscriptionTrackingService"/> and its derivatives.  The <see cref="Name"/> 
-    /// specified in <see cref="ProviderAttribute"/> corresponds to the name of
+    /// <see cref="T:Platibus.SQL.Commands.ISubscriptionTrackingCommandBuilders" /> for use with the 
+    /// <see cref="T:Platibus.SQL.SQLSubscriptionTrackingService" /> and its derivatives.  The <see cref="P:Platibus.Config.Extensibility.ProviderAttribute.Name" /> 
+    /// specified in <see cref="T:Platibus.Config.Extensibility.ProviderAttribute" /> corresponds to the name of
     /// the ADO.NET provider specified in the connection string settings.
     /// </description>
     /// </item>
@@ -101,8 +102,6 @@ namespace Platibus.Config.Extensibility
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public class ProviderAttribute : Attribute
     {
-        private readonly string _name;
-
         /// <summary>
         /// The provider name
         /// </summary>
@@ -111,10 +110,7 @@ namespace Platibus.Config.Extensibility
         /// to indicate that the decorated type should be used to provide
         /// service implementations during initialization.
         /// </remarks>
-        public string Name
-        {
-            get { return _name; }
-        }
+        public string Name { get; }
 
         /// <summary>
         /// The relative priority of the provider
@@ -127,18 +123,19 @@ namespace Platibus.Config.Extensibility
         /// </remarks>
         public int Priority { get; set; }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="ProviderAttribute"/> with the
-        /// specified <paramref name="name"/>.
+        /// Initializes a new <see cref="T:Platibus.Config.Extensibility.ProviderAttribute" /> with the
+        /// specified <paramref name="name" />.
         /// </summary>
         /// <param name="name">The provider name to associate with the
         /// decorated type.</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="name"/>
+        /// <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="name" />
         /// is <c>null</c> or whitespace.</exception>
         public ProviderAttribute(string name)
         {
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
-            _name = name;
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException(nameof(name));
+            Name = name;
         }
     }
 }

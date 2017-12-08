@@ -87,8 +87,7 @@ namespace Platibus.Queueing
         /// or <paramref name="message"/> is <c>null</c></exception>
         public Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
         {
-            TQueue queue;
-            if (!_queues.TryGetValue(queueName, out queue))
+            if (!_queues.TryGetValue(queueName, out TQueue queue))
             {
                 throw new QueueNotFoundException(queueName);
             }

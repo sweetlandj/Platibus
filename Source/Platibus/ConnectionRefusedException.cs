@@ -33,9 +33,6 @@ namespace Platibus
     [Serializable]
     public class ConnectionRefusedException : TransportException
     {
-        private readonly string _host;
-        private readonly int _port;
-
         /// <summary>
         /// Initializes a new <see cref="ConnectionRefusedException"/> with the
         /// specified <paramref name="host"/> and <paramref name="port"/>
@@ -43,10 +40,10 @@ namespace Platibus
         /// <param name="host">The host that refused the connection</param>
         /// <param name="port">The port on which the connection was refused</param>
         public ConnectionRefusedException(string host, int port)
-            : base(string.Format("Connection refused to {0}:{1}", host, port))
+            : base($"Connection refused to {host}:{port}")
         {
-            _host = host;
-            _port = port;
+            Host = host;
+            Port = port;
         }
 
         /// <summary>
@@ -58,10 +55,10 @@ namespace Platibus
         /// <param name="port">The port on which the connection was refused</param>
         /// <param name="innerException">The nested exception</param>
         public ConnectionRefusedException(string host, int port, Exception innerException)
-            : base(string.Format("Connection refused to {0}:{1}", host, port), innerException)
+            : base($"Connection refused to {host}:{port}", innerException)
         {
-            _host = host;
-            _port = port;
+            Host = host;
+            Port = port;
         }
 
         /// <summary>
@@ -73,25 +70,19 @@ namespace Platibus
         public ConnectionRefusedException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _host = info.GetString("Host");
-            _port = info.GetInt32("Port");
+            Host = info.GetString("Host");
+            Port = info.GetInt32("Port");
         }
 
         /// <summary>
         /// The host that refused the connection
         /// </summary>
-        public string Host
-        {
-            get { return _host; }
-        }
+        public string Host { get; }
 
         /// <summary>
         /// The port on which the connection was refused
         /// </summary>
-        public int Port
-        {
-            get { return _port; }
-        }
+        public int Port { get; }
 
         /// <summary>
         /// When overridden in a derived class, sets the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> with information about the exception.
@@ -101,8 +92,8 @@ namespace Platibus
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("Host", _host);
-            info.AddValue("Port", _port);
+            info.AddValue("Host", Host);
+            info.AddValue("Port", Port);
         }
     }
 }

@@ -127,8 +127,7 @@ namespace Platibus.Filesystem
             CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
-            IEnumerable<ExpiringSubscription> subscriptions;
-            _subscriptions.TryGetValue(topic, out subscriptions);
+            _subscriptions.TryGetValue(topic, out var subscriptions);
             var activeSubscribers = (subscriptions ?? Enumerable.Empty<ExpiringSubscription>())
                 .Where(s => s.ExpirationDate > DateTime.UtcNow)
                 .Select(s => s.Subscriber)
@@ -207,8 +206,7 @@ namespace Platibus.Filesystem
 
         private async Task FlushSubscriptionsToDisk(TopicName topicName)
         {
-            IEnumerable<ExpiringSubscription> expiringSubscriptions;
-            if (!_subscriptions.TryGetValue(topicName, out expiringSubscriptions))
+            if (!_subscriptions.TryGetValue(topicName, out var expiringSubscriptions))
             {
                 return;
             }
@@ -285,37 +283,28 @@ namespace Platibus.Filesystem
 
         private FileInfo GetSubscriptionFile(TopicName topicName)
         {
-            var filename = string.Format("{0}.psub", topicName);
+            var filename = $"{topicName}.psub";
             var filePath = Path.Combine(_baseDirectory.FullName, filename);
             return new FileInfo(filePath);
         }
 
         private class ExpiringSubscription : IEquatable<ExpiringSubscription>
         {
-            private readonly DateTime _expirationDate;
-            private readonly Uri _subscriber;
-
             public ExpiringSubscription(Uri subscriber, DateTime expirationDate)
             {
-                _subscriber = subscriber.WithTrailingSlash();
-                _expirationDate = expirationDate;
+                Subscriber = subscriber.WithTrailingSlash();
+                ExpirationDate = expirationDate;
             }
 
-            public Uri Subscriber
-            {
-                get { return _subscriber; }
-            }
+            public Uri Subscriber { get; }
 
-            public DateTime ExpirationDate
-            {
-                get { return _expirationDate; }
-            }
+            public DateTime ExpirationDate { get; }
 
             public bool Equals(ExpiringSubscription subscription)
             {
                 if (ReferenceEquals(this, subscription)) return true;
                 if (ReferenceEquals(null, subscription)) return false;
-                return Equals(_subscriber, subscription._subscriber);
+                return Equals(Subscriber, subscription.Subscriber);
             }
 
             public override bool Equals(object obj)
@@ -325,7 +314,7 @@ namespace Platibus.Filesystem
 
             public override int GetHashCode()
             {
-                return _subscriber.GetHashCode();
+                return Subscriber.GetHashCode();
             }
         }
     }

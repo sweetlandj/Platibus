@@ -36,9 +36,8 @@ namespace Platibus.Http
 
         public HttpEndpointCredentialsVisitor(HttpClientHandler clientHandler, HttpClient client, bool newHandler = false)
         {
-            if (client == null) throw new ArgumentNullException("client");
             _clientHandler = clientHandler;
-            _client = client;
+            _client = client ?? throw new ArgumentNullException(nameof(client));
             _newHandler = newHandler;
         }
 

@@ -30,34 +30,21 @@ namespace Platibus
     internal class BusMessageContext : IMessageContext
     {
         private readonly Bus _bus;
-        private readonly IMessageHeaders _headers;
-        private readonly IPrincipal _senderPrincipal;
 
         public BusMessageContext(Bus bus, IMessageHeaders headers, IPrincipal senderPrincipal)
         {
-            if (bus == null) throw new ArgumentNullException("bus");
-            if (headers == null) throw new ArgumentNullException("headers");
-            _bus = bus;
-            _headers = headers;
-            _senderPrincipal = senderPrincipal;
+            _bus = bus ?? throw new ArgumentNullException(nameof(bus));
+            Headers = headers ?? throw new ArgumentNullException(nameof(headers));
+            Principal = senderPrincipal;
         }
 
-        public IMessageHeaders Headers
-        {
-            get { return _headers; }
-        }
+        public IMessageHeaders Headers { get; }
 
         public bool MessageAcknowledged { get; private set; }
 
-        public IBus Bus
-        {
-            get { return _bus; }
-        }
+        public IBus Bus => _bus;
 
-        public IPrincipal Principal
-        {
-            get { return _senderPrincipal; }
-        }
+        public IPrincipal Principal { get; }
 
         public void Acknowledge()
         {
@@ -67,7 +54,7 @@ namespace Platibus
         public Task SendReply(object replyContent, SendOptions options = default(SendOptions),
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (replyContent == null) throw new ArgumentNullException("replyContent");
+            if (replyContent == null) throw new ArgumentNullException(nameof(replyContent));
             return _bus.SendReply(this, replyContent, options, cancellationToken);
         }
     }

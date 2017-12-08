@@ -22,6 +22,9 @@
 
 using System;
 using System.Threading.Tasks;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 using Platibus.Diagnostics;
 using Platibus.Security;
 
@@ -44,6 +47,7 @@ namespace Platibus.Config.Extensibility
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
+#if NET452
         /// <summary>
         /// Initializes a security token service based on the supplied
         /// <paramref name="configuration"/>
@@ -68,16 +72,48 @@ namespace Platibus.Config.Extensibility
 
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
-            {
-                Detail = "Message journal initialized"
-            }.Build());
+                {
+                    Detail = "Message journal initialized"
+                }.Build());
 
             return messageJournal;
         }
+#else
+        /// <summary>
+        /// Initializes a security token service based on the supplied
+        /// <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="configuration">The message queue configuration</param>
+        /// <returns>Returns a task whose result is the initialized security token service</returns>
+        public async Task<ISecurityTokenService> InitSecurityTokenService(IConfiguration configuration)
+        {
+            var providerName = configuration?["provider"];
+            var provider = GetProvider(providerName);
+            if (string.IsNullOrWhiteSpace(providerName))
+            {
+                await _diagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                    {
+                        Detail = "Security tokens disabled"
+                    }.Build());
+                return null;
+            }
+
+            var messageJournal = await provider.CreateSecurityTokenService(configuration);
+
+            await _diagnosticService.EmitAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
+                {
+                    Detail = "Message journal initialized"
+                }.Build());
+
+            return messageJournal;
+        }
+#endif
 
         private ISecurityTokenServiceProvider GetProvider(string providerName)
         {
-            if (string.IsNullOrWhiteSpace(providerName)) throw new ArgumentNullException("providerName");
+            if (string.IsNullOrWhiteSpace(providerName)) throw new ArgumentNullException(nameof(providerName));
             return ProviderHelper.GetProvider<ISecurityTokenServiceProvider>(providerName);
         }
     }

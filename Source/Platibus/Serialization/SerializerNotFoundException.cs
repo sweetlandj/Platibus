@@ -33,8 +33,6 @@ namespace Platibus.Serialization
     [Serializable]
     public class SerializerNotFoundException : ApplicationException
     {
-        private readonly string _contentType;
-
         /// <summary>
         /// Initializes a new <see cref="SerializerNotFoundException"/> for the
         /// specified <paramref name="contentType"/>
@@ -43,7 +41,7 @@ namespace Platibus.Serialization
         /// was not found</param>
         public SerializerNotFoundException(string contentType) : base(contentType)
         {
-            _contentType = contentType;
+            ContentType = contentType;
         }
 
         /// <summary>
@@ -55,16 +53,13 @@ namespace Platibus.Serialization
         public SerializerNotFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _contentType = info.GetString("ContentType");
+            ContentType = info.GetString("ContentType");
         }
 
         /// <summary>
         /// The MIME content type for which a serializer was not found
         /// </summary>
-        public string ContentType
-        {
-            get { return _contentType; }
-        }
+        public string ContentType { get; }
 
         /// <summary>
         /// When overridden in a derived class, sets the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> with information about the exception.
@@ -74,7 +69,7 @@ namespace Platibus.Serialization
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("ContentType", _contentType);
+            info.AddValue("ContentType", ContentType);
         }
     }
 }

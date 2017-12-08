@@ -78,8 +78,7 @@ namespace Platibus
         {
             get
             {
-                string value;
-                _headers.TryGetValue(header, out value);
+                _headers.TryGetValue(header, out string value);
                 return value;
             }
             set
@@ -98,107 +97,107 @@ namespace Platibus
         /// <inheritdoc/>
         public MessageId MessageId
         {
-            get { return this[HeaderName.MessageId]; }
-            set { this[HeaderName.MessageId] = value; }
+            get => this[HeaderName.MessageId];
+            set => this[HeaderName.MessageId] = value;
         }
 
         /// <inheritdoc/>
         public MessageName MessageName
         {
-            get { return this[HeaderName.MessageName]; }
-            set { this[HeaderName.MessageName] = value; }
+            get => this[HeaderName.MessageName];
+            set => this[HeaderName.MessageName] = value;
         }
 
         /// <inheritdoc/>
         public DateTime Expires
         {
-            get { return GetDateTime(HeaderName.Expires).GetValueOrDefault(DateTime.MaxValue); }
-            set { SetDateTime(HeaderName.Expires, value); }
+            get => GetDateTime(HeaderName.Expires).GetValueOrDefault(DateTime.MaxValue);
+            set => SetDateTime(HeaderName.Expires, value);
         }
 
         /// <inheritdoc/>
         public Uri Destination
         {
-            get { return GetUri(HeaderName.Destination); }
-            set { SetUri(HeaderName.Destination, value); }
+            get => GetUri(HeaderName.Destination);
+            set => SetUri(HeaderName.Destination, value);
         }
 
         /// <inheritdoc/>
         public Uri Origination
         {
-            get { return GetUri(HeaderName.Origination); }
-            set { SetUri(HeaderName.Origination, value); }
+            get => GetUri(HeaderName.Origination);
+            set => SetUri(HeaderName.Origination, value);
         }
 
         /// <inheritdoc/>
         public Uri ReplyTo
         {
-            get { return GetUri(HeaderName.ReplyTo); }
-            set { SetUri(HeaderName.ReplyTo, value); }
+            get => GetUri(HeaderName.ReplyTo);
+            set => SetUri(HeaderName.ReplyTo, value);
         }
 
         /// <inheritdoc/>
         public MessageId RelatedTo
         {
-            get { return this[HeaderName.RelatedTo]; }
-            set { this[HeaderName.RelatedTo] = value; }
+            get => this[HeaderName.RelatedTo];
+            set => this[HeaderName.RelatedTo] = value;
         }
 
         /// <inheritdoc/>
         public DateTime Published
         {
-            get { return GetDateTime(HeaderName.Published).GetValueOrDefault(); }
-            set { SetDateTime(HeaderName.Published, value); }
+            get => GetDateTime(HeaderName.Published).GetValueOrDefault();
+            set => SetDateTime(HeaderName.Published, value);
         }
 
         /// <inheritdoc/>
         public TopicName Topic
         {
-            get { return this[HeaderName.Topic]; }
-            set { this[HeaderName.Topic] = value; }
+            get => this[HeaderName.Topic];
+            set => this[HeaderName.Topic] = value;
         }
 
         /// <inheritdoc/>
         public DateTime Sent
         {
-            get { return GetDateTime(HeaderName.Sent).GetValueOrDefault(); }
-            set { SetDateTime(HeaderName.Sent, value); }
+            get => GetDateTime(HeaderName.Sent).GetValueOrDefault();
+            set => SetDateTime(HeaderName.Sent, value);
         }
 
         /// <inheritdoc/>
         public DateTime Received
         {
-            get { return GetDateTime(HeaderName.Received).GetValueOrDefault(); }
-            set { SetDateTime(HeaderName.Received, value); }
+            get => GetDateTime(HeaderName.Received).GetValueOrDefault();
+            set => SetDateTime(HeaderName.Received, value);
         }
 
         /// <inheritdoc/>
         public string ContentType
         {
-            get { return this[HeaderName.ContentType]; }
-            set { this[HeaderName.ContentType] = value; }
+            get => this[HeaderName.ContentType];
+            set => this[HeaderName.ContentType] = value;
         }
 
         /// <inheritdoc/>
         [Obsolete("Use Synchronous to override asynchronous queueing behavior")]
         public MessageImportance Importance
         {
-            get { return GetInt(HeaderName.Importance); }
-            set { SetInt(HeaderName.Importance, value); }
+            get => GetInt(HeaderName.Importance);
+            set => SetInt(HeaderName.Importance, value);
         }
 
         /// <inheritdoc/>
         public bool Synchronous
         {
-            get { return GetBool(HeaderName.Synchronous); }
-            set { SetBool(HeaderName.Synchronous, value); }
+            get => GetBool(HeaderName.Synchronous);
+            set => SetBool(HeaderName.Synchronous, value);
         }
 
         /// <inheritdoc/>
         public string SecurityToken
         {
-            get { return this[HeaderName.SecurityToken]; }
-            set { this[HeaderName.SecurityToken] = value; }
+            get => this[HeaderName.SecurityToken];
+            set => this[HeaderName.SecurityToken] = value;
         }
 
         /// <summary>
@@ -222,9 +221,8 @@ namespace Platibus
         /// does not exist or could not be parsed to an integer</returns>
         public int GetInt(HeaderName headerName)
         {
-            int intValue;
             var value = this[headerName];
-            if (!string.IsNullOrWhiteSpace(value) && int.TryParse(value, out intValue))
+            if (!string.IsNullOrWhiteSpace(value) && int.TryParse(value, out int intValue))
             {
                 return intValue;
             }

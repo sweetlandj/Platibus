@@ -50,19 +50,13 @@ namespace Platibus.Security
         /// <returns>
         /// The <see cref="T:System.Security.Principal.IIdentity"/> object associated with the current principal.
         /// </returns>
-        public IIdentity Identity
-        {
-            get { return _identity; }
-        }
+        public IIdentity Identity => _identity;
 
         /// <summary>
         /// Returns roles associated with this sender principal
         /// </summary>
-        public IEnumerable<SenderRole> Roles
-        {
-            get { return _roles; }
-        }
-        
+        public IEnumerable<SenderRole> Roles => _roles;
+
         /// <summary>
         /// Initializes a new <see cref="SenderPrincipal"/> based on the specifieed 
         /// <paramref name="principal"/>
@@ -72,18 +66,16 @@ namespace Platibus.Security
         /// <c>null</c></exception>
         public SenderPrincipal(IPrincipal principal)
         {
-            if (principal == null) throw new ArgumentNullException("principal");
+            if (principal == null) throw new ArgumentNullException(nameof(principal));
             if (principal.Identity != null)
             {
                 _identity = SenderIdentity.From(principal.Identity);
             }
 
-            var claimsPrincipal = principal as ClaimsPrincipal;
-            if (claimsPrincipal != null)
+            if (principal is ClaimsPrincipal claimsPrincipal)
             {
                 var roleClaimType = ClaimTypes.Role;
-                var claimsIdentity = claimsPrincipal.Identity as ClaimsIdentity;
-                if (claimsIdentity != null)
+                if (claimsPrincipal.Identity is ClaimsIdentity claimsIdentity)
                 {
                     roleClaimType = claimsIdentity.RoleClaimType;
                 }
@@ -122,6 +114,7 @@ namespace Platibus.Security
             info.AddValue("Roles", _roles);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Determines whether the current principal belongs to the specified role.
         /// </summary>
@@ -133,6 +126,7 @@ namespace Platibus.Security
         {
             if (string.IsNullOrWhiteSpace(role)) return false;
 
+#if NET452
             var ntAccount = new NTAccount(role);
             try
             {
@@ -148,6 +142,7 @@ namespace Platibus.Security
             catch (IdentityNotMappedException)
             {
             }
+#endif
 
             return _roles.Contains(new SenderRole(role));
         }

@@ -48,7 +48,6 @@ namespace Platibus
         private int _concurrencyLimit = DefaultConcurrencyLimit;
         private int _maxAttempts = DefaultMaxAttempts;
         private TimeSpan _retryDelay = TimeSpan.FromMilliseconds(DefaultRetryDelay);
-        private bool _isDurable = true;
 
         /// <summary>
         ///     The maximum number of messages that will be processed concurrently.
@@ -60,12 +59,12 @@ namespace Platibus
         /// <seealso cref="DefaultConcurrencyLimit" />
         public int ConcurrencyLimit
         {
-            get { return _concurrencyLimit; }
+            get => _concurrencyLimit;
             set
             {
                 if (value <= 0)
                 {
-                    throw new ArgumentOutOfRangeException("value", value, "Concurrency limit must be greater than zero");
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Concurrency limit must be greater than zero");
                 }
                 _concurrencyLimit = value;
             }
@@ -88,12 +87,12 @@ namespace Platibus
         /// </summary>
         public int MaxAttempts
         {
-            get { return _maxAttempts; }
+            get => _maxAttempts;
             set
             {
                 if (value <= 0)
                 {
-                    throw new ArgumentOutOfRangeException("value", value, "Maximum number of attempts must be greater than zero");
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Maximum number of attempts must be greater than zero");
                 }
                 _maxAttempts = value;
             }
@@ -104,12 +103,12 @@ namespace Platibus
         /// </summary>
         public TimeSpan RetryDelay
         {
-            get { return _retryDelay; }
+            get => _retryDelay;
             set
             {
                 if (value <= TimeSpan.Zero)
                 {
-                    throw new ArgumentOutOfRangeException("value", value, "Retry delay must be greater than zero");
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Retry delay must be greater than zero");
                 }
                 _retryDelay = value;
             }
@@ -123,12 +122,8 @@ namespace Platibus
         /// <summary>
         /// Indicates whether the queue should be durable or transient (if supported)
         /// </summary>
-        public bool IsDurable
-        {
-            get { return _isDurable; }
-            set { _isDurable = value; }
-        }
-        
+        public bool IsDurable { get; set; } = true;
+
         /// <inheritdoc />
         public bool Equals(QueueOptions other)
         {

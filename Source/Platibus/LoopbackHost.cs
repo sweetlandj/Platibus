@@ -71,7 +71,7 @@ namespace Platibus
         public static async Task<LoopbackHost> Start(ILoopbackConfiguration configuration,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             var host = new LoopbackHost(configuration);
             await host.Init(cancellationToken);
             return host;
@@ -84,14 +84,11 @@ namespace Platibus
         /// The hosted Platibus instance
         /// </summary>
         /// <returns>Returns the hosted Platibus</returns>
-        public IBus Bus
-        {
-            get { return _bus; }
-        }
+        public IBus Bus => _bus;
 
         private LoopbackHost(ILoopbackConfiguration configuration)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             // Placeholder value; required by the bus
             var baseUri = configuration.BaseUri;
             var transportService = new LoopbackTransportService(HandleMessage);

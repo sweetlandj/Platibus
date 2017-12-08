@@ -96,10 +96,7 @@ namespace Platibus.RabbitMQ
         /// <summary>
         /// The hosted bus instance
         /// </summary>
-        public Bus Bus
-        {
-            get { return _bus; }
-        }
+        public Bus Bus => _bus;
 
         private RabbitMQHost(IRabbitMQHostConfiguration configuration)
         {

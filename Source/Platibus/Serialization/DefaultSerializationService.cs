@@ -106,9 +106,8 @@ namespace Platibus.Serialization
         /// <returns>Returns a serializer for the specified content type</returns>
         public ISerializer GetSerializer(string forContentType)
         {
-            ISerializer serializer;
             var key = NormalizeContentType(forContentType);
-            if (!_serializers.TryGetValue(key, out serializer) || serializer == null)
+            if (!_serializers.TryGetValue(key, out ISerializer serializer) || serializer == null)
             {
                 throw new SerializerNotFoundException(forContentType);
             }
@@ -125,7 +124,7 @@ namespace Platibus.Serialization
         /// is <c>null</c> or whitespace</exception>
         protected string NormalizeContentType(string contentType)
         {
-            if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentNullException("contentType");
+            if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentNullException(nameof(contentType));
             return contentType.Split(';').First().Trim().ToLower();
         }
 
@@ -141,8 +140,8 @@ namespace Platibus.Serialization
         /// </remarks>
         public void Add(string contentType, ISerializer serializer)
         {
-            if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentNullException("contentType");
-            if (serializer == null) throw new ArgumentNullException("serializer");
+            if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentNullException(nameof(contentType));
+            if (serializer == null) throw new ArgumentNullException(nameof(serializer));
             var key = NormalizeContentType(contentType);
             _serializers[key] = serializer;
         }

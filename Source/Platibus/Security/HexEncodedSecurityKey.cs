@@ -20,15 +20,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.IdentityModel.Tokens;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Platibus.Security
 {
+    /// <inheritdoc />
     /// <summary>
-    /// A <see cref="SecurityKey"/> implementation based on a bytes represented as hexadecimal
+    /// A <see cref="T:System.IdentityModel.Tokens.SecurityKey" /> implementation based on a bytes represented as hexadecimal
     /// degits
     /// </summary>
-    public class HexEncodedSecurityKey : InMemorySymmetricSecurityKey
+    public class HexEncodedSecurityKey : SymmetricSecurityKey
     {
         /// <summary>
         /// Initializes a new <see cref="HexEncodedSecurityKey"/> based on the specified

@@ -21,7 +21,12 @@
 // THE SOFTWARE.
 
 using System;
+#if NET452
 using System.Configuration;
+#endif
+#if NETSTANDARD2_0
+using Platibus.Config;
+#endif
 using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Config.Extensibility;
@@ -43,19 +48,17 @@ namespace Platibus.SQL
         /// </summary>
         protected readonly IDiagnosticService DiagnosticService;
 
-        private readonly IDbConnectionProvider _connectionProvider;
-        private readonly IMessageQueueingCommandBuilders _commandBuilders;
         private readonly ISecurityTokenService _securityTokenService;
 
         /// <summary>
         /// The connection provider used to obtain connections to the SQL database
         /// </summary>
-        public IDbConnectionProvider ConnectionProvider { get { return _connectionProvider; } }
+        public IDbConnectionProvider ConnectionProvider { get; }
 
         /// <summary>
         /// The SQL dialect
         /// </summary>
-        public IMessageQueueingCommandBuilders CommandBuilders { get { return _commandBuilders; } }
+        public IMessageQueueingCommandBuilders CommandBuilders { get; }
 
         /// <summary>
         /// Initializes a new <see cref="SQLMessageQueueingService"/> with the specified connection
@@ -84,10 +87,10 @@ namespace Platibus.SQL
             ISecurityTokenService securityTokenService = null,
             IDiagnosticService diagnosticService = null)
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
+            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
             DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
-            _connectionProvider = new DefaultConnectionProvider(connectionStringSettings, DiagnosticService);
-            _commandBuilders = commandBuilders ??
+            ConnectionProvider = new DefaultConnectionProvider(connectionStringSettings, DiagnosticService);
+            CommandBuilders = commandBuilders ??
                                new CommandBuildersFactory(connectionStringSettings, DiagnosticService)
                                    .InitMessageQueueingCommandBuilders();
             _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
@@ -117,11 +120,9 @@ namespace Platibus.SQL
             ISecurityTokenService securityTokenService = null, 
             IDiagnosticService diagnosticService = null)
         {
-            if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
-            if (commandBuilders == null) throw new ArgumentNullException("commandBuilders");
             DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
-            _connectionProvider = connectionProvider;
-            _commandBuilders = commandBuilders;
+            ConnectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
+            CommandBuilders = commandBuilders ?? throw new ArgumentNullException(nameof(commandBuilders));
             _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
         }
 
@@ -131,10 +132,10 @@ namespace Platibus.SQL
         /// </summary>
         public void Init()
         {
-            var connection = _connectionProvider.GetConnection();
+            var connection = ConnectionProvider.GetConnection();
             try
             {
-                var commandBuilder = _commandBuilders.NewCreateObjectsCommandBuilder();
+                var commandBuilder = CommandBuilders.NewCreateObjectsCommandBuilder();
                 using (var command = commandBuilder.BuildDbCommand(connection))
                 {
                     command.ExecuteNonQuery();
@@ -142,7 +143,7 @@ namespace Platibus.SQL
             }
             finally
             {
-                _connectionProvider.ReleaseConnection(connection);
+                ConnectionProvider.ReleaseConnection(connection);
             }
         }
 
@@ -151,7 +152,7 @@ namespace Platibus.SQL
             QueueOptions options = null,
             CancellationToken cancellationToken = new CancellationToken())
         {
-            var queue = new SQLMessageQueue(_connectionProvider, _commandBuilders, queueName, listener,
+            var queue = new SQLMessageQueue(ConnectionProvider, CommandBuilders, queueName, listener,
                 _securityTokenService, options, DiagnosticService);
 
             return Task.FromResult(queue);
@@ -164,8 +165,7 @@ namespace Platibus.SQL
             if (disposing)
             {
                 // ReSharper disable once SuspiciousTypeConversion.Global
-                var disposableConnectionProvider = _connectionProvider as IDisposable;
-                if (disposableConnectionProvider != null)
+                if (ConnectionProvider is IDisposable disposableConnectionProvider)
                 {
                     disposableConnectionProvider.Dispose();
                 }

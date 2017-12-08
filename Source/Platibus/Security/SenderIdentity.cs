@@ -38,20 +38,13 @@ namespace Platibus.Security
     [Obsolete("Use MessageSecurityToken")]
     public class SenderIdentity : IIdentity, ISerializable, IEquatable<SenderIdentity>
     {
-        private readonly string _name;
-        private readonly string _authenticationType;
-        private readonly bool _isAuthenticated;
-
         /// <summary>
         /// Gets the type of authentication used.
         /// </summary>
         /// <returns>
         /// The type of authentication used to identify the user.
         /// </returns>
-        public string AuthenticationType
-        {
-            get { return _authenticationType; }
-        }
+        public string AuthenticationType { get; }
 
         /// <summary>
         /// Gets a value that indicates whether the user has been authenticated.
@@ -59,10 +52,7 @@ namespace Platibus.Security
         /// <returns>
         /// true if the user was authenticated; otherwise, false.
         /// </returns>
-        public bool IsAuthenticated
-        {
-            get { return _isAuthenticated; }
-        }
+        public bool IsAuthenticated { get; }
 
         /// <summary>
         /// Gets the name of the current user.
@@ -70,10 +60,7 @@ namespace Platibus.Security
         /// <returns>
         /// The name of the user on whose behalf the code is running.
         /// </returns>
-        public string Name
-        {
-            get { return _name; }
-        }
+        public string Name { get; }
 
         /// <summary>
         /// Initializes a new <see cref="SenderIdentity"/> based on the specified
@@ -84,10 +71,10 @@ namespace Platibus.Security
         /// <c>null</c></exception>
         public SenderIdentity(IIdentity identity)
         {
-            if (identity == null) throw new ArgumentNullException("identity");
-            _name = identity.Name;
-            _authenticationType = identity.AuthenticationType;
-            _isAuthenticated = identity.IsAuthenticated;
+            if (identity == null) throw new ArgumentNullException(nameof(identity));
+            Name = identity.Name;
+            AuthenticationType = identity.AuthenticationType;
+            IsAuthenticated = identity.IsAuthenticated;
         }
 
         /// <summary>
@@ -97,9 +84,9 @@ namespace Platibus.Security
         /// <param name="context">The streaming context</param>
         protected SenderIdentity(SerializationInfo info, StreamingContext context)
         {
-            _name = info.GetString("Name");
-            _authenticationType = info.GetString("AuthenticationType");
-            _isAuthenticated = info.GetBoolean("IsAuthenticated");
+            Name = info.GetString("Name");
+            AuthenticationType = info.GetString("AuthenticationType");
+            IsAuthenticated = info.GetBoolean("IsAuthenticated");
         }
 
         /// <summary>
@@ -109,9 +96,9 @@ namespace Platibus.Security
         [SecurityPermission(SecurityAction.Demand, Flags = SecurityPermissionFlag.SerializationFormatter)]
         public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            info.AddValue("Name", _name);
-            info.AddValue("AuthenticationType", _authenticationType);
-            info.AddValue("IsAuthenticated", _isAuthenticated);
+            info.AddValue("Name", Name);
+            info.AddValue("AuthenticationType", AuthenticationType);
+            info.AddValue("IsAuthenticated", IsAuthenticated);
         }
 
         /// <summary>
@@ -123,7 +110,7 @@ namespace Platibus.Security
         /// <filterpriority>2</filterpriority>
         public override string ToString()
         {
-            return _name;
+            return Name;
         }
 
         /// <summary>
@@ -152,7 +139,7 @@ namespace Platibus.Security
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return string.Equals(_name, other._name) && _isAuthenticated == other._isAuthenticated;
+            return string.Equals(Name, other.Name) && IsAuthenticated == other.IsAuthenticated;
         }
 
         /// <inheritdoc />
@@ -168,8 +155,8 @@ namespace Platibus.Security
         {
             unchecked
             {
-                var hashCode = _name != null ? _name.GetHashCode() : 0;
-                hashCode = (hashCode * 397) ^ _isAuthenticated.GetHashCode();
+                var hashCode = Name != null ? Name.GetHashCode() : 0;
+                hashCode = (hashCode * 397) ^ IsAuthenticated.GetHashCode();
                 return hashCode;
             }
         }

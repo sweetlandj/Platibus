@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿#if NET452
+// The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
 // 
@@ -40,8 +41,8 @@ namespace Platibus.Config
         [ConfigurationProperty(EndpointPropertyName, IsRequired = true, IsKey = true)]
         public string Endpoint
         {
-            get { return (string) base[EndpointPropertyName]; }
-            set { base[EndpointPropertyName] = value; }
+            get => (string) base[EndpointPropertyName];
+            set => base[EndpointPropertyName] = value;
         }
 
         /// <summary>
@@ -50,8 +51,8 @@ namespace Platibus.Config
         [ConfigurationProperty(TopicPropertyName, IsRequired = true, IsKey = true)]
         public string Topic
         {
-            get { return (string) base[TopicPropertyName]; }
-            set { base[TopicPropertyName] = value; }
+            get => (string) base[TopicPropertyName];
+            set => base[TopicPropertyName] = value;
         }
 
         /// <summary>
@@ -65,8 +66,9 @@ namespace Platibus.Config
         [ConfigurationProperty(TTLPropertyName)]
         public TimeSpan TTL
         {
-            get { return (TimeSpan) base[TTLPropertyName]; }
-            set { base[TTLPropertyName] = value; }
+            get => (TimeSpan) base[TTLPropertyName];
+            set => base[TTLPropertyName] = value;
         }
     }
 }
+#endif

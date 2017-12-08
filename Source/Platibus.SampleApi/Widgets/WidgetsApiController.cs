@@ -19,11 +19,8 @@ namespace Platibus.SampleApi.Widgets
     {
         private readonly IWidgetRepository _widgetRepository;
 
-        private IBus Bus
-        {
-            get { return Request.GetOwinContext().GetBus(); }
-        }
-        
+        private IBus Bus => Request.GetOwinContext().GetBus();
+
         public WidgetsApiController(IWidgetRepository widgetRepository)
         {
             _widgetRepository = widgetRepository;

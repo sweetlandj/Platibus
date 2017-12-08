@@ -21,7 +21,11 @@
 // THE SOFTWARE.
 
 using System;
+#if NET452
 using System.Configuration;
+#elif NETSTANDARD2_0
+using Platibus.Config;
+#endif
 using System.Data;
 using System.Data.Common;
 
@@ -43,15 +47,14 @@ namespace Platibus.SQL
         /// is <c>null</c></exception>
         public static DbConnection OpenConnection(this ConnectionStringSettings connectionStringSettings)
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
+            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
 
             var providerFactory = DbProviderFactories.GetFactory(connectionStringSettings.ProviderName);
             var connection = providerFactory.CreateConnection();
-            if (connection != null)
-            {
-                connection.ConnectionString = connectionStringSettings.ConnectionString;
-                connection.Open();
-            }
+            if (connection == null) return null;
+
+            connection.ConnectionString = connectionStringSettings.ConnectionString;
+            connection.Open();
             return connection;
         }
 
@@ -71,8 +74,8 @@ namespace Platibus.SQL
         /// </remarks>
         public static void SetParameter(this DbCommand command, string name, object value)
         {
-            if (command == null) throw new ArgumentNullException("command");
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
+            if (command == null) throw new ArgumentNullException(nameof(command));
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException(nameof(name));
 
             var parameter = command.CreateParameter();
             parameter.ParameterName = name;
@@ -107,8 +110,8 @@ namespace Platibus.SQL
         /// <paramref name="name"/> is <c>null</c> or whitespace</exception>
         public static string GetString(this IDataRecord record, string name, string defaultValue = null)
         {
-            if (record == null) throw new ArgumentNullException("record");
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
+            if (record == null) throw new ArgumentNullException(nameof(record));
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException(nameof(name));
             var ordinal = record.GetOrdinal(name);
             return record.IsDBNull(ordinal) ? defaultValue : record.GetString(ordinal);
         }
@@ -149,8 +152,8 @@ namespace Platibus.SQL
         /// <paramref name="name"/> is <c>null</c> or whitespace</exception>
         public static int? GetInt(this IDataRecord record, string name)
         {
-            if (record == null) throw new ArgumentNullException("record");
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
+            if (record == null) throw new ArgumentNullException(nameof(record));
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException(nameof(name));
             var ordinal = record.GetOrdinal(name);
             return record.IsDBNull(ordinal) ? null : (int?) record.GetInt32(ordinal);
         }
@@ -167,8 +170,8 @@ namespace Platibus.SQL
         /// <paramref name="name"/> is <c>null</c> or whitespace</exception>
         public static long? GetLong(this IDataRecord record, string name)
         {
-            if (record == null) throw new ArgumentNullException("record");
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
+            if (record == null) throw new ArgumentNullException(nameof(record));
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException(nameof(name));
             var ordinal = record.GetOrdinal(name);
             return record.IsDBNull(ordinal) ? null : (long?) record.GetInt64(ordinal);
         }
@@ -184,8 +187,8 @@ namespace Platibus.SQL
         /// <paramref name="name"/> is <c>null</c> or whitespace</exception>
         public static bool? GetBoolean(this IDataRecord record, string name)
         {
-            if (record == null) throw new ArgumentNullException("record");
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
+            if (record == null) throw new ArgumentNullException(nameof(record));
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException(nameof(name));
             var ordinal = record.GetOrdinal(name);
             return record.IsDBNull(ordinal) ? null : (bool?) record.GetBoolean(ordinal);
         }
@@ -202,8 +205,8 @@ namespace Platibus.SQL
         /// <paramref name="name"/> is <c>null</c> or whitespace</exception>
         public static DateTime? GetDateTime(this IDataRecord record, string name)
         {
-            if (record == null) throw new ArgumentNullException("record");
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
+            if (record == null) throw new ArgumentNullException(nameof(record));
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException(nameof(name));
             var ordinal = record.GetOrdinal(name);
             return record.IsDBNull(ordinal) ? null : (DateTime?) record.GetDateTime(ordinal);
         }
@@ -224,8 +227,8 @@ namespace Platibus.SQL
         /// </remarks>
         public static TimeSpan? GetTimeSpan(this IDataRecord record, string name)
         {
-            if (record == null) throw new ArgumentNullException("record");
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
+            if (record == null) throw new ArgumentNullException(nameof(record));
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException(nameof(name));
             var milliseconds = record.GetLong(name);
             return milliseconds == null ? null : (TimeSpan?) TimeSpan.FromMilliseconds(milliseconds.Value);
         }

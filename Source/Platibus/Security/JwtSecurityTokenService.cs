@@ -22,13 +22,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.IdentityModel.Protocols.WSTrust;
-using System.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using Platibus.Diagnostics;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Platibus.Security
 {
@@ -45,7 +45,6 @@ namespace Platibus.Security
         private readonly SecurityKey _signingKey;
         private readonly SecurityKey _fallbackSigningKey;
         private readonly string _signingAlgorithm = "http://www.w3.org/2001/04/xmldsig-more#hmac-sha256";
-        private readonly string _digestAlgorithm = "http://www.w3.org/2001/04/xmlenc#sha256";
         private readonly IDiagnosticService _diagnosticService;
         private readonly TimeSpan _defaultTtl;
 
@@ -90,7 +89,7 @@ namespace Platibus.Security
         {
             if (principal == null)
             {
-                throw new ArgumentNullException("principal");
+                throw new ArgumentNullException(nameof(principal));
             }
 
             var myExpires = expires ?? DateTime.UtcNow.Add(_defaultTtl);
@@ -101,17 +100,16 @@ namespace Platibus.Security
 
             var identity = principal.Identity;
             var claimsIdentity = identity as ClaimsIdentity ?? new ClaimsIdentity(identity);
-            var lifetime = new Lifetime(DateTime.UtcNow, myExpires);
-            
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = claimsIdentity,
-                Lifetime = lifetime
+                Expires = myExpires
             };
 
             if (_signingKey != null)
             {
-                var signingCredentials = new SigningCredentials(_signingKey, _signingAlgorithm, _digestAlgorithm);
+                var signingCredentials = new SigningCredentials(_signingKey, _signingAlgorithm);
                 tokenDescriptor.SigningCredentials = signingCredentials;
             }
 
@@ -125,7 +123,7 @@ namespace Platibus.Security
         {
             if (string.IsNullOrWhiteSpace(securityToken))
             {
-                throw new ArgumentNullException("securityToken");
+                throw new ArgumentNullException(nameof(securityToken));
             }
 
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -160,8 +158,7 @@ namespace Platibus.Security
             IPrincipal principal;
             try
             {
-                SecurityToken token;
-                principal = tokenHandler.ValidateToken(securityToken, parameters, out token);
+                principal = tokenHandler.ValidateToken(securityToken, parameters, out SecurityToken _);
             }
             catch (Exception ex)
             {

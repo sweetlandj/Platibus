@@ -76,10 +76,7 @@ namespace Platibus.IIS
         /// <returns>
         /// true if the handler can be reused; otherwise, false.  The default is false.
         /// </returns>
-        public override bool IsReusable
-        {
-            get { return true; }
-        }
+        public override bool IsReusable => true;
 
         /// <summary>
         /// Inititializes a new <see cref="PlatibusHttpHandler"/> with the default
@@ -110,8 +107,7 @@ namespace Platibus.IIS
         /// handler</param>
         public PlatibusHttpHandler(Task<IIISConfiguration> configuration)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
-            _configuration = configuration;
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             var bus = InitBus(configuration);
             _resourceRouter = InitResourceRouter(configuration, bus);
         }
@@ -128,8 +124,8 @@ namespace Platibus.IIS
         /// </remarks>
         internal PlatibusHttpHandler(Bus bus, IIISConfiguration configuration)
         {
-            if (bus == null) throw new ArgumentNullException("bus");
-            if (configuration == null) throw new ArgumentNullException("configuration");
+            if (bus == null) throw new ArgumentNullException(nameof(bus));
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             _configuration = Task.FromResult(configuration);
             _resourceRouter = Task.FromResult(InitResourceRouter(bus, configuration));
         }

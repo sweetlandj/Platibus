@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿
+// The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
 // 
@@ -21,163 +22,40 @@
 // THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Threading.Tasks;
 using Platibus.Config.Extensibility;
 using Platibus.Diagnostics;
-using Platibus.Journaling;
 using Platibus.Security;
 using Platibus.Serialization;
+#if NET452
+using System.Collections.Generic;
+using System.Configuration;
+using Platibus.Journaling;
+#endif
+#if NETSTANDARD2_0
+using System.IO;
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Platibus.Config
 {
+    /// <inheritdoc />
     /// <summary>
-    /// Factory class used to initialize <see cref="PlatibusConfiguration"/> objects from
+    /// Factory class used to initialize <see cref="T:Platibus.Config.PlatibusConfiguration" /> objects from
     /// declarative configuration elements in application configuration files.
     /// </summary>
     public class PlatibusConfigurationManager : PlatibusConfigurationManager<PlatibusConfiguration>
     {
     }
-    
+
+
     /// <summary>
     /// Factory class used to initialize <see cref="PlatibusConfiguration"/> objects from
     /// declarative configuration elements in application configuration files.
     /// </summary>
     public class PlatibusConfigurationManager<TConfiguration> where TConfiguration : PlatibusConfiguration
     {
-        /// <summary>
-        /// Loads the configuration section of the specified <typeparamref name="TConfigSection">
-        /// type and name, appling defaults where appropriate</typeparamref>
-        /// </summary>
-        /// <typeparam name="TConfigSection">The type of configuration section to load</typeparam>
-        /// <param name="configSectionName">The name of the configuration section</param>
-        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
-        /// are reported and processed</param>
-        /// <returns>Returns the loaded configuration section</returns>
-        protected TConfigSection LoadConfigurationSection<TConfigSection>(string configSectionName, IDiagnosticService diagnosticService = null)
-            where TConfigSection : ConfigurationSection, new()
-        {
-            if (string.IsNullOrWhiteSpace(configSectionName)) throw new ArgumentNullException("configSectionName");
-            var myDiagnosticsService = diagnosticService ?? DiagnosticService.DefaultInstance;
-
-            var configSection = ConfigurationManager.GetSection(configSectionName);
-            if (configSection == null)
-            {
-                myDiagnosticsService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
-                {
-                    Detail = "Configuration section \"" + configSectionName + "\" not found; using default configuration"
-                }.Build());
-
-                configSection = new TConfigSection();
-            }
-
-            var typedConfigSection = configSection as TConfigSection;
-            if (typedConfigSection == null)
-            {
-                var errorMessage = "Unexpected type for configuration section \"" + configSectionName +
-                                   "\": expected " + typeof(TConfigSection) + " but was " +
-                                   configSection.GetType();
-
-                myDiagnosticsService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
-                {
-                    Detail = errorMessage
-                }.Build());
-
-                throw new ConfigurationErrorsException(errorMessage);
-            }
-
-            return typedConfigSection;
-        }
-
-        /// <summary>
-        /// Initializes the specified <paramref name="configuration"/> object according to the
-        /// values in the <see cref="PlatibusConfigurationSection"/> with the specified 
-        /// <paramref name="configSectionName"/>
-        /// </summary>
-        /// <param name="configuration">The configuration object to initialize</param>
-        /// <param name="configSectionName">(Optional) The name of the 
-        /// <see cref="PlatibusConfigurationSection"/> to load</param>
-        /// <remarks>
-        /// The default configuration section name is "platibus".
-        /// </remarks>
-        /// <seealso cref="Initialize(TConfiguration,PlatibusConfigurationSection)"/>
-        public virtual Task Initialize(TConfiguration configuration, string configSectionName = null)
-        {
-            if (configuration == null) throw new ArgumentNullException("configuration");
-
-            var diagnosticService = configuration.DiagnosticService;
-            if (string.IsNullOrWhiteSpace(configSectionName))
-            {
-                configSectionName = "platibus";
-                diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
-                {
-                    Detail = "Using default configuration section \"" + configSectionName + "\""
-                }.Build());
-            }
-
-            var configSection = LoadConfigurationSection<PlatibusConfigurationSection>(configSectionName, diagnosticService);
-            return Initialize(configuration, configSection);
-        }
-
-        /// <summary>
-        /// Initializes the specified <paramref name="configuration"/> object according to the
-        /// values in the supplied <paramref name="configSection"/>
-        /// </summary>
-        /// <param name="configuration">The configuration object to initialize</param>
-        /// <param name="configSection">The <see cref="PlatibusConfigurationSection"/>
-        /// containing the values used to initialize the Platibus configuration</param>
-        public virtual async Task Initialize(TConfiguration configuration, PlatibusConfigurationSection configSection)
-        {
-            if (configuration == null) throw new ArgumentNullException("configuration");
-            if (configSection == null) throw new ArgumentNullException("configSection");
-
-            await InitializeDiagnostics(configuration, configSection);
-            var diagnosticService = configuration.DiagnosticService;
-            
-            configuration.ReplyTimeout = configSection.ReplyTimeout;
-            configuration.SerializationService = new DefaultSerializationService();
-            configuration.MessageNamingService = new DefaultMessageNamingService();
-            configuration.DefaultContentType = configSection.DefaultContentType;
-
-            InitializeDefaultSendOptions(configuration, configSection);
-
-            InitializeEndpoints(configuration, configSection);
-            InitializeTopics(configuration, configSection);
-            InitializeSendRules(configuration, configSection);
-            InitializeSubscriptions(configuration, configSection);
-
-            var messageJournalFactory = new MessageJournalFactory(diagnosticService);
-            configuration.MessageJournal = await messageJournalFactory.InitMessageJournal(configSection.Journaling);
-        }
-
-        private static void InitializeDefaultSendOptions(TConfiguration configuration,
-            PlatibusConfigurationSection configSection)
-        {
-            if (configSection.DefaultSendOptions == null) return;
-
-            configuration.DefaultSendOptions = new SendOptions
-            {
-                ContentType = configSection.DefaultSendOptions.ContentType,
-                TTL = configSection.DefaultSendOptions.TTL,
-                Synchronous = configSection.DefaultSendOptions.Synchronous
-            };
-
-            switch (configSection.DefaultSendOptions.CredentialType)
-            {
-                case ClientCredentialType.Basic:
-                    var un = configSection.DefaultSendOptions.Username;
-                    var pw = configSection.DefaultSendOptions.Password;
-                    configuration.DefaultSendOptions.Credentials = new BasicAuthCredentials(un, pw);
-                    break;
-                case ClientCredentialType.Windows:
-                case ClientCredentialType.NTLM:
-                    configuration.DefaultSendOptions.Credentials = new DefaultCredentials();
-                    break;
-            }
-        }
-
         /// <summary>
         /// Uses reflection to locate, initialize, and invoke all types inheriting from
         /// <see cref="IConfigurationHook"/> or <see cref="IAsyncConfigurationHook"/> found in the 
@@ -248,7 +126,152 @@ namespace Platibus.Config
                 }
             }
         }
+        
+        /// <summary>
+        /// Helper method to locate, initialize, and invoke all types inheriting from
+        /// <see cref="IConfigurationHook"/> found in the application domain
+        /// </summary>
+        /// <param name="configuration">The configuration that will be passed to the
+        ///     configuration hooks</param>
+        [Obsolete("Use instance method FindAndProcessConfigurationHooks")]
+        public static Task ProcessConfigurationHooks(PlatibusConfiguration configuration)
+        {
+            if (configuration == null) Task.FromResult(0);
+            var configManager = new PlatibusConfigurationManager();
+            return configManager.FindAndProcessConfigurationHooks(configuration);
+        }
 
+#if NET452
+        /// <summary>
+        /// Loads the configuration section of the specified <typeparamref name="TConfigSection">
+        /// type and name, appling defaults where appropriate</typeparamref>
+        /// </summary>
+        /// <typeparam name="TConfigSection">The type of configuration section to load</typeparam>
+        /// <param name="configSectionName">The name of the configuration section</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
+        /// <returns>Returns the loaded configuration section</returns>
+        protected TConfigSection LoadConfigurationSection<TConfigSection>(string configSectionName, IDiagnosticService diagnosticService = null)
+            where TConfigSection : ConfigurationSection, new()
+        {
+            if (string.IsNullOrWhiteSpace(configSectionName)) throw new ArgumentNullException(nameof(configSectionName));
+            var myDiagnosticsService = diagnosticService ?? DiagnosticService.DefaultInstance;
+
+            var configSection = ConfigurationManager.GetSection(configSectionName);
+            if (configSection == null)
+            {
+                myDiagnosticsService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                {
+                    Detail = "Configuration section \"" + configSectionName + "\" not found; using default configuration"
+                }.Build());
+
+                configSection = new TConfigSection();
+            }
+
+            if (configSection is TConfigSection typedConfigSection)
+            {
+                return typedConfigSection;
+            }
+
+            var errorMessage = "Unexpected type for configuration section \"" + configSectionName +
+                               "\": expected " + typeof(TConfigSection) + " but was " +
+                               configSection.GetType();
+
+            myDiagnosticsService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
+            {
+                Detail = errorMessage
+            }.Build());
+
+            throw new ConfigurationErrorsException(errorMessage);
+        }
+
+        /// <summary>
+        /// Initializes the specified <paramref name="configuration"/> object according to the
+        /// values in the <see cref="PlatibusConfigurationSection"/> with the specified 
+        /// <paramref name="configSectionName"/>
+        /// </summary>
+        /// <param name="configuration">The configuration object to initialize</param>
+        /// <param name="configSectionName">(Optional) The name of the 
+        /// <see cref="PlatibusConfigurationSection"/> to load</param>
+        /// <remarks>
+        /// The default configuration section name is "platibus".
+        /// </remarks>
+        /// <seealso cref="Initialize(TConfiguration,PlatibusConfigurationSection)"/>
+        public virtual Task Initialize(TConfiguration configuration, string configSectionName = null)
+        {
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+
+            var diagnosticService = configuration.DiagnosticService;
+            if (string.IsNullOrWhiteSpace(configSectionName))
+            {
+                configSectionName = "platibus";
+                diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                {
+                    Detail = "Using default configuration section \"" + configSectionName + "\""
+                }.Build());
+            }
+
+            var configSection = LoadConfigurationSection<PlatibusConfigurationSection>(configSectionName, diagnosticService);
+            return Initialize(configuration, configSection);
+        }
+
+        /// <summary>
+        /// Initializes the specified <paramref name="configuration"/> object according to the
+        /// values in the supplied <paramref name="configSection"/>
+        /// </summary>
+        /// <param name="configuration">The configuration object to initialize</param>
+        /// <param name="configSection">The <see cref="PlatibusConfigurationSection"/>
+        /// containing the values used to initialize the Platibus configuration</param>
+        public virtual async Task Initialize(TConfiguration configuration, PlatibusConfigurationSection configSection)
+        {
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+            if (configSection == null) throw new ArgumentNullException(nameof(configSection));
+
+            await InitializeDiagnostics(configuration, configSection);
+            var diagnosticService = configuration.DiagnosticService;
+            
+            configuration.ReplyTimeout = configSection.ReplyTimeout;
+            configuration.SerializationService = new DefaultSerializationService();
+            configuration.MessageNamingService = new DefaultMessageNamingService();
+            configuration.DefaultContentType = configSection.DefaultContentType;
+
+            InitializeDefaultSendOptions(configuration, configSection);
+
+            InitializeEndpoints(configuration, configSection);
+            InitializeTopics(configuration, configSection);
+            InitializeSendRules(configuration, configSection);
+            InitializeSubscriptions(configuration, configSection);
+
+            var messageJournalFactory = new MessageJournalFactory(diagnosticService);
+            configuration.MessageJournal = await messageJournalFactory.InitMessageJournal(configSection.Journaling);
+        }
+
+        private static void InitializeDefaultSendOptions(TConfiguration configuration,
+            PlatibusConfigurationSection configSection)
+        {
+            if (configSection.DefaultSendOptions == null) return;
+
+            configuration.DefaultSendOptions = new SendOptions
+            {
+                ContentType = configSection.DefaultSendOptions.ContentType,
+                TTL = configSection.DefaultSendOptions.TTL,
+                Synchronous = configSection.DefaultSendOptions.Synchronous
+            };
+
+            switch (configSection.DefaultSendOptions.CredentialType)
+            {
+                case ClientCredentialType.Basic:
+                    var un = configSection.DefaultSendOptions.Username;
+                    var pw = configSection.DefaultSendOptions.Password;
+                    configuration.DefaultSendOptions.Credentials = new BasicAuthCredentials(un, pw);
+                    break;
+                case ClientCredentialType.Windows:
+                case ClientCredentialType.NTLM:
+                    configuration.DefaultSendOptions.Credentials = new DefaultCredentials();
+                    break;
+            }
+        }
+        
         /// <summary>
         /// Initializes subscriptions in the supplied <paramref name="configuration"/> based on the
         /// properties of the specified <paramref name="configSection"/>
@@ -318,8 +341,8 @@ namespace Platibus.Config
         /// properties</param>
         protected virtual void InitializeTopics(TConfiguration configuration, PlatibusConfigurationSection configSection)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
-            if (configSection == null) throw new ArgumentNullException("configSection");
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+            if (configSection == null) throw new ArgumentNullException(nameof(configSection));
             IEnumerable<TopicElement> topics = configSection.Topics;
             foreach (var topic in topics)
             {
@@ -336,8 +359,8 @@ namespace Platibus.Config
         /// properties</param>
         protected virtual void InitializeEndpoints(TConfiguration configuration, PlatibusConfigurationSection configSection)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
-            if (configSection == null) throw new ArgumentNullException("configSection");
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+            if (configSection == null) throw new ArgumentNullException(nameof(configSection));
             
             IEnumerable<EndpointElement> endpoints = configSection.Endpoints;
             foreach (var endpointConfig in endpoints)
@@ -523,19 +546,247 @@ namespace Platibus.Config
             var factory = new MessageJournalFactory();
             return factory.InitMessageJournal(config);
         }
-        
-	    /// <summary>
-	    /// Helper method to locate, initialize, and invoke all types inheriting from
-	    /// <see cref="IConfigurationHook"/> found in the application domain
-	    /// </summary>
-	    /// <param name="configuration">The configuration that will be passed to the
-	    ///     configuration hooks</param>
-	    [Obsolete("Use instance method FindAndProcessConfigurationHooks")]
-	    public static Task ProcessConfigurationHooks(PlatibusConfiguration configuration)
+#else
+        /// <summary>
+        /// Loads the configuration section of the specified name
+        /// </summary>
+        /// <param name="configSectionName">The name of the configuration section</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
+        /// <returns>Returns the loaded configuration section</returns>
+        protected IConfigurationSection LoadConfigurationSection(string configSectionName, IDiagnosticService diagnosticService = null)
         {
-            if (configuration == null) Task.FromResult(0);
-            var configManager = new PlatibusConfigurationManager();
-            return configManager.FindAndProcessConfigurationHooks(configuration);
+            if (string.IsNullOrWhiteSpace(configSectionName)) throw new ArgumentNullException(nameof(configSectionName));
+            var myDiagnosticsService = diagnosticService ?? DiagnosticService.DefaultInstance;
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json");
+
+            var configuration = builder.Build();
+            var configSection = configuration.GetSection(configSectionName);
+            if (configSection == null)
+            {
+                myDiagnosticsService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                {
+                    Detail = "Configuration section \"" + configSectionName + "\" not found; using default configuration"
+                }.Build());
+            }
+            return configSection;
         }
+
+        /// <summary>
+        /// Initializes the specified <paramref name="platibusConfiguration"/> object according to the
+        /// values in the <see cref="IConfigurationSection"/> with the specified 
+        /// <paramref name="sectionName"/>
+        /// </summary>
+        /// <param name="platibusConfiguration">The configuration object to initialize</param>
+        /// <param name="sectionName">(Optional) The name of the 
+        /// <see cref="IConfigurationSection"/> to load</param>
+        /// <remarks>
+        /// The default configuration section name is "platibus".
+        /// </remarks>
+        /// <seealso cref="Initialize(TConfiguration,Microsoft.Extensions.Configuration.IConfiguration)"/>
+        public virtual Task Initialize(TConfiguration platibusConfiguration, string sectionName = null)
+        {
+            if (platibusConfiguration == null) throw new ArgumentNullException(nameof(platibusConfiguration));
+
+            var diagnosticService = platibusConfiguration.DiagnosticService;
+            if (string.IsNullOrWhiteSpace(sectionName))
+            {
+                sectionName = "platibus";
+                diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                {
+                    Detail = "Using default configuration section \"" + sectionName + "\""
+                }.Build());
+            }
+
+            var configSection = LoadConfigurationSection(sectionName, diagnosticService);
+            return Initialize(platibusConfiguration, configSection);
+        }
+
+        /// <summary>
+        /// Initializes the specified <paramref name="platibusConfiguration"/> object according to the
+        /// values in the supplied <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="platibusConfiguration">The configuration object to initialize</param>
+        /// <param name="configuration">The <see cref="IConfigurationSection"/>
+        ///     containing the values used to initialize the Platibus configuration</param>
+        public virtual async Task Initialize(TConfiguration platibusConfiguration, IConfiguration configuration)
+        {
+            if (platibusConfiguration == null) throw new ArgumentNullException(nameof(platibusConfiguration));
+
+            await InitializeDiagnostics(platibusConfiguration, configuration);
+            var diagnosticService = platibusConfiguration.DiagnosticService;
+
+            platibusConfiguration.ReplyTimeout = configuration?.GetValue<TimeSpan>("replyTimeout") ?? TimeSpan.Zero;
+            platibusConfiguration.SerializationService = new DefaultSerializationService();
+            platibusConfiguration.MessageNamingService = new DefaultMessageNamingService();
+            platibusConfiguration.DefaultContentType = configuration?["defaultContentType"];
+
+            InitializeDefaultSendOptions(platibusConfiguration, configuration);
+
+            InitializeEndpoints(platibusConfiguration, configuration);
+            InitializeTopics(platibusConfiguration, configuration);
+            InitializeSendRules(platibusConfiguration, configuration);
+            InitializeSubscriptions(platibusConfiguration, configuration);
+
+            var messageJournalFactory = new MessageJournalFactory(diagnosticService);
+            var journalingSection = configuration?.GetSection("journaling");
+            platibusConfiguration.MessageJournal = await messageJournalFactory.InitMessageJournal(journalingSection);
+        }
+
+        protected static void InitializeDefaultSendOptions(TConfiguration platibusConfiguration,
+            IConfiguration configuration)
+        {
+            var sendOptionsSection = configuration?.GetSection("defaultSendOptions");
+            if (sendOptionsSection == null) return;
+
+            platibusConfiguration.DefaultSendOptions = new SendOptions
+            {
+                ContentType = sendOptionsSection["contentType"],
+                TTL = sendOptionsSection.GetValue<TimeSpan>("ttl"),
+                Synchronous = sendOptionsSection.GetValue<bool>("synchronous")
+            };
+
+            var credentialType = sendOptionsSection.GetValue<ClientCredentialType>("credentialType");
+            switch (credentialType)
+            {
+                case ClientCredentialType.Basic:
+                    var un = sendOptionsSection["username"];
+                    var pw = sendOptionsSection["password"];
+                    platibusConfiguration.DefaultSendOptions.Credentials = new BasicAuthCredentials(un, pw);
+                    break;
+                case ClientCredentialType.Windows:
+                case ClientCredentialType.NTLM:
+                    platibusConfiguration.DefaultSendOptions.Credentials = new DefaultCredentials();
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Initializes subscriptions in the supplied <paramref name="platibusConfiguration"/> based on the
+        /// properties of the specified <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="platibusConfiguration">The configuration to initialize</param>
+        /// <param name="configuration">The configuration section containing the subscription
+        /// properties</param>
+        protected virtual async Task InitializeDiagnostics(TConfiguration platibusConfiguration,
+            IConfiguration configuration)
+        {
+            var diagnosticsSection = configuration?.GetSection("diagnostics");
+            if (diagnosticsSection == null) return;
+
+            var factory = new DiagnosticEventSinkFactory(platibusConfiguration.DiagnosticService);
+            var sinksSection = diagnosticsSection.GetSection("sinks");
+            var initializations = sinksSection.GetChildren()
+                .Select(c => factory.InitDiagnosticEventSink(c));
+
+            var sinks = await Task.WhenAll(initializations);
+            foreach (var sink in sinks)
+            {
+                platibusConfiguration.DiagnosticService.AddSink(sink);
+            }
+        }
+
+        /// <summary>
+        /// Initializes subscriptions in the supplied <paramref name="platibusConfiguration"/> based on the
+        /// properties of the specified <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="platibusConfiguration">The configuration to initialize</param>
+        /// <param name="configuration">The configuration section containing the subscription
+        /// properties</param>
+        protected virtual void InitializeSubscriptions(TConfiguration platibusConfiguration,
+            IConfiguration configuration)
+        {
+            var subscriptionsSection = configuration?.GetSection("subscriptions");
+            if (subscriptionsSection == null) return;
+
+            foreach (var subscriptionSection in subscriptionsSection.GetChildren())
+            {
+                var endpointName = subscriptionSection["endpoint"];
+                var topicName = subscriptionSection["topic"];
+                var ttl = subscriptionSection.GetValue<TimeSpan>("ttl");
+                platibusConfiguration.AddSubscription(new Subscription(endpointName, topicName, ttl));
+            }
+        }
+
+        /// <summary>
+        /// Initializes send rules in the supplied <paramref name="platibusConfiguration"/> based on the
+        /// properties of the specified <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="platibusConfiguration">The configuration to initialize</param>
+        /// <param name="configuration">The configuration section containing the send rule 
+        /// properties</param>
+        protected virtual void InitializeSendRules(TConfiguration platibusConfiguration, IConfiguration configuration)
+        {
+            var sendRulesSection = configuration?.GetSection("sendRules");
+            if (sendRulesSection == null) return;
+
+            foreach (var sendRuleSection in sendRulesSection.GetChildren())
+            {
+                var messageSpec = new MessageNamePatternSpecification(sendRuleSection["namePattern"]);
+                var endpointName = (EndpointName)sendRulesSection["endpoint"];
+                platibusConfiguration.AddSendRule(new SendRule(messageSpec, endpointName));
+            }
+        }
+
+        /// <summary>
+        /// Initializes topics in the supplied <paramref name="platibusConfiguration"/> based on the
+        /// properties of the specified <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="platibusConfiguration">The configuration to initialize</param>
+        /// <param name="configuration">The configuration section containing the topic 
+        /// properties</param>
+        protected virtual void InitializeTopics(TConfiguration platibusConfiguration, IConfiguration configuration)
+        {
+            if (platibusConfiguration == null) throw new ArgumentNullException(nameof(platibusConfiguration));
+            var topicsSection = configuration?.GetSection("topics");
+            if (topicsSection == null) return;
+
+            foreach (var topicSection in topicsSection.GetChildren())
+            {
+                var topicName = topicSection["name"];
+                platibusConfiguration.AddTopic(topicName);
+            }
+        }
+
+        /// <summary>
+        /// Initializes endpoints in the supplied <paramref name="platibusConfiguration"/> based on the
+        /// properties of the specified <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="platibusConfiguration">The configuration to initialize</param>
+        /// <param name="configuration">The configuration section containing the endpoint 
+        /// properties</param>
+        protected virtual void InitializeEndpoints(TConfiguration platibusConfiguration, IConfiguration configuration)
+        {
+            if (platibusConfiguration == null) throw new ArgumentNullException(nameof(platibusConfiguration));
+            var endpointsSection = configuration?.GetSection("endpoints");
+            if (endpointsSection == null) return;
+
+            foreach (var endpointSection in endpointsSection.GetChildren())
+            {
+                var credentialType = endpointSection.GetValue<ClientCredentialType>("credentialType");
+                IEndpointCredentials credentials = null;
+                switch (credentialType)
+                {
+                    case ClientCredentialType.Basic:
+                        var un = endpointSection["username"];
+                        var pw = endpointSection["password"];
+                        credentials = new BasicAuthCredentials(un, pw);
+                        break;
+                    case ClientCredentialType.Windows:
+                    case ClientCredentialType.NTLM:
+                        credentials = new DefaultCredentials();
+                        break;
+                }
+
+                var name = endpointsSection["name"];
+                var address = endpointsSection.GetValue<Uri>("address");
+                var endpoint = new Endpoint(address, credentials);
+                platibusConfiguration.AddEndpoint(name, endpoint);
+            }
+        }
+#endif
+
     }
 }

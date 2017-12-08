@@ -80,7 +80,6 @@ namespace Platibus.Http
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
         private readonly IMessageQueueingService _messageQueueingService;
         private readonly IMessageJournal _messageJournal;
-        private readonly HttpTransportService _transportService;
         private readonly Bus _bus;
         private readonly IHttpResourceRouter _resourceRouter;
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
@@ -92,18 +91,12 @@ namespace Platibus.Http
         /// <summary>
         /// Returns the transport service used by the bus instance
         /// </summary>
-        public HttpTransportService TransportService
-        {
-            get { return _transportService; }
-        }
+        public HttpTransportService TransportService { get; }
 
         /// <summary>
         /// The hosted bus instance
         /// </summary>
-        public IBus Bus
-        {
-            get { return _bus; }
-        }
+        public IBus Bus => _bus;
 
         private HttpServer(IHttpServerConfiguration configuration)
         {
@@ -118,13 +111,13 @@ namespace Platibus.Http
             _messageJournal = configuration.MessageJournal;
 
             var endpoints = configuration.Endpoints;
-            _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, 
+            TransportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, 
                 _messageJournal, _subscriptionTrackingService,
                 configuration.BypassTransportLocalDestination, 
                 HandleMessage,
                 _diagnosticService);
 
-            _bus = new Bus(configuration, _baseUri, _transportService, _messageQueueingService);
+            _bus = new Bus(configuration, _baseUri, TransportService, _messageQueueingService);
 
             var authorizationService = configuration.AuthorizationService;
             _resourceRouter = new ResourceTypeDictionaryRouter
@@ -184,7 +177,7 @@ namespace Platibus.Http
         {
             if (_httpListener.IsListening) return;
 
-            await _transportService.Init(cancellationToken);
+            await TransportService.Init(cancellationToken);
             await _bus.Init(cancellationToken);
             
             _httpListener.Start();
@@ -335,7 +328,7 @@ namespace Platibus.Http
             }
             
             _bus.Dispose();
-            _transportService.Dispose();
+            TransportService.Dispose();
             
             var disposableMessageQueueingService = _messageQueueingService as IDisposable;
             if (disposableMessageQueueingService != null)

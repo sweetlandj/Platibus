@@ -29,26 +29,18 @@ namespace Platibus.Queueing
     internal class QueuedMessageContext : IQueuedMessageContext
     {
         private readonly Message _message;
-        private readonly IPrincipal _senderPrincipal;
 
         public QueuedMessageContext(Message message, IPrincipal senderPrincipal)
         {
-            if (message == null) throw new ArgumentNullException("message");
-            _message = message;
-            _senderPrincipal = senderPrincipal;
+            _message = message ?? throw new ArgumentNullException(nameof(message));
+            Principal = senderPrincipal;
         }
 
         public bool Acknowledged { get; private set; }
 
-        public IMessageHeaders Headers
-        {
-            get { return _message.Headers; }
-        }
+        public IMessageHeaders Headers => _message.Headers;
 
-        public IPrincipal Principal
-        {
-            get { return _senderPrincipal; }
-        }
+        public IPrincipal Principal { get; }
 
         public Task Acknowledge()
         {

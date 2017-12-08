@@ -29,8 +29,8 @@ namespace Platibus.Http.Controllers
         public async Task Process(IHttpResourceRequest request, IHttpResourceResponse response,
             IEnumerable<string> subPath)
         {
-            if (request == null) throw new ArgumentNullException("request");
-            if (response == null) throw new ArgumentNullException("response");
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (response == null) throw new ArgumentNullException(nameof(response));
 
             if (!request.IsGet())
             {

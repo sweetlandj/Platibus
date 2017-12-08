@@ -26,22 +26,17 @@ namespace Platibus
 {
     internal class SentMessageWithCachedReplies : ISentMessage
     {
-        private readonly MessageId _messageId;
         private readonly ReplyStream _replyStream;
 
         public SentMessageWithCachedReplies(MessageId messageId, ReplyStream replyStream)
         {
-            if (messageId == null) throw new ArgumentNullException("messageId");
-            if (replyStream == null) throw new ArgumentNullException("replyStream");
+            if (messageId == null) throw new ArgumentNullException(nameof(messageId));
 
-            _messageId = messageId;
-            _replyStream = replyStream;
+            MessageId = messageId;
+            _replyStream = replyStream ?? throw new ArgumentNullException(nameof(replyStream));
         }
 
-        public MessageId MessageId
-        {
-            get { return _messageId; }
-        }
+        public MessageId MessageId { get; }
 
         public IObservable<object> ObserveReplies()
         {

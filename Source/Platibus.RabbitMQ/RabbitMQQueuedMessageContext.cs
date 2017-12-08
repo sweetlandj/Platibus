@@ -30,15 +30,9 @@ namespace Platibus.RabbitMQ
         private readonly IMessageHeaders _headers;
         private readonly IPrincipal _senderPrincipal;
 
-        public IMessageHeaders Headers
-        {
-            get { return _headers; }
-        }
+        public IMessageHeaders Headers => _headers;
 
-        public IPrincipal Principal
-        {
-            get { return _senderPrincipal; }
-        }
+        public IPrincipal Principal => _senderPrincipal;
 
         public bool Acknowledged { get; private set; }
 

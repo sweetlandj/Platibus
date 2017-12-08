@@ -95,8 +95,7 @@ namespace Platibus.InMemory
         public Task<IEnumerable<Uri>> GetSubscribers(TopicName topic,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            IEnumerable<ExpiringSubscription> subscriptions;
-            _subscriptions.TryGetValue(topic, out subscriptions);
+            _subscriptions.TryGetValue(topic, out IEnumerable<ExpiringSubscription> subscriptions);
             var activeSubscriptions = (subscriptions ?? Enumerable.Empty<ExpiringSubscription>())
                 .Where(s => s.ExpirationDate > DateTime.UtcNow)
                 .Select(s => s.Subscriber);
@@ -106,30 +105,21 @@ namespace Platibus.InMemory
 
         private class ExpiringSubscription : IEquatable<ExpiringSubscription>
         {
-            private readonly DateTime _expirationDate;
-            private readonly Uri _subscriber;
-
             public ExpiringSubscription(Uri subscriber, DateTime expirationDate)
             {
-                _subscriber = subscriber;
-                _expirationDate = expirationDate;
+                Subscriber = subscriber;
+                ExpirationDate = expirationDate;
             }
 
-            public Uri Subscriber
-            {
-                get { return _subscriber; }
-            }
+            public Uri Subscriber { get; }
 
-            public DateTime ExpirationDate
-            {
-                get { return _expirationDate; }
-            }
+            public DateTime ExpirationDate { get; }
 
             public bool Equals(ExpiringSubscription subscription)
             {
                 if (ReferenceEquals(this, subscription)) return true;
                 if (ReferenceEquals(null, subscription)) return false;
-                return Equals(_subscriber, subscription._subscriber);
+                return Equals(Subscriber, subscription.Subscriber);
             }
 
             public override bool Equals(object obj)
@@ -139,7 +129,7 @@ namespace Platibus.InMemory
 
             public override int GetHashCode()
             {
-                return _subscriber.GetHashCode();
+                return Subscriber.GetHashCode();
             }
         }
     }

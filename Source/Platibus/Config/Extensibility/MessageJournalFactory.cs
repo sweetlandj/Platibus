@@ -23,6 +23,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 using Platibus.Diagnostics;
 using Platibus.Journaling;
 
@@ -45,6 +48,7 @@ namespace Platibus.Config.Extensibility
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
+#if NET452
         /// <summary>
         /// Initializes a message journal on the supplied
         /// <paramref name="configuration"/>
@@ -83,10 +87,56 @@ namespace Platibus.Config.Extensibility
 
             return new SanitizedMessageJournal(messageJournal);
         }
+#else
+        /// <summary>
+        /// Initializes a message journal on the supplied
+        /// <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="configuration">The journal configuration</param>
+        /// <returns>Returns a task whose result is the initialized message journal</returns>
+        public async Task<IMessageJournal> InitMessageJournal(IConfiguration configuration)
+        {
+            var providerName = configuration?["provider"];
+            if (string.IsNullOrWhiteSpace(providerName))
+            {
+                await _diagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                    {
+                        Detail = "Message journal disabled"
+                    }.Build());
+                return null;
+            }
+
+            var provider = GetProvider(providerName);
+            var messageJournal = await provider.CreateMessageJournal(configuration);
+            if (messageJournal == null) return null;
+
+            var categories = new List<MessageJournalCategory>();
+            var journalSentMessages = configuration?.GetValue("sent", true) ?? false;
+            if (journalSentMessages) categories.Add(MessageJournalCategory.Sent);
+
+            var journalReceivedMessages = configuration?.GetValue("received", true) ?? false;
+            if (journalReceivedMessages) categories.Add(MessageJournalCategory.Received);
+
+            var journalPublishedMessages = configuration?.GetValue("published", true) ?? false;
+            if (journalPublishedMessages) categories.Add(MessageJournalCategory.Published);
+
+            var filteredMessageJournalingService = new FilteredMessageJournal(messageJournal, categories);
+            messageJournal = filteredMessageJournalingService;
+
+            await _diagnosticService.EmitAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
+                {
+                    Detail = "Message journal initialized"
+                }.Build());
+
+            return new SanitizedMessageJournal(messageJournal);
+        }
+#endif
 
         private static IMessageJournalProvider GetProvider(string providerName)
         {
-            if (string.IsNullOrWhiteSpace(providerName)) throw new ArgumentNullException("providerName");
+            if (string.IsNullOrWhiteSpace(providerName)) throw new ArgumentNullException(nameof(providerName));
             return ProviderHelper.GetProvider<IMessageJournalProvider>(providerName);
         }
     }

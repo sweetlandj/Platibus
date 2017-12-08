@@ -33,35 +33,31 @@ namespace Platibus.Http
 
         public HttpListenerResponseAdapter(HttpListenerResponse response)
         {
-            if (response == null) throw new ArgumentNullException("response");
-            _response = response;
+            _response = response ?? throw new ArgumentNullException(nameof(response));
         }
 
         public int StatusCode
         {
-            set { _response.StatusCode = value; }
+            set => _response.StatusCode = value;
         }
 
         public string StatusDescription
         {
-            set { _response.StatusDescription = value; }
+            set => _response.StatusDescription = value;
         }
 
-        public Stream OutputStream
-        {
-            get { return _response.OutputStream; }
-        }
+        public Stream OutputStream => _response.OutputStream;
 
         public string ContentType
         {
-            get { return _response.ContentType; }
-            set { _response.ContentType = value; }
+            get => _response.ContentType;
+            set => _response.ContentType = value;
         }
 
         public Encoding ContentEncoding
         {
-            get { return _response.ContentEncoding; }
-            set { _response.ContentEncoding = value; }
+            get => _response.ContentEncoding;
+            set => _response.ContentEncoding = value;
         }
 
         public void AddHeader(string header, string value)

@@ -28,7 +28,7 @@ namespace Platibus
     /// <summary>
     /// A name that identifies a topic to which messages can be published
     /// </summary>
-    [DebuggerDisplay("{_value,nq}")]
+    [DebuggerDisplay("{" + nameof(_value) + ",nq}")]
     public class TopicName : IEquatable<TopicName>
     {
         private readonly string _value;
@@ -42,7 +42,7 @@ namespace Platibus
         /// is <c>null</c> or whitespace</exception>
         public TopicName(string value)
         {
-            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException("value");
+            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException(nameof(value));
             _value = value.Trim();
         }
         

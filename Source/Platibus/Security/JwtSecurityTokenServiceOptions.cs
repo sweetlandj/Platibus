@@ -1,6 +1,6 @@
 ﻿using System;
 using Platibus.Diagnostics;
-using System.IdentityModel.Tokens;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Platibus.Security
 {

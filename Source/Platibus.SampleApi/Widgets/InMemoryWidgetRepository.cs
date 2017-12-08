@@ -12,7 +12,7 @@ namespace Platibus.SampleApi.Widgets
 
         public Task Add(Widget widget)
         {
-            if (widget == null) throw new ArgumentNullException("widget");
+            if (widget == null) throw new ArgumentNullException(nameof(widget));
             if (string.IsNullOrWhiteSpace(widget.Id))
             {
                 widget.Id = Guid.NewGuid().ToString();
@@ -29,7 +29,7 @@ namespace Platibus.SampleApi.Widgets
         {
             if (widget == null)
             {
-                throw new ArgumentNullException("widget");
+                throw new ArgumentNullException(nameof(widget));
             }
 
             if (string.IsNullOrWhiteSpace(widget.Id))
@@ -43,8 +43,7 @@ namespace Platibus.SampleApi.Widgets
 
         public Task<Widget> Get(string id)
         {
-            Widget widget;
-            _widgets.TryGetValue(id, out widget);
+            _widgets.TryGetValue(id, out Widget widget);
             if (widget == null) throw new WidgetNotFoundException(id);
             return Task.FromResult(CopyOf(widget));
         }
@@ -57,8 +56,7 @@ namespace Platibus.SampleApi.Widgets
 
         public Task Remove(string id)
         {
-            Widget widget;
-            if (!_widgets.TryRemove(id, out widget))
+            if (!_widgets.TryRemove(id, out Widget widget))
             {
                 throw new WidgetNotFoundException(id);
             }

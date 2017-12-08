@@ -27,12 +27,10 @@ namespace Platibus.Security
     /// </summary>
     public class BearerCredentials : IEndpointCredentials
     {
-        private readonly string _credentials;
-
         /// <summary>
         /// The bearer token
         /// </summary>
-        public string Credentials { get { return _credentials; } }
+        public string Credentials { get; }
 
         /// <summary>
         /// Initializes a new <see cref="BearerCredentials"/>
@@ -40,7 +38,7 @@ namespace Platibus.Security
         /// <param name="credentials">The bearer token</param>
         public BearerCredentials(string credentials)
         {
-            _credentials = credentials;
+            Credentials = credentials;
         }
 
         /// <inheritdoc />

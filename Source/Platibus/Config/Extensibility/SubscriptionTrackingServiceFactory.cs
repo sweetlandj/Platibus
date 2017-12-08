@@ -21,6 +21,9 @@
 // THE SOFTWARE.
 
 using System.Threading.Tasks;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 using Platibus.Diagnostics;
 using Platibus.Filesystem;
 
@@ -43,6 +46,7 @@ namespace Platibus.Config.Extensibility
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
+#if NET452
         /// <summary>
         /// Initializes a subscription tracking service based on the supplied
         /// <paramref name="configuration"/>
@@ -70,6 +74,35 @@ namespace Platibus.Config.Extensibility
 
             return messageQueueingService;
         }
+#else
+        /// <summary>
+        /// Initializes a subscription tracking service based on the supplied
+        /// <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="configuration">The subscription tracking configuration</param>
+        /// <returns>Returns a task whose result is the initialized subscription tracking service</returns>
+        public async Task<ISubscriptionTrackingService> InitSubscriptionTrackingService(IConfigurationSection configuration)
+        {
+            var providerName = configuration?["provider"];
+            var provider = await GetProvider(providerName);
+
+            await _diagnosticService.EmitAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
+                {
+                    Detail = "Initializing subscription tracking service"
+                }.Build());
+
+            var messageQueueingService = await provider.CreateSubscriptionTrackingService(configuration);
+
+            await _diagnosticService.EmitAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
+                {
+                    Detail = "Subscription tracking service initialized"
+                }.Build());
+
+            return messageQueueingService;
+        }
+#endif
 
         private async Task<ISubscriptionTrackingServiceProvider> GetProvider(string providerName)
         {

@@ -34,15 +34,10 @@ namespace Platibus.Security
     [Obsolete("Use MessageSecurityToken")]
     public class SenderRole : IEquatable<SenderRole>, ISerializable
     {
-        private readonly string _name;
-
         /// <summary>
         /// The role name
         /// </summary>
-        public string Name
-        {
-            get { return _name; }
-        }
+        public string Name { get; }
 
         /// <summary>
         /// Initializes a new <see cref="SenderRole"/> with the specified <paramref name="name"/>
@@ -52,8 +47,8 @@ namespace Platibus.Security
         /// <c>null</c> or whitespace</exception>
         public SenderRole(string name)
         {
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
-            _name = name.Trim();
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException(nameof(name));
+            Name = name.Trim();
         }
 
         /// <summary>
@@ -65,8 +60,8 @@ namespace Platibus.Security
         /// <c>null</c></exception>
         public SenderRole(Claim claim)
         {
-            if (claim == null) throw new ArgumentNullException("claim");
-            _name = claim.Value.Trim();
+            if (claim == null) throw new ArgumentNullException(nameof(claim));
+            Name = claim.Value.Trim();
         }
 
         /// <summary>
@@ -76,7 +71,7 @@ namespace Platibus.Security
         /// <param name="context">The streaming context</param>
         protected SenderRole(SerializationInfo info, StreamingContext context)
         {
-            _name = info.GetString("Name");
+            Name = info.GetString("Name");
         }
 
         /// <summary>
@@ -85,7 +80,7 @@ namespace Platibus.Security
         /// <returns>Returns a string representation of the role (i.e. the role name)</returns>
         public override string ToString()
         {
-            return _name;
+            return Name;
         }
 
         /// <summary>
@@ -95,7 +90,7 @@ namespace Platibus.Security
         [SecurityPermission(SecurityAction.Demand, Flags = SecurityPermissionFlag.SerializationFormatter)]
         public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            info.AddValue("Name", _name);
+            info.AddValue("Name", Name);
         }
 
         /// <summary>
@@ -107,7 +102,7 @@ namespace Platibus.Security
         /// <filterpriority>2</filterpriority>
         public override int GetHashCode()
         {
-            return _name.ToLower().GetHashCode();
+            return Name.ToLower().GetHashCode();
         }
 
         /// <summary>
@@ -132,7 +127,7 @@ namespace Platibus.Security
         {
             if (ReferenceEquals(null, senderRole)) return false;
             if (ReferenceEquals(this, senderRole)) return true;
-            return _name.Equals(senderRole._name, StringComparison.OrdinalIgnoreCase);
+            return Name.Equals(senderRole.Name, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -155,7 +150,7 @@ namespace Platibus.Security
         /// otherwise returns the string representation of the sender role</returns>
         public static implicit operator string(SenderRole role)
         {
-            return role == null ? null : role._name;
+            return role == null ? null : role.Name;
         }
     }
 }

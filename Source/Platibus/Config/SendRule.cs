@@ -31,26 +31,17 @@ namespace Platibus.Config
     /// </summary>
     public class SendRule : ISendRule
     {
-        private readonly IEnumerable<EndpointName> _endpoints;
-        private readonly IMessageSpecification _specification;
-
         /// <summary>
         /// The message specification that selects messages to which the
         /// send rule applies.
         /// </summary>
-        public IMessageSpecification Specification
-        {
-            get { return _specification; }
-        }
+        public IMessageSpecification Specification { get; }
 
         /// <summary>
         /// The set of endpoints to which messages that match the
         /// <see cref="ISendRule.Specification"/> should be sent.
         /// </summary>
-        public IEnumerable<EndpointName> Endpoints
-        {
-            get { return _endpoints; }
-        }
+        public IEnumerable<EndpointName> Endpoints { get; }
 
         /// <summary>
         /// Initializes a new <see cref="SendRule"/> with the provided
@@ -65,14 +56,14 @@ namespace Platibus.Config
         /// is empty or contains only <c>null</c> elements</exception>
         public SendRule(IMessageSpecification specification, IEnumerable<EndpointName> endpoints)
         {
-            if (specification == null) throw new ArgumentNullException("specification");
-            if (endpoints == null) throw new ArgumentNullException("endpoints");
+            if (specification == null) throw new ArgumentNullException(nameof(specification));
+            if (endpoints == null) throw new ArgumentNullException(nameof(endpoints));
 
             var endpointList = endpoints as IList<EndpointName> ?? endpoints.ToList();
             if (endpointList.All(x => x == null)) throw new EndpointRequiredException();
 
-            _specification = specification;
-            _endpoints = endpointList.Where(x => x != null).ToList();
+            Specification = specification;
+            Endpoints = endpointList.Where(x => x != null).ToList();
         }
 
         /// <summary>

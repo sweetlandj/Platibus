@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿#if NET452
+// The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
 // 
@@ -40,8 +41,8 @@ namespace Platibus.Config
         [ConfigurationProperty(ProviderPropertyName, DefaultValue = "Filesystem")]
         public string Provider
         {
-            get { return (string) base[ProviderPropertyName]; }
-            set { base[ProviderPropertyName] = value; }
+            get => (string) base[ProviderPropertyName];
+            set => base[ProviderPropertyName] = value;
         }
 
         /// <summary>
@@ -50,8 +51,9 @@ namespace Platibus.Config
         [ConfigurationProperty(SecurityTokensPropertyName)]
         public SecurityTokensElement SecurityTokens
         {
-            get { return (SecurityTokensElement)base[SecurityTokensPropertyName]; }
-            set { base[SecurityTokensPropertyName] = value; }
+            get => (SecurityTokensElement)base[SecurityTokensPropertyName];
+            set => base[SecurityTokensPropertyName] = value;
         }
     }
 }
+#endif

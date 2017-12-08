@@ -29,30 +29,25 @@ namespace Platibus.Journaling
     /// </summary>
     public class MessageJournalEntry
     {
-        private readonly MessageJournalCategory _category;
-        private readonly MessageJournalPosition _position;
-        private readonly DateTime _timestamp;
-        private readonly Message _data;
-
         /// <summary>
         /// The category of journaled message (e.g. sent, received, published)
         /// </summary>
-        public MessageJournalCategory Category { get { return _category; } }
-        
+        public MessageJournalCategory Category { get; }
+
         /// <summary>
         /// The position of the message in the journal
         /// </summary>
-        public MessageJournalPosition Position { get { return _position; } }
+        public MessageJournalPosition Position { get; }
 
         /// <summary>
         /// The timestamp for the journaled message
         /// </summary>
-        public DateTime Timestamp { get { return _timestamp; } }
+        public DateTime Timestamp { get; }
 
         /// <summary>
         /// The message
         /// </summary>
-        public Message Data { get { return _data; } }
+        public Message Data { get; }
 
         /// <summary>
         /// Initializes a new <see cref="MessageJournalEntry"/>
@@ -63,12 +58,10 @@ namespace Platibus.Journaling
         /// <param name="data">The message</param>
         public MessageJournalEntry(MessageJournalCategory category, MessageJournalPosition position, DateTime timestamp, Message data)
         {
-            if (position == null) throw new ArgumentNullException("position");
-            if (data == null) throw new ArgumentNullException("data");
-            _category = category;
-            _position = position;
-            _timestamp = timestamp;
-            _data = data;
+            Category = category;
+            Position = position ?? throw new ArgumentNullException(nameof(position));
+            Timestamp = timestamp;
+            Data = data ?? throw new ArgumentNullException(nameof(data));
         }
     }
 }

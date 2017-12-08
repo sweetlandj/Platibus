@@ -1,6 +1,11 @@
 ﻿using System;
-using System.Configuration;
 using MongoDB.Driver;
+#if NET452
+using System.Configuration;
+#endif
+#if NETSTANDARD2_0
+using Platibus.Config;
+#endif
 
 namespace Platibus.MongoDB
 {
@@ -20,7 +25,7 @@ namespace Platibus.MongoDB
         public static IMongoDatabase Connect(ConnectionStringSettings connectionStringSettings,
             string databaseName = null)
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
+            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
             var mongoUrl = new MongoUrl(connectionStringSettings.ConnectionString);
             var myDatabaseName = string.IsNullOrWhiteSpace(databaseName)
                 ? mongoUrl.DatabaseName

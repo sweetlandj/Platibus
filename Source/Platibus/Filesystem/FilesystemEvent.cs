@@ -30,12 +30,10 @@ namespace Platibus.Filesystem
     /// </summary>
     public class FilesystemEvent : DiagnosticEvent
     {
-        private readonly string _path;
-
         /// <summary>
         /// The path of the file or directory to which the event pertains
         /// </summary>
-        public string Path { get { return _path; } }
+        public string Path { get; }
 
         /// <summary>
         /// Initializes a new <see cref="DiagnosticEvent"/>
@@ -52,7 +50,7 @@ namespace Platibus.Filesystem
         public FilesystemEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, EndpointName endpoint = null, QueueName queue = null, TopicName topic = null, string path = null) 
             : base(source, type, detail, exception, message, endpoint, queue, topic)
         {
-            _path = path;
+            Path = path;
         }
     }
 }

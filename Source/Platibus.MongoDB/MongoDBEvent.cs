@@ -8,24 +8,20 @@ namespace Platibus.MongoDB
     /// </summary>
     public class MongoDBEvent : DiagnosticEvent
     {
-        private readonly string _databaseName;
-        private readonly string _collectionName;
-        private readonly string _indexName;
-
         /// <summary>
         /// The name of the MongoDB database
         /// </summary>
-        public string DatabaseName { get { return _databaseName; } }
+        public string DatabaseName { get; }
 
         /// <summary>
         /// The name of the MongoDB collection
         /// </summary>
-        public string CollectionName { get { return _collectionName; } }
+        public string CollectionName { get; }
 
         /// <summary>
         /// The name of the MongoDB index
         /// </summary>
-        public string IndexName { get { return _indexName; } }
+        public string IndexName { get; }
 
         /// <summary>
         /// Initializes a new <see cref="MongoDBEvent"/>
@@ -44,9 +40,9 @@ namespace Platibus.MongoDB
         public MongoDBEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, EndpointName endpoint = null, QueueName queue = null, TopicName topic = null, string databaseName = null, string collectionName = null, string indexName = null) 
             : base(source, type, detail, exception, message, endpoint, queue, topic)
         {
-            _databaseName = databaseName;
-            _collectionName = collectionName;
-            _indexName = indexName;
+            DatabaseName = databaseName;
+            CollectionName = collectionName;
+            IndexName = indexName;
         }
     }
 }

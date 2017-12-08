@@ -21,6 +21,9 @@
 // THE SOFTWARE.
 
 using System.Threading.Tasks;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 using Platibus.Diagnostics;
 using Platibus.Filesystem;
 
@@ -43,6 +46,7 @@ namespace Platibus.Config.Extensibility
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
+#if NET452
         /// <summary>
         /// Initializes a message queueing service based on the supplied
         /// <paramref name="configuration"/>
@@ -64,6 +68,29 @@ namespace Platibus.Config.Extensibility
 
             return messageQueueingService;
         }
+#else
+        /// <summary>
+        /// Initializes a message queueing service based on the supplied
+        /// <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="configuration">The message queue configuration</param>
+        /// <returns>Returns a task whose result is the initialized message queueing service</returns>
+        public async Task<IMessageQueueingService> InitMessageQueueingService(IConfiguration configuration)
+        {
+            var providerName = configuration?["provider"];
+            var provider = await GetProvider(providerName);
+
+            var messageQueueingService = await provider.CreateMessageQueueingService(configuration);
+
+            await _diagnosticService.EmitAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
+                {
+                    Detail = "Message queueing service initialized"
+                }.Build());
+
+            return messageQueueingService;
+        }
+#endif
 
         private async Task<IMessageQueueingServiceProvider> GetProvider(string providerName)
         {

@@ -9,8 +9,9 @@ using Platibus.Diagnostics;
 
 namespace Platibus.Multicast
 {
+    /// <inheritdoc cref="ISubscriptionTrackingService" />
     /// <summary>
-    /// A <see cref="ISubscriptionTrackingService"/> implementation that broadcasts and consumes
+    /// A <see cref="T:Platibus.ISubscriptionTrackingService" /> implementation that broadcasts and consumes
     /// subscription changes on a multicast group in addition to maintaining local subscription
     /// state.
     /// </summary>
@@ -52,12 +53,9 @@ namespace Platibus.Multicast
         /// </remarks>
         public MulticastSubscriptionTrackingService(ISubscriptionTrackingService inner, IPAddress groupAddress, int port, IDiagnosticService diagnosticService = null)
         {
-            if (inner == null) throw new ArgumentNullException("inner");
-            if (groupAddress == null) throw new ArgumentNullException("groupAddress");
-
             _nodeId = NodeId.Generate();
-            _inner = inner;
-            _groupAddress = groupAddress;
+            _inner = inner ?? throw new ArgumentNullException(nameof(inner));
+            _groupAddress = groupAddress ?? throw new ArgumentNullException(nameof(groupAddress));
             _port = port;
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
 
@@ -102,7 +100,7 @@ namespace Platibus.Multicast
                 Port = listenerBinding.Port
             }.Build());
             
-            _receiveResultQueue = new ActionBlock<UdpReceiveResult>(result => HandleReceiveResult(result),
+            _receiveResultQueue = new ActionBlock<UdpReceiveResult>(HandleReceiveResult,
                 new ExecutionDataflowBlockOptions
                 {
                     MaxDegreeOfParallelism = 2
@@ -126,7 +124,7 @@ namespace Platibus.Multicast
                     }
 
                     var receiveResult = await received;
-                    var bytesReceived = receiveResult.Buffer == null ? 0 : receiveResult.Buffer.Length;
+                    var bytesReceived = receiveResult.Buffer?.Length ?? 0;
                     await _diagnosticService.EmitAsync(new MulticastEventBuilder(this, MulticastEventType.DatagramReceived)
                     {
                         Detail = bytesReceived + " byte(s) received",
@@ -280,10 +278,7 @@ namespace Platibus.Multicast
                 _cancellationTokenSource.Dispose();
             }
 
-            if (_listeningTask != null)
-            {
-                _listeningTask.Wait(TimeSpan.FromSeconds(5));
-            }
+            _listeningTask?.Wait(TimeSpan.FromSeconds(5));
 
             if (_receiveResultQueue != null)
             {

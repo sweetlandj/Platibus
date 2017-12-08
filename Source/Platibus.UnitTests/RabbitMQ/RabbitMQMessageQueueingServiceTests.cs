@@ -56,7 +56,7 @@ namespace Platibus.UnitTests.RabbitMQ
 
         protected override async Task GivenExistingQueuedMessage(QueueName queueName, Message message, IPrincipal principal)
         {
-            var connectionFactory = new ConnectionFactory { Uri = _uri.ToString() };
+            var connectionFactory = new ConnectionFactory { Uri = _uri };
             using (var connection = connectionFactory.CreateConnection())
             using (var channel = connection.CreateModel())
             {
@@ -94,7 +94,7 @@ namespace Platibus.UnitTests.RabbitMQ
 
         private uint GetQueueDepth(QueueName queueName)
         {
-            var connectionFactory = new ConnectionFactory { Uri = _uri.ToString() };
+            var connectionFactory = new ConnectionFactory { Uri = _uri };
             using (var connection = connectionFactory.CreateConnection())
             using (var channel = connection.CreateModel())
             {

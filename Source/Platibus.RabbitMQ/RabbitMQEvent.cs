@@ -16,22 +16,22 @@ namespace Platibus.RabbitMQ
         /// <summary>
         /// The exchange to which the event pertains, if applicable
         /// </summary>
-        public string Exchange { get { return _exchange; } }
+        public string Exchange => _exchange;
 
         /// <summary>
         /// The channel number to which the event pertains, if applicable
         /// </summary>
-        public int? ChannelNumber { get { return _channelNumber; } }
+        public int? ChannelNumber => _channelNumber;
 
         /// <summary>
         /// The consumer tag to which the event pertains, if applicable
         /// </summary>
-        public string ConsumerTag { get { return _consumerTag; } }
+        public string ConsumerTag => _consumerTag;
 
         /// <summary>
         /// The delivery tag to which the event pertains, if applicable
         /// </summary>
-        public ulong? DeliveryTag { get { return _deliveryTag; } }
+        public ulong? DeliveryTag => _deliveryTag;
 
         /// <summary>
         /// Initializes a new <see cref="RabbitMQEvent"/>

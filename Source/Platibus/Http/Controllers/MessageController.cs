@@ -49,8 +49,7 @@ namespace Platibus.Http.Controllers
         /// <c>null</c></exception>
         public MessageController(Func<Message, IPrincipal, Task> accept, IAuthorizationService authorizationService = null)
         {
-            if (accept == null) throw new ArgumentNullException("accept");
-            _accept = accept;
+            _accept = accept ?? throw new ArgumentNullException(nameof(accept));
             _authorizationService = authorizationService;
         }
 
@@ -66,8 +65,8 @@ namespace Platibus.Http.Controllers
         /// response has been updated</returns>
         public async Task Process(IHttpResourceRequest request, IHttpResourceResponse response, IEnumerable<string> subPath)
         {
-            if (request == null) throw new ArgumentNullException("request");
-            if (response == null) throw new ArgumentNullException("response");
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (response == null) throw new ArgumentNullException(nameof(response));
 
             if (!request.IsPost())
             {
@@ -81,8 +80,8 @@ namespace Platibus.Http.Controllers
 
         private async Task Post(IHttpResourceRequest request, IHttpResourceResponse response)
         {
-            if (request == null) throw new ArgumentNullException("request");
-            if (response == null) throw new ArgumentNullException("response");
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (response == null) throw new ArgumentNullException(nameof(response));
 
             var authorized = _authorizationService == null ||
                              await _authorizationService.IsAuthorizedToSendMessages(request.Principal);

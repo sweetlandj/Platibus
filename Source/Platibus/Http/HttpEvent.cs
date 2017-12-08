@@ -8,30 +8,25 @@ namespace Platibus.Http
     /// </summary>
     public class HttpEvent : DiagnosticEvent
     {
-        private readonly string _remote;
-        private readonly string _method;
-        private readonly Uri _uri;
-        private readonly int? _status;
-
         /// <summary>
         /// The IP or hostname of the remote client
         /// </summary>
-        public string Remote { get { return _remote; } }
+        public string Remote { get; }
 
         /// <summary>
         /// The HTTP method specified in the request
         /// </summary>
-        public string Method { get { return _method; } }
+        public string Method { get; }
 
         /// <summary>
         /// The request URI
         /// </summary>
-        public Uri Uri { get { return _uri; } }
+        public Uri Uri { get; }
 
         /// <summary>
         /// The HTTP status code in the response
         /// </summary>
-        public int? Status { get { return _status; } }
+        public int? Status { get; }
 
         /// <summary>
         /// Initializes a new <see cref="HttpEvent"/>
@@ -51,10 +46,10 @@ namespace Platibus.Http
         public HttpEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, EndpointName endpoint = null, QueueName queue = null, TopicName topic = null, string remote = null, string method = null, Uri uri = null, int? status = null) 
             : base(source, type, detail, exception, message, endpoint, queue, topic)
         {
-            _remote = remote;
-            _method = method;
-            _uri = uri;
-            _status = status;
+            Remote = remote;
+            Method = method;
+            Uri = uri;
+            Status = status;
         }
     }
 }

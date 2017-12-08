@@ -22,11 +22,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MongoDB.Driver;
+#if NET452
+using System.Configuration;
+#endif
+#if NETSTANDARD2_0
+using Platibus.Config;
+#endif
 
 namespace Platibus.MongoDB
 {
@@ -57,7 +62,7 @@ namespace Platibus.MongoDB
         /// <see cref="DefaultCollectionName"/> will be used</param>
         public MongoDBSubscriptionTrackingService(ConnectionStringSettings connectionStringSettings, string databaseName = null, string collectionName = DefaultCollectionName)
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
+            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
             var myCollectionName = string.IsNullOrWhiteSpace(collectionName)
                 ? DefaultCollectionName
                 : collectionName;
@@ -70,8 +75,8 @@ namespace Platibus.MongoDB
         public Task AddSubscription(TopicName topic, Uri subscriber, TimeSpan ttl = new TimeSpan(),
             CancellationToken cancellationToken = new CancellationToken())
         {
-            if (topic == null) throw new ArgumentNullException("topic");
-            if (subscriber == null) throw new ArgumentNullException("subscriber");
+            if (topic == null) throw new ArgumentNullException(nameof(topic));
+            if (subscriber == null) throw new ArgumentNullException(nameof(subscriber));
 
             var expires = ttl <= TimeSpan.Zero
                 ? DateTime.MaxValue
@@ -90,8 +95,8 @@ namespace Platibus.MongoDB
         /// <inheritdoc />
         public Task RemoveSubscription(TopicName topic, Uri subscriber, CancellationToken cancellationToken = new CancellationToken())
         {
-            if (topic == null) throw new ArgumentNullException("topic");
-            if (subscriber == null) throw new ArgumentNullException("subscriber");
+            if (topic == null) throw new ArgumentNullException(nameof(topic));
+            if (subscriber == null) throw new ArgumentNullException(nameof(subscriber));
 
             var fb = Builders<SubscriptionDocument>.Filter;
             var filter = fb.Eq(s => s.Topic, topic.ToString()) &

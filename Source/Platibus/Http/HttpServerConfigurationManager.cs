@@ -21,61 +21,71 @@
 // THE SOFTWARE.
 
 using System;
+
+using System.Net;
 using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
 using Platibus.Diagnostics;
+#if NET452
+using System.Collections.Generic;
+#endif
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Platibus.Http
 {
+    /// <inheritdoc />
     /// <summary>
     /// Helper class for loading HTTP server configuration information
     /// </summary>
     public class HttpServerConfigurationManager : PlatibusConfigurationManager<HttpServerConfiguration>
     {
+#if NET452
         /// <inheritdoc />
-        public override async Task Initialize(HttpServerConfiguration configuration, string configSectionName = null)
+        public override async Task Initialize(HttpServerConfiguration platibusConfiguration, string sectionName = null)
         {
-            var diagnosticService = configuration.DiagnosticService;
-            if (string.IsNullOrWhiteSpace(configSectionName))
+            var diagnosticService = platibusConfiguration.DiagnosticService;
+            if (string.IsNullOrWhiteSpace(sectionName))
             {
-                configSectionName = "platibus.httpserver";
+                sectionName = "platibus.httpserver";
                 await diagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
                     {
-                        Detail = "Using default configuration section \"" + configSectionName + "\""
+                        Detail = "Using default configuration section \"" + sectionName + "\""
                     }.Build());
             }
 
-            var configSection = LoadConfigurationSection<HttpServerConfigurationSection>(configSectionName, diagnosticService);
-            await Initialize(configuration, configSection);
+            var configuration = LoadConfigurationSection<HttpServerConfigurationSection>(sectionName, diagnosticService);
+            await Initialize(platibusConfiguration, configuration);
         }
 
         /// <summary>
-        /// Initializes the supplied HTTP server <paramref name="configuration"/> based on the
+        /// Initializes the supplied HTTP server <paramref name="platibusConfiguration"/> based on the
         /// properties of the provided <paramref name="configSection"/>
         /// </summary>
-        /// <param name="configuration">The configuration to initialize</param>
+        /// <param name="platibusConfiguration">The configuration to initialize</param>
         /// <param name="configSection">The configuration section whose properties are to be used
-        /// to initialize the <paramref name="configuration"/></param>
+        /// to initialize the <paramref name="platibusConfiguration"/></param>
         /// <returns>Returns a task that completes when the configuration has been initialized</returns>
-        public async Task Initialize(HttpServerConfiguration configuration,
+        public async Task Initialize(HttpServerConfiguration platibusConfiguration,
             HttpServerConfigurationSection configSection)
         {
-            await base.Initialize(configuration, configSection);
+            await base.Initialize(platibusConfiguration, configSection);
 
-            configuration.BaseUri = configSection.BaseUri;
-            configuration.ConcurrencyLimit = configSection.ConcurrencyLimit;
-            configuration.AuthenticationSchemes = configSection.AuthenticationSchemes.GetFlags();
-            configuration.BypassTransportLocalDestination = configSection.BypassTransportLocalDestination;
+            platibusConfiguration.BaseUri = configSection.BaseUri;
+            platibusConfiguration.ConcurrencyLimit = configSection.ConcurrencyLimit;
+            platibusConfiguration.AuthenticationSchemes = configSection.AuthenticationSchemes.GetFlags();
+            platibusConfiguration.BypassTransportLocalDestination = configSection.BypassTransportLocalDestination;
 
-            var mqsFactory = new MessageQueueingServiceFactory(configuration.DiagnosticService);
+            var mqsFactory = new MessageQueueingServiceFactory(platibusConfiguration.DiagnosticService);
             var mqsConfig = configSection.Queueing;
-            configuration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(mqsConfig);
+            platibusConfiguration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(mqsConfig);
 
-            var stsFactory = new SubscriptionTrackingServiceFactory(configuration.DiagnosticService);
+            var stsFactory = new SubscriptionTrackingServiceFactory(platibusConfiguration.DiagnosticService);
             var stsConfig = configSection.SubscriptionTracking;
-            configuration.SubscriptionTrackingService = await stsFactory.InitSubscriptionTrackingService(stsConfig);
+            platibusConfiguration.SubscriptionTrackingService = await stsFactory.InitSubscriptionTrackingService(stsConfig);
         }
 
         /// <summary>
@@ -111,5 +121,69 @@ namespace Platibus.Http
             var factory = new SubscriptionTrackingServiceFactory();
             return factory.InitSubscriptionTrackingService(config);
         }
+#endif
+#if NETSTANDARD2_0
+        /// <inheritdoc />
+        public override async Task Initialize(HttpServerConfiguration platibusConfiguration, string sectionName = null)
+        {
+            var diagnosticService = platibusConfiguration.DiagnosticService;
+            if (string.IsNullOrWhiteSpace(sectionName))
+            {
+                sectionName = "platibus.httpserver";
+                await diagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                    {
+                        Detail = "Using default configuration section \"" + sectionName + "\""
+                    }.Build());
+            }
+
+            var configuration = LoadConfigurationSection(sectionName, diagnosticService);
+            await Initialize(platibusConfiguration, configuration);
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes the supplied HTTP server <paramref name="platibusConfiguration" /> based on the
+        /// properties of the provided <paramref name="configuration" />
+        /// </summary>
+        /// <param name="platibusConfiguration">The configuration to initialize</param>
+        /// <param name="configuration">The configuration section whose properties are to be used
+        /// to initialize the <paramref name="platibusConfiguration" /></param>
+        /// <returns>Returns a task that completes when the configuration has been initialized</returns>
+        public override async Task Initialize(HttpServerConfiguration platibusConfiguration, IConfiguration configuration)
+        {
+            await base.Initialize(platibusConfiguration, configuration);
+
+            platibusConfiguration.BaseUri = configuration?.GetValue<Uri>("baseUri");
+            platibusConfiguration.ConcurrencyLimit = configuration?.GetValue<int>("concurrencyLimit") ?? 0;
+
+            InitializeAuthenticationSchemes(platibusConfiguration, configuration);
+            platibusConfiguration.BypassTransportLocalDestination = configuration?.GetValue<bool>("bypassTransportLocalDestination") ?? false;
+
+            var mqsFactory = new MessageQueueingServiceFactory(platibusConfiguration.DiagnosticService);
+            var queueingSection = configuration?.GetSection("queueing");
+            platibusConfiguration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(queueingSection);
+
+            var stsFactory = new SubscriptionTrackingServiceFactory(platibusConfiguration.DiagnosticService);
+            var stSection = configuration?.GetSection("subscriptionTracking");
+            platibusConfiguration.SubscriptionTrackingService = await stsFactory.InitSubscriptionTrackingService(stSection);
+        }
+
+        private static void InitializeAuthenticationSchemes(HttpServerConfiguration platibusConfiguration, IConfiguration configuration)
+        {
+            var authenticationSchemes = default(AuthenticationSchemes);
+            var authenticationSchemesSection = configuration?.GetSection("authenticationSchemes");
+            if (authenticationSchemesSection == null) return;
+
+            foreach (var authenticationSchemeSection in authenticationSchemesSection.GetChildren())
+            {
+                if (Enum.TryParse(authenticationSchemeSection.Value, out AuthenticationSchemes authenticationScheme))
+                {
+                    authenticationSchemes |= authenticationScheme;
+                }
+            }
+            platibusConfiguration.AuthenticationSchemes = authenticationSchemes;
+        }
+#endif
     }
 }

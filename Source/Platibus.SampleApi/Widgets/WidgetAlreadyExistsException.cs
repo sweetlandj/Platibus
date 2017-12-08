@@ -7,13 +7,11 @@ namespace Platibus.SampleApi.Widgets
     [Serializable]
     public class WidgetAlreadyExistsException : Exception
     {
-        private readonly string _widgetId;
-
-        public string WidgetId { get { return _widgetId; } }
+        public string WidgetId { get; }
 
         public WidgetAlreadyExistsException(string widgetId) : base("Widget " + widgetId + " already exists")
         {
-            _widgetId = widgetId;
+            WidgetId = widgetId;
         }
 
         /// <summary>
@@ -25,7 +23,7 @@ namespace Platibus.SampleApi.Widgets
         public WidgetAlreadyExistsException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _widgetId = info.GetString("WidgetId");
+            WidgetId = info.GetString("WidgetId");
         }
         
         /// <summary>
@@ -36,7 +34,7 @@ namespace Platibus.SampleApi.Widgets
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("WidgetId", _widgetId);
+            info.AddValue("WidgetId", WidgetId);
         }
     }
 }

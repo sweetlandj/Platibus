@@ -48,7 +48,7 @@ namespace Platibus.Diagnostics
         /// <param name="port">(Optional) The port of the Gralog TCP endpoint (12201)</param>
         public GelfTcpLoggingSink(string host, int port = 12201)
         {
-            if (string.IsNullOrWhiteSpace(host)) throw new ArgumentNullException("host");
+            if (string.IsNullOrWhiteSpace(host)) throw new ArgumentNullException(nameof(host));
             _tcpClient = new TcpClient();
             _host = host;
             _port = port;

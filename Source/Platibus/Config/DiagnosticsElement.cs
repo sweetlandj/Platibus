@@ -1,4 +1,5 @@
-﻿using System.Configuration;
+﻿#if NET452
+using System.Configuration;
 
 namespace Platibus.Config
 {
@@ -17,8 +18,10 @@ namespace Platibus.Config
             CollectionType = ConfigurationElementCollectionType.AddRemoveClearMap)]
         public DiagnosticEventSinkElementCollection Sinks
         {
-            get { return (DiagnosticEventSinkElementCollection)base[SinksPropertName]; }
-            set { base[SinksPropertName] = value; }
+            get => (DiagnosticEventSinkElementCollection)base[SinksPropertName];
+            set => base[SinksPropertName] = value;
         }
     }
 }
+
+#endif

@@ -28,54 +28,35 @@ namespace Platibus.Http
         /// </summary>
         public static readonly TimeSpan MinTTL = TimeSpan.FromSeconds(10);
 
-        private readonly IEndpoint _endpoint;
-        private readonly TopicName _topic;
-        private readonly TimeSpan _ttl;
-        private readonly bool _expires;
-        private readonly TimeSpan _renewalInterval;
-        private readonly TimeSpan _retryInterval;
-
         /// <summary>
         /// The endpoint to which subscription requests will be sent
         /// </summary>
-        public IEndpoint Endpoint { get { return _endpoint; } }
+        public IEndpoint Endpoint { get; }
 
         /// <summary>
         /// The topic to which the subscriber is subscribing
         /// </summary>
-        public TopicName Topic { get { return _topic; } }
+        public TopicName Topic { get; }
 
         /// <summary>
         /// The (adjusted) time-to-live to send in each subscription request
         /// </summary>
-        public TimeSpan TTL
-        {
-            get { return _ttl; }
-        }
+        public TimeSpan TTL { get; }
 
         /// <summary>
         /// Whether the subscription is set to expire (nonzero TTL)
         /// </summary>
-        public bool Expires
-        {
-            get { return _expires; }
-        }
+        public bool Expires { get; }
 
         /// <summary>
         /// The amount of time to wait between renewal requests
         /// </summary>
-        public TimeSpan RenewalInterval
-        {
-            get { return _renewalInterval; }
-        }
+        public TimeSpan RenewalInterval { get; }
 
         /// <summary>
         /// The amount of time to wait before retrying a failed subscription request
         /// </summary>
-        public TimeSpan RetryInterval
-        {
-            get { return _retryInterval; }
-        }
+        public TimeSpan RetryInterval { get; }
 
         /// <summary>
         /// Initializes a new set of <see cref="HttpSubscriptionMetadata"/> for a subscription
@@ -86,41 +67,40 @@ namespace Platibus.Http
         /// <param name="ttl">The non-negative time-to-live for the subscription</param>
         public HttpSubscriptionMetadata(IEndpoint endpoint, TopicName topic, TimeSpan ttl)
         {
-            if (endpoint == null) throw new ArgumentNullException("endpoint");
-            if (topic == null) throw new ArgumentNullException("topic");
-            if (ttl < TimeSpan.Zero) throw new ArgumentOutOfRangeException("ttl");
+            if (topic == null) throw new ArgumentNullException(nameof(topic));
+            if (ttl < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(ttl));
 
-            _endpoint = endpoint;
-            _topic = topic;
+            Endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
+            Topic = topic;
             
             if (ttl > TimeSpan.Zero)
             {
-                _ttl = ttl > MinTTL ? ttl : MinTTL;
-                _expires = true;    
+                TTL = ttl > MinTTL ? ttl : MinTTL;
+                Expires = true;    
             }
 
             // Attempt to renew after half of the TTL or 5 minutes (whichever is less)
             // to allow for issues that may occur when attempting to renew the
             // subscription.
-            _renewalInterval = new TimeSpan(ttl.Ticks / 2);
-            if (_renewalInterval > MaxRenewalInterval)
+            RenewalInterval = new TimeSpan(ttl.Ticks / 2);
+            if (RenewalInterval > MaxRenewalInterval)
             {
-                _renewalInterval = MaxRenewalInterval;
+                RenewalInterval = MaxRenewalInterval;
             }
 
             // Wait for the standard renewal interval or 30 seconds (whichever is less) before
             // retrying in the event of an unsuccessful subscription request 
-            _retryInterval = _renewalInterval;
-            if (_retryInterval > MaxRetryInterval)
+            RetryInterval = RenewalInterval;
+            if (RetryInterval > MaxRetryInterval)
             {
-                _retryInterval = MaxRetryInterval;
+                RetryInterval = MaxRetryInterval;
             }
 
             // Ensure a minimum amount of time elapses between retries to avoid overloading
             // both the subscriber and publisher with requests
-            if (_retryInterval < MinRetryInterval)
+            if (RetryInterval < MinRetryInterval)
             {
-                _retryInterval = MinRetryInterval;
+                RetryInterval = MinRetryInterval;
             }
         }
     }

@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿#if NET452
+// The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
 // 
@@ -56,8 +57,8 @@ namespace Platibus.RabbitMQ
         [ConfigurationProperty(BaseUriPropertyName, DefaultValue = DefaultBaseUri)]
         public Uri BaseUri
         {
-            get { return (Uri)base[BaseUriPropertyName]; }
-            set { base[BaseUriPropertyName] = value; }
+            get => (Uri)base[BaseUriPropertyName];
+            set => base[BaseUriPropertyName] = value;
         }
 
         /// <summary>
@@ -67,8 +68,8 @@ namespace Platibus.RabbitMQ
         [ConfigurationProperty(EncodingPropertyName, DefaultValue = "UTF-8")]
         public string Encoding
         {
-            get { return (string)base[EncodingPropertyName]; }
-            set { base[EncodingPropertyName] = value; }
+            get => (string)base[EncodingPropertyName];
+            set => base[EncodingPropertyName] = value;
         }
 
         /// <summary>
@@ -78,8 +79,8 @@ namespace Platibus.RabbitMQ
         [ConfigurationProperty(AutoAcknowledgePropertyName, DefaultValue = false)]
         public bool AutoAcknowledge
         {
-            get { return (bool)base[AutoAcknowledgePropertyName]; }
-            set { base[AutoAcknowledgePropertyName] = value; }
+            get => (bool)base[AutoAcknowledgePropertyName];
+            set => base[AutoAcknowledgePropertyName] = value;
         }
 
         /// <summary>
@@ -89,8 +90,8 @@ namespace Platibus.RabbitMQ
         [ConfigurationProperty(ConcurrencyLimitPropertyName, DefaultValue = 1)]
         public int ConcurrencyLimit
         {
-            get { return (int)base[ConcurrencyLimitPropertyName]; }
-            set { base[ConcurrencyLimitPropertyName] = value; }
+            get => (int)base[ConcurrencyLimitPropertyName];
+            set => base[ConcurrencyLimitPropertyName] = value;
         }
 
         /// <summary>
@@ -100,8 +101,8 @@ namespace Platibus.RabbitMQ
         [ConfigurationProperty(MaxAttemptsPropertyName, DefaultValue = 10)]
         public int MaxAttempts
         {
-            get { return (int)base[MaxAttemptsPropertyName]; }
-            set { base[MaxAttemptsPropertyName] = value; }
+            get => (int)base[MaxAttemptsPropertyName];
+            set => base[MaxAttemptsPropertyName] = value;
         }
 
         /// <summary>
@@ -110,8 +111,8 @@ namespace Platibus.RabbitMQ
         [ConfigurationProperty(RetryDelayPropertyName, DefaultValue = "00:00:05")]
         public TimeSpan RetryDelay
         {
-            get { return (TimeSpan)base[RetryDelayPropertyName]; }
-            set { base[RetryDelayPropertyName] = value; }
+            get => (TimeSpan)base[RetryDelayPropertyName];
+            set => base[RetryDelayPropertyName] = value;
         }
 
         /// <summary>
@@ -123,8 +124,8 @@ namespace Platibus.RabbitMQ
         [ConfigurationProperty(DurablePropertyName, DefaultValue = true)]
         public bool IsDurable
         {
-            get { return (bool)base[DurablePropertyName]; }
-            set { base[DurablePropertyName] = value; }
+            get => (bool)base[DurablePropertyName];
+            set => base[DurablePropertyName] = value;
         }
 
         /// <summary>
@@ -133,8 +134,10 @@ namespace Platibus.RabbitMQ
         [ConfigurationProperty(SecurityTokensPropertyName)]
         public SecurityTokensElement SecurityTokens
         {
-            get { return (SecurityTokensElement)base[SecurityTokensPropertyName]; }
-            set { base[SecurityTokensPropertyName] = value; }
+            get => (SecurityTokensElement)base[SecurityTokensPropertyName];
+            set => base[SecurityTokensPropertyName] = value;
         }
     }
 }
+
+#endif

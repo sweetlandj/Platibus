@@ -51,7 +51,7 @@ namespace Platibus
         /// <param name="endpointCollection">An endpoint collection</param>
         public ReadOnlyEndpointCollection(IEndpointCollection endpointCollection)
         {
-            if (endpointCollection == null) throw new ArgumentNullException("endpointCollection");
+            if (endpointCollection == null) throw new ArgumentNullException(nameof(endpointCollection));
             _endpoints = endpointCollection.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }
 
@@ -66,8 +66,7 @@ namespace Platibus
         {
             get
             {
-                IEndpoint endpoint;
-                if (!_endpoints.TryGetValue(endpointName, out endpoint))
+                if (!_endpoints.TryGetValue(endpointName, out IEndpoint endpoint))
                 {
                     throw new EndpointNotFoundException(endpointName);
                 }

@@ -30,10 +30,6 @@ namespace Platibus.SQL
     /// </summary>
     public class SQLSubscription : IEquatable<SQLSubscription>
     {
-        private readonly TopicName _topicName;
-        private readonly Uri _subscriber;
-        private readonly DateTime _expires;
-
         /// <summary>
         /// Initializes a new <see cref="SQLSubscription"/> with the specified topic,
         /// subscriber URI, and expiration date
@@ -46,36 +42,27 @@ namespace Platibus.SQL
         /// or <paramref name="subscriber"/> is <c>null</c></exception>
         public SQLSubscription(TopicName topicName, Uri subscriber, DateTime expires)
         {
-            if (topicName == null) throw new ArgumentNullException("topicName");
-            if (subscriber == null) throw new ArgumentNullException("subscriber");
-            _topicName = topicName;
-            _subscriber = subscriber;
-            _expires = expires;
+            if (topicName == null) throw new ArgumentNullException(nameof(topicName));
+            if (subscriber == null) throw new ArgumentNullException(nameof(subscriber));
+            TopicName = topicName;
+            Subscriber = subscriber;
+            Expires = expires;
         }
 
         /// <summary>
         /// The name of the topic to which the subscriber is subscribing
         /// </summary>
-        public TopicName TopicName
-        {
-            get { return _topicName; }
-        }
+        public TopicName TopicName { get; }
 
         /// <summary>
         /// The base URI of the subscribing application
         /// </summary>
-        public Uri Subscriber
-        {
-            get { return _subscriber; }
-        }
+        public Uri Subscriber { get; }
 
         /// <summary>
         /// The date and time at which the subscription expires
         /// </summary>
-        public DateTime Expires
-        {
-            get { return _expires; }
-        }
+        public DateTime Expires { get; }
 
         /// <summary>
         /// Determines whether another SQL subscription is equal to this one
@@ -87,7 +74,7 @@ namespace Platibus.SQL
         {
             if (ReferenceEquals(this, subscription)) return true;
             if (ReferenceEquals(null, subscription)) return false;
-            return Equals(_topicName, subscription._topicName) && Equals(_subscriber, subscription._subscriber);
+            return Equals(TopicName, subscription.TopicName) && Equals(Subscriber, subscription.Subscriber);
         }
 
         /// <summary>
@@ -111,7 +98,7 @@ namespace Platibus.SQL
         /// <filterpriority>2</filterpriority>
         public override int GetHashCode()
         {
-            return _subscriber.GetHashCode();
+            return Subscriber.GetHashCode();
         }
     }
 }

@@ -50,8 +50,7 @@ namespace Platibus.RabbitMQ
         /// </remarks>
         public MessageWriter(TextWriter writer, bool leaveOpen = false)
         {
-            if (writer == null) throw new ArgumentNullException("writer");
-            _writer = writer;
+            _writer = writer ?? throw new ArgumentNullException("writer");
             _leaveOpen = leaveOpen;
         }
 

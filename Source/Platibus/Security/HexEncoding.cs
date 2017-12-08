@@ -40,7 +40,7 @@ namespace Platibus.Security
         /// encoded string</returns>
         public static byte[] GetBytes(string hex)
         {
-            if (string.IsNullOrWhiteSpace(hex)) throw new ArgumentNullException("hex");
+            if (string.IsNullOrWhiteSpace(hex)) throw new ArgumentNullException(nameof(hex));
 
             var trimmedHex = hex.Trim().ToLower();
             var len = trimmedHex.Length;

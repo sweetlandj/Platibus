@@ -41,9 +41,7 @@ namespace Platibus.SQLite.Commands
         }
 
         /// <inheritdoc />
-        public override string CommandText
-        {
-            get { return @"
+        public override string CommandText => @"
 SELECT
     [Id],
     [Category],
@@ -51,7 +49,6 @@ SELECT
     [Headers], 
     [MessageContent]
 FROM [PB_MessageJournal]
-WHERE [Id] >= @Start"; }
-        }
+WHERE [Id] >= @Start";
     }
 }

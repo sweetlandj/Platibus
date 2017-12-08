@@ -20,9 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Configuration;
+
 using Platibus.Config.Extensibility;
 using Platibus.SQL.Commands;
+#if NET452
+using System.Configuration;
+#endif
+#if NETSTANDARD2_0
+using Platibus.Config;
+#endif
 
 namespace Platibus.SQLite.Commands
 {

@@ -40,8 +40,8 @@ namespace Platibus.IIS
         /// </summary>
         public Uri BaseUri
         {
-            get { return _baseUri ?? (_baseUri = new Uri("http://localhost/platibus")); }
-            set { _baseUri = value; }
+            get => _baseUri ?? (_baseUri = new Uri("http://localhost/platibus"));
+            set => _baseUri = value;
         }
 
         /// <summary>

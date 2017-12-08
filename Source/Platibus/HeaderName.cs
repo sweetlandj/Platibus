@@ -28,7 +28,7 @@ namespace Platibus
     /// <summary>
     /// An amplified value type that provides equality semantics for header names
     /// </summary>
-    [DebuggerDisplay("{_value,nq}")]
+    [DebuggerDisplay("{" + nameof(_value) + ",nq}")]
     public class HeaderName : IEquatable<HeaderName>
     {
         private static readonly char[] InvalidChars =
@@ -139,7 +139,7 @@ namespace Platibus
         /// </remarks>
         public HeaderName(string value)
         {
-            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException("value");
+            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException(nameof(value));
             foreach(var c in InvalidChars)
             {
                 if (value.IndexOf(c) >= 0) throw new FormatException("Invalid character '" + c + "'");

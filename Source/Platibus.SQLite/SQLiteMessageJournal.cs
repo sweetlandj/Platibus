@@ -21,7 +21,6 @@
 // THE SOFTWARE.
 
 using System;
-using System.Configuration;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,11 +29,19 @@ using Platibus.Diagnostics;
 using Platibus.Journaling;
 using Platibus.SQL;
 using Platibus.SQLite.Commands;
+#if NET452
+using System.Configuration;
+#endif
+#if NETSTANDARD2_0
+using Platibus.Config;
+#endif
 
 namespace Platibus.SQLite
 {
+    /// <inheritdoc cref="SQLMessageJournal"/>
+    /// <inheritdoc cref="IDisposable"/>
     /// <summary>
-    /// An <see cref="IMessageQueueingService"/> implementation that stores queued
+    /// An <see cref="T:Platibus.IMessageQueueingService" /> implementation that stores queued
     /// messages in a SQLite database
     /// </summary>
     public class SQLiteMessageJournal : SQLMessageJournal, IDisposable
@@ -44,8 +51,9 @@ namespace Platibus.SQLite
 
         private bool _disposed;
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="SQLiteMessageQueueingService"/>
+        /// Initializes a new <see cref="T:Platibus.SQLite.SQLiteMessageQueueingService" />
         /// </summary>
         /// <param name="baseDirectory">The directory in which the SQLite database files will be 
         ///     created</param>
@@ -84,12 +92,23 @@ namespace Platibus.SQLite
             }
 
             var dbPath = Path.Combine(directory.FullName, "journal.db");
+#if NET452
             var connectionStringSettings = new ConnectionStringSettings
             {
                 Name = dbPath,
                 ConnectionString = "Data Source=" + dbPath + "; Version=3; BinaryGUID=False; DateTimeKind=Utc",
                 ProviderName = "System.Data.SQLite"
             };
+#endif
+#if NETSTANDARD2_0
+            SQLiteProviderFactory.Register();
+            var connectionStringSettings = new ConnectionStringSettings
+            {
+                Name = dbPath,
+                ConnectionString = "Data Source=" + dbPath + "",
+                ProviderName = SQLiteProviderFactory.InvariantName
+            };
+#endif
 
             return new SingletonConnectionProvider(connectionStringSettings, diagnosticService);
         }

@@ -142,7 +142,7 @@ namespace Platibus
         /// <c>null</c></exception>
         public DelegateMessageHandler(Func<TContent, IMessageContext, Task> handleMessage)
         {
-            if (handleMessage == null) throw new ArgumentNullException("handleMessage");
+            if (handleMessage == null) throw new ArgumentNullException(nameof(handleMessage));
             _handleMessage = (msg, ctx, tok) => handleMessage(msg, ctx);
         }
 
@@ -155,8 +155,7 @@ namespace Platibus
         /// <c>null</c></exception>
         public DelegateMessageHandler(Func<TContent, IMessageContext, CancellationToken, Task> handleMessage)
         {
-            if (handleMessage == null) throw new ArgumentNullException("handleMessage");
-            _handleMessage = handleMessage;
+            _handleMessage = handleMessage ?? throw new ArgumentNullException(nameof(handleMessage));
         }
 
         /// <summary>
@@ -168,7 +167,7 @@ namespace Platibus
         /// <c>null</c></exception>
         public DelegateMessageHandler(Action<TContent, IMessageContext> handleMessage)
         {
-            if (handleMessage == null) throw new ArgumentNullException("handleMessage");
+            if (handleMessage == null) throw new ArgumentNullException(nameof(handleMessage));
             _handleMessage = (msg, ctx, tok) => Task.Run(() => handleMessage(msg, ctx), tok);
         }
 

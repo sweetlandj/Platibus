@@ -55,7 +55,7 @@ namespace Platibus.Diagnostics
         /// <param name="enableCompression">(Optional) Whether to enable compression</param>
         public GelfUdpLoggingSink(string host, int port = 12201, bool enableCompression = false)
         {
-            if (string.IsNullOrWhiteSpace(host)) throw new ArgumentNullException("host");
+            if (string.IsNullOrWhiteSpace(host)) throw new ArgumentNullException(nameof(host));
             _host = host;
             _port = port;
             _enableCompression = enableCompression;

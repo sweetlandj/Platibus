@@ -21,6 +21,9 @@
 // THE SOFTWARE.
 
 using System.Threading.Tasks;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 using Platibus.Security;
 
 namespace Platibus.Config.Extensibility
@@ -36,9 +39,13 @@ namespace Platibus.Config.Extensibility
         /// based on the provided <paramref name="configuration"/>.
         /// </summary>
         /// <param name="configuration">The journaling configuration
-        /// element.</param>
+        ///     element.</param>
         /// <returns>Returns a task whose result is an initialized
         /// <see cref="ISecurityTokenService"/>.</returns>
+#if NET452
         Task<ISecurityTokenService> CreateSecurityTokenService(SecurityTokensElement configuration);
+#else
+        Task<ISecurityTokenService> CreateSecurityTokenService(IConfiguration configuration);
+#endif
     }
 }

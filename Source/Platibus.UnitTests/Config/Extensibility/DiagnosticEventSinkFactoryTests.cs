@@ -35,17 +35,7 @@ namespace Platibus.UnitTests.Config.Extensibility
             await WhenInitializingSink();
             AssertSink<ConsoleLoggingSink>();
         }
-
-        [Theory]
-        [InlineData("CommonLogging")]
-        [InlineData("commonlogging")]
-        public async Task CommonLoggingSinkInitializedForCommonLoggingProvider(string providerName)
-        {
-            GivenProvider(providerName);
-            await WhenInitializingSink();
-            AssertSink<CommonLoggingSink>();
-        }
-
+        
         [Theory]
         [InlineData("GelfUdp")]
         [InlineData("gelfudp")]

@@ -46,10 +46,9 @@ namespace Platibus
         /// endpoint with the specified <paramref name="endpointName"/></exception>
         public void Add(EndpointName endpointName, IEndpoint endpoint)
         {
-            if (endpointName == null) throw new ArgumentNullException("endpointName");
-            if (endpoint == null) throw new ArgumentNullException("endpoint");
+            if (endpointName == null) throw new ArgumentNullException(nameof(endpointName));
             if (_endpoints.ContainsKey(endpointName)) throw new EndpointAlreadyExistsException(endpointName);
-            _endpoints[endpointName] = endpoint;
+            _endpoints[endpointName] = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
         }
 
         /// <summary>
@@ -63,8 +62,7 @@ namespace Platibus
         {
             get
             {
-                IEndpoint endpoint;
-                if (!_endpoints.TryGetValue(endpointName, out endpoint))
+                if (!_endpoints.TryGetValue(endpointName, out IEndpoint endpoint))
                 {
                     throw new EndpointNotFoundException(endpointName);
                 }

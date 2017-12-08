@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Web;
 using Newtonsoft.Json;
 using Platibus.Http.Models;
 using Platibus.Journaling;
+using System.Threading.Tasks;
+#if NET452
+using System.Web;
+#endif
 
 namespace Platibus.Http.Clients
 {
@@ -16,6 +18,7 @@ namespace Platibus.Http.Clients
     /// </summary>
     public class HttpMessageJournalClient : IDisposable
     {
+        private static readonly UrlEncoder UrlEncoder = new UrlEncoder();
         private readonly Task<HttpClient> _httpClient;
         private bool _disposed;
 
@@ -29,7 +32,7 @@ namespace Platibus.Http.Clients
         /// instance hosting the journal</param>
         public HttpMessageJournalClient(Uri baseUri, IEndpointCredentials credentials = null)
         {
-            if (baseUri == null) throw new ArgumentNullException("baseUri");
+            if (baseUri == null) throw new ArgumentNullException(nameof(baseUri));
             _httpClient = new BasicHttpClientFactory().GetClient(baseUri, credentials);
         }
         
@@ -101,7 +104,7 @@ namespace Platibus.Http.Clients
                 }
             }
             return string.Join("&", queryParameters
-                .Select(p => p.Key + "=" + HttpUtility.UrlEncode(p.Value)));
+                .Select(p => p.Key + "=" + UrlEncoder.Encode(p.Value)));
         }
 
         private static string FormatDate(DateTime? date)
@@ -140,7 +143,7 @@ namespace Platibus.Http.Clients
         {
             if (disposing)
             {
-                if (_httpClient != null) _httpClient.Dispose();
+                _httpClient?.Dispose();
             }
         }
 

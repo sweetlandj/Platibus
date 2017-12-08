@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿#if NETSTANDARD2_0
+// The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
 // 
@@ -20,22 +21,40 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
-using System.Runtime.InteropServices;
+using System;
+using System.Runtime.Serialization;
 
-// General Information about an assembly is controlled through the following 
-// set of attributes. Change these attribute values to modify the information
-// associated with an assembly.
+namespace Platibus.Config
+{
+    /// <inheritdoc />
+    /// <summary>
+    /// Exception thrown in response to missing or invalid configuration
+    /// </summary>
+    [Serializable]
+    public class ConfigurationErrorsException : Exception
+    {
+        /// <inheritdoc />
+        public ConfigurationErrorsException()
+        {
+        }
 
-[assembly: AssemblyTitle("Platibus.IIS")]
-[assembly: AssemblyDescription("IIS hosting support for the Platibus decentralized asynchronous messaging framework")]
+        /// <inheritdoc />
+        public ConfigurationErrorsException(string message) : base(message)
+        {
+        }
 
-// Setting ComVisible to false makes the types in this assembly not visible 
-// to COM components.  If you need to access a type in this assembly from 
-// COM, set the ComVisible attribute to true on that type.
+        /// <inheritdoc />
+        public ConfigurationErrorsException(string message, Exception innerException) 
+            : base(message, innerException)
+        {
+        }
 
-[assembly: ComVisible(false)]
+        /// <inheritdoc />
+        protected ConfigurationErrorsException(SerializationInfo info, StreamingContext context) 
+            : base(info, context)
+        {
+        }
+    }
+}
 
-// The following GUID is for the ID of the typelib if this project is exposed to COM
-
-[assembly: Guid("364c0514-792a-4eb8-8574-1bbd7a711c8e")]
+#endif

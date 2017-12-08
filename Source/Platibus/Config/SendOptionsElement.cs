@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿#if NET452
+// The MIT License (MIT)
 // 
 // Copyright (c) 2017 Jesse Sweetland
 // 
@@ -44,8 +45,8 @@ namespace Platibus.Config
         [ConfigurationProperty(ContentTypePropertyName)]
         public string ContentType
         {
-            get { return (string)base[ContentTypePropertyName]; }
-            set { base[ContentTypePropertyName] = value; }
+            get => (string)base[ContentTypePropertyName];
+            set => base[ContentTypePropertyName] = value;
         }
 
         /// <summary>
@@ -54,8 +55,8 @@ namespace Platibus.Config
         [ConfigurationProperty(TtlPropertyName)]
         public TimeSpan TTL
         {
-            get { return (TimeSpan)base[TtlPropertyName]; }
-            set { base[TtlPropertyName] = value; }
+            get => (TimeSpan)base[TtlPropertyName];
+            set => base[TtlPropertyName] = value;
         }
 
         /// <summary>
@@ -65,8 +66,8 @@ namespace Platibus.Config
         [ConfigurationProperty(SynchronousPropertyName)]
         public bool Synchronous
         {
-            get { return (bool)base[SynchronousPropertyName]; }
-            set { base[SynchronousPropertyName] = value; }
+            get => (bool)base[SynchronousPropertyName];
+            set => base[SynchronousPropertyName] = value;
         }
 
         /// <summary>
@@ -75,8 +76,8 @@ namespace Platibus.Config
         [ConfigurationProperty(CredentialTypePropertyName, IsRequired = false, DefaultValue = ClientCredentialType.None)]
         public ClientCredentialType CredentialType
         {
-            get { return (ClientCredentialType)base[CredentialTypePropertyName]; }
-            set { base[CredentialTypePropertyName] = value; }
+            get => (ClientCredentialType)base[CredentialTypePropertyName];
+            set => base[CredentialTypePropertyName] = value;
         }
 
         /// <summary>
@@ -86,8 +87,8 @@ namespace Platibus.Config
         [ConfigurationProperty(UsernamePropertyName, IsRequired = false)]
         public string Username
         {
-            get { return (string)base[UsernamePropertyName]; }
-            set { base[UsernamePropertyName] = value; }
+            get => (string)base[UsernamePropertyName];
+            set => base[UsernamePropertyName] = value;
         }
 
         /// <summary>
@@ -97,8 +98,10 @@ namespace Platibus.Config
         [ConfigurationProperty(PasswordPropertyName, IsRequired = false)]
         public string Password
         {
-            get { return (string)base[PasswordPropertyName]; }
-            set { base[PasswordPropertyName] = value; }
+            get => (string)base[PasswordPropertyName];
+            set => base[PasswordPropertyName] = value;
         }
     }
 }
+
+#endif

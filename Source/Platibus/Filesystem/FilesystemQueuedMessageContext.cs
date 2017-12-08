@@ -27,26 +27,17 @@ namespace Platibus.Filesystem
 {
     internal class FilesystemQueuedMessageContext : IQueuedMessageContext
     {
-        private readonly IMessageHeaders _headers;
-        private readonly IPrincipal _principal;
-
         public FilesystemQueuedMessageContext(IMessageHeaders headers, IPrincipal principal)
         {
-            _headers = headers;
-            _principal = principal;
+            Headers = headers;
+            Principal = principal;
         }
 
         public bool Acknowledged { get; private set; }
 
-        public IMessageHeaders Headers
-        {
-            get { return _headers; }
-        }
+        public IMessageHeaders Headers { get; }
 
-        public IPrincipal Principal
-        {
-            get { return _principal; }
-        }
+        public IPrincipal Principal { get; }
 
         public Task Acknowledge()
         {

@@ -20,12 +20,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Configuration;
+using System.Net;
 using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
 using Platibus.Journaling;
 using Platibus.Multicast;
+#if NET452
+using System.Configuration;
+#endif
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Platibus.SQL
 {
@@ -35,6 +41,7 @@ namespace Platibus.SQL
     [Provider("SQL")]
     public class SQLServicesProvider : IMessageQueueingServiceProvider, IMessageJournalProvider, ISubscriptionTrackingServiceProvider
     {
+#if NET452
         /// <inheritdoc />
         public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
@@ -52,8 +59,8 @@ namespace Platibus.SQL
             }
 
             var securityTokenServiceFactory = new SecurityTokenServiceFactory();
-            var securitTokenConfig = configuration.SecurityTokens;
-            var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securitTokenConfig);
+            var securityTokenConfig = configuration.SecurityTokens;
+            var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securityTokenConfig);
 
             var sqlMessageQueueingService = new SQLMessageQueueingService(connectionStringSettings, securityTokenService: securityTokenService);
             sqlMessageQueueingService.Init();
@@ -110,5 +117,85 @@ namespace Platibus.SQL
 
             return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
         }
+#endif
+#if NETSTANDARD2_0
+        /// <inheritdoc />
+        public async Task<IMessageQueueingService> CreateMessageQueueingService(IConfiguration configuration)
+        {
+            var connectionName = configuration?["connectionName"];
+            if (string.IsNullOrWhiteSpace(connectionName))
+            {
+                throw new ConfigurationErrorsException(
+                    "Attribute 'connectionName' is required for SQL message queueing service");
+            }
+
+            var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
+            if (connectionStringSettings == null)
+            {
+                throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
+            }
+
+            var securityTokenServiceFactory = new SecurityTokenServiceFactory();
+            var securityTokensSection = configuration?.GetSection("securityTokens");
+            var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securityTokensSection);
+
+            var sqlMessageQueueingService = new SQLMessageQueueingService(connectionStringSettings, securityTokenService: securityTokenService);
+            sqlMessageQueueingService.Init();
+            return sqlMessageQueueingService;
+        }
+
+        /// <inheritdoc />
+        public Task<IMessageJournal> CreateMessageJournal(IConfiguration configuration)
+        {
+            var connectionName = configuration?["connectionName"];
+            if (string.IsNullOrWhiteSpace(connectionName))
+            {
+                throw new ConfigurationErrorsException(
+                    "Attribute 'connectionName' is required for SQL message journal");
+            }
+
+            var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
+            if (connectionStringSettings == null)
+            {
+                throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
+            }
+            var sqlMessageJournalingService = new SQLMessageJournal(connectionStringSettings);
+            sqlMessageJournalingService.Init();
+            return Task.FromResult<IMessageJournal>(sqlMessageJournalingService);
+        }
+
+        /// <inheritdoc />
+        public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(IConfiguration configuration)
+        {
+            var connectionName = configuration["connectionName"];
+            if (string.IsNullOrWhiteSpace(connectionName))
+            {
+                throw new ConfigurationErrorsException(
+                    "Attribute 'connectionName' is required for SQL subscription tracking service");
+            }
+
+            var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
+            if (connectionStringSettings == null)
+            {
+                throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
+            }
+            var sqlSubscriptionTrackingService = new SQLSubscriptionTrackingService(connectionStringSettings);
+            sqlSubscriptionTrackingService.Init();
+
+            var multicastSection = configuration.GetSection("multicast");
+            var multicastEnabled = multicastSection?.GetValue("enabled", true) ?? false;
+            if (!multicastEnabled)
+            {
+                return Task.FromResult<ISubscriptionTrackingService>(sqlSubscriptionTrackingService);
+            }
+
+            var ipAddress = multicastSection.GetValue("address", IPAddress.Parse("239.255.21.80"));
+            var port = multicastSection.GetValue("port", 52181);
+            var multicastTrackingService = new MulticastSubscriptionTrackingService(
+                sqlSubscriptionTrackingService, ipAddress, port);
+
+            return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
+        }
+#endif
     }
 }

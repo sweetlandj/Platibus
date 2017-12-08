@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿#if NET452
+// The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
 // 
@@ -37,7 +38,7 @@ namespace Platibus.Config
         private const string TopicsPropertyName = "topics";
         private const string SendRulesPropertyName = "sendRules";
         private const string SubscriptionsPropertyName = "subscriptions";
-		private const string DefaultContentTypePropertyName = "defaultContentType";
+        private const string DefaultContentTypePropertyName = "defaultContentType";
         private const string DiagnosticsPropertName = "diagnostics";
         private const string DefaultSendOptionsPropertyName = "defaultSendOptions";
 
@@ -58,8 +59,8 @@ namespace Platibus.Config
         [ConfigurationProperty(DiagnosticsPropertName, IsRequired = false, DefaultValue = null)]
         public DiagnosticsElement Diagnostics
         {
-            get { return (DiagnosticsElement)base[DiagnosticsPropertName]; }
-            set { base[DiagnosticsPropertName] = value; }
+            get => (DiagnosticsElement)base[DiagnosticsPropertName];
+            set => base[DiagnosticsPropertName] = value;
         }
 
         /// <summary>
@@ -68,8 +69,8 @@ namespace Platibus.Config
         [ConfigurationProperty(JournalingPropertyName, IsRequired = false, DefaultValue = null)]
         public JournalingElement Journaling
         {
-            get { return (JournalingElement) base[JournalingPropertyName]; }
-            set { base[JournalingPropertyName] = value; }
+            get => (JournalingElement) base[JournalingPropertyName];
+            set => base[JournalingPropertyName] = value;
         }
 
         /// <summary>
@@ -79,8 +80,8 @@ namespace Platibus.Config
         [ConfigurationProperty(ReplyTimeoutPropertyName)]
         public TimeSpan ReplyTimeout
         {
-            get { return (TimeSpan) base[ReplyTimeoutPropertyName]; }
-            set { base[ReplyTimeoutPropertyName] = value; }
+            get => (TimeSpan) base[ReplyTimeoutPropertyName];
+            set => base[ReplyTimeoutPropertyName] = value;
         }
 
         /// <summary>
@@ -91,8 +92,8 @@ namespace Platibus.Config
             CollectionType = ConfigurationElementCollectionType.AddRemoveClearMap)]
         public EndpointElementCollection Endpoints
         {
-            get { return (EndpointElementCollection) base[EndpointsPropertyName]; }
-            set { base[EndpointsPropertyName] = value; }
+            get => (EndpointElementCollection) base[EndpointsPropertyName];
+            set => base[EndpointsPropertyName] = value;
         }
 
         /// <summary>
@@ -103,8 +104,8 @@ namespace Platibus.Config
             CollectionType = ConfigurationElementCollectionType.AddRemoveClearMap)]
         public TopicElementCollection Topics
         {
-            get { return (TopicElementCollection) base[TopicsPropertyName]; }
-            set { base[TopicsPropertyName] = value; }
+            get => (TopicElementCollection) base[TopicsPropertyName];
+            set => base[TopicsPropertyName] = value;
         }
 
         /// <summary>
@@ -115,8 +116,8 @@ namespace Platibus.Config
             CollectionType = ConfigurationElementCollectionType.AddRemoveClearMap)]
         public SendRuleElementCollection SendRules
         {
-            get { return (SendRuleElementCollection) base[SendRulesPropertyName]; }
-            set { base[SendRulesPropertyName] = value; }
+            get => (SendRuleElementCollection) base[SendRulesPropertyName];
+            set => base[SendRulesPropertyName] = value;
         }
 
         /// <summary>
@@ -127,19 +128,19 @@ namespace Platibus.Config
             CollectionType = ConfigurationElementCollectionType.AddRemoveClearMap)]
         public SubscriptionElementCollection Subscriptions
         {
-            get { return (SubscriptionElementCollection) base[SubscriptionsPropertyName]; }
-            set { base[SubscriptionsPropertyName] = value; }
+            get => (SubscriptionElementCollection) base[SubscriptionsPropertyName];
+            set => base[SubscriptionsPropertyName] = value;
         }
 
-		/// <summary>
-		/// The default content type to use for messages sent from this instance
-		/// </summary>
-		[ConfigurationProperty(DefaultContentTypePropertyName, IsRequired = false, DefaultValue = null)]
-		public string DefaultContentType
-		{
-			get { return (string)base[DefaultContentTypePropertyName]; }
-			set { base[DefaultContentTypePropertyName] = value; }
-		}
+        /// <summary>
+        /// The default content type to use for messages sent from this instance
+        /// </summary>
+        [ConfigurationProperty(DefaultContentTypePropertyName, IsRequired = false, DefaultValue = null)]
+        public string DefaultContentType
+        {
+            get => (string)base[DefaultContentTypePropertyName];
+            set => base[DefaultContentTypePropertyName] = value;
+        }
 
         /// <summary>
         /// Default send options
@@ -147,8 +148,9 @@ namespace Platibus.Config
         [ConfigurationProperty(DefaultSendOptionsPropertyName)]
         public SendOptionsElement DefaultSendOptions
         {
-            get { return (SendOptionsElement)base[DefaultSendOptionsPropertyName]; }
-            set { base[DefaultSendOptionsPropertyName] = value; }
+            get => (SendOptionsElement)base[DefaultSendOptionsPropertyName];
+            set => base[DefaultSendOptionsPropertyName] = value;
         }
     }
 }
+#endif

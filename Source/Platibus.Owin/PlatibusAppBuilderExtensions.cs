@@ -31,26 +31,26 @@ namespace Platibus.Owin
     {
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, string sectionName = null)
         {
-            if (app == null) throw new ArgumentNullException("app");
+            if (app == null) throw new ArgumentNullException(nameof(app));
             return app.UsePlatibusMiddleware(new PlatibusMiddleware(sectionName), true);
         }
 
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, IOwinConfiguration configuration)
         {
-            if (app == null) throw new ArgumentNullException("app");
+            if (app == null) throw new ArgumentNullException(nameof(app));
             return app.UsePlatibusMiddleware(new PlatibusMiddleware(configuration), true);
         }
 
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, Task<IOwinConfiguration> configuration)
         {
-            if (app == null) throw new ArgumentNullException("app");
+            if (app == null) throw new ArgumentNullException(nameof(app));
             return app.UsePlatibusMiddleware(new PlatibusMiddleware(configuration), true);
         }
 
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, PlatibusMiddleware middleware, bool disposeMiddleware = false)
         {
-            if (app == null) throw new ArgumentNullException("app");
-            if (middleware == null) throw new ArgumentNullException("app");
+            if (app == null) throw new ArgumentNullException(nameof(app));
+            if (middleware == null) throw new ArgumentNullException(nameof(app));
 
             if (disposeMiddleware)
             {

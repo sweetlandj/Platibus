@@ -22,7 +22,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -32,6 +31,12 @@ using MongoDB.Driver;
 using MongoDB.Driver.Core.Misc;
 using Platibus.Diagnostics;
 using Platibus.Journaling;
+#if NET452
+using System.Configuration;
+#endif
+#if NETSTANDARD2_0
+using Platibus.Config;
+#endif
 
 namespace Platibus.MongoDB
 {
@@ -69,7 +74,7 @@ namespace Platibus.MongoDB
         public MongoDBMessageJournal(ConnectionStringSettings connectionStringSettings, string databaseName = null, string collectionName = null, IDiagnosticService diagnosticService = null)
         {
             _diagnosticService = diagnosticService;
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
+            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
             var myCollectionName = string.IsNullOrWhiteSpace(collectionName)
                 ? DefaultCollectionName
                 : collectionName;

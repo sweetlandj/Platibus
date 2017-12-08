@@ -28,7 +28,7 @@ namespace Platibus
     /// <summary>
     /// A globally unique vaue that identifies a message
     /// </summary>
-    [DebuggerDisplay("{_value,nq}")]
+    [DebuggerDisplay("{" + nameof(_value) + ",nq}")]
     public struct MessageId : IEquatable<MessageId>
     {
         private readonly Guid _value;

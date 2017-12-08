@@ -42,14 +42,13 @@ namespace Platibus.Filesystem
 
         public MessageFileReader(TextReader reader, bool leaveOpen = false)
         {
-            if (reader == null) throw new ArgumentNullException("reader");
-            _reader = reader;
+            _reader = reader ?? throw new ArgumentNullException(nameof(reader));
             _leaveOpen = leaveOpen;
         }
 
         public MessageFileReader(Stream stream, Encoding encoding = null, bool leaveOpen = false)
         {
-            if (stream == null) throw new ArgumentNullException("stream");
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
             _reader = new StreamReader(stream, encoding ?? Encoding.UTF8);
             _leaveOpen = leaveOpen;
         }
@@ -139,16 +138,13 @@ namespace Platibus.Filesystem
                 var separatorPos = currentLine.IndexOf(':');
                 if (separatorPos < 0)
                 {
-                    throw new FormatException(string.Format("Invalid header on line {0}:  Character ':' expected",
-                        lineNumber));
+                    throw new FormatException($"Invalid header on line {lineNumber}:  Character ':' expected");
                 }
 
                 if (separatorPos == 0)
                 {
                     throw new FormatException(
-                        string.Format(
-                            "Invalid header on line {0}:  Character ':' found at position 0 (missing header name)",
-                            lineNumber));
+                        $"Invalid header on line {lineNumber}:  Character ':' found at position 0 (missing header name)");
                 }
 
                 currentHeaderName = currentLine.Substring(0, separatorPos);

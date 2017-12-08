@@ -33,8 +33,6 @@ namespace Platibus
     [Serializable]
     public class TopicNotFoundException : ApplicationException
     {
-        private readonly TopicName _topic;
-
         /// <summary>
         /// Initializes a new <see cref="TopicNotFoundException"/> with the specified
         /// <paramref name="topic"/> name
@@ -42,7 +40,7 @@ namespace Platibus
         /// <param name="topic">The name of the topic that was not found</param>
         public TopicNotFoundException(TopicName topic)
         {
-            _topic = topic;
+            Topic = topic;
         }
 
         /// <summary>
@@ -54,16 +52,13 @@ namespace Platibus
         public TopicNotFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _topic = info.GetString("Topic");
+            Topic = info.GetString("Topic");
         }
 
         /// <summary>
         /// The name of the topic that was not found
         /// </summary>
-        public TopicName Topic
-        {
-            get { return _topic; }
-        }
+        public TopicName Topic { get; }
 
         /// <summary>
         /// When overridden in a derived class, sets the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> with information about the exception.
@@ -73,7 +68,7 @@ namespace Platibus
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("Topic", _topic);
+            info.AddValue("Topic", Topic);
         }
     }
 }

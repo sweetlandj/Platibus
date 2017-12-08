@@ -45,8 +45,7 @@ namespace Platibus.Diagnostics
         /// <param name="writer">The text writer to target</param>
         public TextLoggingSink(TextWriter writer)
         {
-            if (writer == null) throw new ArgumentNullException("writer");
-            _writer = writer;
+            _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         }
 
         /// <inheritdoc />

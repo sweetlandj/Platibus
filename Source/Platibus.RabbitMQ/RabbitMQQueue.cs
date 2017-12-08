@@ -80,9 +80,6 @@ namespace Platibus.RabbitMQ
             IDiagnosticService diagnosticService = null)
         {
             if (queueName == null) throw new ArgumentNullException("queueName");
-            if (listener == null) throw new ArgumentNullException("listener");
-            if (connection == null) throw new ArgumentNullException("connection");
-            if (securityTokenService == null) throw new ArgumentNullException("securityTokenService");
 
             _queueName = queueName;
             _queueExchange = _queueName.GetExchangeName();
@@ -90,9 +87,9 @@ namespace Platibus.RabbitMQ
             _retryExchange = _queueName.GetRetryExchangeName();
             _deadLetterExchange = _queueName.GetDeadLetterExchangeName();
 
-            _listener = listener;
-            _connection = connection;
-            _securityTokenService = securityTokenService;
+            _listener = listener ?? throw new ArgumentNullException("listener");
+            _connection = connection ?? throw new ArgumentNullException("connection");
+            _securityTokenService = securityTokenService ?? throw new ArgumentNullException("securityTokenService");
             _encoding = encoding ?? Encoding.UTF8;
 
             var myOptions = options ?? new QueueOptions();

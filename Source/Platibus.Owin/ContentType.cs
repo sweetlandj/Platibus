@@ -31,20 +31,17 @@ namespace Platibus.Owin
     {
         private const string CharsetAttributeName = "charset";
 
-        private readonly string _type;
-        private readonly string _subtype;
-        private readonly IDictionary<string, string> _parameters = new Dictionary<string, string>();
+        public string Type { get; }
 
-        public string Type { get { return _type; } }
-        public string Subtype { get { return _subtype; } }
-        public IDictionary<string, string> Parameters { get { return _parameters; } }
+        public string Subtype { get; }
+
+        public IDictionary<string, string> Parameters { get; } = new Dictionary<string, string>();
 
         public Encoding CharsetEncoding
         {
             get
             {
-                string charset;
-                if (_parameters.TryGetValue(CharsetAttributeName, out charset))
+                if (Parameters.TryGetValue(CharsetAttributeName, out string charset))
                 {
                     try
                     {
@@ -61,11 +58,11 @@ namespace Platibus.Owin
             {
                 if (value != null)
                 {
-                    _parameters[CharsetAttributeName] = value.WebName;
+                    Parameters[CharsetAttributeName] = value.WebName;
                 }
                 else
                 {
-                    _parameters.Remove(CharsetAttributeName);
+                    Parameters.Remove(CharsetAttributeName);
                 }
             }
         }
@@ -79,8 +76,8 @@ namespace Platibus.Owin
                 .ToList();
 
             var typeAndSubtype = parts.First().Split('/').ToList();
-            _type = typeAndSubtype.First().Trim();
-            _subtype = typeAndSubtype.Skip(1).Select(str => str.Trim()).FirstOrDefault();
+            Type = typeAndSubtype.First().Trim();
+            Subtype = typeAndSubtype.Skip(1).Select(str => str.Trim()).FirstOrDefault();
 
             var parameters = parts
                 .Skip(1)
@@ -89,15 +86,15 @@ namespace Platibus.Owin
 
             foreach (var keyValuePair in parameters)
             {
-                _parameters[keyValuePair.Key.ToLower()] = keyValuePair.Value;
+                Parameters[keyValuePair.Key.ToLower()] = keyValuePair.Value;
             }
         }
 
         public override string ToString()
         {
-            var value = _type;
-            if (!string.IsNullOrWhiteSpace(_subtype)) value += "/" + _subtype;
-            foreach (var parameter in _parameters)
+            var value = Type;
+            if (!string.IsNullOrWhiteSpace(Subtype)) value += "/" + Subtype;
+            foreach (var parameter in Parameters)
             {
                 value += "; " + parameter.Key + "=" + parameter.Value;
             }

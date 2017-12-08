@@ -52,7 +52,7 @@ namespace Platibus.SQL.Commands
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public virtual DbCommand BuildDbCommand(DbConnection connection)
         {
-            if (connection == null) throw new ArgumentNullException("connection");
+            if (connection == null) throw new ArgumentNullException(nameof(connection));
 
             var command = connection.CreateCommand();
             command.CommandType = CommandType.Text;
@@ -67,15 +67,9 @@ namespace Platibus.SQL.Commands
         /// <summary>
         /// The default command text (Transact-SQL syntax)
         /// </summary>
-        public virtual string CommandText
-        {
-            get
-            {
-                return @"
+        public virtual string CommandText => @"
 DELETE FROM [PB_Subscriptions]
 WHERE [TopicName]=@TopicName
 AND [Subscriber]=@Subscriber";
-            }
-        }
     }
 }

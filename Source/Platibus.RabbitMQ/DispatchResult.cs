@@ -5,8 +5,8 @@
         private readonly Message _message;
         private readonly bool _acknowledged;
 
-        public Message Message { get { return _message; } }
-        public bool Acknowledged { get { return _acknowledged; } }
+        public Message Message => _message;
+        public bool Acknowledged => _acknowledged;
 
         public DispatchResult(Message message, bool acknowledged)
         {

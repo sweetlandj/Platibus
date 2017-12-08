@@ -51,11 +51,9 @@ namespace Platibus.RabbitMQ
             bool autoAcknowledge = false, IDiagnosticService diagnosticService = null)
         {
             if (string.IsNullOrWhiteSpace(queueName)) throw new ArgumentNullException("queueName");
-            if (connection == null) throw new ArgumentNullException("connection");
-            if (consume == null) throw new ArgumentNullException("consume");
-            _connection = connection;
+            _connection = connection ?? throw new ArgumentNullException("connection");
             _queueName = queueName;
-            _consume = consume;
+            _consume = consume ?? throw new ArgumentNullException("consume");
             _consumerTag = consumerTag;
             _concurrencyLimit = concurrencyLimit > 0 
                 ? (ushort)concurrencyLimit
@@ -64,6 +62,14 @@ namespace Platibus.RabbitMQ
             _autoAcknowledge = autoAcknowledge;
             _cancellationTokenSource = new CancellationTokenSource();
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+
+            connection.RecoverySucceeded += (sender, e) => RecoverChannel();
+        }
+
+        private void RecoverChannel()
+        {
+            TryCancelConsumer();
+            Init();
         }
 
         public void Init()

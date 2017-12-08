@@ -8,17 +8,13 @@ namespace Platibus.Multicast
     /// </summary>
     public class MulticastEvent : DiagnosticEvent
     {
-        private readonly string _node;
-        private readonly string _host;
-        private readonly int? _port;
-
         /// <summary>
         /// The node to which the multicast event pertains
         /// </summary>
         /// <remarks>
         /// The node to which the event pertains may differ from the node that emitted the event
         /// </remarks>
-        public string Node { get { return _node; } }
+        public string Node { get; }
 
         /// <summary>
         /// The host to which the event pertains
@@ -26,7 +22,7 @@ namespace Platibus.Multicast
         /// <remarks>
         /// The host to which the event pertains may differ from the host that emitted the event
         /// </remarks>
-        public string Host { get { return _host; } }
+        public string Host { get; }
 
         /// <summary>
         /// The port to which the event pertains
@@ -35,7 +31,7 @@ namespace Platibus.Multicast
         /// The port to which the event pertains may differ from the port of the host that emitted
         /// the event
         /// </remarks>
-        public int? Port { get { return _port; } }
+        public int? Port { get; }
 
         /// <summary>
         /// Initializes a new <see cref="MulticastEvent"/>
@@ -54,9 +50,9 @@ namespace Platibus.Multicast
         public MulticastEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, EndpointName endpoint = null, QueueName queue = null, TopicName topic = null, string node = null, string host = null, int? port = null) 
             : base(source, type, detail, exception, message, endpoint, queue, topic)
         {
-            _node = node;
-            _host = host;
-            _port = port;
+            Node = node;
+            Host = host;
+            Port = port;
         }
     }
 }

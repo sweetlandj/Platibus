@@ -22,7 +22,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,6 +31,12 @@ using Platibus.Queueing;
 using Platibus.Security;
 using Platibus.SQL;
 using Platibus.SQLite.Commands;
+#if NET452
+using System.Configuration;
+#endif
+#if NETSTANDARD2_0
+using Platibus.Config;
+#endif
 
 namespace Platibus.SQLite
 {
@@ -76,12 +81,23 @@ namespace Platibus.SQLite
         {
             var myDiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
             var dbPath = Path.Combine(directory.FullName, queueName + ".db");
+#if NET452
             var connectionStringSettings = new ConnectionStringSettings
             {
                 Name = dbPath,
                 ConnectionString = "Data Source=" + dbPath + "; Version=3; BinaryGUID=False; DateTimeKind=Utc",
                 ProviderName = "System.Data.SQLite"
             };
+#endif
+#if NETSTANDARD2_0
+            SQLiteProviderFactory.Register();
+            var connectionStringSettings = new ConnectionStringSettings
+            {
+                Name = dbPath,
+                ConnectionString = "Data Source=" + dbPath + "",
+                ProviderName = SQLiteProviderFactory.InvariantName
+            };
+#endif
 
             return new SingletonConnectionProvider(connectionStringSettings, myDiagnosticService);
         }

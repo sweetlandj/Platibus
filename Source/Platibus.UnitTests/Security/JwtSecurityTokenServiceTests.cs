@@ -22,12 +22,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Threading.Tasks;
+using Microsoft.IdentityModel.Tokens;
 using Xunit;
 using Platibus.Security;
 
@@ -116,7 +117,7 @@ namespace Platibus.UnitTests.Security
             RNG.GetBytes(signingKeyBytes);
             // Output for testing/verification on jwt.io
             Console.WriteLine(Convert.ToBase64String(signingKeyBytes));
-            return new InMemorySymmetricSecurityKey(signingKeyBytes);
+            return new SymmetricSecurityKey(signingKeyBytes);
         }
 
         protected void GivenNoSigningKey()

@@ -76,7 +76,7 @@ namespace Platibus.Diagnostics
         /// <param name="type">The type of event</param>
         public DiagnosticEventBuilder(object source, DiagnosticEventType type)
         {
-            if (type == null) throw new ArgumentNullException("type");
+            if (type == null) throw new ArgumentNullException(nameof(type));
             Source = source;
             Type = type;
         }

@@ -20,10 +20,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Net;
 using System.Threading.Tasks;
-using Platibus.Config;
 using Platibus.Config.Extensibility;
 using Platibus.Multicast;
+
+#if NET452
+using Platibus.Config;
+#else
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Platibus.InMemory
 {
@@ -33,6 +39,7 @@ namespace Platibus.InMemory
     [Provider("InMemory")]
     public class InMemoryServicesProvider : IMessageQueueingServiceProvider, ISubscriptionTrackingServiceProvider
     {
+#if NET452
         /// <summary>
         /// Returns an in-memory message queueing service
         /// </summary>
@@ -63,5 +70,44 @@ namespace Platibus.InMemory
 
             return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
         }
+#else
+        /// <inheritdoc />
+        /// <summary>
+        /// Returns an in-memory message queueing service
+        /// </summary>
+        /// <param name="configuration">The queueing configuration element</param>
+        /// <returns>Returns an in-memory message queueing service</returns>
+        public Task<IMessageQueueingService> CreateMessageQueueingService(IConfiguration configuration)
+        {
+            return Task.FromResult<IMessageQueueingService>(new InMemoryMessageQueueingService());
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Returns an in-memory subscription tracking service
+        /// </summary>
+        /// <param name="configuration">The subscription tracking configuration element</param>
+        /// <returns>Returns an in-memory subscription tracking service</returns>
+        public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
+            IConfiguration configuration)
+        {
+            var inMemoryTrackingService = new InMemorySubscriptionTrackingService();
+            var multicastSection = configuration?.GetSection("multicast");
+            var multicastEnabled = multicastSection?.GetValue("enabled", true) ?? false;
+            if (!multicastEnabled)
+            {
+                return Task.FromResult<ISubscriptionTrackingService>(inMemoryTrackingService);
+            }
+
+            var ipAddress = multicastSection.GetValue<IPAddress>("address") ?? IPAddress.Parse("239.255.21.80");
+            var port = multicastSection.GetValue<int?>("port") ?? 52181;
+            var multicastTrackingService = new MulticastSubscriptionTrackingService(
+                inMemoryTrackingService, ipAddress, port);
+
+            return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
+        }
+#endif
+
+
     }
 }

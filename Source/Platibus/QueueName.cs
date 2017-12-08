@@ -28,7 +28,7 @@ namespace Platibus
     /// <summary>
     /// An amplified value type that provides equality semantics for queue names
     /// </summary>
-    [DebuggerDisplay("{_value,nq}")]
+    [DebuggerDisplay("{" + nameof(_value) + ",nq}")]
     public class QueueName : IEquatable<QueueName>
     {
         private readonly string _value;
@@ -42,7 +42,7 @@ namespace Platibus
         /// is <c>null</c> or whitespace</exception>
         public QueueName(string value)
         {
-            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException("value");
+            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException(nameof(value));
             _value = value.Trim();
         }
 

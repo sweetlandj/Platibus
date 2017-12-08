@@ -17,7 +17,7 @@ namespace Platibus.Security
         /// headers</returns>
         public static Message WithSanitizedHeaders(this Message message)
         {
-            if (message == null) throw new ArgumentNullException("message");
+            if (message == null) throw new ArgumentNullException(nameof(message));
             var sanitizedHeaders = message.Headers.Sanitize();
             return new Message(sanitizedHeaders, message.Content);
         }
@@ -30,7 +30,7 @@ namespace Platibus.Security
         /// removed</returns>
         public static IMessageHeaders Sanitize(this IMessageHeaders headers)
         {
-            if (headers == null) throw new ArgumentNullException("headers");
+            if (headers == null) throw new ArgumentNullException(nameof(headers));
             
             var authorizationHeader = HttpRequestHeader.Authorization.ToString("G");
             var platibusSecurityTokenHeader = HeaderName.SecurityToken;

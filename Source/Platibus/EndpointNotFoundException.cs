@@ -34,9 +34,6 @@ namespace Platibus
     [Serializable]
     public class EndpointNotFoundException : KeyNotFoundException
     {
-        private readonly EndpointName _endpoint;
-        private readonly Uri _address;
-
         /// <summary>
         /// Initializes a new <see cref="EndpointNotFoundException"/> for the
         /// specified <paramref name="endpoint"/> name
@@ -45,7 +42,7 @@ namespace Platibus
         /// found</param>
         public EndpointNotFoundException(EndpointName endpoint) : base(endpoint)
         {
-            _endpoint = endpoint;
+            Endpoint = endpoint;
         }
 
         /// <summary>
@@ -55,7 +52,7 @@ namespace Platibus
         /// <param name="address">The address of the endpoint that could not be found</param>
         public EndpointNotFoundException(Uri address) : base(address == null ? null : address.ToString())
         {
-            _address = address;
+            Address = address;
         }
 
         /// <summary>
@@ -67,26 +64,20 @@ namespace Platibus
         public EndpointNotFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _endpoint = info.GetString("Endpoint");
+            Endpoint = info.GetString("Endpoint");
             var addressStr = info.GetString("Address");
-            _address = string.IsNullOrWhiteSpace(addressStr) ? null : new Uri(addressStr);
+            Address = string.IsNullOrWhiteSpace(addressStr) ? null : new Uri(addressStr);
         }
 
         /// <summary>
         /// The name of the endpoint that was not found
         /// </summary>
-        public EndpointName Endpoint
-        {
-            get { return _endpoint; }
-        }
+        public EndpointName Endpoint { get; }
 
         /// <summary>
         /// The address that was not found
         /// </summary>
-        public Uri Address
-        {
-            get { return _address; }
-        }
+        public Uri Address { get; }
 
         /// <summary>
         /// When overridden in a derived class, sets the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> with information about the exception.
@@ -96,8 +87,8 @@ namespace Platibus
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("Endpoint", (string)_endpoint);
-            info.AddValue("Address", _address == null ? null : _address.ToString());
+            info.AddValue("Endpoint", (string)Endpoint);
+            info.AddValue("Address", Address == null ? null : Address.ToString());
         }
     }
 }

@@ -32,34 +32,17 @@ namespace Platibus.Config
     /// </summary>
     public class HandlingRule : IHandlingRule
     {
-        private readonly IMessageHandler _messageHandler;
-        private readonly QueueName _queueName;
-        private readonly IMessageSpecification _specification;
-        private readonly QueueOptions _queueOptions;
+        /// <inheritdoc />
+        public IMessageSpecification Specification { get; }
 
         /// <inheritdoc />
-        public IMessageSpecification Specification
-        {
-            get { return _specification; }
-        }
+        public IMessageHandler MessageHandler { get; }
 
         /// <inheritdoc />
-        public IMessageHandler MessageHandler
-        {
-            get { return _messageHandler; }
-        }
+        public QueueName QueueName { get; }
 
         /// <inheritdoc />
-        public QueueName QueueName
-        {
-            get { return _queueName; }
-        }
-
-        /// <inheritdoc />
-        public QueueOptions QueueOptions
-        {
-            get { return _queueOptions; }
-        }
+        public QueueOptions QueueOptions { get; }
 
         /// <summary>
         /// Initializes a new <see cref="HandlingRule"/> with the supplied message
@@ -82,12 +65,10 @@ namespace Platibus.Config
         /// <seealso cref="GenerateQueueName"/>
         public HandlingRule(IMessageSpecification specification, IMessageHandler messageHandler, QueueName queueName = null, QueueOptions queueOptions = null)
         {
-            if (specification == null) throw new ArgumentNullException("specification");
-            if (messageHandler == null) throw new ArgumentNullException("messageHandler");
-            _specification = specification;
-            _messageHandler = messageHandler;
-            _queueName = queueName ?? GenerateQueueName(messageHandler);
-            _queueOptions = queueOptions;
+            Specification = specification ?? throw new ArgumentNullException(nameof(specification));
+            MessageHandler = messageHandler ?? throw new ArgumentNullException(nameof(messageHandler));
+            QueueName = queueName ?? GenerateQueueName(messageHandler);
+            QueueOptions = queueOptions;
         }
         
         /// <summary>

@@ -28,13 +28,9 @@ namespace Platibus.Config
     /// <summary>
     /// A basic implementation of <see cref="ISubscription"/>
     /// </summary>
-    [DebuggerDisplay("{ToString,nq}")]
+    [DebuggerDisplay("{" + nameof(ToString) + ",nq}")]
     public class Subscription : ISubscription, IEquatable<Subscription>
     {
-        private readonly EndpointName _endpoint;
-        private readonly TopicName _topic;
-        private readonly TimeSpan _ttl;
-
         /// <summary>
         /// Initializes a new <see cref="Subscription"/> to the specified
         /// <paramref name="endpoint"/> and <paramref name="topic"/> with the
@@ -49,12 +45,12 @@ namespace Platibus.Config
         /// <paramref name="topic"/> are <c>null</c></exception>
         public Subscription(EndpointName endpoint, TopicName topic, TimeSpan ttl = default(TimeSpan))
         {
-            if (endpoint == null) throw new ArgumentNullException("endpoint");
-            if (topic == null) throw new ArgumentNullException("topic");
+            if (endpoint == null) throw new ArgumentNullException(nameof(endpoint));
+            if (topic == null) throw new ArgumentNullException(nameof(topic));
             
-            _topic = topic;
-            _endpoint = endpoint;
-            _ttl = ttl;
+            Topic = topic;
+            Endpoint = endpoint;
+            TTL = ttl;
         }
 
         /// <summary>
@@ -68,25 +64,19 @@ namespace Platibus.Config
         public bool Equals(Subscription subscription)
         {
             return subscription != null
-                   && _endpoint.Equals(subscription._endpoint)
-                   && _topic.Equals(subscription._topic);
+                   && Endpoint.Equals(subscription.Endpoint)
+                   && Topic.Equals(subscription.Topic);
         }
 
         /// <summary>
         /// The name of the publisher endpoint
         /// </summary>
-        public EndpointName Endpoint
-        {
-            get { return _endpoint; }
-        }
+        public EndpointName Endpoint { get; }
 
         /// <summary>
         /// The name of the topic
         /// </summary>
-        public TopicName Topic
-        {
-            get { return _topic; }
-        }
+        public TopicName Topic { get; }
 
         /// <summary>
         /// The Time-To-Live (TTL) for the subscription
@@ -96,10 +86,7 @@ namespace Platibus.Config
         /// "dead man's switch" that will cause the subscription to be terminated
         /// if not renewed within that span of time.
         /// </remarks>
-        public TimeSpan TTL
-        {
-            get { return _ttl; }
-        }
+        public TimeSpan TTL { get; }
 
         /// <summary>
         /// Returns a string that represents the current object.
@@ -110,7 +97,7 @@ namespace Platibus.Config
         /// <filterpriority>2</filterpriority>
         public override string ToString()
         {
-            return string.Format("{0}@{1}", _topic, _endpoint);
+            return $"{Topic}@{Endpoint}";
         }
 
         /// <summary>
@@ -122,8 +109,8 @@ namespace Platibus.Config
         /// <filterpriority>2</filterpriority>
         public override int GetHashCode()
         {
-            var hashCode = _endpoint.GetHashCode();
-            hashCode = (hashCode*397) ^ _topic.GetHashCode();
+            var hashCode = Endpoint.GetHashCode();
+            hashCode = (hashCode*397) ^ Topic.GetHashCode();
             return hashCode;
         }
 

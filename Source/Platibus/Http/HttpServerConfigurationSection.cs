@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿#if NET452
+// The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
 // 
@@ -48,8 +49,8 @@ namespace Platibus.Http
         [ConfigurationProperty(BaseUriPropertyName)]
         public Uri BaseUri
         {
-            get { return (Uri) base[BaseUriPropertyName]; }
-            set { base[BaseUriPropertyName] = value; }
+            get => (Uri) base[BaseUriPropertyName];
+            set => base[BaseUriPropertyName] = value;
         }
 
         /// <summary>
@@ -58,8 +59,8 @@ namespace Platibus.Http
         [ConfigurationProperty(ConcurrencyLimitPropertyName)]
         public int ConcurrencyLimit
         {
-            get { return (int)base[ConcurrencyLimitPropertyName]; }
-            set { base[ConcurrencyLimitPropertyName] = value; }
+            get => (int)base[ConcurrencyLimitPropertyName];
+            set => base[ConcurrencyLimitPropertyName] = value;
         }
 
         /// <summary>
@@ -68,8 +69,8 @@ namespace Platibus.Http
         [ConfigurationProperty(AuthenticationSchemesPropertyName)]
         public AuthenticationSchemesElementCollection AuthenticationSchemes
         {
-            get { return (AuthenticationSchemesElementCollection) base[AuthenticationSchemesPropertyName]; }
-            set { base[AuthenticationSchemesPropertyName] = value; }
+            get => (AuthenticationSchemesElementCollection) base[AuthenticationSchemesPropertyName];
+            set => base[AuthenticationSchemesPropertyName] = value;
         }
 
         /// <summary>
@@ -78,8 +79,8 @@ namespace Platibus.Http
         [ConfigurationProperty(SubscriptionTrackingPropertyName)]
         public SubscriptionTrackingElement SubscriptionTracking
         {
-            get { return (SubscriptionTrackingElement) base[SubscriptionTrackingPropertyName]; }
-            set { base[SubscriptionTrackingPropertyName] = value; }
+            get => (SubscriptionTrackingElement) base[SubscriptionTrackingPropertyName];
+            set => base[SubscriptionTrackingPropertyName] = value;
         }
 
         /// <summary>
@@ -88,8 +89,8 @@ namespace Platibus.Http
         [ConfigurationProperty(QueueingPropertyName)]
         public QueueingElement Queueing
         {
-            get { return (QueueingElement) base[QueueingPropertyName]; }
-            set { base[QueueingPropertyName] = value; }
+            get => (QueueingElement) base[QueueingPropertyName];
+            set => base[QueueingPropertyName] = value;
         }
 
         /// <summary>
@@ -99,8 +100,9 @@ namespace Platibus.Http
         [ConfigurationProperty(BypassTransportLocalDestinationPropertyName, IsRequired = false, DefaultValue = false)]
         public bool BypassTransportLocalDestination
         {
-            get { return (bool)base[BypassTransportLocalDestinationPropertyName]; }
-            set { base[BypassTransportLocalDestinationPropertyName] = value; }
+            get => (bool)base[BypassTransportLocalDestinationPropertyName];
+            set => base[BypassTransportLocalDestinationPropertyName] = value;
         }
     }
 }
+#endif

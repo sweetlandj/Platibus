@@ -28,7 +28,7 @@ namespace Platibus.Diagnostics
     /// <summary>
     /// Denotes a type or category of diagnostic event
     /// </summary>
-    [DebuggerDisplay("{_name,nq}")]
+    [DebuggerDisplay("{" + nameof(Name) + ",nq}")]
     public class DiagnosticEventType
     {
         /// <summary>
@@ -206,18 +206,15 @@ namespace Platibus.Diagnostics
         /// </summary>
         public static readonly DiagnosticEventType InvalidSecurityToken = new DiagnosticEventType("InvalidSecurityToken", DiagnosticEventLevel.Error);
 
-        private readonly string _name;
-        private readonly DiagnosticEventLevel _level;
-
         /// <summary>
         /// The name of the diagnostic event type
         /// </summary>
-        public string Name { get { return _name; } }
+        public string Name { get; }
 
         /// <summary>
         /// An indication of the purpose and relative importance of this event
         /// </summary>
-        public DiagnosticEventLevel Level { get { return _level; } }
+        public DiagnosticEventLevel Level { get; }
 
         /// <summary>
         /// Initializes a new <see cref="DiagnosticEventType"/> with the specified 
@@ -227,15 +224,15 @@ namespace Platibus.Diagnostics
         /// <param name="level">An indication of the purpose and relative importance of this event</param>
         public DiagnosticEventType(string value, DiagnosticEventLevel level = DiagnosticEventLevel.Debug)
         {
-            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException("value");
-            _name = value.Trim();
-            _level = level;
+            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException(nameof(value));
+            Name = value.Trim();
+            Level = level;
         }
         
         /// <inheritdoc />
         public override string ToString()
         {
-            return _name;
+            return Name;
         }
 
         /// <summary>
@@ -247,7 +244,7 @@ namespace Platibus.Diagnostics
         public bool Equals(DiagnosticEventType eventType)
         {
             return !ReferenceEquals(null, eventType) &&
-                   string.Equals(_name, eventType._name, StringComparison.InvariantCultureIgnoreCase);
+                   string.Equals(Name, eventType.Name, StringComparison.InvariantCultureIgnoreCase);
         }
         
         /// <inheritdoc />
@@ -259,7 +256,7 @@ namespace Platibus.Diagnostics
         /// <inheritdoc />
         public override int GetHashCode()
         {
-            return _name.ToLowerInvariant().GetHashCode();
+            return Name.ToLowerInvariant().GetHashCode();
         }
 
         /// <summary>
@@ -296,7 +293,7 @@ namespace Platibus.Diagnostics
         /// otherwise returns the value of the <paramref name="eventType"/> object</returns>
         public static implicit operator string(DiagnosticEventType eventType)
         {
-            return eventType == null ? null : eventType._name;
+            return eventType == null ? null : eventType.Name;
         }
     }
 }

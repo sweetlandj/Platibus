@@ -50,10 +50,7 @@ namespace Platibus.Http
         /// <see cref="Add(KeyValuePair{ResourceType, IHttpResourceController})"/>
         /// methods
         /// </remarks>
-        public IEnumerable<ResourceType> ResourceTypes
-        {
-            get { return _resourceHandlers.Keys; }
-        }
+        public IEnumerable<ResourceType> ResourceTypes => _resourceHandlers.Keys;
 
         /// <summary>
         /// Returns an enumerator that iterates through the collection.
@@ -129,8 +126,8 @@ namespace Platibus.Http
         /// or <paramref name="controller"/> are <c>null</c></exception>
         public void Add(ResourceType resourceType, IHttpResourceController controller)
         {
-            if (resourceType == null) throw new ArgumentNullException("resourceType");
-            if (controller == null) throw new ArgumentNullException("controller");
+            if (resourceType == null) throw new ArgumentNullException(nameof(resourceType));
+            if (controller == null) throw new ArgumentNullException(nameof(controller));
             _resourceHandlers.Add(resourceType, controller);
         }
 
@@ -148,12 +145,11 @@ namespace Platibus.Http
 
         private IHttpResourceController GetController(ResourceType resourceType)
         {
-            IHttpResourceController resourceHandler;
-            if (_resourceHandlers.TryGetValue(resourceType, out resourceHandler))
+            if (_resourceHandlers.TryGetValue(resourceType, out IHttpResourceController resourceHandler))
             {
                 return resourceHandler;
             }
-            throw new ArgumentOutOfRangeException("resourceType", resourceType);
+            throw new ArgumentOutOfRangeException(nameof(resourceType), resourceType);
         }
     }
 }

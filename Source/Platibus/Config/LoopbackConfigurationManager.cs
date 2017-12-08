@@ -21,88 +21,69 @@
 // THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
-using System.Configuration;
 using System.Threading.Tasks;
 using Platibus.Config.Extensibility;
 using Platibus.Diagnostics;
 using Platibus.Serialization;
+#if NET452
+using System.Collections.Generic;
+#endif
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Platibus.Config
 {
+    /// <inheritdoc />
     /// <summary>
-    /// Factory class used to initialize <see cref="LoopbackConfiguration"/> objects from
+    /// Factory class used to initialize <see cref="T:Platibus.Config.LoopbackConfiguration" /> objects from
     /// declarative configuration elements in application configuration files.
     /// </summary>
     public class LoopbackConfigurationManager : PlatibusConfigurationManager<LoopbackConfiguration>
     {
+
+
+#if NET452
         /// <inheritdoc />
-        public override async Task Initialize(LoopbackConfiguration configuration, string configSectionName = null)
+        public override async Task Initialize(LoopbackConfiguration platibusConfiguration, string sectionName = null)
         {
-            var diagnosticService = configuration.DiagnosticService;
-            if (string.IsNullOrWhiteSpace(configSectionName))
+            var diagnosticService = platibusConfiguration.DiagnosticService;
+            if (string.IsNullOrWhiteSpace(sectionName))
             {
-                configSectionName = "platibus.loopback";
+                sectionName = "platibus.loopback";
                 await diagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
                     {
-                        Detail = "Using default configuration section \"" + configSectionName + "\""
+                        Detail = "Using default configuration section \"" + sectionName + "\""
                     }.Build());
             }
 
-            var configSection = ConfigurationManager.GetSection(configSectionName);
-            if (configSection == null)
-            {
-                await diagnosticService.EmitAsync(
-                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
-                    {
-                        Detail = "Configuration section \"" + configSectionName +
-                                 "\" not found; using default configuration"
-                    }.Build());
-                configSection = new PlatibusConfigurationSection();
-            }
-
-            var platibusConfigSection = configSection as LoopbackConfigurationSection;
-            if (platibusConfigSection == null)
-            {
-                var errorMessage = "Unexpected type for configuration section \"" + configSectionName +
-                                   "\": expected " + typeof(LoopbackConfigurationSection) + " but was " +
-                                   configSection.GetType();
-
-                await diagnosticService.EmitAsync(
-                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
-                    {
-                        Detail = errorMessage
-                    }.Build());
-
-                throw new ConfigurationErrorsException(errorMessage);
-            }
-
-            await Initialize(configuration, platibusConfigSection);
+            var configuration = LoadConfigurationSection<LoopbackConfigurationSection>(sectionName, diagnosticService);
+            await Initialize(platibusConfiguration, configuration);
         }
 
         /// <summary>
-        /// Initializes the specified <paramref name="configuration"/> object according to the
+        /// Initializes the specified <paramref name="platibusConfiguration"/> object according to the
         /// values in the supplied loopback <paramref name="configSection"/>
         /// </summary>
-        /// <param name="configuration">The configuration object to initialize</param>
+        /// <param name="platibusConfiguration">The configuration object to initialize</param>
         /// <param name="configSection">The <see cref="LoopbackConfigurationSection"/>
         /// containing the values used to initialize the Platibus configuration</param>
-        public async Task Initialize(LoopbackConfiguration configuration, LoopbackConfigurationSection configSection)
+        public async Task Initialize(LoopbackConfiguration platibusConfiguration, LoopbackConfigurationSection configSection)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
-            if (configSection == null) throw new ArgumentNullException("configSection");
+            if (platibusConfiguration == null) throw new ArgumentNullException(nameof(platibusConfiguration));
+            if (configSection == null) throw new ArgumentNullException(nameof(configSection));
 
-            await InitializeDiagnostics(configuration, configSection);
+            await InitializeDiagnostics(platibusConfiguration, configSection);
 
-            configuration.ReplyTimeout = configSection.ReplyTimeout;
-            configuration.SerializationService = new DefaultSerializationService();
-            configuration.MessageNamingService = new DefaultMessageNamingService();
-            configuration.DefaultContentType = configSection.DefaultContentType;
+            platibusConfiguration.ReplyTimeout = configSection.ReplyTimeout;
+            platibusConfiguration.SerializationService = new DefaultSerializationService();
+            platibusConfiguration.MessageNamingService = new DefaultMessageNamingService();
+            platibusConfiguration.DefaultContentType = configSection.DefaultContentType;
 
             if (configSection.DefaultSendOptions != null)
             {
-                configuration.DefaultSendOptions = new SendOptions
+                platibusConfiguration.DefaultSendOptions = new SendOptions
                 {
                     ContentType = configSection.DefaultSendOptions.ContentType,
                     TTL = configSection.DefaultSendOptions.TTL,
@@ -110,13 +91,13 @@ namespace Platibus.Config
                 };
             }
 
-            InitializeTopics(configuration, configSection);
+            InitializeTopics(platibusConfiguration, configSection);
 
-            var messageJournalFactory = new MessageJournalFactory(configuration.DiagnosticService);
-            configuration.MessageJournal = await messageJournalFactory.InitMessageJournal(configSection.Journaling);
+            var messageJournalFactory = new MessageJournalFactory(platibusConfiguration.DiagnosticService);
+            platibusConfiguration.MessageJournal = await messageJournalFactory.InitMessageJournal(configSection.Journaling);
 
-            var mqsFactory = new MessageQueueingServiceFactory(configuration.DiagnosticService);
-            configuration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(configSection.Queueing);
+            var mqsFactory = new MessageQueueingServiceFactory(platibusConfiguration.DiagnosticService);
+            platibusConfiguration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(configSection.Queueing);
         }
 
         /// <summary>
@@ -150,13 +131,57 @@ namespace Platibus.Config
         /// properties</param>
         protected virtual void InitializeTopics(LoopbackConfiguration configuration, LoopbackConfigurationSection configSection)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
-            if (configSection == null) throw new ArgumentNullException("configSection");
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+            if (configSection == null) throw new ArgumentNullException(nameof(configSection));
             IEnumerable<TopicElement> topics = configSection.Topics;
             foreach (var topic in topics)
             {
                 configuration.AddTopic(topic.Name);
             }
         }
+#endif
+#if NETSTANDARD2_0
+        /// <inheritdoc />
+        public override async Task Initialize(LoopbackConfiguration platibusConfiguration, string sectionName = null)
+        {
+            var diagnosticService = platibusConfiguration.DiagnosticService;
+            if (string.IsNullOrWhiteSpace(sectionName))
+            {
+                sectionName = "platibus.loopback";
+                await diagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                    {
+                        Detail = "Using default configuration section \"" + sectionName + "\""
+                    }.Build());
+            }
+
+            var configuration = LoadConfigurationSection(sectionName, diagnosticService);
+            await Initialize(platibusConfiguration, configuration);
+        }
+
+        public override async Task Initialize(LoopbackConfiguration platibusConfiguration, IConfiguration configuration)
+        {
+            if (platibusConfiguration == null) throw new ArgumentNullException(nameof(platibusConfiguration));
+
+            await InitializeDiagnostics(platibusConfiguration, configuration);
+            var diagnosticService = platibusConfiguration.DiagnosticService;
+
+            platibusConfiguration.ReplyTimeout = configuration?.GetValue<TimeSpan>("replyTimeout") ?? TimeSpan.Zero;
+            platibusConfiguration.SerializationService = new DefaultSerializationService();
+            platibusConfiguration.MessageNamingService = new DefaultMessageNamingService();
+            platibusConfiguration.DefaultContentType = configuration?["defaultContentType"];
+
+            InitializeDefaultSendOptions(platibusConfiguration, configuration);
+            InitializeTopics(platibusConfiguration, configuration);
+
+            var messageJournalFactory = new MessageJournalFactory(diagnosticService);
+            var journalingSection = configuration?.GetSection("journaling");
+            platibusConfiguration.MessageJournal = await messageJournalFactory.InitMessageJournal(journalingSection);
+
+            var mqsFactory = new MessageQueueingServiceFactory(platibusConfiguration.DiagnosticService);
+            var queueingSection = configuration?.GetSection("queueing");
+            platibusConfiguration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(queueingSection);
+        }
+#endif
     }
 }

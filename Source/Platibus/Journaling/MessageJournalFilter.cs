@@ -16,8 +16,8 @@ namespace Platibus.Journaling
         /// </summary>
         public IList<MessageJournalCategory> Categories
         {
-            get { return _categories ?? (_categories = new List<MessageJournalCategory>()); }
-            set { _categories = value; }
+            get => _categories ?? (_categories = new List<MessageJournalCategory>());
+            set => _categories = value;
         }
 
         /// <summary>
@@ -25,8 +25,8 @@ namespace Platibus.Journaling
         /// </summary>
         public IList<TopicName> Topics
         {
-            get { return _topics ?? (_topics = new List<TopicName>()); }
-            set { _topics = value; }
+            get => _topics ?? (_topics = new List<TopicName>());
+            set => _topics = value;
         }
 
         /// <summary>

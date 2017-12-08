@@ -13,20 +13,17 @@ namespace Platibus.Diagnostics
         /// </summary>
         public const string DefaultMeasurement = "pb_stats";
 
-        private readonly Uri _uri;
-        private readonly string _database;
-        
         private IDictionary<string, string> _tags;
 
         /// <summary>
         /// The URI (scheme, host, and port) of the InfluxDB server
         /// </summary>
-        public Uri Uri { get { return _uri; } }
+        public Uri Uri { get; }
 
         /// <summary>
         /// The name of the database to target
         /// </summary>
-        public string Database { get { return _database; } }
+        public string Database { get; }
 
         /// <summary>
         /// (Optional) The measurement name to use
@@ -86,8 +83,8 @@ namespace Platibus.Diagnostics
         /// </remarks>
         public IDictionary<string, string> Tags
         {
-            get { return _tags ?? (_tags = new Dictionary<string, string>()); }
-            set { _tags = value; }
+            get => _tags ?? (_tags = new Dictionary<string, string>());
+            set => _tags = value;
         }
 
         /// <summary>
@@ -97,10 +94,10 @@ namespace Platibus.Diagnostics
         /// <param name="database">The database to which points will be written</param>
         public InfluxDBOptions(Uri uri, string database)
         {
-            if (uri == null) throw new ArgumentNullException("uri");
-            if (string.IsNullOrWhiteSpace(database)) throw new ArgumentNullException("database");
-            _uri = uri;
-            _database = database.Trim();
+            if (uri == null) throw new ArgumentNullException(nameof(uri));
+            if (string.IsNullOrWhiteSpace(database)) throw new ArgumentNullException(nameof(database));
+            Uri = uri;
+            Database = database.Trim();
         }
     }
 }

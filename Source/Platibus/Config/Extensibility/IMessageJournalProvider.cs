@@ -21,7 +21,9 @@
 // THE SOFTWARE.
 
 using System.Threading.Tasks;
-using Platibus.Diagnostics;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 using Platibus.Journaling;
 
 namespace Platibus.Config.Extensibility
@@ -38,6 +40,10 @@ namespace Platibus.Config.Extensibility
         /// <param name="configuration">The journaling configuration element.</param>
         /// <returns>Returns a task whose result is an initialized
         /// <see cref="IMessageJournal"/>.</returns>
+#if NET452
         Task<IMessageJournal> CreateMessageJournal(JournalingElement configuration);
+#else
+        Task<IMessageJournal> CreateMessageJournal(IConfiguration configuration);
+#endif
     }
 }

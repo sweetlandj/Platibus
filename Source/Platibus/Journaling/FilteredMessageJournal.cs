@@ -13,8 +13,7 @@ namespace Platibus.Journaling
 
         public FilteredMessageJournal(IMessageJournal inner, IEnumerable<MessageJournalCategory> categories = null)
         {
-            if (inner == null) throw new ArgumentNullException("inner");
-            _inner = inner;
+            _inner = inner ?? throw new ArgumentNullException(nameof(inner));
             _categories = (categories ?? Enumerable.Empty<MessageJournalCategory>()).ToList();
         }
 

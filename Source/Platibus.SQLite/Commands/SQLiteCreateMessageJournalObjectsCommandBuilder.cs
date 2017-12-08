@@ -37,7 +37,7 @@ namespace Platibus.SQLite.Commands
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public override DbCommand BuildDbCommand(DbConnection connection)
         {
-            if (connection == null) throw new ArgumentNullException("connection");
+            if (connection == null) throw new ArgumentNullException(nameof(connection));
             var command = connection.CreateCommand();
             command.CommandType = CommandType.Text;
             command.CommandText = CommandText;
@@ -47,11 +47,7 @@ namespace Platibus.SQLite.Commands
         /// <summary>
         /// The default command text (SQLite syntax)
         /// </summary>
-        public virtual string CommandText
-        {
-            get
-            {
-                return @"
+        public virtual string CommandText => @"
 CREATE TABLE IF NOT EXISTS [PB_MessageJournal]
 (
     [Id] INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -90,8 +86,5 @@ CREATE INDEX IF NOT EXISTS [PB_MessageJournal_IX_Destination]
 
 CREATE INDEX IF NOT EXISTS [PB_MessageJournal_IX_RelatedTo] 
     ON [PB_MessageJournal]([RelatedTo]);";
-
-            }
-        }
     }
 }

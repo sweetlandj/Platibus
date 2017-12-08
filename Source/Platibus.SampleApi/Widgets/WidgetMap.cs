@@ -7,7 +7,7 @@ namespace Platibus.SampleApi.Widgets
     {
         public static Widget ToEntity(WidgetResource resource)
         {
-            if (resource == null) throw new ArgumentNullException("resource");
+            if (resource == null) throw new ArgumentNullException(nameof(resource));
             var attributes = resource.Attributes ?? new WidgetAttributes();
             return new Widget
             {

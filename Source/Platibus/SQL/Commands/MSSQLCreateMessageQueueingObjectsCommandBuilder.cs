@@ -37,7 +37,7 @@ namespace Platibus.SQL.Commands
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public override DbCommand BuildDbCommand(DbConnection connection)
         {
-            if (connection == null) throw new ArgumentNullException("connection");
+            if (connection == null) throw new ArgumentNullException(nameof(connection));
             var command = connection.CreateCommand();
             command.CommandType = CommandType.Text;
             command.CommandText = CommandText;
@@ -47,11 +47,7 @@ namespace Platibus.SQL.Commands
         /// <summary>
         /// The default command text (Transact-SQL syntax)
         /// </summary>
-        public virtual string CommandText
-        {
-            get
-            {
-                return @"
+        public virtual string CommandText => @"
 IF OBJECT_ID('[PB_QueuedMessages]') IS NULL
 BEGIN
     CREATE TABLE [PB_QueuedMessages]
@@ -78,7 +74,5 @@ BEGIN
     CREATE INDEX [PB_QueuedMessages_IX_QueueName] 
         ON [PB_QueuedMessages]([QueueName])
 END";
-            }
-        }
     }
 }

@@ -31,7 +31,7 @@ namespace Platibus
     /// handled by both the sender and the recipient
     /// </summary>
     [Obsolete("Use SendOptions.Synchronous to override asynchronous queueing behavior")]
-    [DebuggerDisplay("{_value,nq}")]
+    [DebuggerDisplay("{" + nameof(_value) + ",nq}")]
     public struct MessageImportance : IComparable<MessageImportance>
     {
         private const int LowValue = -1;
@@ -69,18 +69,12 @@ namespace Platibus
         /// <summary>
         /// Indicates whether this message importance level allows messages to be discarded
         /// </summary>
-        public bool AllowsDiscarding
-        {
-            get { return _value <= LowValue; }
-        }
+        public bool AllowsDiscarding => _value <= LowValue;
 
         /// <summary>
         /// Indicates whether this message importance level requires messages to be queued
         /// </summary>
-        public bool RequiresQueueing
-        {
-            get { return _value >= CriticalValue; }
-        }
+        public bool RequiresQueueing => _value >= CriticalValue;
 
         /// <summary>
         /// Initializes a new <see cref="MessageImportance"/> with the specified relative value

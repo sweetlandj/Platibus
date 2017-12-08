@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿#if NET452
+// The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
 // 
@@ -40,8 +41,9 @@ namespace Platibus.Http
         [ConfigurationProperty(SchemePropertyName, IsKey = true, IsRequired = true)]
         public AuthenticationSchemes Scheme
         {
-            get { return (AuthenticationSchemes) base[SchemePropertyName]; }
-            set { base[SchemePropertyName] = value; }
+            get => (AuthenticationSchemes) base[SchemePropertyName];
+            set => base[SchemePropertyName] = value;
         }
     }
 }
+#endif

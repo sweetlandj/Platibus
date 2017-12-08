@@ -71,10 +71,10 @@ namespace Platibus
         /// <exception cref="ArgumentNullException">Thrown if any of the parameters are <c>null</c></exception>
         public Bus(IPlatibusConfiguration configuration, Uri baseUri, ITransportService transportService, IMessageQueueingService messageQueueingService)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
-            if (baseUri == null) throw new ArgumentNullException("baseUri");
-            if (transportService == null) throw new ArgumentNullException("transportService");
-            if (messageQueueingService == null) throw new ArgumentNullException("messageQueueingService");
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+            if (baseUri == null) throw new ArgumentNullException(nameof(baseUri));
+            if (transportService == null) throw new ArgumentNullException(nameof(transportService));
+            if (messageQueueingService == null) throw new ArgumentNullException(nameof(messageQueueingService));
 
             // Validate the provided configuration and throw exceptions for missing or invalid
             // configurations
@@ -185,7 +185,7 @@ namespace Platibus
         {
             CheckDisposed();
 
-            if (content == null) throw new ArgumentNullException("content");
+            if (content == null) throw new ArgumentNullException(nameof(content));
 
             var myOptions = options ?? _defaultSendOptions;
             var sent = DateTime.UtcNow;
@@ -234,8 +234,8 @@ namespace Platibus
         {
             CheckDisposed();
 
-            if (content == null) throw new ArgumentNullException("content");
-            if (endpointName == null) throw new ArgumentNullException("endpointName");
+            if (content == null) throw new ArgumentNullException(nameof(content));
+            if (endpointName == null) throw new ArgumentNullException(nameof(endpointName));
 
             var myOptions = options ?? _defaultSendOptions;
             var endpoint = _endpoints[endpointName];
@@ -284,8 +284,8 @@ namespace Platibus
         {
             CheckDisposed();
 
-            if (content == null) throw new ArgumentNullException("content");
-            if (endpointAddress == null) throw new ArgumentNullException("endpointAddress");
+            if (content == null) throw new ArgumentNullException(nameof(content));
+            if (endpointAddress == null) throw new ArgumentNullException(nameof(endpointAddress));
 
             var myOptions = options ?? _defaultSendOptions;
             var headers = new MessageHeaders
@@ -297,12 +297,11 @@ namespace Platibus
             var message = BuildMessage(content, headers, myOptions);
             var credentials = myOptions.Credentials;
 
-            IEndpoint knownEndpoint;
-            if (credentials == null && _endpoints.TryGetEndpointByAddress(endpointAddress, out knownEndpoint))
+            if (credentials == null && _endpoints.TryGetEndpointByAddress(endpointAddress, out IEndpoint knownEndpoint))
             {
                 credentials = knownEndpoint.Credentials;
             }
-            
+
             // Create the sent message before transporting it in order to ensure that the
             // reply stream is cached before any replies arrive.
             var sentMessage = _replyHub.CreateSentMessage(message);
@@ -346,7 +345,7 @@ namespace Platibus
 
         private Message BuildMessage(object content, IMessageHeaders suppliedHeaders, SendOptions options)
         {
-            if (content == null) throw new ArgumentNullException("content");
+            if (content == null) throw new ArgumentNullException(nameof(content));
             var messageName = _messageNamingService.GetNameForType(content.GetType());
 
             var headers = new MessageHeaders(suppliedHeaders)
@@ -403,13 +402,12 @@ namespace Platibus
         internal async Task SendReply(BusMessageContext messageContext, object replyContent,
             SendOptions options = default(SendOptions), CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (messageContext == null) throw new ArgumentNullException("messageContext");
-            if (replyContent == null) throw new ArgumentNullException("replyContent");
+            if (messageContext == null) throw new ArgumentNullException(nameof(messageContext));
+            if (replyContent == null) throw new ArgumentNullException(nameof(replyContent));
 
-            IEndpoint replyToEndpoint;
             IEndpointCredentials credentials = null;
             var replyTo = messageContext.Headers.ReplyTo ?? messageContext.Headers.Origination;
-            if (_endpoints.TryGetEndpointByAddress(replyTo, out replyToEndpoint))
+            if (_endpoints.TryGetEndpointByAddress(replyTo, out IEndpoint replyToEndpoint))
             {
                 credentials = replyToEndpoint.Credentials;
             }

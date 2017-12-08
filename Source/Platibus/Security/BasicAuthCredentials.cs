@@ -31,24 +31,15 @@ namespace Platibus.Security
     /// </summary>
     public sealed class BasicAuthCredentials : IEndpointCredentials, IEquatable<BasicAuthCredentials>
     {
-        private readonly string _username;
-        private readonly string _password;
-
         /// <summary>
         /// The username used to authenticate
         /// </summary>
-        public string Username
-        {
-            get { return _username; }
-        }
+        public string Username { get; }
 
         /// <summary>
         /// The password used to authenticate
         /// </summary>
-        public string Password
-        {
-            get { return _password; }
-        }
+        public string Password { get; }
 
         /// <summary>
         /// Initializes a new <see cref="BasicAuthCredentials"/> with the specified
@@ -58,8 +49,8 @@ namespace Platibus.Security
         /// <param name="password">The password used to authenticate</param>
         public BasicAuthCredentials(string username, string password)
         {
-            _username = username;
-            _password = password;
+            Username = username;
+            Password = password;
         }
 
         void IEndpointCredentials.Accept(IEndpointCredentialsVisitor visitor)
@@ -72,7 +63,7 @@ namespace Platibus.Security
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return string.Equals(_username, other._username) && string.Equals(_password, other._password);
+            return string.Equals(Username, other.Username) && string.Equals(Password, other.Password);
         }
 
         /// <inheritdoc />
@@ -87,7 +78,7 @@ namespace Platibus.Security
         {
             unchecked
             {
-                return ((_username != null ? _username.GetHashCode() : 0) * 397) ^ (_password != null ? _password.GetHashCode() : 0);
+                return ((Username != null ? Username.GetHashCode() : 0) * 397) ^ (Password != null ? Password.GetHashCode() : 0);
             }
         }
 

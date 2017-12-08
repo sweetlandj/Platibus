@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿#if NET452
+// The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
 // 
@@ -42,8 +43,8 @@ namespace Platibus.Config
         [ConfigurationProperty(EnabledPropertyName, DefaultValue = true)]
         public bool IsEnabled
         {
-            get { return (bool) base[EnabledPropertyName]; }
-            set { base[EnabledPropertyName] = value; }
+            get => (bool) base[EnabledPropertyName];
+            set => base[EnabledPropertyName] = value;
         }
 
         /// <summary>
@@ -54,8 +55,8 @@ namespace Platibus.Config
         [ConfigurationProperty(ProviderPropertyName)]
         public string Provider
         {
-            get { return (string) base[ProviderPropertyName]; }
-            set { base[ProviderPropertyName] = value; }
+            get => (string) base[ProviderPropertyName];
+            set => base[ProviderPropertyName] = value;
         }
 
         /// <summary>
@@ -64,8 +65,8 @@ namespace Platibus.Config
         [ConfigurationProperty(SentPropertyName, DefaultValue = true)]
         public bool JournalSentMessages
         {
-            get { return (bool)base[SentPropertyName]; }
-            set { base[SentPropertyName] = value; }
+            get => (bool)base[SentPropertyName];
+            set => base[SentPropertyName] = value;
         }
 
         /// <summary>
@@ -74,8 +75,8 @@ namespace Platibus.Config
         [ConfigurationProperty(ReceivedPropertyName, DefaultValue = true)]
         public bool JournalReceivedMessages
         {
-            get { return (bool)base[ReceivedPropertyName]; }
-            set { base[ReceivedPropertyName] = value; }
+            get => (bool)base[ReceivedPropertyName];
+            set => base[ReceivedPropertyName] = value;
         }
 
         /// <summary>
@@ -84,8 +85,9 @@ namespace Platibus.Config
         [ConfigurationProperty(PublishedPropertyName, DefaultValue = true)]
         public bool JournalPublishedMessages
         {
-            get { return (bool)base[PublishedPropertyName]; }
-            set { base[PublishedPropertyName] = value; }
+            get => (bool)base[PublishedPropertyName];
+            set => base[PublishedPropertyName] = value;
         }
     }
 }
+#endif

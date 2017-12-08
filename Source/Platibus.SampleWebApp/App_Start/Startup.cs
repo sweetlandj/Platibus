@@ -1,5 +1,5 @@
 ﻿using System;
-using System.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
@@ -142,7 +142,7 @@ namespace Platibus.SampleWebApp
                 // onto their .NET equivalents.
                 var inboundClaimType = claim.Type;
                 string mappedClaimType;
-                if (!JwtSecurityTokenHandler.InboundClaimTypeMap.TryGetValue(inboundClaimType, out mappedClaimType))
+                if (!JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.TryGetValue(inboundClaimType, out mappedClaimType))
                 {
                     mappedClaimType = inboundClaimType;
                 }

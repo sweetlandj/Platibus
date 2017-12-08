@@ -11,16 +11,12 @@ namespace Platibus.Diagnostics
     /// </summary>
     public class FilteringSink : IDiagnosticEventSink
     {
-        private readonly IDiagnosticEventSink _inner;
         private readonly IDiagnosticEventSpecification _specification;
 
         /// <summary>
         /// The wrapped sink
         /// </summary>
-        public IDiagnosticEventSink Inner
-        {
-            get { return _inner; }
-        }
+        public IDiagnosticEventSink Inner { get; }
 
         /// <summary>
         /// Initializes a new <see cref="FilteringSink"/> that wraps the specified 
@@ -32,10 +28,8 @@ namespace Platibus.Diagnostics
         /// be forwarded to the wrapped sink</param>
         public FilteringSink(IDiagnosticEventSink inner, IDiagnosticEventSpecification specification)
         {
-            if (inner == null) throw new ArgumentNullException("inner");
-            if (specification == null) throw new ArgumentNullException("specification");
-            _inner = inner;
-            _specification = specification;
+            Inner = inner ?? throw new ArgumentNullException(nameof(inner));
+            _specification = specification ?? throw new ArgumentNullException(nameof(specification));
         }
 
         /// <inheritdoc />
@@ -43,7 +37,7 @@ namespace Platibus.Diagnostics
         {
             if (_specification.IsSatisfiedBy(@event))
             {
-                _inner.Consume(@event);
+                Inner.Consume(@event);
             }
         }
 
@@ -51,7 +45,7 @@ namespace Platibus.Diagnostics
         public Task ConsumeAsync(DiagnosticEvent @event, CancellationToken cancellationToken = new CancellationToken())
         {
             return _specification.IsSatisfiedBy(@event) 
-                ? _inner.ConsumeAsync(@event, cancellationToken) 
+                ? Inner.ConsumeAsync(@event, cancellationToken) 
                 : Task.FromResult(0);
         }
     }

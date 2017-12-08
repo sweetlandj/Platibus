@@ -23,7 +23,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
@@ -32,6 +31,12 @@ using System.Transactions;
 using Platibus.Config.Extensibility;
 using Platibus.Diagnostics;
 using Platibus.SQL.Commands;
+#if NET452
+using System.Configuration;
+#endif
+#if NETSTANDARD2_0
+using Platibus.Config;
+#endif
 
 namespace Platibus.SQL
 {
@@ -46,7 +51,6 @@ namespace Platibus.SQL
         /// </summary>
         protected readonly IDiagnosticService DiagnosticService;
 
-        private readonly IDbConnectionProvider _connectionProvider;
         private readonly ISubscriptionTrackingCommandBuilders _commandBuilders;
 
         private readonly ConcurrentDictionary<TopicName, IEnumerable<SQLSubscription>> _subscriptions =
@@ -57,10 +61,7 @@ namespace Platibus.SQL
         /// <summary>
         /// The connection provider used to obtain connections to the SQL database
         /// </summary>
-        public IDbConnectionProvider ConnectionProvider
-        {
-            get { return _connectionProvider; }
-        }
+        public IDbConnectionProvider ConnectionProvider { get; }
 
         /// <summary>
         /// Initializes a new <see cref="SQLSubscriptionTrackingService"/> with the specified connection
@@ -82,9 +83,9 @@ namespace Platibus.SQL
         /// <seealso cref="ISubscriptionTrackingCommandBuildersProvider"/>
         public SQLSubscriptionTrackingService(ConnectionStringSettings connectionStringSettings, ISubscriptionTrackingCommandBuilders commandBuilders = null, IDiagnosticService diagnosticService = null)
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
+            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
             DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
-            _connectionProvider = new DefaultConnectionProvider(connectionStringSettings, DiagnosticService);
+            ConnectionProvider = new DefaultConnectionProvider(connectionStringSettings, DiagnosticService);
             _commandBuilders = commandBuilders ??
                                new CommandBuildersFactory(connectionStringSettings, DiagnosticService)
                                    .InitSubscriptionTrackingCommandBuilders();
@@ -107,11 +108,9 @@ namespace Platibus.SQL
             ISubscriptionTrackingCommandBuilders commandBuilders, 
             IDiagnosticService diagnosticService = null)
         {
-            if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
-            if (commandBuilders == null) throw new ArgumentNullException("commandBuilders");
             DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
-            _connectionProvider = connectionProvider;
-            _commandBuilders = commandBuilders;
+            ConnectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
+            _commandBuilders = commandBuilders ?? throw new ArgumentNullException(nameof(commandBuilders));
         }
 
         /// <summary>
@@ -121,7 +120,7 @@ namespace Platibus.SQL
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public void Init()
         {
-            var connection = _connectionProvider.GetConnection();
+            var connection = ConnectionProvider.GetConnection();
             try
             {
                 var commandBuilder = _commandBuilders.NewCreateObjectsCommandBuilder();
@@ -132,7 +131,7 @@ namespace Platibus.SQL
             }
             finally
             {
-                _connectionProvider.ReleaseConnection(connection);
+                ConnectionProvider.ReleaseConnection(connection);
             }
 
             var subscriptionsByTopicName = SelectSubscriptions()
@@ -163,8 +162,8 @@ namespace Platibus.SQL
         public async Task AddSubscription(TopicName topic, Uri subscriber, TimeSpan ttl = default(TimeSpan),
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (topic == null) throw new ArgumentNullException("topic");
-            if (subscriber == null) throw new ArgumentNullException("subscriber");
+            if (topic == null) throw new ArgumentNullException(nameof(topic));
+            if (subscriber == null) throw new ArgumentNullException(nameof(subscriber));
 
             CheckDisposed();
             var expires = ttl <= TimeSpan.Zero ? DateTime.MaxValue : (DateTime.UtcNow + ttl);
@@ -189,8 +188,8 @@ namespace Platibus.SQL
         public async Task RemoveSubscription(TopicName topic, Uri subscriber,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (topic == null) throw new ArgumentNullException("topic");
-            if (subscriber == null) throw new ArgumentNullException("subscriber");
+            if (topic == null) throw new ArgumentNullException(nameof(topic));
+            if (subscriber == null) throw new ArgumentNullException(nameof(subscriber));
 
             CheckDisposed();
             cancellationToken.ThrowIfCancellationRequested();
@@ -213,11 +212,10 @@ namespace Platibus.SQL
         public Task<IEnumerable<Uri>> GetSubscribers(TopicName topic,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (topic == null) throw new ArgumentNullException("topic");
+            if (topic == null) throw new ArgumentNullException(nameof(topic));
             
             CheckDisposed();
-            IEnumerable<SQLSubscription> subscriptions;
-            _subscriptions.TryGetValue(topic, out subscriptions);
+            _subscriptions.TryGetValue(topic, out IEnumerable<SQLSubscription> subscriptions);
             var activeSubscribers = (subscriptions ?? Enumerable.Empty<SQLSubscription>())
                 .Where(s => s.Expires > DateTime.UtcNow)
                 .Select(s => s.Subscriber);
@@ -239,7 +237,7 @@ namespace Platibus.SQL
             DateTime expires)
         {
             SQLSubscription subscription;
-            var connection = _connectionProvider.GetConnection();
+            var connection = ConnectionProvider.GetConnection();
             try
             {
                 var insertBuilder = _commandBuilders.NewInsertSubscriptionCommandBuilder();
@@ -271,7 +269,7 @@ namespace Platibus.SQL
             }
             finally
             {
-                _connectionProvider.ReleaseConnection(connection);
+                ConnectionProvider.ReleaseConnection(connection);
             }
             return Task.FromResult(subscription);
         }
@@ -285,7 +283,7 @@ namespace Platibus.SQL
         protected virtual IEnumerable<SQLSubscription> SelectSubscriptions()
         {
             var subscriptions = new List<SQLSubscription>();
-            var connection = _connectionProvider.GetConnection();
+            var connection = ConnectionProvider.GetConnection();
             try
             {
                 var commandBuilder = _commandBuilders.NewSelectSubscriptionsCommandBuilder();
@@ -312,7 +310,7 @@ namespace Platibus.SQL
             }
             finally
             {
-                _connectionProvider.ReleaseConnection(connection);
+                ConnectionProvider.ReleaseConnection(connection);
             }
             return subscriptions;
         }
@@ -327,7 +325,7 @@ namespace Platibus.SQL
         [SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         protected virtual async Task DeleteSubscription(TopicName topic, Uri subscriber)
         {
-            var connection = _connectionProvider.GetConnection();
+            var connection = ConnectionProvider.GetConnection();
             try
             {
                 var commandBuilder = _commandBuilders.NewDeleteSubscriptionCommandBuilder();
@@ -345,7 +343,7 @@ namespace Platibus.SQL
             }
             finally
             {
-                _connectionProvider.ReleaseConnection(connection);
+                ConnectionProvider.ReleaseConnection(connection);
             }
         }
 
@@ -380,7 +378,7 @@ namespace Platibus.SQL
             if (disposing)
             {
                 // ReSharper disable once SuspiciousTypeConversion.Global
-                var disposableConnectionProvider = _connectionProvider as IDisposable;
+                var disposableConnectionProvider = ConnectionProvider as IDisposable;
                 if (disposableConnectionProvider != null)
                 {
                     disposableConnectionProvider.Dispose();

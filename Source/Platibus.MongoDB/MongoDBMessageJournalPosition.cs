@@ -6,22 +6,17 @@ namespace Platibus.MongoDB
 {
     internal class MongoDBMessageJournalPosition : MessageJournalPosition
     {
-        private readonly ObjectId _id;
-
-        public ObjectId Id
-        {
-            get { return _id; }
-        }
+        public ObjectId Id { get; }
 
         public MongoDBMessageJournalPosition(ObjectId id)
         {
-            if (id == null) throw new ArgumentNullException("id");
-            _id = id;
+            if (id == null) throw new ArgumentNullException(nameof(id));
+            Id = id;
         }
 
         public override string ToString()
         {
-            return _id.ToString();
+            return Id.ToString();
         }
 
         public override bool Equals(object obj)
@@ -29,12 +24,12 @@ namespace Platibus.MongoDB
             if (ReferenceEquals(this, obj)) return true;
             if (ReferenceEquals(obj, null)) return false;
             var other = obj as MongoDBMessageJournalPosition;
-            return other != null && _id.Equals(other._id);
+            return other != null && Id.Equals(other.Id);
         }
 
         public override int GetHashCode()
         {
-            return _id.GetHashCode();
+            return Id.GetHashCode();
         }
 
         public static MongoDBMessageJournalPosition Parse(string str)

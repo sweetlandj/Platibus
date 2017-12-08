@@ -21,8 +21,7 @@ namespace Platibus.Journaling
         /// <param name="journal">The message journal to wrap</param>
         public SanitizedMessageJournal(IMessageJournal journal)
         {
-            if (journal == null) throw new ArgumentNullException("journal");
-            _inner = journal;
+            _inner = journal ?? throw new ArgumentNullException(nameof(journal));
         }
 
         /// <inheritdoc />

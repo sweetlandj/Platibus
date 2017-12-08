@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿#if NET452
+using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
@@ -55,3 +56,4 @@ namespace Platibus.Config
         }
     }
 }
+#endif

@@ -31,10 +31,7 @@ namespace Platibus.SQLite
         private readonly Task _task;
         private readonly Func<Task> _asyncOperation;
 
-        public Task Task
-        {
-            get { return _task; }
-        }
+        public Task Task => _task;
 
         public SQLiteOperation(Action operation)
             : this(AsAsync(operation))
@@ -43,7 +40,7 @@ namespace Platibus.SQLite
 
         private static Func<Task> AsAsync(Action operation)
         {
-            if (operation == null) throw new ArgumentNullException("operation");
+            if (operation == null) throw new ArgumentNullException(nameof(operation));
             return () =>
             {
                 operation();
@@ -53,10 +50,9 @@ namespace Platibus.SQLite
 
         public SQLiteOperation(Func<Task> asyncOperation)
         {
-            if (asyncOperation == null) throw new ArgumentNullException("asyncOperation");
             _taskCompletionSource = new TaskCompletionSource<bool>(false);
             _task = _taskCompletionSource.Task;
-            _asyncOperation = asyncOperation;
+            _asyncOperation = asyncOperation ?? throw new ArgumentNullException(nameof(asyncOperation));
         }
 
         public async Task Execute()
@@ -79,10 +75,7 @@ namespace Platibus.SQLite
         private readonly Task<TResult> _task;
         private readonly Func<Task<TResult>> _asyncOperation;
 
-        public Task<TResult> Task
-        {
-            get { return _task; }
-        }
+        public Task<TResult> Task => _task;
 
         public SQLiteOperation(Func<TResult> operation)
             : this(AsAsync(operation))
@@ -91,16 +84,15 @@ namespace Platibus.SQLite
 
         private static Func<Task<TResult>> AsAsync(Func<TResult> operation)
         {
-            if (operation == null) throw new ArgumentNullException("operation");
+            if (operation == null) throw new ArgumentNullException(nameof(operation));
             return () => System.Threading.Tasks.Task.FromResult(operation());
         }
 
         public SQLiteOperation(Func<Task<TResult>> asyncOperation)
         {
-            if (asyncOperation == null) throw new ArgumentNullException("asyncOperation");
             _taskCompletionSource = new TaskCompletionSource<TResult>(false);
             _task = _taskCompletionSource.Task;
-            _asyncOperation = asyncOperation;
+            _asyncOperation = asyncOperation ?? throw new ArgumentNullException(nameof(asyncOperation));
         }
 
         public async Task Execute()

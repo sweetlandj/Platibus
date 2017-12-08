@@ -22,20 +22,30 @@
 
 using System;
 using System.IO;
+using System.Net;
 using System.Threading.Tasks;
-using Platibus.Config;
 using Platibus.Config.Extensibility;
 using Platibus.Journaling;
 using Platibus.Multicast;
+#if NET452
+using Platibus.Config;
+#endif
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Platibus.SQLite
 {
+    /// <inheritdoc cref="IMessageQueueingServiceProvider"/>
+    /// <inheritdoc cref="IMessageJournalProvider"/>
+    /// <inheritdoc cref="ISubscriptionTrackingServiceProvider"/>
     /// <summary>
     /// A provider for SQLite-based message queueing and subscription tracking services
     /// </summary>
     [Provider("SQLite")]
     public class SQLiteServicesProvider : IMessageQueueingServiceProvider, IMessageJournalProvider, ISubscriptionTrackingServiceProvider
     {
+#if NET452
         /// <inheritdoc />
         public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
@@ -80,6 +90,55 @@ namespace Platibus.SQLite
 
             return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
         }
+#endif
+#if NETSTANDARD2_0
+        /// <inheritdoc />
+        public async Task<IMessageQueueingService> CreateMessageQueueingService(IConfiguration configuration)
+        {
+            var securityTokenServiceFactory = new SecurityTokenServiceFactory();
+            var securityTokensSection = configuration?.GetSection("securityTokens");
+            var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securityTokensSection);
+
+            var path = configuration?["path"];
+            var sqliteBaseDir = GetRootedDirectory(path);
+            var sqliteMessageQueueingService = new SQLiteMessageQueueingService(sqliteBaseDir, securityTokenService);
+            sqliteMessageQueueingService.Init();
+            return sqliteMessageQueueingService;
+        }
+
+        /// <inheritdoc />
+        public Task<IMessageJournal> CreateMessageJournal(IConfiguration configuration)
+        {
+            var path = configuration?["path"];
+            var sqliteBaseDir = GetRootedDirectory(path);
+            var sqliteMessageQueueingService = new SQLiteMessageJournal(sqliteBaseDir);
+            sqliteMessageQueueingService.Init();
+            return Task.FromResult<IMessageJournal>(sqliteMessageQueueingService);
+        }
+
+        /// <inheritdoc />
+        public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(IConfiguration configuration)
+        {
+            var path = configuration?["path"];
+            var sqliteBaseDir = GetRootedDirectory(path);
+            var sqliteSubscriptionTrackingService = new SQLiteSubscriptionTrackingService(sqliteBaseDir);
+            sqliteSubscriptionTrackingService.Init();
+
+            var multicastSection = configuration?.GetSection("multicast");
+            var multicastEnabled = multicastSection?.GetValue("enabled", true) ?? false;
+            if (!multicastEnabled)
+            {
+                return Task.FromResult<ISubscriptionTrackingService>(sqliteSubscriptionTrackingService);
+            }
+
+            var ipAddress = multicastSection.GetValue("address", IPAddress.Parse("239.255.21.80"));
+            var port = multicastSection.GetValue("port", 52181);
+            var multicastTrackingService = new MulticastSubscriptionTrackingService(
+                sqliteSubscriptionTrackingService, ipAddress, port);
+
+            return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
+        }
+#endif
 
         private static DirectoryInfo GetRootedDirectory(string path)
         {

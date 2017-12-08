@@ -28,12 +28,9 @@ namespace Platibus
     /// <summary>
     /// A basic implementation of <see cref="IEndpoint"/>
     /// </summary>
-    [DebuggerDisplay("{_address,nq}")]
+    [DebuggerDisplay("{" + nameof(Address) + ",nq}")]
     public class Endpoint : IEndpoint
     {
-        private readonly Uri _address;
-        private readonly IEndpointCredentials _credentials;
-
         /// <summary>
         /// Initializes a new <see cref="Endpoint"/> with the specified address
         /// and credentials
@@ -45,26 +42,20 @@ namespace Platibus
         /// is <c>null</c></exception>
         public Endpoint(Uri address, IEndpointCredentials credentials = null)
         {
-            if (address == null) throw new ArgumentNullException("address");
-            _address = address.WithTrailingSlash();
-            _credentials = credentials;
+            if (address == null) throw new ArgumentNullException(nameof(address));
+            Address = address.WithTrailingSlash();
+            Credentials = credentials;
         }
 
         /// <summary>
         /// The base URI used to connect to the endpoint
         /// </summary>
-        public Uri Address
-        {
-            get { return _address; }
-        }
+        public Uri Address { get; }
 
         /// <summary>
         /// The credentials required to connect to the endpoint
         /// </summary>
-        public IEndpointCredentials Credentials
-        {
-            get { return _credentials; }
-        }
+        public IEndpointCredentials Credentials { get; }
 
         /// <summary>
         /// Returns a string that represents the current object.
@@ -75,7 +66,7 @@ namespace Platibus
         /// <filterpriority>2</filterpriority>
         public override string ToString()
         {
-            return _address.ToString();
+            return Address.ToString();
         }
     }
 }

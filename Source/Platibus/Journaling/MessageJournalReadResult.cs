@@ -31,30 +31,27 @@ namespace Platibus.Journaling
     /// </summary>
     public class MessageJournalReadResult
     {
-        private readonly MessageJournalPosition _start;
-        private readonly MessageJournalPosition _next;
-        private readonly bool _endOfJournal;
         private readonly IList<MessageJournalEntry> _entries;
 
         /// <summary>
         /// The position at which the read started
         /// </summary>
-        public MessageJournalPosition Start { get { return _start; } }
+        public MessageJournalPosition Start { get; }
 
         /// <summary>
         /// The next position to read from
         /// </summary>
-        public MessageJournalPosition Next { get { return _next; } }
+        public MessageJournalPosition Next { get; }
 
         /// <summary>
         /// Whether the end of the journal was reached during the read operation
         /// </summary>
-        public bool EndOfJournal { get { return _endOfJournal; } }
+        public bool EndOfJournal { get; }
 
         /// <summary>
         /// The journaled messages that were read
         /// </summary>
-        public IEnumerable<MessageJournalEntry> Entries { get { return _entries; } }
+        public IEnumerable<MessageJournalEntry> Entries => _entries;
 
         /// <summary>
         /// Initializes a new <see cref="MessageJournalReadResult"/>
@@ -65,11 +62,9 @@ namespace Platibus.Journaling
         /// <param name="messages">The journaled messages that were read</param>
         public MessageJournalReadResult(MessageJournalPosition start, MessageJournalPosition next, bool endOfJournal, IEnumerable<MessageJournalEntry> messages)
         {
-            if (start == null) throw new ArgumentNullException("start");
-            if (next == null) throw new ArgumentNullException("next");
-            _start = start;
-            _next = next;
-            _endOfJournal = endOfJournal;
+            Start = start ?? throw new ArgumentNullException(nameof(start));
+            Next = next ?? throw new ArgumentNullException(nameof(next));
+            EndOfJournal = endOfJournal;
             _entries = (messages ?? Enumerable.Empty<MessageJournalEntry>()).ToList();
         }
     }

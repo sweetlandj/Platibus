@@ -21,12 +21,17 @@
 // THE SOFTWARE.
 
 using System;
-using System.Configuration;
 using System.Threading;
 using System.Threading.Tasks;
 using MongoDB.Driver;
 using Platibus.Queueing;
 using Platibus.Security;
+#if NET452
+using System.Configuration;
+#endif
+#if NETSTANDARD2_0
+using Platibus.Config;
+#endif
 
 namespace Platibus.MongoDB
 {
@@ -71,7 +76,7 @@ namespace Platibus.MongoDB
             ISecurityTokenService securityTokenService = null, 
             string databaseName = null, QueueCollectionNameFactory collectionNameFactory = null)
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
+            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
             _database = MongoDBHelper.Connect(connectionStringSettings, databaseName);
             _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
             _collectionNameFactory = collectionNameFactory ?? (_ => DefaultCollectionName);

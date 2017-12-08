@@ -29,7 +29,7 @@ namespace Platibus.Http
     /// A type of HTTP resource with which controllers can be associated in order to
     /// route HTTP resource requests
     /// </summary>
-    [DebuggerDisplay("{_value,nq}")]
+    [DebuggerDisplay("{" + nameof(_value) + ",nq}")]
     public class ResourceType : IEquatable<ResourceType>
     {
         private readonly string _value;
@@ -42,7 +42,7 @@ namespace Platibus.Http
         /// <c>null</c> or whitespace</exception>
         public ResourceType(string value)
         {
-            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException("value");
+            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentNullException(nameof(value));
             _value = value.Trim();
         }
 

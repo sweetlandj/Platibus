@@ -38,10 +38,8 @@ namespace Platibus
 
         public MessageHandler(IMessageNamingService messageNamingService, ISerializationService serializationService, IDiagnosticService diagnosticService = null)
         {
-            if (messageNamingService == null) throw new ArgumentNullException("messageNamingService");
-            if (serializationService == null) throw new ArgumentNullException("serializationService");
-            _messageNamingService = messageNamingService;
-            _serializationService = serializationService;
+            _messageNamingService = messageNamingService ?? throw new ArgumentNullException(nameof(messageNamingService));
+            _serializationService = serializationService ?? throw new ArgumentNullException(nameof(serializationService));
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 

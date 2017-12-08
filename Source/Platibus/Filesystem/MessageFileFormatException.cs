@@ -33,15 +33,10 @@ namespace Platibus.Filesystem
     [Serializable]
     public class MessageFileFormatException : ApplicationException
     {
-        private readonly string _path;
-
         /// <summary>
         /// The message file path
         /// </summary>
-        public string Path
-        {
-            get { return _path; }
-        }
+        public string Path { get; }
 
         /// <summary>
         /// Initializes a new <see cref="MessageFileFormatException"/> for the message
@@ -50,7 +45,7 @@ namespace Platibus.Filesystem
         /// <param name="path">The message file path</param>
         public MessageFileFormatException(string path)
         {
-            _path = path;
+            Path = path;
         }
 
         /// <summary>
@@ -61,7 +56,7 @@ namespace Platibus.Filesystem
         /// <param name="message">A detail message</param>
         public MessageFileFormatException(string path, string message) : base(message)
         {
-            _path = path;
+            Path = path;
         }
 
         /// <summary>
@@ -74,7 +69,7 @@ namespace Platibus.Filesystem
         public MessageFileFormatException(string path, string message, Exception innerException)
             : base(message, innerException)
         {
-            _path = path;
+            Path = path;
         }
 
         /// <summary>
@@ -85,7 +80,7 @@ namespace Platibus.Filesystem
         /// <param name="context">The streaming context</param>
         protected MessageFileFormatException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
-            _path = info.GetString("Path");
+            Path = info.GetString("Path");
         }
 
         /// <summary>
@@ -96,7 +91,7 @@ namespace Platibus.Filesystem
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("Path", _path);
+            info.AddValue("Path", Path);
         }
     }
 }

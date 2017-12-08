@@ -22,21 +22,30 @@
 
 using System;
 using System.IO;
+using System.Net;
 using System.Threading.Tasks;
-using Platibus.Config;
 using Platibus.Config.Extensibility;
 using Platibus.Multicast;
+#if NET452
+using Platibus.Config;
+#endif
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Platibus.Filesystem
 {
+    /// <inheritdoc cref="IMessageQueueingServiceProvider"/>
+    /// <inheritdoc cref="ISubscriptionTrackingServiceProvider"/>
     /// <summary>
     /// A provider that returns filesystem based message queueing, message journaling, and
-    /// subscription trakcing services
+    /// subscription tracking services
     /// </summary>
     [Provider("Filesystem")]
     public class FilesystemServicesProvider : IMessageQueueingServiceProvider,
         ISubscriptionTrackingServiceProvider
     {
+#if NET452
         /// <summary>
         /// Creates an initializes a <see cref="IMessageQueueingService"/>
         /// based on the provided <paramref name="configuration"/>
@@ -57,7 +66,7 @@ namespace Platibus.Filesystem
             fsQueueingService.Init();
             return fsQueueingService;
         }
-        
+
         /// <summary>
         /// Creates an initializes a <see cref="ISubscriptionTrackingService"/>
         /// based on the provided <paramref name="configuration"/>.
@@ -85,6 +94,59 @@ namespace Platibus.Filesystem
 
             return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
         }
+#else
+        /// <inheritdoc />
+        /// <summary>
+        /// Creates an initializes a <see cref="T:Platibus.IMessageQueueingService" />
+        /// based on the provided <paramref name="configuration" />
+        /// </summary>
+        /// <param name="configuration">The journaling configuration
+        ///     element</param>
+        /// <returns>Returns a task whose result is an initialized
+        /// <see cref="T:Platibus.IMessageQueueingService" /></returns>
+        public async Task<IMessageQueueingService> CreateMessageQueueingService(IConfiguration configuration)
+        {
+            var securityTokenServiceFactory = new SecurityTokenServiceFactory();
+            var securitTokenConfig = configuration?.GetSection("securityTokens");
+            var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securitTokenConfig);
+
+            var path = configuration?["path"];
+            var fsQueueingBaseDir = GetRootedDirectory(path);
+            var fsQueueingService = new FilesystemMessageQueueingService(fsQueueingBaseDir, securityTokenService);
+            fsQueueingService.Init();
+            return fsQueueingService;
+        }
+
+        /// <summary>
+        /// Creates an initializes a <see cref="ISubscriptionTrackingService"/>
+        /// based on the provided <paramref name="configuration"/>.
+        /// </summary>
+        /// <param name="configuration">The journaling configuration
+        ///     element.</param>
+        /// <returns>Returns a task whose result is an initialized
+        /// <see cref="ISubscriptionTrackingService"/>.</returns>
+        public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(IConfiguration configuration)
+        {
+            var path = configuration?["path"];
+            var fsTrackingBaseDir = GetRootedDirectory(path);
+            var fsTrackingService = new FilesystemSubscriptionTrackingService(fsTrackingBaseDir);
+            fsTrackingService.Init();
+
+            var multicastSection = configuration?.GetSection("multicast");
+            var multicastEnabled = multicastSection?.GetValue("enabled", true) ?? false;
+            if (!multicastEnabled)
+            {
+                return Task.FromResult<ISubscriptionTrackingService>(fsTrackingService);
+            }
+
+            var ipAddress = multicastSection.GetValue("address", IPAddress.Parse("239.255.21.80"));
+            var port = multicastSection.GetValue("port", 52181);
+            var multicastTrackingService = new MulticastSubscriptionTrackingService(
+                fsTrackingService, ipAddress, port);
+
+            return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
+        }
+#endif
 
         private static DirectoryInfo GetRootedDirectory(string path)
         {

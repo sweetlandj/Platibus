@@ -84,14 +84,14 @@ namespace Platibus.IIS
         /// <returns>Returns a task whose result is the bus instance</returns>
         public async Task<IBus> GetBus(IIISConfiguration configuration)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             var managedBus = await GetManagedBus(configuration);
             return await managedBus.GetBus();
         }
 
         internal async Task<ManagedBus> GetManagedBus(IIISConfiguration configuration)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
 
             var uri = configuration.BaseUri;
             ManagedBus bus;
@@ -109,7 +109,7 @@ namespace Platibus.IIS
 
         internal void DisposeManagedBus(IIISConfiguration configuration)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
 
             var uri = configuration.BaseUri;
             ManagedBus bus;

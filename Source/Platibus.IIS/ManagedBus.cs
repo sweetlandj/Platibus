@@ -63,8 +63,7 @@ namespace Platibus.IIS
         /// and its related components</param>
         public ManagedBus(IIISConfiguration configuration)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
-            _configuration = configuration;
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _baseUri = _configuration.BaseUri;
             _subscriptionTrackingService = _configuration.SubscriptionTrackingService;
             _messageQueueingService = _configuration.MessageQueueingService;

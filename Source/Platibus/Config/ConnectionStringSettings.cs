@@ -1,4 +1,7 @@
-﻿// The MIT License (MIT)
+﻿
+
+#if NETSTANDARD2_0
+// The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
 // 
@@ -20,22 +23,35 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Reflection;
-using System.Runtime.InteropServices;
+namespace Platibus.Config
+{
+    /// <summary>
+    /// Settings for opening a new ADO.NET connection
+    /// </summary>
+    public class ConnectionStringSettings
+    {
+        /// <summary>
+        /// The connection name
+        /// </summary>
+        public string Name { get; set; }
 
-// General Information about an assembly is controlled through the following 
-// set of attributes. Change these attribute values to modify the information
-// associated with an assembly.
+        /// <summary>
+        /// The provider invariant name
+        /// </summary>
+        /// <remarks>
+        /// The <see cref="System.Data.Common.DbProviderFactory"/> instance
+        /// corresponding to this provider should be registered with the
+        /// <see cref="Platibus.SQL.DbProviderFactories.Add"/> method before
+        /// opening a connection based on these 
+        /// <see cref="ConnectionStringSettings"/>.
+        /// </remarks>
+        /// <see cref="Platibus.SQL.DbProviderFactories"/>
+        public string ProviderName { get; set; }
 
-[assembly: AssemblyTitle("Platibus.RabbitMQ")]
-[assembly: AssemblyDescription("Platibus.RabbitMQ")]
-
-// Setting ComVisible to false makes the types in this assembly not visible 
-// to COM components.  If you need to access a type in this assembly from 
-// COM, set the ComVisible attribute to true on that type.
-
-[assembly: ComVisible(false)]
-
-// The following GUID is for the ID of the typelib if this project is exposed to COM
-
-[assembly: Guid("76c4437e-154b-4de1-ad28-c6fa8312d0fd")]
+        /// <summary>
+        /// The connection string
+        /// </summary>
+        public string ConnectionString { get; set; }
+    }
+}
+#endif

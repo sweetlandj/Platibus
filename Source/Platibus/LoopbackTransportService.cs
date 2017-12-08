@@ -45,8 +45,7 @@ namespace Platibus
         /// is <c>null</c></exception>
         public LoopbackTransportService(Func<Message, IPrincipal, Task> accept)
         {
-            if (accept == null) throw new ArgumentNullException("accept");
-            _accept = accept;
+            _accept = accept ?? throw new ArgumentNullException(nameof(accept));
         }
 
         /// <summary>

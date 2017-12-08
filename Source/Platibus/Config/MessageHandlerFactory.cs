@@ -21,8 +21,7 @@ namespace Platibus.Config
         /// <exception cref="ArgumentNullException"></exception>
         public MessageHandlerFactory(Func<IMessageHandler> factory)
         {
-            if (factory == null) throw new ArgumentNullException("factory");
-            _factory = factory;
+            _factory = factory ?? throw new ArgumentNullException(nameof(factory));
         }
 
         /// <inheritdoc />
@@ -41,7 +40,7 @@ namespace Platibus.Config
         /// <exception cref="ArgumentNullException"></exception>
         public static MessageHandlerFactory For(Func<IMessageHandler> factory)
         {
-            if (factory == null) throw new ArgumentNullException("factory");
+            if (factory == null) throw new ArgumentNullException(nameof(factory));
             return new MessageHandlerFactory(factory);
         }
     }
@@ -64,8 +63,7 @@ namespace Platibus.Config
         /// <exception cref="ArgumentNullException"></exception>
         public MessageHandlerFactory(Func<IMessageHandler<TContent>> factory)
         {
-            if (factory == null) throw new ArgumentNullException("factory");
-            _factory = factory;
+            _factory = factory ?? throw new ArgumentNullException(nameof(factory));
         }
 
         /// <inheritdoc />
@@ -91,7 +89,7 @@ namespace Platibus.Config
         /// <exception cref="ArgumentNullException"></exception>
         public static MessageHandlerFactory<T> For<T>(Func<IMessageHandler<T>> factory)
         {
-            if (factory == null) throw new ArgumentNullException("factory");
+            if (factory == null) throw new ArgumentNullException(nameof(factory));
             return new MessageHandlerFactory<T>(factory);
         }
     }

@@ -5,25 +5,23 @@ namespace Platibus.SQL
 {
     internal class SQLMessageJournalPosition : MessageJournalPosition, IEquatable<SQLMessageJournalPosition>
     {
-        private readonly long _id;
-
-        public long Id { get { return _id; } }
+        public long Id { get; }
 
         public SQLMessageJournalPosition(long id)
         {
-            _id = id;
+            Id = id;
         }
 
         public override string ToString()
         {
-            return _id.ToString("D");
+            return Id.ToString("D");
         }
 
         public bool Equals(SQLMessageJournalPosition other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return _id == other._id;
+            return Id == other.Id;
         }
 
         public override bool Equals(object obj)
@@ -35,7 +33,7 @@ namespace Platibus.SQL
 
         public override int GetHashCode()
         {
-            return _id.GetHashCode();
+            return Id.GetHashCode();
         }
 
         public static bool operator ==(SQLMessageJournalPosition left, SQLMessageJournalPosition right)

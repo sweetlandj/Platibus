@@ -20,7 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#if NET452
 using System.Configuration;
+#elif NETSTANDARD2_0
+using Platibus.Config;
+#endif
 using Platibus.Config.Extensibility;
 
 namespace Platibus.SQL.Commands

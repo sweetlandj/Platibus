@@ -21,11 +21,17 @@
 // THE SOFTWARE.
 
 using System;
-using System.Runtime.Caching;
 using System.Threading.Tasks;
+#if NET452
+using System.Runtime.Caching;
+#endif
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Caching.Memory;
+#endif
 
 namespace Platibus
 {
+    /// <inheritdoc />
     /// <summary>
     /// Uses a memory cache to store sent messages and route related messages to their
     /// reply stream
@@ -33,7 +39,12 @@ namespace Platibus
     public class MemoryCacheReplyHub : IDisposable
     {
         private bool _disposed;
+#if NET452
         private readonly MemoryCache _cache = new MemoryCache("MemoryCacheReplyHub");
+#endif
+#if NETSTANDARD2_0
+        private readonly MemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
+#endif
         private readonly TimeSpan _replyTimeout;
 
         /// <summary>
@@ -44,7 +55,7 @@ namespace Platibus
         /// in memory before they are evicted from cache</param>
         public MemoryCacheReplyHub(TimeSpan replyTimeout)
         {
-            _replyTimeout = (replyTimeout <= TimeSpan.Zero) ? TimeSpan.FromMinutes(5) : replyTimeout;
+            _replyTimeout = replyTimeout <= TimeSpan.Zero ? TimeSpan.FromMinutes(5) : replyTimeout;
         }
 
         /// <summary>
@@ -58,11 +69,12 @@ namespace Platibus
         /// is <c>null</c></exception>
         public ISentMessage CreateSentMessage(Message message)
         {
-            if (message == null) throw new ArgumentNullException("message");
+            if (message == null) throw new ArgumentNullException(nameof(message));
             CheckDisposed();
 
             var messageId = message.Headers.MessageId;
             var replyStreamExpiration = DateTime.UtcNow.Add(_replyTimeout);
+#if NET452
             var newReplyStream = new ReplyStream();
             var replyStream = (ReplyStream) _cache.AddOrGetExisting(messageId, newReplyStream, replyStreamExpiration);
             // ReSharper disable once ConvertIfStatementToNullCoalescingExpression
@@ -74,6 +86,15 @@ namespace Platibus
                 replyStream = newReplyStream;
             }
             return new SentMessageWithCachedReplies(messageId, replyStream);
+#endif
+#if NETSTANDARD2_0
+            var replyStream = _cache.GetOrCreate(messageId, entry =>
+            {
+                entry.AbsoluteExpiration = replyStreamExpiration;
+                return new ReplyStream();
+            });
+            return new SentMessageWithCachedReplies(messageId, replyStream);
+#endif
         }
 
         /// <summary>
@@ -90,13 +111,10 @@ namespace Platibus
             CheckDisposed();
             return Task.Run(() =>
             {
-                var replyStream = _cache.Get(relatedToMessageId) as ReplyStream;
-                if (replyStream == null)
+                if (_cache.Get(relatedToMessageId) is ReplyStream replyStream)
                 {
-                    return;
+                    replyStream.NotifyReplyReceived(reply);
                 }
-
-                replyStream.NotifyReplyReceived(reply);
             });
         }
 
@@ -113,13 +131,15 @@ namespace Platibus
         {
             return Task.Run(() =>
             {
+#if NET452
                 var replyStream = _cache.Remove(relatedToMessageId) as ReplyStream;
-                if (replyStream == null)
-                {
-                    return;
-                }
-
-                replyStream.NotifyCompleted();
+                replyStream?.NotifyCompleted();
+#endif
+#if NETSTANDARD2_0
+                var replyStream = _cache.Get<ReplyStream>(relatedToMessageId);
+                replyStream?.NotifyCompleted();
+                _cache.Remove(relatedToMessageId);
+#endif
             });
         }
 

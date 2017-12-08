@@ -35,20 +35,16 @@ namespace Platibus.RabbitMQ
     internal class ManagedConnection : IConnection
     {
         private readonly object _syncRoot = new object();
-        private readonly string _managedConnectionId;
-        private readonly IConnectionFactory _connectionFactory;
         private readonly IDiagnosticService _diagnosticService;
-
-        private volatile IConnection _connection;
+        private readonly IConnection _connection;
 
         private bool _closed;
 
-        public string ManagedConnectionId { get { return _managedConnectionId; } }
+        public string ManagedConnectionId { get; }
 
         public ManagedConnection(Uri uri, IDiagnosticService diagnosticService)
         {
             if (uri == null) throw new ArgumentNullException("uri");
-            if (diagnosticService == null) throw new ArgumentNullException("diagnosticService");
 
             // Trailing slashes causes errors when connecting to RabbitMQ
             uri = uri.WithoutTrailingSlash();
@@ -62,82 +58,34 @@ namespace Platibus.RabbitMQ
                 Password = ""
             };
 
-            _managedConnectionId = managedConnectionIdBuilder.Uri.ToString();
-            _connectionFactory = new ConnectionFactory {Uri = uri.ToString()};
-            _diagnosticService = diagnosticService;
-            _connection = _connectionFactory.CreateConnection();
-        }
-
-        private IConnection Connection
-        {
-            get
+            ManagedConnectionId = managedConnectionIdBuilder.Uri.ToString();
+            IConnectionFactory connectionFactory = new ConnectionFactory
             {
-                CheckClosed();
-                var myConnection = _connection;
-                if (myConnection != null && myConnection.IsOpen) return myConnection;
-                lock (_syncRoot)
-                {
-                    myConnection = _connection;
-                    if (myConnection != null && myConnection.IsOpen) return myConnection;
+                Uri = uri,
+                AutomaticRecoveryEnabled = true,
+                RequestedHeartbeat = 15
+            };
+            _diagnosticService = diagnosticService ?? throw new ArgumentNullException("diagnosticService");
+            _connection = connectionFactory.CreateConnection();
 
-                    if (myConnection != null)
-                    {
-                        _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQReconnect)
-                        {
-                            Detail = "Reconnecting managed connection ID " + _managedConnectionId
-                        }.Build());
-                    }
-
-                    myConnection = _connectionFactory.CreateConnection();
-                    myConnection.CallbackException += CallbackException;
-                    myConnection.ConnectionShutdown += ConnectionShutdown;
-                    myConnection.ConnectionShutdown += (sender, args) => _connection = null;
-                    myConnection.ConnectionBlocked += ConnectionBlocked;
-                    myConnection.ConnectionUnblocked += ConnectionUnblocked;
-
-                    _connection = myConnection;
-
-                    _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionOpened)
-                    {
-                        Detail = "Opened managed connection ID " + _managedConnectionId
-                    }.Build());
-                }
-                return _connection;
-            }
-        }
-
-        public string ClientProvidedName
-        {
-            get { return Connection.ClientProvidedName; }
-        }
-
-        public IDictionary<string, object> ClientProperties
-        {
-            get { return Connection.ClientProperties; }
+            _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionOpened)
+            {
+                Detail = "Opened managed connection ID " + ManagedConnectionId
+            }.Build());
         }
         
-        public int LocalPort
-        {
-            get { return Connection.LocalPort; }
-        }
-        
-        public int RemotePort
-        {
-            get { return Connection.RemotePort; }
-        }
+        public string ClientProvidedName => _connection.ClientProvidedName;
+
+        public IDictionary<string, object> ClientProperties => _connection.ClientProperties;
+
+        public int LocalPort => _connection.LocalPort;
+
+        public int RemotePort => _connection.RemotePort;
 
         public void Dispose()
         {
         }
-
-        private void CheckClosed()
-        {
-            if (_closed)
-            {
-                throw new ObjectDisposedException(GetType().FullName);
-            }
-        }
-
+        
         ~ManagedConnection()
         {
             CloseManagedConnection(false);
@@ -150,12 +98,14 @@ namespace Platibus.RabbitMQ
             _closed = true;
             if (disposing)
             {
-                _connection.Close();
-                _connection = null;
+                lock (_syncRoot)
+                {
+                    _connection.Close();
+                }
                 
                 _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionClosed)
                 {
-                    Detail = "Managed connection ID " + _managedConnectionId + " successfully closed"
+                    Detail = "Managed connection ID " + ManagedConnectionId + " successfully closed"
                 }.Build());
             }
             GC.SuppressFinalize(this);
@@ -168,10 +118,9 @@ namespace Platibus.RabbitMQ
             {
                 if (_connection == null) return;
                 _connection.Abort();
-                _connection = null;
                 _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionAborted)
                 {
-                    Detail = "Managed connection ID " + _managedConnectionId + " aborted"
+                    Detail = "Managed connection ID " + ManagedConnectionId + " aborted"
                 }.Build());
             }
         }
@@ -183,7 +132,6 @@ namespace Platibus.RabbitMQ
             {
                 if (_connection == null) return;
                 _connection.Abort(reasonCode, reasonText);
-                _connection = null;
             }
         }
 
@@ -194,7 +142,6 @@ namespace Platibus.RabbitMQ
             {
                 if (_connection == null) return;
                 _connection.Abort(timeout);
-                _connection = null;
             }
         }
 
@@ -205,7 +152,6 @@ namespace Platibus.RabbitMQ
             {
                 if (_connection == null) return;
                 _connection.Abort(reasonCode, reasonText, timeout);
-                _connection = null;
             }
         }
 
@@ -227,17 +173,17 @@ namespace Platibus.RabbitMQ
 
         public IModel CreateModel()
         {
-            return Connection.CreateModel();
+            return _connection.CreateModel();
         }
 
         public void HandleConnectionBlocked(string reason)
         {
-            Connection.HandleConnectionBlocked(reason);
+            _connection.HandleConnectionBlocked(reason);
         }
 
         public void HandleConnectionUnblocked()
         {
-            Connection.HandleConnectionUnblocked();
+            _connection.HandleConnectionUnblocked();
         }
 
         public bool AutoClose
@@ -246,65 +192,62 @@ namespace Platibus.RabbitMQ
             set { }
         }
 
-        public ushort ChannelMax
+        public ushort ChannelMax => _connection.ChannelMax;
+
+        public ShutdownEventArgs CloseReason => _connection.CloseReason;
+
+        public AmqpTcpEndpoint Endpoint => _connection.Endpoint;
+
+        public uint FrameMax => _connection.FrameMax;
+
+        public ushort Heartbeat => _connection.Heartbeat;
+
+        public bool IsOpen => _connection.IsOpen;
+
+        public AmqpTcpEndpoint[] KnownHosts => _connection.KnownHosts;
+
+        public IProtocol Protocol => _connection.Protocol;
+
+        public IDictionary<string, object> ServerProperties => _connection.ServerProperties;
+
+        public IList<ShutdownReportEntry> ShutdownReport => _connection.ShutdownReport;
+
+        public ConsumerWorkService ConsumerWorkService => _connection.ConsumerWorkService;
+
+        public event EventHandler<CallbackExceptionEventArgs> CallbackException
         {
-            get { return Connection.ChannelMax; }
+            add => _connection.CallbackException += value;
+            remove => _connection.CallbackException -= value;
         }
 
-        public ShutdownEventArgs CloseReason
+        public event EventHandler<ConnectionBlockedEventArgs> ConnectionBlocked
         {
-            get { return Connection.CloseReason; }
+            add => _connection.ConnectionBlocked += value;
+            remove => _connection.ConnectionBlocked -= value;
         }
 
-        public AmqpTcpEndpoint Endpoint
+        public event EventHandler<ShutdownEventArgs> ConnectionShutdown
         {
-            get { return Connection.Endpoint; }
+            add => _connection.ConnectionShutdown += value;
+            remove => _connection.ConnectionShutdown -= value;
         }
 
-        public uint FrameMax
+        public event EventHandler<EventArgs> ConnectionUnblocked
         {
-            get { return Connection.FrameMax; }
+            add => _connection.ConnectionUnblocked += value;
+            remove => _connection.ConnectionUnblocked -= value;
         }
 
-        public ushort Heartbeat
+        public event EventHandler<EventArgs> RecoverySucceeded
         {
-            get { return Connection.Heartbeat; }
+            add => _connection.RecoverySucceeded += value;
+            remove => _connection.RecoverySucceeded -= value;
         }
 
-        public bool IsOpen
+        public event EventHandler<ConnectionRecoveryErrorEventArgs> ConnectionRecoveryError
         {
-            get { return Connection.IsOpen; }
+            add => _connection.ConnectionRecoveryError += value;
+            remove => _connection.ConnectionRecoveryError -= value;
         }
-
-        public AmqpTcpEndpoint[] KnownHosts
-        {
-            get { return Connection.KnownHosts; }
-        }
-
-        public IProtocol Protocol
-        {
-            get { return Connection.Protocol; }
-        }
-
-        public IDictionary<string, object> ServerProperties
-        {
-            get { return Connection.ServerProperties; }
-        }
-
-        public IList<ShutdownReportEntry> ShutdownReport
-        {
-            get { return Connection.ShutdownReport; }
-        }
-
-        public ConsumerWorkService ConsumerWorkService
-        {
-            get { return Connection.ConsumerWorkService; }
-        }
-
-        public event EventHandler<CallbackExceptionEventArgs> CallbackException;
-        public event EventHandler<ConnectionBlockedEventArgs> ConnectionBlocked;
-        public event EventHandler<ShutdownEventArgs> ConnectionShutdown;
-        public event EventHandler<EventArgs> ConnectionUnblocked;
-
     }
 }

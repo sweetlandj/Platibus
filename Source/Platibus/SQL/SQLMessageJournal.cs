@@ -22,12 +22,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.Configuration;
+#if NET452
+using System.Configuration;    
+#endif
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
+#if NETSTANDARD2_0
+using Platibus.Config;
+#endif
 using Platibus.Config.Extensibility;
 using Platibus.Diagnostics;
 using Platibus.Journaling;
@@ -46,24 +51,15 @@ namespace Platibus.SQL
         /// </summary>
         protected readonly IDiagnosticService DiagnosticService;
 
-        private readonly IDbConnectionProvider _connectionProvider;
-        private readonly IMessageJournalingCommandBuilders _commandBuilders;
-        
         /// <summary>
         /// The connection provider used to obtain connections to the SQL database
         /// </summary>
-        public IDbConnectionProvider ConnectionProvider
-        {
-            get { return _connectionProvider; }
-        }
+        public IDbConnectionProvider ConnectionProvider { get; }
 
         /// <summary>
         /// The SQL dialect
         /// </summary>
-        public IMessageJournalingCommandBuilders CommandBuilders
-        {
-            get { return _commandBuilders; }
-        }
+        public IMessageJournalingCommandBuilders CommandBuilders { get; }
 
         /// <summary>
         /// Initializes the message queueing service by creating the necessary objects in the
@@ -71,10 +67,10 @@ namespace Platibus.SQL
         /// </summary>
         public void Init()
         {
-            var connection = _connectionProvider.GetConnection();
+            var connection = ConnectionProvider.GetConnection();
             try
             {
-                var createObjectsCommand = _commandBuilders.NewCreateObjectsCommandBuilder();
+                var createObjectsCommand = CommandBuilders.NewCreateObjectsCommandBuilder();
                 using (var command = createObjectsCommand.BuildDbCommand(connection))
                 {
                     command.ExecuteNonQuery();
@@ -82,7 +78,7 @@ namespace Platibus.SQL
             }
             finally
             {
-                _connectionProvider.ReleaseConnection(connection);
+                ConnectionProvider.ReleaseConnection(connection);
             }
         }
 
@@ -109,12 +105,12 @@ namespace Platibus.SQL
             IMessageJournalingCommandBuilders commandBuilders = null, 
             IDiagnosticService diagnosticService = null)
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
+            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
             DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
-            _connectionProvider = new DefaultConnectionProvider(connectionStringSettings, DiagnosticService);
-           _commandBuilders = commandBuilders ??
-                               new CommandBuildersFactory(connectionStringSettings, DiagnosticService)
-                                   .InitMessageJournalingCommandBuilders();
+            ConnectionProvider = new DefaultConnectionProvider(connectionStringSettings, DiagnosticService);
+            CommandBuilders = commandBuilders ??
+                              new CommandBuildersFactory(connectionStringSettings, DiagnosticService)
+                                  .InitMessageJournalingCommandBuilders();
         }
 
         /// <summary>
@@ -133,11 +129,9 @@ namespace Platibus.SQL
             IMessageJournalingCommandBuilders commandBuilders, 
             IDiagnosticService diagnosticService = null)
         {
-            if (connectionProvider == null) throw new ArgumentNullException("connectionProvider");
-            if (commandBuilders == null) throw new ArgumentNullException("commandBuilders");
             DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
-            _connectionProvider = connectionProvider;
-            _commandBuilders = commandBuilders;
+            ConnectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
+            CommandBuilders = commandBuilders ?? throw new ArgumentNullException(nameof(commandBuilders));
         }
 
         /// <inheritdoc />
@@ -149,15 +143,15 @@ namespace Platibus.SQL
         /// <inheritdoc />
         public virtual async Task Append(Message message, MessageJournalCategory category, CancellationToken cancellationToken = new CancellationToken())
         {
-            if (message == null) throw new ArgumentNullException("message");
-            if (category == null) throw new ArgumentNullException("category");
+            if (message == null) throw new ArgumentNullException(nameof(message));
+            if (category == null) throw new ArgumentNullException(nameof(category));
 
             var timestamp = message.GetJournalTimestamp(category);
-            var connection = _connectionProvider.GetConnection();
+            var connection = ConnectionProvider.GetConnection();
             try
             {
                 var headers = message.Headers;
-                var commandBuilder = _commandBuilders.NewInsertJournaledMessageCommandBuilder();
+                var commandBuilder = CommandBuilders.NewInsertJournaledMessageCommandBuilder();
 
                 commandBuilder.MessageId = headers.MessageId;
                 commandBuilder.Timestamp = timestamp;
@@ -189,7 +183,7 @@ namespace Platibus.SQL
             }
             finally
             {
-                _connectionProvider.ReleaseConnection(connection);
+                ConnectionProvider.ReleaseConnection(connection);
             }
         }
 
@@ -200,10 +194,10 @@ namespace Platibus.SQL
             var next = start;
             var journaledMessages = new List<MessageJournalEntry>();
             var endOfJournal = true;
-            var connection = _connectionProvider.GetConnection();
+            var connection = ConnectionProvider.GetConnection();
             try
             {
-                var commandBuilder = _commandBuilders.NewSelectJournaledMessagesCommandBuilder();
+                var commandBuilder = CommandBuilders.NewSelectJournaledMessagesCommandBuilder();
                 commandBuilder.Categories = myFilter.Categories.Select(c => (string) c).ToList();
                 commandBuilder.Topics = myFilter.Topics.Select(t => (string) t).ToList();
                 commandBuilder.From = myFilter.From;
@@ -250,7 +244,7 @@ namespace Platibus.SQL
             }
             finally
             {
-                _connectionProvider.ReleaseConnection(connection);
+                ConnectionProvider.ReleaseConnection(connection);
             }
 
             return new MessageJournalReadResult(start, next, endOfJournal, journaledMessages);
@@ -259,7 +253,7 @@ namespace Platibus.SQL
         /// <inheritdoc />
         public virtual MessageJournalPosition ParsePosition(string str)
         {
-            if (string.IsNullOrWhiteSpace(str)) throw new ArgumentNullException("str");
+            if (string.IsNullOrWhiteSpace(str)) throw new ArgumentNullException(nameof(str));
             return new SQLMessageJournalPosition(long.Parse(str));
         }
         
@@ -362,16 +356,13 @@ namespace Platibus.SQL
                     var separatorPos = currentLine.IndexOf(':');
                     if (separatorPos < 0)
                     {
-                        throw new FormatException(string.Format("Invalid header on line {0}:  Character ':' expected",
-                            lineNumber));
+                        throw new FormatException($"Invalid header on line {lineNumber}:  Character ':' expected");
                     }
 
                     if (separatorPos == 0)
                     {
                         throw new FormatException(
-                            string.Format(
-                                "Invalid header on line {0}:  Character ':' found at position 0 (missing header name)",
-                                lineNumber));
+                            $"Invalid header on line {lineNumber}:  Character ':' found at position 0 (missing header name)");
                     }
 
                     currentHeaderName = currentLine.Substring(0, separatorPos);

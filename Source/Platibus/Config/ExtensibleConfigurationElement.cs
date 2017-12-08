@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿#if NET452
+// The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
 // 
@@ -207,14 +208,12 @@ namespace Platibus.Config
             }
 
             var str = val.ToString();
-            TimeSpan timeSpan;
-            if (TimeSpan.TryParse(str, out timeSpan))
+            if (TimeSpan.TryParse(str, out TimeSpan timeSpan))
             {
                 return timeSpan;
             }
 
-            int seconds;
-            if (int.TryParse(str, out seconds))
+            if (int.TryParse(str, out int seconds))
             {
                 return TimeSpan.FromSeconds(seconds);
             }
@@ -251,3 +250,4 @@ namespace Platibus.Config
         }
     }
 }
+#endif

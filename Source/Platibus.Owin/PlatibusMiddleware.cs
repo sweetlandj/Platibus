@@ -34,8 +34,6 @@ namespace Platibus.Owin
     public class PlatibusMiddleware : IDisposable
     {
         private readonly HttpMetricsCollector _metricsCollector = new HttpMetricsCollector();
-        private readonly Task<IOwinConfiguration> _configuration;
-        private readonly Task<Bus> _bus;
         private readonly Task<IHttpResourceRouter> _resourceRouter;
 
         private HttpTransportService _transportService;
@@ -45,8 +43,9 @@ namespace Platibus.Owin
 
         private bool _disposed;
 
-        public Task<IOwinConfiguration> Configuration { get { return _configuration; } }
-        public Task<Bus> Bus { get { return _bus; } }
+        public Task<IOwinConfiguration> Configuration { get; }
+
+        public Task<Bus> Bus { get; }
 
         public PlatibusMiddleware(string sectionName = null)
             : this(LoadConfiguration(sectionName))
@@ -60,10 +59,10 @@ namespace Platibus.Owin
 
         public PlatibusMiddleware(Task<IOwinConfiguration> configuration)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
-            _configuration = Configure(configuration);
-            _bus = InitBus(_configuration);
-            _resourceRouter = InitResourceRouter(_configuration, _bus);
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+            Configuration = Configure(configuration);
+            Bus = InitBus(Configuration);
+            _resourceRouter = InitResourceRouter(Configuration, Bus);
         }
 
         private async Task<IOwinConfiguration> Configure(Task<IOwinConfiguration> loadConfiguration)
@@ -75,9 +74,9 @@ namespace Platibus.Owin
         
         public async Task Invoke(IOwinContext context, Func<Task> next)
         {
-            var configuration = await _configuration ?? new OwinConfiguration();
+            var configuration = await Configuration ?? new OwinConfiguration();
             var baseUri = configuration.BaseUri;
-            var bus = await _bus;
+            var bus = await Bus;
             context.SetBus(bus);
 
             if (IsPlatibusUri(context.Request.Uri, baseUri))
@@ -182,7 +181,7 @@ namespace Platibus.Owin
 
         private async Task HandleMessage(Message message, CancellationToken cancellationToken)
         {
-            var bus = await _bus;
+            var bus = await Bus;
             await bus.HandleMessage(message, Thread.CurrentPrincipal);
         }
 
@@ -226,7 +225,7 @@ namespace Platibus.Owin
         {
             if (!disposing) return;
 
-            _bus.Dispose();
+            Bus.Dispose();
             _transportService.Dispose();
             _metricsCollector.Dispose();
 

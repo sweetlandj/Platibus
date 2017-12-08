@@ -34,7 +34,6 @@ namespace Platibus.Filesystem
     public class MessageFile : IDisposable
     {
         private bool _disposed;
-        private readonly FileInfo _file;
         private readonly SemaphoreSlim _fileAccess = new SemaphoreSlim(1);
 
         private volatile Message _message;
@@ -43,10 +42,7 @@ namespace Platibus.Filesystem
         /// <summary>
         /// The path and filename in which the message is stored
         /// </summary>
-        public FileInfo File
-        {
-            get { return _file; }
-        }
+        public FileInfo File { get; }
 
         /// <summary>
         /// Initializes a new <see cref="MessageFile"/> for an message file stored in disk
@@ -54,8 +50,7 @@ namespace Platibus.Filesystem
         /// <param name="file">The path and filename in which the message file is stored</param>
         public MessageFile(FileInfo file)
         {
-            if (file == null) throw new ArgumentNullException("file");
-            _file = file;
+            File = file ?? throw new ArgumentNullException(nameof(file));
         }
 
         /// <summary>
@@ -74,8 +69,8 @@ namespace Platibus.Filesystem
             do
             {
                 var filename = counter == 0
-                    ? string.Format("{0}.pmsg", message.Headers.MessageId)
-                    : string.Format("{0}_{1}.pmsg", message.Headers.MessageId, counter);
+                    ? $"{message.Headers.MessageId}.pmsg"
+                    : $"{message.Headers.MessageId}_{counter}.pmsg";
 
                 var filePath = Path.Combine(directory.FullName, filename);
                 file = new FileInfo(filePath);
@@ -156,7 +151,7 @@ namespace Platibus.Filesystem
                 if (_message != null) return;
 
                 string messageFileContent;
-                using (var fileStream = _file.OpenRead())
+                using (var fileStream = File.OpenRead())
                 using (var fileReader = new StreamReader(fileStream))
                 {
                     messageFileContent = await fileReader.ReadToEndAsync();
@@ -177,7 +172,7 @@ namespace Platibus.Filesystem
             }
             catch (Exception ex)
             {
-                throw new MessageFileFormatException(_file.FullName, "Error reading message file", ex);
+                throw new MessageFileFormatException(File.FullName, "Error reading message file", ex);
             }
             finally
             {
@@ -196,12 +191,12 @@ namespace Platibus.Filesystem
         public async Task<MessageFile> MoveTo(DirectoryInfo destinationDirectory,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            var newPath = Path.Combine(destinationDirectory.FullName, _file.Name);
+            var newPath = Path.Combine(destinationDirectory.FullName, File.Name);
             await _fileAccess.WaitAsync(cancellationToken);
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                _file.MoveTo(newPath);
+                File.MoveTo(newPath);
                 return new MessageFile(new FileInfo(newPath));
             }
             finally
@@ -225,10 +220,10 @@ namespace Platibus.Filesystem
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                _file.Refresh();
-                if (_file.Exists)
+                File.Refresh();
+                if (File.Exists)
                 {
-                    _file.Delete();
+                    File.Delete();
                 }
             }
             finally

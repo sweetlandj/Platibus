@@ -7,33 +7,20 @@ namespace Platibus.Queueing
     /// </summary>
     public class MessageQueueEventArgs : EventArgs
     {
-        private readonly QueueName _queue;
-        private readonly QueuedMessage _queuedMessage;
-        private readonly Exception _exception;
-
         /// <summary>
         /// The name of the queue from which the message was read
         /// </summary>
-        public QueueName Queue
-        {
-            get { return _queue; }
-        }
+        public QueueName Queue { get; }
 
         /// <summary>
         /// The queued message for which the handling attempt was made
         /// </summary>
-        public QueuedMessage QueuedMessage
-        {
-            get { return _queuedMessage; }
-        }
-        
+        public QueuedMessage QueuedMessage { get; }
+
         /// <summary>
         /// The exception that was caught during the handling attempt, if applicable
         /// </summary>
-        public Exception Exception
-        {
-            get { return _exception; }
-        }
+        public Exception Exception { get; }
 
         /// <summary>
         /// Initializes a new <see cref="MessageQueueEventArgs"/>
@@ -42,8 +29,8 @@ namespace Platibus.Queueing
         /// <param name="queuedMessage">The queued message for which the handling attempt was made</param>
         public MessageQueueEventArgs(QueueName queue, QueuedMessage queuedMessage)
         {
-            _queue = queue;
-            _queuedMessage = queuedMessage;
+            Queue = queue;
+            QueuedMessage = queuedMessage;
         }
         
 
@@ -55,9 +42,9 @@ namespace Platibus.Queueing
         /// <param name="exception">The exception that was caught</param>
         public MessageQueueEventArgs(QueueName queue, QueuedMessage queuedMessage, Exception exception)
         {
-            _queue = queue;
-            _queuedMessage = queuedMessage;
-            _exception = exception;
+            Queue = queue;
+            QueuedMessage = queuedMessage;
+            Exception = exception;
         }
     }
 }

@@ -35,50 +35,25 @@ namespace Platibus.IIS
         private readonly HttpRequestBase _request;
         private readonly IPrincipal _principal;
 
-        public Uri Url
-        {
-            get { return _request.Url; }
-        }
+        public Uri Url => _request.Url;
 
-        public string HttpMethod
-        {
-            get { return _request.HttpMethod; }
-        }
+        public string HttpMethod => _request.HttpMethod;
 
-        public NameValueCollection Headers
-        {
-            get { return _request.Headers; }
-        }
+        public NameValueCollection Headers => _request.Headers;
 
-        public NameValueCollection QueryString
-        {
-            get { return _request.QueryString; }
-        }
+        public NameValueCollection QueryString => _request.QueryString;
 
-        public string ContentType
-        {
-            get { return _request.ContentType; }
-        }
+        public string ContentType => _request.ContentType;
 
-        public Encoding ContentEncoding
-        {
-            get { return _request.ContentEncoding; }
-        }
+        public Encoding ContentEncoding => _request.ContentEncoding;
 
-        public Stream InputStream
-        {
-            get { return _request.InputStream; }
-        }
+        public Stream InputStream => _request.InputStream;
 
-        public IPrincipal Principal
-        {
-            get { return _principal; }
-        }
+        public IPrincipal Principal => _principal;
 
         public HttpRequestAdapter(HttpRequestBase request, IPrincipal principal)
         {
-            if (request == null) throw new ArgumentNullException("request");
-            _request = request;
+            _request = request ?? throw new ArgumentNullException(nameof(request));
             _principal = principal;
         }
     }

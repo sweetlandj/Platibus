@@ -21,6 +21,9 @@
 // THE SOFTWARE.
 
 using System.Threading.Tasks;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Platibus.Config.Extensibility
 {
@@ -35,9 +38,13 @@ namespace Platibus.Config.Extensibility
         /// based on the provided <paramref name="configuration"/>.
         /// </summary>
         /// <param name="configuration">The subscription tracking service configuration 
-        /// element</param>
+        ///     element</param>
         /// <returns>Returns a task whose result is an initialized
         /// <see cref="ISubscriptionTrackingService"/>.</returns>
+#if NET452
         Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(SubscriptionTrackingElement configuration);
+#else
+        Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(IConfiguration configuration);
+#endif
     }
 }

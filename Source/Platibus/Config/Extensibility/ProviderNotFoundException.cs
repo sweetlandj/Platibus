@@ -35,15 +35,10 @@ namespace Platibus.Config.Extensibility
     [Serializable]
     public class ProviderNotFoundException : Exception
     {
-        private readonly string _providerName;
-
         /// <summary>
         /// The provider name
         /// </summary>
-        public string ProviderName
-        {
-            get { return _providerName; }
-        }
+        public string ProviderName { get; }
 
         /// <summary>
         /// Initializes a new <see cref="ProviderNotFoundException"/> for the 
@@ -52,7 +47,7 @@ namespace Platibus.Config.Extensibility
         /// <param name="providerName">The provider name</param>
         public ProviderNotFoundException(string providerName) : base(providerName)
         {
-            _providerName = providerName;
+            ProviderName = providerName;
         }
 
         /// <summary>
@@ -64,7 +59,7 @@ namespace Platibus.Config.Extensibility
         public ProviderNotFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _providerName = info.GetString("providerName");
+            ProviderName = info.GetString("providerName");
         }
 
         /// <summary>
@@ -75,7 +70,7 @@ namespace Platibus.Config.Extensibility
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("providerName", _providerName);
+            info.AddValue("providerName", ProviderName);
         }
     }
 }

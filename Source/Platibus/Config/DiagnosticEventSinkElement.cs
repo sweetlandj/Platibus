@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿#if NET452
+// The MIT License (MIT)
 // 
 // Copyright (c) 2017 Jesse Sweetland
 // 
@@ -42,8 +43,8 @@ namespace Platibus.Config
         [ConfigurationProperty(NamePropertyName, IsRequired = true)]
         public string Name
         {
-            get { return (string)base[NamePropertyName]; }
-            set { base[NamePropertyName] = value; }
+            get => (string)base[NamePropertyName];
+            set => base[NamePropertyName] = value;
         }
 
         /// <summary>
@@ -54,8 +55,8 @@ namespace Platibus.Config
         [ConfigurationProperty(ProviderPropertyName, IsRequired = true)]
         public string Provider
         {
-            get { return (string)base[ProviderPropertyName]; }
-            set { base[ProviderPropertyName] = value; }
+            get => (string)base[ProviderPropertyName];
+            set => base[ProviderPropertyName] = value;
         }
 
         /// <summary>
@@ -64,8 +65,8 @@ namespace Platibus.Config
         [ConfigurationProperty(MinLevelPropertyName, IsRequired = false, DefaultValue = DiagnosticEventLevel.Debug)]
         public DiagnosticEventLevel MinLevel
         {
-            get { return (DiagnosticEventLevel)base[MinLevelPropertyName]; }
-            set { base[MinLevelPropertyName] = value; }
+            get => (DiagnosticEventLevel)base[MinLevelPropertyName];
+            set => base[MinLevelPropertyName] = value;
         }
 
         /// <summary>
@@ -74,10 +75,12 @@ namespace Platibus.Config
         [ConfigurationProperty(MaxLevelPropertyName, IsRequired = false, DefaultValue = DiagnosticEventLevel.Error)]
         public DiagnosticEventLevel MaxLevel
         {
-            get { return (DiagnosticEventLevel)base[MaxLevelPropertyName]; }
-            set { base[MaxLevelPropertyName] = value; }
+            get => (DiagnosticEventLevel)base[MaxLevelPropertyName];
+            set => base[MaxLevelPropertyName] = value;
         }
 
 
     }
 }
+
+#endif

@@ -48,8 +48,8 @@ namespace Platibus.Http.Controllers
         /// <inheritdoc />
         public async Task Process(IHttpResourceRequest request, IHttpResourceResponse response, IEnumerable<string> subPath)
         {
-            if (request == null) throw new ArgumentNullException("request");
-            if (response == null) throw new ArgumentNullException("response");
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (response == null) throw new ArgumentNullException(nameof(response));
 
             if (!request.IsGet())
             {
@@ -65,8 +65,8 @@ namespace Platibus.Http.Controllers
 
         private async Task Get(IHttpResourceRequest request, IHttpResourceResponse response)
         {
-            if (request == null) throw new ArgumentNullException("request");
-            if (response == null) throw new ArgumentNullException("response");
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (response == null) throw new ArgumentNullException(nameof(response));
 
             if (_messageJournal == null)
             {
@@ -152,8 +152,7 @@ namespace Platibus.Http.Controllers
                 return 0;
             }
 
-            int count;
-            if (!int.TryParse(countStr, out count) || count <= 0)
+            if (!int.TryParse(countStr, out int count) || count <= 0)
             {
                 errors.Add(new ErrorModel("Count must be a positive integer value", "count"));
                 return 0;
@@ -197,8 +196,7 @@ namespace Platibus.Http.Controllers
             var value = request.QueryString[parameter];
             if (!string.IsNullOrWhiteSpace(value))
             {
-                DateTime dateValue;
-                if (!TryParseDate(value, out dateValue))
+                if (!TryParseDate(value, out DateTime dateValue))
                 {
                     errors.Add(new ErrorModel("Invalid date/time: " + value, parameter));
                 }
@@ -216,8 +214,7 @@ namespace Platibus.Http.Controllers
             var value = request.QueryString[parameter];
             if (!string.IsNullOrWhiteSpace(value))
             {
-                Uri uri;
-                if (!Uri.TryCreate(value, UriKind.Absolute, out uri))
+                if (!Uri.TryCreate(value, UriKind.Absolute, out Uri uri))
                 {
                     errors.Add(new ErrorModel("Invalid URI: " + value, parameter));
                 }
@@ -245,8 +242,7 @@ namespace Platibus.Http.Controllers
             var value = request.QueryString[parameter];
             if (!string.IsNullOrWhiteSpace(value))
             {
-                Guid guid;
-                if (!Guid.TryParse(value, out guid))
+                if (!Guid.TryParse(value, out Guid guid))
                 {
                     errors.Add(new ErrorModel("Invalid message ID: " + value, parameter));
                 }

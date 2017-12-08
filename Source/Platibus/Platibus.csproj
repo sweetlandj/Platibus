@@ -1,424 +1,55 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{73863B52-5751-4F75-8436-1CD3E6AC0D50}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Platibus</RootNamespace>
-    <AssemblyName>Platibus</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
-    <RestorePackages>true</RestorePackages>
-    <TargetFrameworkProfile />
-    <UseFullSemVerForNuGet>false</UseFullSemVerForNuGet>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
+    <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Version>5.0.0</Version>
+    <Authors>Jesse Sweetland</Authors>
+    <Company />
+    <Copyright>Copyright 2017 Jesse Sweetland</Copyright>
+    <PackageProjectUrl>https://github.com/sweetlandj/Platibus</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/sweetlandj/Platibus/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/sweetlandj/Platibus/master/Icon.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/sweetlandj/Platibus</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>bus message queue service rest async</PackageTags>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <LangVersion>5</LangVersion>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
+    <DefineConstants>NET452</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <BuildPackage>true</BuildPackage>
-    <DocumentationFile>bin\Release\Platibus.XML</DocumentationFile>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <DefineConstants>NETSTANDARD2_0</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>Platibus.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Common.Logging, Version=3.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Common.Logging.3.3.1\lib\net40\Common.Logging.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Common.Logging.Core, Version=3.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Common.Logging.Core.3.3.1\lib\net40\Common.Logging.Core.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.IdentityModel.Logging, Version=1.1.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.IdentityModel.Logging.1.1.3\lib\net451\Microsoft.IdentityModel.Logging.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
+    <PackageReference Include="Microsoft.IdentityModel.Logging" Version="1.1.5" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="5.1.5" />
+    <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.8.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
     <Reference Include="System.Configuration" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
     <Reference Include="System.IdentityModel" />
-    <Reference Include="System.IdentityModel.Tokens.Jwt, Version=4.0.40306.1554, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.IdentityModel.Tokens.Jwt.4.0.4.403061554\lib\net45\System.IdentityModel.Tokens.Jwt.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.IO.Compression" />
-    <Reference Include="System.Net" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.Runtime.Caching" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.ServiceProcess" />
-    <Reference Include="System.Threading.Tasks.Dataflow, Version=4.5.24.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Tpl.Dataflow.4.5.24\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web" />
-    <Reference Include="System.XML" />
-    <Reference Include="WindowsBase" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\Copyright.cs">
-      <Link>Properties\Copyright.cs</Link>
-    </Compile>
-    <Compile Include="Config\ClientCredentialType.cs" />
-    <Compile Include="Config\DiagnosticEventSinkElement.cs" />
-    <Compile Include="Config\DiagnosticEventSinkElementCollection.cs" />
-    <Compile Include="Config\DiagnosticsElement.cs" />
-    <Compile Include="Config\Extensibility\CommandBuildersFactory.cs" />
-    <Compile Include="Config\Extensibility\DiagnosticEventSinkFactory.cs" />
-    <Compile Include="Config\Extensibility\IDiagnosticEventSinkProvider.cs" />
-    <Compile Include="Config\Extensibility\ISecurityTokenServiceProvider.cs" />
-    <Compile Include="Config\Extensibility\MessageJournalFactory.cs" />
-    <Compile Include="Config\Extensibility\MessageQueueingServiceFactory.cs" />
-    <Compile Include="Config\Extensibility\ProviderHelper.cs" />
-    <Compile Include="Config\Extensibility\SecurityTokenServiceFactory.cs" />
-    <Compile Include="Config\Extensibility\SubscriptionTrackingServiceFactory.cs" />
-    <Compile Include="Config\GenericMessageHandlerAdapter.cs" />
-    <Compile Include="Config\IAsyncConfigurationHook.cs" />
-    <Compile Include="Config\ILoopbackConfiguration.cs" />
-    <Compile Include="Config\IPAddressConverter.cs" />
-    <Compile Include="Config\LoopbackConfiguration.cs" />
-    <Compile Include="Config\LoopbackConfigurationManager.cs" />
-    <Compile Include="Config\LoopbackConfigurationSection.cs" />
-    <Compile Include="Config\MessageHandlerFactory.cs" />
-    <Compile Include="Config\MulticastElement.cs" />
-    <Compile Include="Config\PlatibusConfigurationValidationExtensions.cs" />
-    <Compile Include="Config\QueueNameFactory.cs" />
-    <Compile Include="Config\SecurityTokensElement.cs" />
-    <Compile Include="Config\SendOptionsElement.cs" />
-    <Compile Include="DataContractMessageNamingService.cs" />
-    <Compile Include="Diagnostics\CommonLoggingSink.cs" />
-    <Compile Include="Diagnostics\CommonLoggingSinkProvider.cs" />
-    <Compile Include="Diagnostics\ConsoleLoggingSink.cs" />
-    <Compile Include="Diagnostics\ConsoleLoggingSinkProvider.cs" />
-    <Compile Include="Diagnostics\DiagnosticEvent.cs" />
-    <Compile Include="Diagnostics\DiagnosticEventBuilder.cs" />
-    <Compile Include="Diagnostics\DiagnosticEventLevel.cs" />
-    <Compile Include="Diagnostics\DiagnosticEventLevelSpecification.cs" />
-    <Compile Include="Diagnostics\DiagnosticEventType.cs" />
-    <Compile Include="Diagnostics\DiagnosticSinkExceptionEventArgs.cs" />
-    <Compile Include="Diagnostics\DiagnosticSinkExceptionHandler.cs" />
-    <Compile Include="Diagnostics\FilteringSink.cs" />
-    <Compile Include="Diagnostics\GelfLoggingSink.cs" />
-    <Compile Include="Diagnostics\GelfLoggingSinkProviders.cs" />
-    <Compile Include="Diagnostics\GelfMessage.cs" />
-    <Compile Include="Diagnostics\GelfHttpLoggingSink.cs" />
-    <Compile Include="Diagnostics\GelfTcpLoggingSink.cs" />
-    <Compile Include="Diagnostics\GelfUdpLoggingSink.cs" />
-    <Compile Include="Diagnostics\IDiagnosticEventSpecification.cs" />
-    <Compile Include="Diagnostics\IDiagnosticEventSink.cs" />
-    <Compile Include="Diagnostics\InfluxDBOptions.cs" />
-    <Compile Include="Diagnostics\InfluxDBPrecision.cs" />
-    <Compile Include="Diagnostics\InfluxDBSinkProvider.cs" />
-    <Compile Include="Http\HttpMetricsCollector.cs" />
-    <Compile Include="Diagnostics\IDiagnosticService.cs" />
-    <Compile Include="Diagnostics\DiagnosticService.cs" />
-    <Compile Include="Diagnostics\TextLoggingSink.cs" />
-    <Compile Include="Diagnostics\UnixTime.cs" />
-    <Compile Include="EndpointAddressEqualityComparer.cs" />
-    <Compile Include="EndpointCollection.cs" />
-    <Compile Include="Filesystem\FilesystemEvent.cs" />
-    <Compile Include="Filesystem\FilesystemEventBuilder.cs" />
-    <Compile Include="Filesystem\FilesystemEventType.cs" />
-    <Compile Include="Http\AuthenticationSchemeElement.cs" />
-    <Compile Include="Http\AuthenticationSchemesElementCollection.cs" />
-    <Compile Include="Http\BasicAuthorizationService.cs" />
-    <Compile Include="Http\BasicHttpClientFactory.cs" />
-    <Compile Include="Http\Clients\HttpMessageJournalClient.cs" />
-    <Compile Include="Http\Controllers\MetricsController.cs" />
-    <Compile Include="Http\HttpClientPool.cs" />
-    <Compile Include="Config\InvalidSendRuleException.cs" />
-    <Compile Include="Config\InvalidSubscriptionException.cs" />
-    <Compile Include="Http\Controllers\JournalController.cs" />
-    <Compile Include="Http\HttpEvent.cs" />
-    <Compile Include="Http\HttpEventBuilder.cs" />
-    <Compile Include="Http\HttpEventType.cs" />
-    <Compile Include="Http\HttpSubscriptionMetadata.cs" />
-    <Compile Include="Diagnostics\InfluxDBSink.cs" />
-    <Compile Include="Http\IHttpClientFactory.cs" />
-    <Compile Include="Http\Models\ErrorModel.cs" />
-    <Compile Include="Http\Models\MessageJournalEntryDataModel.cs" />
-    <Compile Include="Http\Models\JournalGetResponseModel.cs" />
-    <Compile Include="Http\Models\MessageJournalEntryModel.cs" />
-    <Compile Include="Http\Models\MetricsModel.cs" />
-    <Compile Include="Journaling\FilteredMessageJournal.cs" />
-    <Compile Include="Journaling\IMessageJournal.cs" />
-    <Compile Include="Journaling\MessageJournalEntry.cs" />
-    <Compile Include="Journaling\MessageJournalExtensions.cs" />
-    <Compile Include="Journaling\MessageJournalPosition.cs" />
-    <Compile Include="Journaling\MessageJournalCategory.cs" />
-    <Compile Include="Journaling\MessageJournalFilter.cs" />
-    <Compile Include="Journaling\MessageJournalReadResult.cs" />
-    <Compile Include="Journaling\SanitizedMessageJournal.cs" />
-    <Compile Include="Multicast\ByteUtils.cs" />
-    <Compile Include="Multicast\MulticastEventBuilder.cs" />
-    <Compile Include="Multicast\MulticastEventType.cs" />
-    <Compile Include="Multicast\MulticastSubscriptionTrackingService.cs" />
-    <Compile Include="Multicast\NodeId.cs" />
-    <Compile Include="Multicast\SubscriptionTrackingDatagram.cs" />
-    <Compile Include="Multicast\MulticastEvent.cs" />
-    <Compile Include="NoMatchingSendRulesException.cs" />
-    <Compile Include="Queueing\AbstractMessageQueue.cs" />
-    <Compile Include="Queueing\AbstractMessageQueueingService.cs" />
-    <Compile Include="Queueing\MessageQueueEventArgs.cs" />
-    <Compile Include="Queueing\MessageQueueEventHandler.cs" />
-    <Compile Include="Queueing\QueuedMessage.cs" />
-    <Compile Include="Queueing\QueuedMessageContext.cs" />
-    <Compile Include="ResourceNotFoundException.cs" />
-    <Compile Include="Security\BearerCredentials.cs" />
-    <Compile Include="Security\HexEncoding.cs" />
-    <Compile Include="Security\IAuthorizationService.cs" />
-    <Compile Include="Http\HttpServerConfigurationManager.cs" />
-    <Compile Include="Http\IHttpServerConfiguration.cs" />
-    <Compile Include="Http\HttpServerConfiguration.cs" />
-    <Compile Include="Http\HttpServerConfigurationSection.cs" />
-    <Compile Include="Http\HttpExceptionHandler.cs" />
-    <Compile Include="IEndpointCollection.cs" />
-    <Compile Include="IMessageHandler.cs" />
-    <Compile Include="LoopbackHost.cs" />
-    <Compile Include="MessageImportance.cs" />
-    <Compile Include="Http\HttpEndpointCredentialsVisitor.cs" />
-    <Compile Include="InMemory\InMemoryServicesProvider.cs" />
-    <Compile Include="MessageHandler.cs" />
-    <Compile Include="MessageNotAcknowledgedException.cs" />
-    <Compile Include="ReadOnlyEndpointCollection.cs" />
-    <Compile Include="Security\ISecurityTokenService.cs" />
-    <Compile Include="Security\JwtSecurityTokenService.cs" />
-    <Compile Include="Security\JwtSecurityTokenServiceOptions.cs" />
-    <Compile Include="Security\JwtSecurityTokenServiceProvider.cs" />
-    <Compile Include="Security\MessageHeaderSanitizationExtensions.cs" />
-    <Compile Include="Security\SecurityTokenExtensions.cs" />
-    <Compile Include="Security\HexEncodedSecurityKey.cs" />
-    <Compile Include="Security\SecurityTokenServiceExtensions.cs" />
-    <Compile Include="Security\PrincipalExtensions.cs" />
-    <Compile Include="Security\SenderIdentity.cs" />
-    <Compile Include="Security\SenderPrincipal.cs" />
-    <Compile Include="Security\SenderRole.cs" />
-    <Compile Include="Serialization\DataContractJsonSerializerAdapter.cs" />
-    <Compile Include="SQL\Commands\CommandBuilderExtensions.cs" />
-    <Compile Include="SQL\Commands\CommonMessageJournalingCommandBuilders.cs" />
-    <Compile Include="SQL\Commands\CommonSubscriptionTrackingCommandBuilders.cs" />
-    <Compile Include="SQL\Commands\CreateSubscriptionTrackingObjectsCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\DeleteQueuedMessageCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\DeleteSubscriptionCommandBuilder.cs" />
-    <Compile Include="Config\Extensibility\IMessageJournalingCommandBuildersProvider.cs" />
-    <Compile Include="Config\Extensibility\IMessageQueueingCommandBuildersProvider.cs" />
-    <Compile Include="SQL\Commands\InsertMessageJournalEntryCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\CommonMessageQueueingCommandBuilders.cs" />
-    <Compile Include="SQL\Commands\CreateMessageJournalObjectsCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\CreateMessageQueueingObjectsCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\IMessageQueueingCommandBuilders.cs" />
-    <Compile Include="SQL\Commands\InsertSubscriptionCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\ISubscriptionTrackingCommandBuilders.cs" />
-    <Compile Include="Config\Extensibility\ISubscriptionTrackingCommandBuildersProvider.cs" />
-    <Compile Include="SQL\Commands\MessageJournalEntryRecord.cs" />
-    <Compile Include="SQL\Commands\MSSQLCommandBuildersProvider.cs" />
-    <Compile Include="SQL\Commands\MSSQLCreateSubscriptionTrackingObjectsCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\MSSQLMessageJournalingCommandBuilders.cs" />
-    <Compile Include="SQL\Commands\MSSQLSubscriptionTrackingCommandBuilders.cs" />
-    <Compile Include="SQL\Commands\QueuedMessageRecord.cs" />
-    <Compile Include="SQL\Commands\SelectDeadMessagesCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\SelectMessageJournalEntriesCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\SelectPendingMessagesCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\SelectSubscriptionsCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\UpdateQueuedMessageCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\MSSQLCreateMessageJournalObjectsCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\MSSQLCreateMessageQueueingObjectsCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\InsertQueuedMessageCommandBuilder.cs" />
-    <Compile Include="SQL\Commands\IMessageJournalingCommandBuilders.cs" />
-    <Compile Include="SQL\Commands\MSSQLMessageQueueingCommandBuilders.cs" />
-    <Compile Include="SQL\Commands\UpdateSubscriptionCommandBuilder.cs" />
-    <Compile Include="SQL\SQLEvent.cs" />
-    <Compile Include="SQL\SQLEventBuilder.cs" />
-    <Compile Include="SQL\SQLEventType.cs" />
-    <Compile Include="SQL\SQLMessageJournal.cs" />
-    <Compile Include="SQL\SQLMessageJournalPosition.cs" />
-    <Compile Include="Utils.cs" />
-    <Compile Include="ObservableExtensions.cs" />
-    <Compile Include="Security\BasicAuthCredentials.cs" />
-    <Compile Include="Config\Extensibility\ISubscriptionTrackingServiceProvider.cs" />
-    <Compile Include="Config\Extensibility\IMessageJournalProvider.cs" />
-    <Compile Include="Config\Extensibility\IMessageQueueingServiceProvider.cs" />
-    <Compile Include="Config\Extensibility\ProviderAttribute.cs" />
-    <Compile Include="Config\Extensibility\MultipleProvidersFoundException.cs" />
-    <Compile Include="Config\Extensibility\ProviderNotFoundException.cs" />
-    <Compile Include="Config\ExtensibleConfigurationElement.cs" />
-    <Compile Include="Config\ISubscription.cs" />
-    <Compile Include="Config\PlatibusConfigurationExtensions.cs" />
-    <Compile Include="Config\PlatibusConfigurationManager.cs" />
-    <Compile Include="Config\IConfigurationHook.cs" />
-    <Compile Include="Config\JournalingElement.cs" />
-    <Compile Include="Config\ReflectionHelper.cs" />
-    <Compile Include="Config\Subscription.cs" />
-    <Compile Include="Config\SubscriptionElement.cs" />
-    <Compile Include="Config\SubscriptionElementCollection.cs" />
-    <Compile Include="Config\SubscriptionTrackingElement.cs" />
-    <Compile Include="ConnectionRefusedException.cs" />
-    <Compile Include="DefaultMessageNamingService.cs" />
-    <Compile Include="Bus.cs" />
-    <Compile Include="BusMessageContext.cs" />
-    <Compile Include="Config\IHandlingRule.cs" />
-    <Compile Include="Config\HandlingRule.cs" />
-    <Compile Include="Config\TopicAlreadyExistsException.cs" />
-    <Compile Include="Security\DefaultNetworkCredentials.cs" />
-    <Compile Include="DelegateMessageHandler.cs" />
-    <Compile Include="Endpoint.cs" />
-    <Compile Include="Filesystem\FilesystemServicesProvider.cs" />
-    <Compile Include="Filesystem\FilesystemSubscriptionTrackingService.cs" />
-    <Compile Include="Filesystem\MessageFileFormatException.cs" />
-    <Compile Include="Http\ResourceTypeDictionaryRouter.cs" />
-    <Compile Include="Http\HttpListenerResponseAdapter.cs" />
-    <Compile Include="Http\HttpRequestExtensions.cs" />
-    <Compile Include="Http\HttpListenerRequestAdapter.cs" />
-    <Compile Include="Http\ResourceType.cs" />
-    <Compile Include="Http\HttpServer.cs" />
-    <Compile Include="Http\HttpTransportService.cs" />
-    <Compile Include="Http\IHttpResourceRequest.cs" />
-    <Compile Include="Http\IHttpResourceController.cs" />
-    <Compile Include="Http\IHttpResourceRouter.cs" />
-    <Compile Include="Http\IHttpResourceResponse.cs" />
-    <Compile Include="Http\Controllers\MessageController.cs" />
-    <Compile Include="Http\Controllers\TopicController.cs" />
-    <Compile Include="IEndpointCredentials.cs" />
-    <Compile Include="IEndpointCredentialsVisitor.cs" />
-    <Compile Include="InMemory\InMemoryMessageQueueingService.cs" />
-    <Compile Include="InMemory\InMemoryMessageQueue.cs" />
-    <Compile Include="InvalidRequestException.cs" />
-    <Compile Include="ISubscriptionTrackingService.cs" />
-    <Compile Include="LoopbackTransportService.cs" />
-    <Compile Include="Message.cs" />
-    <Compile Include="ITransportService.cs" />
-    <Compile Include="IMessageNamingService.cs" />
-    <Compile Include="MessageContextExtensions.cs" />
-    <Compile Include="MessageEqualityComparer.cs" />
-    <Compile Include="MessageHeadersEqualityComparer.cs" />
-    <Compile Include="MessageName.cs" />
-    <Compile Include="Filesystem\MessageFileReader.cs" />
-    <Compile Include="IQueueListener.cs" />
-    <Compile Include="MessageHandlingListener.cs" />
-    <Compile Include="Filesystem\MessageFileWriter.cs" />
-    <Compile Include="Filesystem\MessageFile.cs" />
-    <Compile Include="Filesystem\FilesystemMessageQueue.cs" />
-    <Compile Include="Filesystem\FilesystemMessageQueueingService.cs" />
-    <Compile Include="Filesystem\FilesystemQueuedMessageContext.cs" />
-    <Compile Include="IQueuedMessageContext.cs" />
-    <Compile Include="NameResolutionFailedException.cs" />
-    <Compile Include="InMemory\InMemorySubscriptionTrackingService.cs" />
-    <Compile Include="PrincipalExtensions.cs" />
-    <Compile Include="SentMessageExtensions.cs" />
-    <Compile Include="SentMessageWithCachedReplies.cs" />
-    <Compile Include="QueueNotFoundException.cs" />
-    <Compile Include="QueueAlreadyExistsException.cs" />
-    <Compile Include="QueueName.cs" />
-    <Compile Include="IMessageQueueingService.cs" />
-    <Compile Include="QueueOptions.cs" />
-    <Compile Include="Config\DelegateMessageSpecification.cs" />
-    <Compile Include="Config\EndpointAlreadyExistsException.cs" />
-    <Compile Include="Config\EndpointElement.cs" />
-    <Compile Include="Config\EndpointElementCollection.cs" />
-    <Compile Include="Config\EndpointRequiredException.cs" />
-    <Compile Include="Config\IMessageSpecification.cs" />
-    <Compile Include="Config\IPlatibusConfiguration.cs" />
-    <Compile Include="Config\ISendRule.cs" />
-    <Compile Include="Config\MessageNamePatternSpecification.cs" />
-    <Compile Include="Config\PlatibusConfiguration.cs" />
-    <Compile Include="Config\PlatibusConfigurationSection.cs" />
-    <Compile Include="Config\QueueingElement.cs" />
-    <Compile Include="Config\SendRule.cs" />
-    <Compile Include="Config\SendRuleElement.cs" />
-    <Compile Include="Config\SendRuleElementCollection.cs" />
-    <Compile Include="Config\TopicElement.cs" />
-    <Compile Include="Config\TopicElementCollection.cs" />
-    <Compile Include="EndpointName.cs" />
-    <Compile Include="IMessageHeaders.cs" />
-    <Compile Include="ISentMessage.cs" />
-    <Compile Include="LoggingCategories.cs" />
-    <Compile Include="MemoryCacheReplyHub.cs" />
-    <Compile Include="EndpointNotFoundException.cs" />
-    <Compile Include="ReplyStream.cs" />
-    <Compile Include="Serialization\Base64ObjectSerializer.cs" />
-    <Compile Include="Serialization\DefaultSerializationService.cs" />
-    <Compile Include="Serialization\ISerializer.cs" />
-    <Compile Include="Serialization\ISerializationService.cs" />
-    <Compile Include="Serialization\NewtonsoftJsonSerializer.cs" />
-    <Compile Include="Serialization\SerializerNotFoundException.cs" />
-    <Compile Include="Serialization\DataContractSerializerAdapter.cs" />
-    <Compile Include="Serialization\StringSerializer.cs" />
-    <Compile Include="Serialization\XmlSerializerAdapter.cs" />
-    <Compile Include="SQL\DbExtensions.cs" />
-    <Compile Include="SQL\DefaultConnectionProvider.cs" />
-    <Compile Include="SQL\IDbConnectionProvider.cs" />
-    <Compile Include="SQL\SQLQueuedMessageContext.cs" />
-    <Compile Include="SQL\SQLMessageQueue.cs" />
-    <Compile Include="SQL\SQLMessageQueueingService.cs" />
-    <Compile Include="SQL\SQLServicesProvider.cs" />
-    <Compile Include="SQL\SQLSubscription.cs" />
-    <Compile Include="SQL\SQLSubscriptionTrackingService.cs" />
-    <Compile Include="TopicNotFoundException.cs" />
-    <Compile Include="HeaderName.cs" />
-    <Compile Include="MessageHeaders.cs" />
-    <Compile Include="IMessageContext.cs" />
-    <Compile Include="IEndpoint.cs" />
-    <Compile Include="IBus.cs" />
-    <Compile Include="MessageId.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SendOptions.cs" />
-    <Compile Include="TopicName.cs" />
-    <Compile Include="TransportException.cs" />
-    <Compile Include="WaitHandleExtensions.cs" />
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory">
+      <Version>2.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration">
+      <Version>2.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder">
+      <Version>2.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json">
+      <Version>2.0.0</Version>
+    </PackageReference>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
-    <None Include="packages.config" />
-    <None Include="Platibus.licenseheader" />
-    <None Include="Platibus.nuspec" />
-    <None Include="Platibus.snk" />
-  </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-    <Error Condition="!Exists('..\packages\GitVersionTask.3.6.5\build\dotnet\GitVersionTask.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GitVersionTask.3.6.5\build\dotnet\GitVersionTask.targets'))" />
-  </Target>
-  <Import Project="..\packages\GitVersionTask.3.6.5\build\dotnet\GitVersionTask.targets" Condition="Exists('..\packages\GitVersionTask.3.6.5\build\dotnet\GitVersionTask.targets')" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

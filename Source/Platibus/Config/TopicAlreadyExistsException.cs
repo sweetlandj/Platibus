@@ -33,8 +33,6 @@ namespace Platibus.Config
     [Serializable]
     public class TopicAlreadyExistsException : ApplicationException
     {
-        private readonly TopicName _topic;
-
         /// <summary>
         /// Initializes a new <see cref="TopicAlreadyExistsException"/> with
         /// the specified <paramref name="topic"/>
@@ -43,7 +41,7 @@ namespace Platibus.Config
         /// time</param>
         public TopicAlreadyExistsException(TopicName topic)
         {
-            _topic = topic;
+            Topic = topic;
         }
 
         /// <summary>
@@ -55,16 +53,13 @@ namespace Platibus.Config
         public TopicAlreadyExistsException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _topic = info.GetString("Topic");
+            Topic = info.GetString("Topic");
         }
 
         /// <summary>
         /// The name of the topic that was added multiple times
         /// </summary>
-        public TopicName Topic
-        {
-            get { return _topic; }
-        }
+        public TopicName Topic { get; }
 
         /// <summary>
         /// When overridden in a derived class, sets the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> with information about the exception.
@@ -74,7 +69,7 @@ namespace Platibus.Config
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("Topic", _topic);
+            info.AddValue("Topic", Topic);
         }
     }
 }

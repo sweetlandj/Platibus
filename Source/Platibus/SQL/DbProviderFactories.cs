@@ -1,4 +1,5 @@
-﻿#if NET452
+﻿#if NETSTANDARD2_0
+
 // The MIT License (MIT)
 // 
 // Copyright (c) 2017 Jesse Sweetland
@@ -22,35 +23,39 @@
 // THE SOFTWARE.
 
 using System;
-using System.ComponentModel;
-using System.Configuration;
-using System.Globalization;
-using System.Net;
+using System.Collections.Generic;
+using System.Data.Common;
 
-namespace Platibus.Config
+namespace Platibus.SQL
 {
-    internal class IPAddressConverter : ConfigurationConverterBase
+    /// <summary>
+    /// Shim that emulates the behavior of <c>System.Data.Common.DbProviderFactories</c>
+    /// using .NET Standard 2.0 APIs
+    /// </summary>
+    public static class DbProviderFactories
     {
-        public override bool CanConvertTo(ITypeDescriptorContext ctx, Type type)
+        private static readonly object SyncRoot = new object();
+        private static readonly IDictionary<string, Func<DbProviderFactory>> Factories = new Dictionary<string, Func<DbProviderFactory>>();
+
+        public static void Add(string invariantName, Func<DbProviderFactory> factory)
         {
-            return type == typeof(string);
+            if (string.IsNullOrWhiteSpace(invariantName)) throw new ArgumentNullException(nameof(invariantName));
+            var myInvariantName = invariantName.Trim();
+            lock(SyncRoot)
+            {
+                Factories[myInvariantName] = factory;
+            }
         }
 
-        public override bool CanConvertFrom(ITypeDescriptorContext ctx, Type type)
+        public static DbProviderFactory GetFactory(string invariantName)
         {
-            return type == typeof(string);
-        }
-
-        public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
-        {
-            var strVal = value as string;
-            return string.IsNullOrWhiteSpace(strVal) ? null : IPAddress.Parse(strVal);
-        }
-
-        public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
-        {
-            if (value == null) return null;
-            return value.ToString();
+            var myInvariantName = invariantName?.Trim();
+            Func<DbProviderFactory> factory;
+            lock(SyncRoot)
+            {
+                Factories.TryGetValue(myInvariantName, out factory);
+            }
+            return factory?.Invoke();
         }
     }
 }

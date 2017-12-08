@@ -62,8 +62,8 @@ namespace Platibus.Multicast
         /// <paramref name="start"/> index</param>
         public NodeId(byte[] buffer, int start)
         {
-            if (buffer == null) throw new ArgumentNullException("buffer");
-            if (buffer.Length < start + Length) throw new ArgumentOutOfRangeException("buffer");
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (buffer.Length < start + Length) throw new ArgumentOutOfRangeException(nameof(buffer));
             Array.Copy(buffer, start, _bytes, 0, Length);
         }
 

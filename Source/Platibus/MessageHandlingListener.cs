@@ -40,13 +40,13 @@ namespace Platibus
 
         public MessageHandlingListener(Bus bus, IMessageNamingService namingService, ISerializationService serializationService, QueueName queueName, IEnumerable<IMessageHandler> messageHandlers, IDiagnosticService diagnosticService = null)
         {
-            if (bus == null) throw new ArgumentNullException("bus");
-            if (namingService == null) throw new ArgumentNullException("namingService");
-            if (serializationService == null) throw new ArgumentNullException("serializationService");
-            if (messageHandlers == null) throw new ArgumentNullException("messageHandlers");
+            if (bus == null) throw new ArgumentNullException(nameof(bus));
+            if (namingService == null) throw new ArgumentNullException(nameof(namingService));
+            if (serializationService == null) throw new ArgumentNullException(nameof(serializationService));
+            if (messageHandlers == null) throw new ArgumentNullException(nameof(messageHandlers));
 
             var handlerList = messageHandlers.Where(h => h != null).ToList();
-            if (!handlerList.Any()) throw new ArgumentNullException("messageHandlers");
+            if (!handlerList.Any()) throw new ArgumentNullException(nameof(messageHandlers));
 
             _bus = bus;
             _queueName = queueName;

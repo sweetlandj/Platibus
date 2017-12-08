@@ -38,26 +38,19 @@ namespace Platibus.Config.Extensibility
     [Serializable]
     public class MultipleProvidersFoundException : Exception
     {
-        private readonly string _providerName;
         private readonly Type[] _providers;
 
         /// <summary>
         /// The provider name for which multiple types were found in the
         /// application domain.
         /// </summary>
-        public string ProviderName
-        {
-            get { return _providerName; }
-        }
+        public string ProviderName { get; }
 
         /// <summary>
         /// The types found in the app domain having the same
         /// <see cref="ProviderName"/>.
         /// </summary>
-        public IEnumerable<Type> Providers
-        {
-            get { return _providers; }
-        }
+        public IEnumerable<Type> Providers => _providers;
 
         /// <summary>
         /// Initializes a new <see cref="MultipleProvidersFoundException"/>
@@ -68,7 +61,7 @@ namespace Platibus.Config.Extensibility
         /// domain having the provider name</param>
         public MultipleProvidersFoundException(string providerName, IEnumerable<Type> providers) : base(providerName)
         {
-            _providerName = providerName;
+            ProviderName = providerName;
             _providers = providers != null ? providers.Where(t => t != null).ToArray() : new Type[0];
         }
 
@@ -81,7 +74,7 @@ namespace Platibus.Config.Extensibility
         public MultipleProvidersFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _providerName = info.GetString("providerName");
+            ProviderName = info.GetString("providerName");
             _providers = (Type[]) info.GetValue("providers", typeof (Type[]));
         }
 
@@ -93,7 +86,7 @@ namespace Platibus.Config.Extensibility
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("providerName", _providerName);
+            info.AddValue("providerName", ProviderName);
             info.AddValue("providers", _providers);
         }
     }

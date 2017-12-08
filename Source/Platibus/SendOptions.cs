@@ -66,8 +66,8 @@ namespace Platibus
                   "receiving sides (Critical importance)")]
         public MessageImportance Importance
         {
-            get { return Synchronous ? MessageImportance.Normal : MessageImportance.Critical; }
-            set { Synchronous = value < MessageImportance.Critical; }
+            get => Synchronous ? MessageImportance.Normal : MessageImportance.Critical;
+            set => Synchronous = value < MessageImportance.Critical;
         }
 
         /// <summary>

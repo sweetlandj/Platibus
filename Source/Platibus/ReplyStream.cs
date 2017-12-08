@@ -114,19 +114,15 @@ namespace Platibus
 
         private class Subscription : IDisposable
         {
-            private readonly IObserver<object> _observer;
             private readonly Action<Subscription> _unsubscribe;
 
             public Subscription(IObserver<object> observer, Action<Subscription> unsubscribe)
             {
-                _observer = observer;
+                Observer = observer;
                 _unsubscribe = unsubscribe;
             }
 
-            public IObserver<object> Observer
-            {
-                get { return _observer; }
-            }
+            public IObserver<object> Observer { get; }
 
             public void Dispose()
             {

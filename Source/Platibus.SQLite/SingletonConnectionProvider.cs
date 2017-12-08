@@ -21,11 +21,16 @@
 // THE SOFTWARE.
 
 using System;
-using System.Configuration;
 using System.Data;
 using System.Data.Common;
 using Platibus.Diagnostics;
 using Platibus.SQL;
+#if NET452
+using System.Configuration;
+#endif
+#if NETSTANDARD2_0
+using Platibus.Config;
+#endif
 
 namespace Platibus.SQLite
 {
@@ -41,7 +46,7 @@ namespace Platibus.SQLite
 
         public SingletonConnectionProvider(ConnectionStringSettings connectionStringSettings, IDiagnosticService diagnosticService = null)
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
+            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
             _dbProviderFactory = DbProviderFactories.GetFactory(connectionStringSettings.ProviderName);
             _connectionStringSettings = connectionStringSettings;
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;

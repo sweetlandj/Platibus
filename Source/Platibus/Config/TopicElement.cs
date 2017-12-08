@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿#if NET452
+// The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
 // 
@@ -37,8 +38,9 @@ namespace Platibus.Config
         [ConfigurationProperty(NamePropertyName, IsRequired = true, IsKey = true)]
         public string Name
         {
-            get { return (string) base[NamePropertyName]; }
-            set { base[NamePropertyName] = value; }
+            get => (string) base[NamePropertyName];
+            set => base[NamePropertyName] = value;
         }
     }
 }
+#endif

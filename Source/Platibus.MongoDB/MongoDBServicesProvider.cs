@@ -24,17 +24,27 @@ using Platibus.Config;
 using Platibus.Config.Extensibility;
 using Platibus.Journaling;
 using Platibus.Multicast;
-using System.Configuration;
 using System.Threading.Tasks;
+#if NET452
+using System.Configuration;
+#endif
+#if NETSTANDARD2_0
+using System.Net;
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Platibus.MongoDB
 {
+    /// <inheritdoc cref="IMessageQueueingServiceProvider"/>
+    /// <inheritdoc cref="ISubscriptionTrackingServiceProvider"/>
+    /// <inheritdoc cref="IMessageJournalProvider"/>
     /// <summary>
     /// A provider for MongoDB-based message queueing and subscription tracking services
     /// </summary>
     [Provider("MongoDB")]
     public class MongoDBServicesProvider : IMessageQueueingServiceProvider, ISubscriptionTrackingServiceProvider, IMessageJournalProvider
     {
+#if NET452
         /// <inheritdoc />
         public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
@@ -128,5 +138,104 @@ namespace Platibus.MongoDB
             var sqlMessageJournalingService = new MongoDBMessageJournal(connectionStringSettings, databaseName, collectionName);
             return Task.FromResult<IMessageJournal>(sqlMessageJournalingService);
         }
+#endif
+#if NETSTANDARD2_0
+        /// <inheritdoc />
+        public async Task<IMessageQueueingService> CreateMessageQueueingService(IConfiguration configuration)
+        {
+            var connectionName = configuration?["connectionName"];
+            if (string.IsNullOrWhiteSpace(connectionName))
+            {
+                throw new ConfigurationErrorsException(
+                    "Attribute 'connectionName' is required for MongoDB message queueing service");
+            }
+
+            QueueCollectionNameFactory collectionNameFactory = null;
+            var databaseName = configuration?["database"];
+            var collectionName = configuration?["collection"];
+            var collectionPerQueue = configuration?.GetValue("collectionPerQueue", false) ?? false;
+            if (!string.IsNullOrWhiteSpace(collectionName))
+            {
+                collectionNameFactory = _ => collectionName;
+            }
+            else if (collectionPerQueue)
+            {
+                var collectionPrefix = (configuration["collectionPrefix"] ?? "").Trim();
+                collectionNameFactory = queueName => (collectionPrefix + queueName).Trim();
+            }
+          
+            var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
+            if (connectionStringSettings == null)
+            {
+                throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
+            }
+
+            var securityTokenServiceFactory = new SecurityTokenServiceFactory();
+            var securityTokensSection = configuration?.GetSection("securityTokens");
+            var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securityTokensSection);
+
+            var messageQueueingService = new MongoDBMessageQueueingService(connectionStringSettings, 
+                securityTokenService, databaseName, collectionNameFactory);
+
+            return messageQueueingService;
+        }
+
+        /// <inheritdoc />
+        public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(IConfiguration configuration)
+        {
+            var connectionName = configuration?["connectionName"];
+            if (string.IsNullOrWhiteSpace(connectionName))
+            {
+                throw new ConfigurationErrorsException(
+                    "Attribute 'connectionName' is required for MongoDB subscription tracking service");
+            }
+
+            var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
+            if (connectionStringSettings == null)
+            {
+                throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
+            }
+
+            var databaseName = configuration?["database"];
+            var collectionName = configuration?["collection"];
+            var subscriptionTrackingService = new MongoDBSubscriptionTrackingService(connectionStringSettings, databaseName, collectionName);
+
+            var multicastSection = configuration?.GetSection("multicast");
+            var multicastEnabled = multicastSection?.GetValue("enabled", true) ?? false;
+            if (!multicastEnabled)
+            {
+                return Task.FromResult<ISubscriptionTrackingService>(subscriptionTrackingService);
+            }
+
+            var ipAddress = multicastSection.GetValue("address", IPAddress.Parse("239.255.21.80"));
+            var port = multicastSection.GetValue("port", 52181);
+            var multicastTrackingService = new MulticastSubscriptionTrackingService(
+                subscriptionTrackingService, ipAddress, port);
+
+            return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
+        }
+
+        /// <inheritdoc />
+        public Task<IMessageJournal> CreateMessageJournal(IConfiguration configuration)
+        {
+            var connectionName = configuration?["connectionName"];
+            if (string.IsNullOrWhiteSpace(connectionName))
+            {
+                throw new ConfigurationErrorsException(
+                    "Attribute 'connectionName' is required for MongoDB message journal");
+            }
+
+            var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
+            if (connectionStringSettings == null)
+            {
+                throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
+            }
+
+            var databaseName = configuration?["database"];
+            var collectionName = configuration?["collection"];
+            var sqlMessageJournalingService = new MongoDBMessageJournal(connectionStringSettings, databaseName, collectionName);
+            return Task.FromResult<IMessageJournal>(sqlMessageJournalingService);
+        }
+#endif
     }
 }

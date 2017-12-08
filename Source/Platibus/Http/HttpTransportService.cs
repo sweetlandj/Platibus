@@ -28,18 +28,25 @@ using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+#if NET452
 using System.Web;
+#endif
 using Platibus.Diagnostics;
 using Platibus.Journaling;
 
 namespace Platibus.Http
 {
+    /// <inheritdoc cref="ITransportService"/>
+    /// <inheritdoc cref="IQueueListener"/>
+    /// <inheritdoc cref="IDisposable"/>
     /// <summary>
-    /// An <see cref="ITransportService"/> that uses the HTTP protocol to transmit messages
+    /// An <see cref="T:Platibus.ITransportService" /> that uses the HTTP protocol to transmit messages
     /// between Platibus instances
     /// </summary>
     public class HttpTransportService : ITransportService, IQueueListener, IDisposable
     {
+        private static readonly UrlEncoder UrlEncoder = new UrlEncoder();
+
         private readonly Uri _baseUri;
         private readonly IEndpointCollection _endpoints;
         private readonly IMessageQueueingService _messageQueueingService;
@@ -82,12 +89,10 @@ namespace Platibus.Http
             Func<Message, CancellationToken, Task> handleMessage = null, 
             IDiagnosticService diagnosticService = null)
         {
-            if (baseUri == null) throw new ArgumentNullException("baseUri");
-            if (messageQueueingService == null) throw new ArgumentNullException("messageQueueingService");
-            if (subscriptionTrackingService == null) throw new ArgumentNullException("subscriptionTrackingService");
+            if (baseUri == null) throw new ArgumentNullException(nameof(baseUri));
             if (bypassTransportLocalDestination && handleMessage == null)
             {
-                throw new ArgumentNullException("handleMessage", "A message handler is required if bypassTransportLocalDestination is true");
+                throw new ArgumentNullException(nameof(handleMessage), "A message handler is required if bypassTransportLocalDestination is true");
             }
 
             _baseUri = baseUri.WithTrailingSlash();
@@ -95,9 +100,9 @@ namespace Platibus.Http
                 ? ReadOnlyEndpointCollection.Empty
                 : new ReadOnlyEndpointCollection(endpoints);
 
-            _messageQueueingService = messageQueueingService;
+            _messageQueueingService = messageQueueingService ?? throw new ArgumentNullException(nameof(messageQueueingService));
             _messageJournal = messageJournal;
-            _subscriptionTrackingService = subscriptionTrackingService;
+            _subscriptionTrackingService = subscriptionTrackingService ?? throw new ArgumentNullException(nameof(subscriptionTrackingService));
             _bypassTransportLocalDestination = bypassTransportLocalDestination;
             _handleMessage = handleMessage;
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
@@ -133,9 +138,8 @@ namespace Platibus.Http
         public async Task MessageReceived(Message message, IQueuedMessageContext context,
             CancellationToken cancellationToken = new CancellationToken())
         {
-            IEndpoint endpoint;
             IEndpointCredentials credentials = null;
-            if (_endpoints.TryGetEndpointByAddress(message.Headers.Destination, out endpoint))
+            if (_endpoints.TryGetEndpointByAddress(message.Headers.Destination, out IEndpoint endpoint))
             {
                 credentials = endpoint.Credentials;
             }
@@ -159,7 +163,7 @@ namespace Platibus.Http
         public async Task SendMessage(Message message, IEndpointCredentials credentials = null,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (message == null) throw new ArgumentNullException("message");
+            if (message == null) throw new ArgumentNullException(nameof(message));
             if (message.Headers.Destination == null) throw new ArgumentException("Message has no destination");
 
             if (message.Headers.Synchronous)
@@ -188,8 +192,7 @@ namespace Platibus.Http
             foreach (var subscriber in subscribers)
             {
                 IEndpointCredentials subscriberCredentials = null;
-                IEndpoint subscriberEndpoint;
-                if (_endpoints.TryGetEndpointByAddress(subscriber, out subscriberEndpoint))
+                if (_endpoints.TryGetEndpointByAddress(subscriber, out IEndpoint subscriberEndpoint))
                 {
                     subscriberCredentials = subscriberEndpoint.Credentials;
                 }
@@ -243,7 +246,7 @@ namespace Platibus.Http
                 }
 
                 var messageId = message.Headers.MessageId;
-                var urlEncodedMessageId = HttpUtility.UrlEncode(messageId);
+                var urlEncodedMessageId = UrlEncoder.Encode(messageId);
                 var relativeUri = string.Format("message/{0}", urlEncodedMessageId);
                 postUri = new Uri(endpointBaseUri, relativeUri);
 
@@ -301,7 +304,7 @@ namespace Platibus.Http
             }
             catch (Exception ex)
             {
-                var errorMessage = string.Format("Error sending message ID {0}", message.Headers.MessageId);
+                var errorMessage = $"Error sending message ID {message.Headers.MessageId}";
                 _diagnosticService.Emit(
                     new HttpEventBuilder(this, HttpEventType.HttpCommunicationError)
                     {
@@ -313,7 +316,7 @@ namespace Platibus.Http
                         Exception = ex
                     }.Build());
 
-                HandleCommunicationException(ex, message.Headers.Destination);
+                TryHandleCommunicationException(ex, message.Headers.Destination);
                 throw new TransportException(errorMessage, ex);
             }
             finally
@@ -331,15 +334,8 @@ namespace Platibus.Http
                         Status = status
                     }.Build());
 
-                if (httpResponseMessage != null)
-                {
-                    httpResponseMessage.Dispose();
-                }
-
-                if (httpClient != null)
-                {
-                    httpClient.Dispose();
-                }
+                httpResponseMessage?.Dispose();
+                httpClient?.Dispose();
             }
         }
 
@@ -491,7 +487,7 @@ namespace Platibus.Http
 
         private async Task SendSubscriptionRequest(HttpSubscriptionMetadata subscriptionMetadata, CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (subscriptionMetadata == null) throw new ArgumentNullException("subscriptionMetadata");
+            if (subscriptionMetadata == null) throw new ArgumentNullException(nameof(subscriptionMetadata));
 
             var endpoint = subscriptionMetadata.Endpoint;
             var topic = subscriptionMetadata.Topic;
@@ -504,8 +500,8 @@ namespace Platibus.Http
                 var endpointBaseUri = endpoint.Address.WithTrailingSlash();
                 httpClient = await _httpClientFactory.GetClient(endpointBaseUri, endpoint.Credentials, cancellationToken);
 
-                var urlSafeTopicName = HttpUtility.UrlEncode(topic);
-                var relativeUri = string.Format("topic/{0}/subscriber?uri={1}", urlSafeTopicName, _baseUri);
+                var urlSafeTopicName = UrlEncoder.Encode(topic);
+                var relativeUri = $"topic/{urlSafeTopicName}/subscriber?uri={_baseUri}";
                 if (ttl > TimeSpan.Zero)
                 {
                     relativeUri += "&ttl=" + ttl.TotalSeconds;
@@ -535,17 +531,17 @@ namespace Platibus.Http
             }
             catch (Exception ex)
             {
-                var errorMessage = string.Format("Error sending subscription request for topic {0} of publisher {1}",
-                    topic, endpoint.Address);
+                var errorMessage =
+                    $"Error sending subscription request for topic {topic} of publisher {endpoint.Address}";
                 
-                HandleCommunicationException(ex, endpoint.Address);
+                TryHandleCommunicationException(ex, endpoint.Address);
 
                 throw new TransportException(errorMessage, ex);
             }
             finally
             {
-                if (httpResponseMessage != null) httpResponseMessage.Dispose();
-                if (httpClient != null) httpClient.Dispose();
+                httpResponseMessage?.Dispose();
+                httpClient?.Dispose();
             }
         }
 
@@ -558,64 +554,57 @@ namespace Platibus.Http
 
             if (statusCode == 401)
             {
-                throw new UnauthorizedAccessException(string.Format("HTTP {0}: {1}", statusCode, statusDescription));
+                throw new UnauthorizedAccessException($"HTTP {statusCode}: {statusDescription}");
             }
 
             if (statusCode == 422)
             {
-                throw new MessageNotAcknowledgedException(string.Format("HTTP {0}: {1}", statusCode, statusDescription));
+                throw new MessageNotAcknowledgedException($"HTTP {statusCode}: {statusDescription}");
             }
 
 			if (statusCode == 404)
 			{
-				throw new ResourceNotFoundException(string.Format("HTTP {0}: {1}", statusCode, statusDescription));
+				throw new ResourceNotFoundException($"HTTP {statusCode}: {statusDescription}");
 			}
 
             if (statusCode < 500)
             {
                 // Other HTTP 400-499 status codes identify invalid requests (bad request, authentication required, 
 				// not authorized, etc.)
-                throw new InvalidRequestException(string.Format("HTTP {0}: {1}", statusCode, statusDescription));
+                throw new InvalidRequestException($"HTTP {statusCode}: {statusDescription}");
             }
 
             // HTTP 500+ are internal server errors
-            throw new TransportException(string.Format("HTTP {0}: {1}", statusCode, statusDescription));
+            throw new TransportException($"HTTP {statusCode}: {statusDescription}");
         }
 
-        private static void HandleCommunicationException(Exception ex, Uri uri)
+        private static void TryHandleCommunicationException(Exception ex, Uri uri)
         {
             var handled = false;
             while (!handled)
             {
-                var hre = ex as HttpRequestException;
-                if (hre != null && hre.InnerException != null)
+                switch (ex)
                 {
-                    ex = hre.InnerException;
-                    continue;
+                    case HttpRequestException hre when hre.InnerException != null:
+                        ex = hre.InnerException;
+                        continue;
+                    case WebException we:
+                        switch (we.Status)
+                        {
+                            case WebExceptionStatus.NameResolutionFailure:
+                                throw new NameResolutionFailedException(uri.Host);
+                            case WebExceptionStatus.ConnectFailure:
+                                throw new ConnectionRefusedException(uri.Host, uri.Port, ex.InnerException ?? ex);
+                        }
+                        break;
+                    case SocketException se:
+                        switch (se.SocketErrorCode)
+                        {
+                            case SocketError.ConnectionRefused:
+                                throw new ConnectionRefusedException(uri.Host, uri.Port, ex.InnerException ?? ex);
+                        }
+                        break;
                 }
-
-                var we = ex as WebException;
-                if (we != null)
-                {
-                    switch (we.Status)
-                    {
-                        case WebExceptionStatus.NameResolutionFailure:
-                            throw new NameResolutionFailedException(uri.Host);
-                        case WebExceptionStatus.ConnectFailure:
-                            throw new ConnectionRefusedException(uri.Host, uri.Port, ex.InnerException ?? ex);
-                    }
-                }
-
-                var se = ex as SocketException;
-                if (se != null)
-                {
-                    switch (se.SocketErrorCode)
-                    {
-                        case SocketError.ConnectionRefused:
-                            throw new ConnectionRefusedException(uri.Host, uri.Port, ex.InnerException ?? ex);
-                    }
-                }
-
                 handled = true;
             }
         }
@@ -645,8 +634,7 @@ namespace Platibus.Http
         {
             if (disposing)
             {
-                var disposableClientFactory = _httpClientFactory as IDisposable;
-                if (disposableClientFactory != null)
+                if (_httpClientFactory is IDisposable disposableClientFactory)
                 {
                     disposableClientFactory.Dispose();
                 }

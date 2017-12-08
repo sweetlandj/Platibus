@@ -44,8 +44,7 @@ namespace Platibus.Config
         /// is <c>null</c></exception>
         public DelegateMessageSpecification(Func<Message, bool> @delegate)
         {
-            if (@delegate == null) throw new ArgumentNullException("delegate");
-            _delegate = @delegate;
+            _delegate = @delegate ?? throw new ArgumentNullException(nameof(@delegate));
         }
 
         /// <summary>

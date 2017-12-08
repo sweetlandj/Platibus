@@ -33,15 +33,10 @@ namespace Platibus.Config
     [Serializable]
     public class EndpointAlreadyExistsException : ApplicationException
     {
-        private readonly EndpointName _endpoint;
-
         /// <summary>
         /// The endpoint name that has already been defined.
         /// </summary>
-        public EndpointName Endpoint
-        {
-            get { return _endpoint; }
-        }
+        public EndpointName Endpoint { get; }
 
         /// <summary>
         /// Initializes a new <see cref="EndpointAlreadyExistsException"/> with
@@ -50,7 +45,7 @@ namespace Platibus.Config
         /// <param name="endpoint">The endpoint name that already exists</param>
         public EndpointAlreadyExistsException(EndpointName endpoint)
         {
-            _endpoint = endpoint;
+            Endpoint = endpoint;
         }
 
         /// <summary>
@@ -62,7 +57,7 @@ namespace Platibus.Config
         public EndpointAlreadyExistsException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _endpoint = info.GetString("Endpoint");
+            Endpoint = info.GetString("Endpoint");
         }
 
         /// <summary>
@@ -73,7 +68,7 @@ namespace Platibus.Config
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("Endpoint", _endpoint);
+            info.AddValue("Endpoint", Endpoint);
         }
     }
 }

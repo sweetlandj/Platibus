@@ -51,8 +51,7 @@ namespace Platibus.Http.Controllers
         /// is <c>null</c></exception>
         public TopicController(ISubscriptionTrackingService subscriptionTrackingService, IEnumerable<TopicName> topics, IAuthorizationService authorizationService = null)
         {
-            if (subscriptionTrackingService == null) throw new ArgumentNullException("subscriptionTrackingService");
-            _subscriptionTrackingService = subscriptionTrackingService;
+            _subscriptionTrackingService = subscriptionTrackingService ?? throw new ArgumentNullException(nameof(subscriptionTrackingService));
             _authorizationService = authorizationService;
             _topics = (topics ?? Enumerable.Empty<TopicName>())
                 .Where(t => t != null)
@@ -72,8 +71,8 @@ namespace Platibus.Http.Controllers
         public async Task Process(IHttpResourceRequest request, IHttpResourceResponse response,
             IEnumerable<string> subPath)
         {
-            if (request == null) throw new ArgumentNullException("request");
-            if (response == null) throw new ArgumentNullException("response");
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (response == null) throw new ArgumentNullException(nameof(response));
 
             var topicSegments = subPath.ToList();
             if (!topicSegments.Any() && request.IsGet())
@@ -116,8 +115,8 @@ namespace Platibus.Http.Controllers
         private async Task PostOrDeleteSubscriber(IHttpResourceRequest request, IHttpResourceResponse response,
             TopicName topic)
         {
-            if (request == null) throw new ArgumentNullException("request");
-            if (response == null) throw new ArgumentNullException("response");
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (response == null) throw new ArgumentNullException(nameof(response));
 
             var uri = request.QueryString["uri"];
             if (uri == null)

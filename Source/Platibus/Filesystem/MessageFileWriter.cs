@@ -36,21 +36,20 @@ namespace Platibus.Filesystem
 
         public MessageFileWriter(TextWriter writer, bool leaveOpen = false)
         {
-            if (writer == null) throw new ArgumentNullException("writer");
-            _writer = writer;
+            _writer = writer ?? throw new ArgumentNullException(nameof(writer));
             _leaveOpen = leaveOpen;
         }
 
         public MessageFileWriter(Stream stream, Encoding encoding = null, bool leaveOpen = false)
         {
-            if (stream == null) throw new ArgumentNullException("stream");
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
             _writer = new StreamWriter(stream, encoding ?? Encoding.UTF8);
             _leaveOpen = leaveOpen;
         }
 
         public async Task WriteMessage(Message message)
         {
-            if (message == null) throw new ArgumentNullException("message");
+            if (message == null) throw new ArgumentNullException(nameof(message));
 
             // Write a blank line to preserve backward compatibility with older messages that
             // have a binary formatted SenderPrincipal.  The MessageFileReader will continue to
@@ -65,7 +64,7 @@ namespace Platibus.Filesystem
                 {
                     var headerName = header.Key;
                     var headerValue = header.Value;
-                    await _writer.WriteAsync(string.Format("{0}: ", headerName));
+                    await _writer.WriteAsync($"{headerName}: ");
                     using (var headerValueReader = new StringReader(headerValue))
                     {
                         var multilineContinuation = false;

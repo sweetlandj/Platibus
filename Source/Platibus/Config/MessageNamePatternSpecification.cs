@@ -32,15 +32,10 @@ namespace Platibus.Config
     /// </summary>
     public class MessageNamePatternSpecification : IMessageSpecification, IEquatable<MessageNamePatternSpecification>
     {
-        private readonly Regex _nameRegex;
-
         /// <summary>
         /// The regular expression used to match message names
         /// </summary>
-        public Regex NameRegex
-        {
-            get { return _nameRegex; }
-        }
+        public Regex NameRegex { get; }
 
         /// <summary>
         /// Initializes a new <see cref="MessageNamePatternSpecification"/>
@@ -53,8 +48,8 @@ namespace Platibus.Config
         /// is <c>null</c> or whitespace</exception>
         public MessageNamePatternSpecification(string namePattern)
         {
-            if (string.IsNullOrWhiteSpace(namePattern)) throw new ArgumentNullException("namePattern");
-            _nameRegex = new Regex(namePattern, RegexOptions.Compiled);
+            if (string.IsNullOrWhiteSpace(namePattern)) throw new ArgumentNullException(nameof(namePattern));
+            NameRegex = new Regex(namePattern, RegexOptions.Compiled);
         }
 
         /// <summary>
@@ -67,7 +62,7 @@ namespace Platibus.Config
         public bool IsSatisfiedBy(Message message)
         {
             var messageName = (string)message.Headers.MessageName ?? "";
-            return (_nameRegex == null || _nameRegex.IsMatch(messageName));
+            return (NameRegex == null || NameRegex.IsMatch(messageName));
         }
 
         /// <summary>
@@ -87,7 +82,7 @@ namespace Platibus.Config
             {
                 return true;
             }
-            return Equals(_nameRegex.ToString(), other._nameRegex.ToString());
+            return Equals(NameRegex.ToString(), other.NameRegex.ToString());
         }
 
         /// <summary>
@@ -119,7 +114,7 @@ namespace Platibus.Config
         /// <filterpriority>2</filterpriority>
         public override int GetHashCode()
         {
-            return (_nameRegex != null ? _nameRegex.GetHashCode() : 0);
+            return (NameRegex != null ? NameRegex.GetHashCode() : 0);
         }
 
         /// <summary>

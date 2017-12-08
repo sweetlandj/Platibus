@@ -33,8 +33,6 @@ namespace Platibus
     [Serializable]
     public class QueueAlreadyExistsException : ApplicationException
     {
-        private readonly QueueName _queueName;
-
         /// <summary>
         /// Initializes a new <see cref="QueueAlreadyExistsException"/> with the
         /// specified <paramref name="queueName"/>
@@ -42,7 +40,7 @@ namespace Platibus
         /// <param name="queueName">The name of the queue that already exists</param>
         public QueueAlreadyExistsException(QueueName queueName) : base(queueName)
         {
-            _queueName = queueName;
+            QueueName = queueName;
         }
 
         /// <summary>
@@ -54,16 +52,13 @@ namespace Platibus
         public QueueAlreadyExistsException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            _queueName = info.GetString("QueueName");
+            QueueName = info.GetString("QueueName");
         }
 
         /// <summary>
         /// The name of the queue that already exists
         /// </summary>
-        public QueueName QueueName
-        {
-            get { return _queueName; }
-        }
+        public QueueName QueueName { get; }
 
         /// <summary>
         /// When overridden in a derived class, sets the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> with information about the exception.
@@ -73,7 +68,7 @@ namespace Platibus
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            info.AddValue("QueueName", (string)_queueName);
+            info.AddValue("QueueName", (string)QueueName);
         }
     }
 }

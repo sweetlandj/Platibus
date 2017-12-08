@@ -35,50 +35,25 @@ namespace Platibus.Owin
         private readonly IOwinRequest _request;
         private readonly ContentType _contentType;
 
-        public Uri Url
-        {
-            get { return _request.Uri; }
-        }
+        public Uri Url => _request.Uri;
 
-        public string HttpMethod
-        {
-            get { return _request.Method; }
-        }
+        public string HttpMethod => _request.Method;
 
-        public NameValueCollection Headers
-        {
-            get { return new HeaderDictionaryAdapter(_request.Headers); }
-        }
+        public NameValueCollection Headers => new HeaderDictionaryAdapter(_request.Headers);
 
-        public NameValueCollection QueryString
-        {
-            get { return new ReadableStringCollectionAdapter(_request.Query); }
-        }
+        public NameValueCollection QueryString => new ReadableStringCollectionAdapter(_request.Query);
 
-        public string ContentType
-        {
-            get { return _request.ContentType; }
-        }
+        public string ContentType => _request.ContentType;
 
-        public Encoding ContentEncoding
-        {
-            get { return _contentType.CharsetEncoding; }
-        }
+        public Encoding ContentEncoding => _contentType.CharsetEncoding;
 
-        public Stream InputStream
-        {
-            get { return _request.Body; }
-        }
+        public Stream InputStream => _request.Body;
 
-        public IPrincipal Principal
-        {
-            get { return _request.User; }
-        }
+        public IPrincipal Principal => _request.User;
 
         public OwinRequestAdapter(IOwinRequest request)
         {
-            if (request == null) throw new ArgumentNullException("request");
-            _request = request;
+            _request = request ?? throw new ArgumentNullException(nameof(request));
             _contentType = request.ContentType;
         }
     }

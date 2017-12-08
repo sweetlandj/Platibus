@@ -21,7 +21,11 @@
 // THE SOFTWARE.
 
 using System;
+#if NET452
 using System.Configuration;
+#elif NETSTANDARD2_0
+using Platibus.Config;
+#endif
 using Platibus.Config.Extensibility;
 using Platibus.Diagnostics;
 
@@ -51,7 +55,7 @@ namespace Platibus.SQL.Commands
         [Obsolete("Use instance method CommandBuildersFactory.InitMessageJournalingCommandBuilders")]
         public static IMessageJournalingCommandBuilders GetMessageJournalingCommandBuilders(this ConnectionStringSettings connectionStringSettings)
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
+            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
             return new CommandBuildersFactory(connectionStringSettings, new DiagnosticService()).InitMessageJournalingCommandBuilders();
         }
 
@@ -72,7 +76,7 @@ namespace Platibus.SQL.Commands
         [Obsolete("Use instance method CommandBuildersFactory.InitMessageQueueingCommandBuilders")]
         public static IMessageQueueingCommandBuilders GetMessageQueueingCommandBuilders(this ConnectionStringSettings connectionStringSettings)
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
+            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
             return new CommandBuildersFactory(connectionStringSettings, new DiagnosticService()).InitMessageQueueingCommandBuilders();
         }
 
@@ -93,7 +97,7 @@ namespace Platibus.SQL.Commands
         [Obsolete("Use instance method CommandBuildersFactory.InitSubscriptionTrackingCommandBuilders")]
         public static ISubscriptionTrackingCommandBuilders GetSubscriptionTrackingCommandBuilders(this ConnectionStringSettings connectionStringSettings)
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException("connectionStringSettings");
+            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
             return new CommandBuildersFactory(connectionStringSettings, new DiagnosticService()).InitSubscriptionTrackingCommandBuilders();
         }
     }

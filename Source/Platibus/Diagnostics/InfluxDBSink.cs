@@ -47,7 +47,7 @@ namespace Platibus.Diagnostics
         /// <param name="sampleRate">(Optional) The rate at which samples should be taken</param>
         public InfluxDBSink(InfluxDBOptions options, TimeSpan sampleRate = default(TimeSpan))
         {
-            if (options == null) throw new ArgumentNullException("options");
+            if (options == null) throw new ArgumentNullException(nameof(options));
 
             _measurement = string.IsNullOrWhiteSpace(options.Measurement) 
                 ? InfluxDBOptions.DefaultMeasurement 

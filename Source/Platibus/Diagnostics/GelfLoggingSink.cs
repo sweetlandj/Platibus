@@ -91,7 +91,7 @@ namespace Platibus.Diagnostics
         /// <returns>Returns the JSON serialized <paramref name="gelfMessage"/></returns>
         protected string Serialize(GelfMessage gelfMessage)
         {
-            if (gelfMessage == null) throw new ArgumentNullException("gelfMessage");
+            if (gelfMessage == null) throw new ArgumentNullException(nameof(gelfMessage));
             return JsonConvert.SerializeObject(gelfMessage, _jsonSerializerSettings);
         }
 
@@ -112,8 +112,7 @@ namespace Platibus.Diagnostics
             gelfMessage.Queue = @event.Queue;
             gelfMessage.Topic = @event.Topic;
 
-            string shortMessage;
-            if (MessageTooLong(@event.Detail, out shortMessage))
+            if (MessageTooLong(@event.Detail, out string shortMessage))
             {
                 gelfMessage.ShortMessage = shortMessage;
                 gelfMessage.FullMessage = @event.Detail;
@@ -219,8 +218,7 @@ namespace Platibus.Diagnostics
         /// level</returns>
         protected int GetSyslogLevel(DiagnosticEventLevel level)
         {
-            int syslogLevel;
-            return SyslogLevels.TryGetValue(level, out syslogLevel) ? syslogLevel : 7;
+            return SyslogLevels.TryGetValue(level, out int syslogLevel) ? syslogLevel : 7;
         }
 
         /// <summary>

@@ -23,6 +23,9 @@
 using System;
 using System.Text;
 using System.Threading.Tasks;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 using Platibus.Config;
 using Platibus.Config.Extensibility;
 using Platibus.Diagnostics;
@@ -35,6 +38,7 @@ namespace Platibus.RabbitMQ
     /// </summary>
     public class RabbitMQHostConfigurationManager : PlatibusConfigurationManager<RabbitMQHostConfiguration>
     {
+#if NET452
         /// <inheritdoc />
         public override async Task Initialize(RabbitMQHostConfiguration configuration, string configSectionName = null)
         {
@@ -124,5 +128,59 @@ namespace Platibus.RabbitMQ
             var factory = new SubscriptionTrackingServiceFactory();
             return factory.InitSubscriptionTrackingService(config);
         }
+#endif
+#if NETSTANDARD2_0
+        /// <inheritdoc />
+        public override async Task Initialize(RabbitMQHostConfiguration platibusConfiguration, string configSectionName = null)
+        {
+            var diagnosticsService = platibusConfiguration.DiagnosticService;
+            if (string.IsNullOrWhiteSpace(configSectionName))
+            {
+                configSectionName = "platibus.rabbitmq";
+                await diagnosticsService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
+                    {
+                        Detail = "Using default configuration section \"" + configSectionName + "\""
+                    }.Build());
+            }
+
+            var configSection = LoadConfigurationSection(configSectionName, diagnosticsService);
+            await Initialize(platibusConfiguration, configSection);
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes the supplied HTTP server <paramref name="platibusConfiguration" /> based on the
+        /// properties of the provided <paramref name="configuration" />
+        /// </summary>
+        /// <param name="platibusConfiguration">The configuration to initialize</param>
+        /// <param name="configuration">The configuration section whose properties are to be used
+        /// to initialize the <paramref name="platibusConfiguration" /></param>
+        /// <returns>Returns a task that completes when the configuration has been initialized</returns>
+        public override async Task Initialize(RabbitMQHostConfiguration platibusConfiguration, IConfiguration configuration)
+        {
+            await base.Initialize(platibusConfiguration, configuration);
+
+            var defaultUri = new Uri("amqp://localhost:5672");
+            platibusConfiguration.BaseUri = configuration?.GetValue("baseUri", defaultUri) ?? defaultUri;
+
+            var encodingName = configuration?["encoding"];
+            platibusConfiguration.Encoding = string.IsNullOrWhiteSpace(encodingName)
+                ? Encoding.UTF8
+                : Encoding.GetEncoding(encodingName);
+
+            platibusConfiguration.AutoAcknowledge = configuration?.GetValue("autoAcknowledge", false) ?? false;
+            platibusConfiguration.ConcurrencyLimit = configuration?.GetValue("concurrencyLimit", 1) ?? 1;
+            platibusConfiguration.MaxAttempts = configuration?.GetValue("maxAttempts", 10) ?? 10;
+
+            var defaultRetryDelay = TimeSpan.FromSeconds(5);
+            platibusConfiguration.RetryDelay = configuration?.GetValue("retryDelay", defaultRetryDelay) ?? defaultRetryDelay;
+            platibusConfiguration.IsDurable = configuration?.GetValue("durable", true) ?? true;
+
+            var securityTokenServiceFactory = new SecurityTokenServiceFactory(platibusConfiguration.DiagnosticService);
+            var securityTokensSection = configuration?.GetSection("securityTokens");
+            platibusConfiguration.SecurityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securityTokensSection);
+        }
+#endif
     }
 }

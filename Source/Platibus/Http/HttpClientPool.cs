@@ -42,10 +42,7 @@ namespace Platibus.Http
         /// <summary>
         /// Indicates the number of HTTP clients currently in the pool
         /// </summary>
-        public int Size
-        {
-            get { return _pool.Count; }
-        }
+        public int Size => _pool.Count;
 
         /// <summary>
         /// Gets an HTTP client from the pool, creating a new HTTP client if necessary
@@ -62,8 +59,7 @@ namespace Platibus.Http
         {
             var newHandler = false;
             var key = new PoolKey(uri, credentials);
-            HttpClientHandler clientHandler;
-            if (_pool.TryGetValue(key, out clientHandler))
+            if (_pool.TryGetValue(key, out HttpClientHandler clientHandler))
             {
                 return CreateClient(clientHandler, uri, credentials, false);
             }

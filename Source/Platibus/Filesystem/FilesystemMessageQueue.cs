@@ -59,14 +59,12 @@ namespace Platibus.Filesystem
             IDiagnosticService diagnosticService = null)
             : base(queueName, listener, options, diagnosticService)
         {
-            if (queueName == null) throw new ArgumentNullException("queueName");
-            if (directory == null) throw new ArgumentNullException("directory");
-            if (listener == null) throw new ArgumentNullException("listener");
-            if (securityTokenService == null) throw new ArgumentNullException("securityTokenService");
+            if (queueName == null) throw new ArgumentNullException(nameof(queueName));
+            if (listener == null) throw new ArgumentNullException(nameof(listener));
 
-            _directory = directory;
+            _directory = directory ?? throw new ArgumentNullException(nameof(directory));
             _deadLetterDirectory = new DirectoryInfo(Path.Combine(directory.FullName, "dead"));
-            _securityTokenService = securityTokenService;
+            _securityTokenService = securityTokenService ?? throw new ArgumentNullException(nameof(securityTokenService));
 
             MessageEnqueued += OnMessageEnqueued;
             MessageAcknowledged += OnMessageAcknowledged;

@@ -27,33 +27,31 @@ namespace Platibus.Multicast
 
         private static readonly Encoding Encoding = Encoding.UTF8;
 
-        private readonly NodeId _nodeId;
-        private readonly ActionType _action;
-        private readonly TopicName _topic;
-        private readonly Uri _subscriberUri;
-        private readonly TimeSpan _ttl;
+        public NodeId NodeId { get; }
 
-        public NodeId NodeId { get { return _nodeId; } }
-        public ActionType Action { get { return _action; } }
-        public TopicName Topic { get { return _topic; } }
-        public Uri SubscriberUri { get { return _subscriberUri; } }
-        public TimeSpan TTL { get { return _ttl; } }
+        public ActionType Action { get; }
+
+        public TopicName Topic { get; }
+
+        public Uri SubscriberUri { get; }
+
+        public TimeSpan TTL { get; }
 
         public SubscriptionTrackingDatagram(NodeId nodeId, ActionType action, TopicName topic, Uri subscriberUri, TimeSpan ttl = default(TimeSpan))
         {
-            if (topic == null) throw new ArgumentNullException("topic");
-            if (subscriberUri == null) throw new ArgumentNullException("subscriberUri");
-            _nodeId = nodeId;
-            _action = action;
-            _topic = topic;
-            _subscriberUri = subscriberUri;
-            _ttl = ttl;
+            if (topic == null) throw new ArgumentNullException(nameof(topic));
+            if (subscriberUri == null) throw new ArgumentNullException(nameof(subscriberUri));
+            NodeId = nodeId;
+            Action = action;
+            Topic = topic;
+            SubscriberUri = subscriberUri;
+            TTL = ttl;
         }
 
         public static SubscriptionTrackingDatagram Decode(byte[] buffer)
         {
-            if (buffer == null) throw new ArgumentNullException("buffer");
-            if (buffer.Length < MinLength) throw new ArgumentOutOfRangeException("buffer", "Buffer must be at least " + MinLength + " bytes");
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (buffer.Length < MinLength) throw new ArgumentOutOfRangeException(nameof(buffer), "Buffer must be at least " + MinLength + " bytes");
 
             var off = 0;
             var nodeId = new NodeId(buffer, off);
@@ -61,7 +59,7 @@ namespace Platibus.Multicast
 
             // Type ID already verified
             var typeId = buffer[off];
-            if (typeId != TypeId) throw new ArgumentOutOfRangeException("buffer", typeId, "Incorrect type ID");
+            if (typeId != TypeId) throw new ArgumentOutOfRangeException(nameof(buffer), typeId, "Incorrect type ID");
             off += TypeIdLength;
 
             var action = (ActionType) buffer[off];
@@ -71,13 +69,13 @@ namespace Platibus.Multicast
             off += TTLLength;
 
             var topicEnd = Array.IndexOf(buffer, NullTerminator, off);
-            if (topicEnd < 0) throw new ArgumentOutOfRangeException("buffer", "Missing null terminator for topic");
+            if (topicEnd < 0) throw new ArgumentOutOfRangeException(nameof(buffer), "Missing null terminator for topic");
             var topicLength = topicEnd - off;
             var topic = Encoding.GetString(buffer, off, topicLength);
             off += topicLength + NullTerminatorLength;
 
             var subscriberUriEnd = Array.IndexOf(buffer, NullTerminator, off);
-            if (subscriberUriEnd < 0) throw new ArgumentOutOfRangeException("buffer", "Missing null terminator for subscriber URI");
+            if (subscriberUriEnd < 0) throw new ArgumentOutOfRangeException(nameof(buffer), "Missing null terminator for subscriber URI");
             var subscriberUriLength = subscriberUriEnd - off;
             var subscriberUri = new Uri(Encoding.GetString(buffer, off, subscriberUriLength));
 
@@ -86,8 +84,8 @@ namespace Platibus.Multicast
 
         public byte[] Encode()
         {
-            var topicBytes = Encoding.GetBytes(_topic);
-            var subscriberUriBytes = Encoding.GetBytes(_subscriberUri.ToString());
+            var topicBytes = Encoding.GetBytes(Topic);
+            var subscriberUriBytes = Encoding.GetBytes(SubscriberUri.ToString());
             
             var topicLen = topicBytes.Length;
             var subscriberUriLen = subscriberUriBytes.Length;
@@ -98,16 +96,16 @@ namespace Platibus.Multicast
             var buffer = new byte[datagramLen];
 
             var off = 0;
-            Array.Copy(_nodeId.GetBytes(), 0, buffer, off, NodeId.Length);
+            Array.Copy(NodeId.GetBytes(), 0, buffer, off, NodeId.Length);
             off += NodeIdLenth;
 
             buffer[off] = TypeId;
             off += TypeIdLength;
 
-            buffer[off] = (byte)_action;
+            buffer[off] = (byte)Action;
             off += ActionTypeLength;
 
-            ByteUtils.WriteInt32((int)_ttl.TotalSeconds, buffer, off);
+            ByteUtils.WriteInt32((int)TTL.TotalSeconds, buffer, off);
             off += TTLLength;
 
             Array.Copy(topicBytes, 0, buffer, off, topicLen);

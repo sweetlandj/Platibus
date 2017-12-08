@@ -21,7 +21,11 @@
 // THE SOFTWARE.
 
 using System;
+#if NET452
 using System.Configuration;
+#elif NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 using System.Threading.Tasks;
 using Platibus.Diagnostics;
 
@@ -44,6 +48,7 @@ namespace Platibus.Config.Extensibility
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
+#if NET452
         /// <summary>
         /// Initializes a subscription tracking service based on the supplied
         /// <paramref name="configuration"/>
@@ -94,10 +99,65 @@ namespace Platibus.Config.Extensibility
 
             return filterSink;
         }
+#elif NETSTANDARD2_0
+        /// <summary>
+        /// Initializes a subscription tracking service based on the supplied
+        /// <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="configuration">The subscription tracking configuration</param>
+        /// <returns>Returns a task whose result is the initialized subscription tracking service</returns>
+        public async Task<IDiagnosticEventSink> InitDiagnosticEventSink(IConfiguration configuration)
+        {
+            var name = configuration?["name"];
+            var providerName = configuration?["provider"];
+            if (string.IsNullOrWhiteSpace(providerName))
+            {
+                var message = "Provider not specified for diagnostic event sink '" + name + "'";
+                await _diagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
+                    {
+                        Detail = message
+                    }.Build());
+                throw new ConfigurationErrorsException(message);
+            }
+
+            var provider = GetProvider(providerName);
+            if (provider == null)
+            {
+                var message = "Unknown provider '" + providerName + "' specified for diagnostic event sink '" + name + "'";
+                await _diagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationError)
+                    {
+                        Detail = message
+                    }.Build());
+                throw new ConfigurationErrorsException(message);
+            }
+
+            await _diagnosticService.EmitAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
+                {
+                    Detail = "Initializing diagnostic event sink '" + name + "'"
+                }.Build());
+
+            var minLevel = configuration?.GetValue<DiagnosticEventLevel>("minLevel") ?? DiagnosticEventLevel.Debug;
+            var maxLevel = configuration?.GetValue<DiagnosticEventLevel>("minLevel") ?? DiagnosticEventLevel.Error;
+            var sink = await provider.CreateDiagnosticEventSink(configuration);
+            var filterSpec = new DiagnosticEventLevelSpecification(minLevel, maxLevel);
+            var filterSink = new FilteringSink(sink, filterSpec);
+
+            await _diagnosticService.EmitAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
+                {
+                    Detail = "Diagnostic event sink '" + name + "' initialized"
+                }.Build());
+
+            return filterSink;
+        }
+#endif
 
         private static IDiagnosticEventSinkProvider GetProvider(string providerName)
         {
-            if (string.IsNullOrWhiteSpace(providerName)) throw new ArgumentNullException("providerName");
+            if (string.IsNullOrWhiteSpace(providerName)) throw new ArgumentNullException(nameof(providerName));
             return ProviderHelper.GetProvider<IDiagnosticEventSinkProvider>(providerName);
         }
     }

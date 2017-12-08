@@ -57,12 +57,11 @@ namespace Platibus.MongoDB
         public MongoDBMessageQueue(IMongoDatabase database, QueueName queueName, IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null, string collectionName = null)
             : base(queueName, listener, options)
         {
-            if (database == null) throw new ArgumentNullException("database");
-            if (queueName == null) throw new ArgumentNullException("queueName");
-            if (listener == null) throw new ArgumentNullException("listener");
-            if (securityTokenService == null) throw new ArgumentNullException("securityTokenService");
-            
-            _securityTokenService = securityTokenService;
+            if (database == null) throw new ArgumentNullException(nameof(database));
+            if (queueName == null) throw new ArgumentNullException(nameof(queueName));
+            if (listener == null) throw new ArgumentNullException(nameof(listener));
+
+            _securityTokenService = securityTokenService ?? throw new ArgumentNullException(nameof(securityTokenService));
 
             var myCollectionName = string.IsNullOrWhiteSpace(collectionName)
                 ? MapToCollectionName(queueName)

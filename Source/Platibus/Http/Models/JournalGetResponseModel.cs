@@ -19,8 +19,8 @@ namespace Platibus.Http.Models
         [JsonProperty("errors")]
         public IList<ErrorModel> Errors
         {
-            get { return _errors ?? (_errors = new List<ErrorModel>()); }
-            set { _errors = value; }
+            get => _errors ?? (_errors = new List<ErrorModel>());
+            set => _errors = value;
         }
 
         /// <summary>

@@ -49,10 +49,8 @@ namespace Platibus.Http
         /// <paramref name="response"/> are <c>null</c></exception>
         public HttpExceptionHandler(IHttpResourceRequest request, IHttpResourceResponse response, IDiagnosticService diagnosticService, object source = null)
         {
-            if (request == null) throw new ArgumentNullException("request");
-            if (response == null) throw new ArgumentNullException("response");
-            _request = request;
-            _response = response;
+            _request = request ?? throw new ArgumentNullException(nameof(request));
+            _response = response ?? throw new ArgumentNullException(nameof(response));
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
             _source = source ?? this;
         }   

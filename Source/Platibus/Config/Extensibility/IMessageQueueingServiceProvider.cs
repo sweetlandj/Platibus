@@ -21,7 +21,9 @@
 // THE SOFTWARE.
 
 using System.Threading.Tasks;
-using Platibus.Diagnostics;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Platibus.Config.Extensibility
 {
@@ -36,9 +38,13 @@ namespace Platibus.Config.Extensibility
         /// based on the provided <paramref name="configuration"/>
         /// </summary>
         /// <param name="configuration">The journaling configuration
-        /// element</param>
+        ///     element</param>
         /// <returns>Returns a task whose result is an initialized
         /// <see cref="IMessageQueueingService"/></returns>
+#if NET452
         Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration);
+#else
+        Task<IMessageQueueingService> CreateMessageQueueingService(IConfiguration configuration);
+#endif
     }
 }
