@@ -148,7 +148,6 @@ namespace Platibus.UnitTests.Security
             {
                 new Claim(ClaimTypes.Name, "test@example.com"),
                 new Claim(ClaimTypes.NameIdentifier, "test@example.com"),
-                new Claim(ClaimTypes.Expiration, DateTime.UtcNow.AddMinutes(5).ToString("O")),
                 new Claim(ClaimTypes.Role, "test"),
                 new Claim(ClaimTypes.Role, "example"),
                 new Claim("custom_claim1", Guid.NewGuid().ToString()),
@@ -184,6 +183,11 @@ namespace Platibus.UnitTests.Security
             foreach (var claim in Principal.Claims)
             {
                 Assert.True(validatedClaimsPrincipal.HasClaim(claim.Type, claim.Value));
+            }
+
+            if (Expiration != null)
+            {
+                Assert.True(validatedClaimsPrincipal.HasClaim(c => c.Type == ClaimTypes.Expiration));
             }
         }
 
