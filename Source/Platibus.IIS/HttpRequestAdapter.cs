@@ -33,7 +33,6 @@ namespace Platibus.IIS
     internal class HttpRequestAdapter : IHttpResourceRequest
     {
         private readonly HttpRequestBase _request;
-        private readonly IPrincipal _principal;
 
         public Uri Url => _request.Url;
 
@@ -49,12 +48,12 @@ namespace Platibus.IIS
 
         public Stream InputStream => _request.InputStream;
 
-        public IPrincipal Principal => _principal;
+        public IPrincipal Principal { get; }
 
         public HttpRequestAdapter(HttpRequestBase request, IPrincipal principal)
         {
             _request = request ?? throw new ArgumentNullException(nameof(request));
-            _principal = principal;
+            Principal = principal;
         }
     }
 }

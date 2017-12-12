@@ -106,25 +106,23 @@ namespace Platibus.UnitTests.Http
 
         internal class Position : MessageJournalPosition, IEquatable<Position>
         {
-            private readonly int _index;
+            public int Index { get; }
 
-            public int Index { get { return _index; } }
-             
             public Position(int index)
             {
-                _index = index;
+                Index = index;
             }
 
             public override string ToString()
             {
-                return _index.ToString("D");
+                return Index.ToString("D");
             }
 
             public bool Equals(Position other)
             {
                 if (ReferenceEquals(null, other)) return false;
                 if (ReferenceEquals(this, other)) return true;
-                return _index == other._index;
+                return Index == other.Index;
             }
 
             public override bool Equals(object obj)
@@ -136,7 +134,7 @@ namespace Platibus.UnitTests.Http
 
             public override int GetHashCode()
             {
-                return _index;
+                return Index;
             }
 
             public static bool operator ==(Position left, Position right)

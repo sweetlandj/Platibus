@@ -6,36 +6,23 @@ namespace Platibus.UnitTests.Filesystem
 {
     public class FilesystemFixture : IDisposable
     {
-        private readonly DirectoryInfo _baseDirectory;
-        private readonly FilesystemMessageQueueingService _messageQueueingService;
-        private readonly FilesystemSubscriptionTrackingService _subscriptionTrackingService;
-
         private bool _disposed;
 
-        public DirectoryInfo BaseDirectory
-        {
-            get { return _baseDirectory; }
-        }
-        
-        public FilesystemMessageQueueingService MessageQueueingService
-        {
-            get { return _messageQueueingService; }
-        }
+        public DirectoryInfo BaseDirectory { get; }
 
-        public FilesystemSubscriptionTrackingService SubscriptionTrackingService
-        {
-            get { return _subscriptionTrackingService; }
-        }
+        public FilesystemMessageQueueingService MessageQueueingService { get; }
+
+        public FilesystemSubscriptionTrackingService SubscriptionTrackingService { get; }
 
         public FilesystemFixture()
         {
-            _baseDirectory = GetTempDirectory();
+            BaseDirectory = GetTempDirectory();
             
-            _messageQueueingService = new FilesystemMessageQueueingService(_baseDirectory);
-            _messageQueueingService.Init();
+            MessageQueueingService = new FilesystemMessageQueueingService(BaseDirectory);
+            MessageQueueingService.Init();
 
-            _subscriptionTrackingService = new FilesystemSubscriptionTrackingService(_baseDirectory);
-            _subscriptionTrackingService.Init();
+            SubscriptionTrackingService = new FilesystemSubscriptionTrackingService(BaseDirectory);
+            SubscriptionTrackingService.Init();
         }
 
         protected DirectoryInfo GetTempDirectory()
@@ -61,8 +48,8 @@ namespace Platibus.UnitTests.Filesystem
         {
             if (disposing)
             {
-                _messageQueueingService.Dispose();
-                _subscriptionTrackingService.Dispose();
+                MessageQueueingService.Dispose();
+                SubscriptionTrackingService.Dispose();
             }
         }
     }

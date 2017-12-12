@@ -1,16 +1,35 @@
-﻿using System.Configuration;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
 using Platibus.Diagnostics;
 using Xunit;
+#if NET452
+using System.Configuration;
+#endif
+#if NETCOREAPP2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Platibus.UnitTests.Config.Extensibility
 {
     public class DiagnosticEventSinkFactoryTests
     {
+#if NET452
         protected DiagnosticEventSinkElement Configuration = new DiagnosticEventSinkElement();
+#endif
+#if NETCOREAPP2_0
+        protected IConfiguration Configuration;
+#endif
         protected IDiagnosticEventSink Sink;
+
+#if NETCOREAPP2_0
+        public DiagnosticEventSinkFactoryTests()
+        {
+            Configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection()
+                .Build();
+        }
+#endif
 
         [Fact]
         public async Task ProviderNameIsRequired()
@@ -43,8 +62,14 @@ namespace Platibus.UnitTests.Config.Extensibility
         public async Task GelfUdpLoggingSinkInitializedForGelfUdpProvider(string providerName)
         {
             GivenProvider(providerName);
+#if NET452
             Configuration.SetAttribute("host", "localhost");
             Configuration.SetAttribute("port", "12201");
+#endif
+#if NETCOREAPP2_0
+            Configuration["host"] = "localhost";
+            Configuration["port"] = "12201";
+#endif
             await WhenInitializingSink();
             AssertSink<GelfUdpLoggingSink>();
         }
@@ -56,8 +81,14 @@ namespace Platibus.UnitTests.Config.Extensibility
         public async Task GelfTcpLoggingSinkInitializedForGelfTcpProvider(string providerName)
         {
             GivenProvider(providerName);
+#if NET452
             Configuration.SetAttribute("host", "localhost");
             Configuration.SetAttribute("port", "12201");
+#endif
+#if NETCOREAPP2_0
+            Configuration["host"] = "localhost";
+            Configuration["port"] = "12201";
+#endif
             await WhenInitializingSink();
             AssertSink<GelfTcpLoggingSink>();
         }
@@ -69,7 +100,12 @@ namespace Platibus.UnitTests.Config.Extensibility
         public async Task GelfHttpLoggingSinkInitializedForGelfHttpProvider(string providerName)
         {
             GivenProvider(providerName);
+#if NET452
             Configuration.SetAttribute("uri", "http://localhost:12201");
+#endif
+#if NETCOREAPP2_0
+            Configuration["uri"] = "http://localhost:12201";
+#endif
             await WhenInitializingSink();
             AssertSink<GelfHttpLoggingSink>();
         }
@@ -80,15 +116,26 @@ namespace Platibus.UnitTests.Config.Extensibility
         public async Task InfluxDBLoggingSinkInitializedForInfluxDBProvider(string providerName)
         {
             GivenProvider(providerName);
+#if NET452
             Configuration.SetAttribute("uri", "http://localhost:8086");
             Configuration.SetAttribute("database", "test");
+#endif
+#if NETCOREAPP2_0
+            Configuration["uri"] = "http://localhost:8086";
+            Configuration["database"] = "test";
+#endif
             await WhenInitializingSink();
             AssertSink<InfluxDBSink>();
         }
 
         protected void GivenProvider(string providerName)
         {
+#if NET452
             Configuration.Provider = providerName;
+#endif
+#if NETCOREAPP2_0
+            Configuration["provider"] = providerName;
+#endif
         }
         
         protected async Task WhenInitializingSink()

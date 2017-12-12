@@ -28,10 +28,9 @@ namespace Platibus.SQLite
     internal class SQLiteOperation : ISQLiteOperation
     {
         private readonly TaskCompletionSource<bool> _taskCompletionSource;
-        private readonly Task _task;
         private readonly Func<Task> _asyncOperation;
 
-        public Task Task => _task;
+        public Task Task { get; }
 
         public SQLiteOperation(Action operation)
             : this(AsAsync(operation))
@@ -51,7 +50,7 @@ namespace Platibus.SQLite
         public SQLiteOperation(Func<Task> asyncOperation)
         {
             _taskCompletionSource = new TaskCompletionSource<bool>(false);
-            _task = _taskCompletionSource.Task;
+            Task = _taskCompletionSource.Task;
             _asyncOperation = asyncOperation ?? throw new ArgumentNullException(nameof(asyncOperation));
         }
 
@@ -72,10 +71,9 @@ namespace Platibus.SQLite
     internal class SQLiteOperation<TResult> : ISQLiteOperation
     {
         private readonly TaskCompletionSource<TResult> _taskCompletionSource;
-        private readonly Task<TResult> _task;
         private readonly Func<Task<TResult>> _asyncOperation;
 
-        public Task<TResult> Task => _task;
+        public Task<TResult> Task { get; }
 
         public SQLiteOperation(Func<TResult> operation)
             : this(AsAsync(operation))
@@ -91,7 +89,7 @@ namespace Platibus.SQLite
         public SQLiteOperation(Func<Task<TResult>> asyncOperation)
         {
             _taskCompletionSource = new TaskCompletionSource<TResult>(false);
-            _task = _taskCompletionSource.Task;
+            Task = _taskCompletionSource.Task;
             _asyncOperation = asyncOperation ?? throw new ArgumentNullException(nameof(asyncOperation));
         }
 

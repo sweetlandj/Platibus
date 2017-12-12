@@ -164,7 +164,7 @@ namespace Platibus.UnitTests.Security
             ValidateIssuedToken();
         }
 
-        public void AssertIssuedTokenIsValid()
+        protected void AssertIssuedTokenIsValid()
         {
             Assert.NotNull(IssuedToken);
             Assert.True(TokenValid);
@@ -191,12 +191,12 @@ namespace Platibus.UnitTests.Security
             }
         }
 
-        public void AssertExpiresAtOrAround(DateTime date)
+        protected void AssertExpiresAtOrAround(DateTime date)
         {
             AssertExpiresBetween(date.AddMinutes(-1), date.AddMinutes(1));
         }
 
-        public void AssertExpiresBetween(DateTime start, DateTime end)
+        protected void AssertExpiresBetween(DateTime start, DateTime end)
         {
             Assert.NotNull(SecurityToken);
             Assert.True(start <= SecurityToken.ValidTo);

@@ -27,7 +27,7 @@ using Xunit;
 namespace Platibus.UnitTests
 {
     [Trait("Category", "UnitTests")]
-    internal class SentMessageExtensionsTests
+    public class SentMessageExtensionsTests
     {
         [Fact]
         public async Task FirstReplyIsReturned()

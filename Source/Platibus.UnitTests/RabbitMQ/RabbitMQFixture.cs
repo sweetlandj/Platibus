@@ -27,19 +27,16 @@ namespace Platibus.UnitTests.RabbitMQ
 {
     public class RabbitMQFixture : IDisposable
     {
-        private readonly Uri _uri;
-        private readonly RabbitMQMessageQueueingService _messageQueueingService;
-
         private bool _disposed;
 
-        public Uri Uri { get { return _uri; } }
-        public RabbitMQMessageQueueingService MessageQueueingService { get { return _messageQueueingService; } }
+        public Uri Uri { get; }
+        public RabbitMQMessageQueueingService MessageQueueingService { get; }
 
         public RabbitMQFixture()
         {
             // docker run --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
-            _uri = new Uri("amqp://guest:guest@localhost:5672");
-            _messageQueueingService = new RabbitMQMessageQueueingService(_uri, new QueueOptions
+            Uri = new Uri("amqp://guest:guest@localhost:5672");
+            MessageQueueingService = new RabbitMQMessageQueueingService(Uri, new QueueOptions
             {
                 IsDurable = false
             });
@@ -55,7 +52,7 @@ namespace Platibus.UnitTests.RabbitMQ
 
         protected virtual void Dispose(bool disposing)
         {
-            _messageQueueingService.Dispose();
+            MessageQueueingService.Dispose();
         }
     }
 }

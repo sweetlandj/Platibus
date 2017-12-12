@@ -21,11 +21,16 @@
 // THE SOFTWARE.
 
 using System;
-using System.Configuration;
 using Mongo2Go;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Platibus.MongoDB;
+#if NET452
+using System.Configuration;
+#endif
+#if NETCOREAPP2_0
+using Platibus.Config;
+#endif
 
 namespace Platibus.UnitTests.MongoDB
 {
@@ -34,58 +39,46 @@ namespace Platibus.UnitTests.MongoDB
         public const string DatabaseName = "platibus_UnitTests";
 
         private readonly MongoDbRunner _mongoDbRunner;
-        private readonly ConnectionStringSettings _connectionStringSettings;
-        
-        private readonly MongoDBSubscriptionTrackingService _subscriptionTrackingService;
-        private readonly MongoDBMessageQueueingService _messageQueueingService;
-        private readonly MongoDBMessageJournal _messageJournal;
 
         private bool _disposed;
 
-        public ConnectionStringSettings ConnectionStringSettings
-        {
-            get { return _connectionStringSettings; }
-        }
+        public ConnectionStringSettings ConnectionStringSettings { get; }
 
-        public MongoDBSubscriptionTrackingService SubscriptionTrackingService
-        {
-            get { return _subscriptionTrackingService; }
-        }
+        public MongoDBSubscriptionTrackingService SubscriptionTrackingService { get; }
 
-        public MongoDBMessageQueueingService MessageQueueingService
-        {
-            get { return _messageQueueingService; }
-        }
+        public MongoDBMessageQueueingService MessageQueueingService { get; }
 
-        public MongoDBMessageJournal MessageJournal
-        {
-            get { return _messageJournal; }
-        }
+        public MongoDBMessageJournal MessageJournal { get; }
 
         public MongoDBFixture()
         {
             var dbPath = FileUtil.NewTempTestPath();
             _mongoDbRunner = MongoDbRunner.Start(dbPath);
-            _connectionStringSettings = new ConnectionStringSettings
+            ConnectionStringSettings = new ConnectionStringSettings
             {
                 Name = "MongoDBFixture",
                 ConnectionString = _mongoDbRunner.ConnectionString + DatabaseName + "?maxpoolsize=1000"
             };
+#if NET452
 
             var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            config.ConnectionStrings.ConnectionStrings.Remove(_connectionStringSettings.Name);
-            config.ConnectionStrings.ConnectionStrings.Add(_connectionStringSettings);
+            config.ConnectionStrings.ConnectionStrings.Remove(ConnectionStringSettings.Name);
+            config.ConnectionStrings.ConnectionStrings.Add(ConnectionStringSettings);
             config.Save();
             ConfigurationManager.RefreshSection("connectionStrings");
+#endif
+#if NETCOREAPP2_0
+            ConfigurationManager.ConnectionStrings[ConnectionStringSettings.Name] = ConnectionStringSettings;
+#endif
 
-            _subscriptionTrackingService = new MongoDBSubscriptionTrackingService(_connectionStringSettings, DatabaseName);
-            _messageQueueingService = new MongoDBMessageQueueingService(_connectionStringSettings, databaseName: DatabaseName);
-            _messageJournal = new MongoDBMessageJournal(_connectionStringSettings, DatabaseName);
+            SubscriptionTrackingService = new MongoDBSubscriptionTrackingService(ConnectionStringSettings, DatabaseName);
+            MessageQueueingService = new MongoDBMessageQueueingService(ConnectionStringSettings, databaseName: DatabaseName);
+            MessageJournal = new MongoDBMessageJournal(ConnectionStringSettings, DatabaseName);
         }
 
         public void DeleteJournaledMessages()
         {
-            var db = MongoDBHelper.Connect(_connectionStringSettings, DatabaseName);
+            var db = MongoDBHelper.Connect(ConnectionStringSettings, DatabaseName);
             var journal = db.GetCollection<BsonDocument>(MongoDBMessageJournal.DefaultCollectionName);
             journal.DeleteMany(Builders<BsonDocument>.Filter.Empty);
         }
@@ -107,9 +100,9 @@ namespace Platibus.UnitTests.MongoDB
         {
             if (disposing)
             {
-                if (_messageQueueingService != null)
+                if (MessageQueueingService != null)
                 {
-                    _messageQueueingService.Dispose();
+                    MessageQueueingService.Dispose();
                 }
             }
             _mongoDbRunner.Dispose();

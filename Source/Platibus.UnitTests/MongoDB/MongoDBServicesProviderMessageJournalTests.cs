@@ -3,9 +3,14 @@ using MongoDB.Driver;
 using Platibus.Config;
 using Platibus.Journaling;
 using Platibus.MongoDB;
-using System.Configuration;
 using System.Threading.Tasks;
 using Xunit;
+#if NET452
+using System.Configuration;
+#endif
+#if NETCOREAPP2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Platibus.UnitTests.MongoDB
 {
@@ -17,12 +22,26 @@ namespace Platibus.UnitTests.MongoDB
         private readonly ConnectionStringSettings _connectionStringSettings;
 
         public Message Message;
-        public JournalingElement Journaling = new JournalingElement();
+#if NET452
+        public JournalingElement Configuration = new JournalingElement();
+#endif
+#if NETCOREAPP2_0
+        public IConfiguration Configuration;
+#endif
+
+#if NETCOREAPP2_0
+        public MongoDBServicesProviderMessageJournalTests()
+        {
+            Configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection()
+                .Build();
+        }
+#endif
 
         public MongoDBServicesProviderMessageJournalTests(MongoDBFixture fixture)
         {
             _connectionStringSettings = fixture.ConnectionStringSettings;
-            Journaling.SetAttribute("connectionName", _connectionStringSettings.Name);
+            ConfigureAttribute("connectionName", _connectionStringSettings.Name);
 
             Message = new Message(new MessageHeaders
             {
@@ -48,29 +67,39 @@ namespace Platibus.UnitTests.MongoDB
             await AssertMessageDocumentInserted(collectionOverride);
         }
         
-        public void GivenDatabaseOverride(string database)
+        protected void GivenDatabaseOverride(string database)
         {
-            Journaling.SetAttribute("database", database);
+            ConfigureAttribute("database", database);
         }
 
-        public void GivenCollectionOverride(string collection)
+        protected void GivenCollectionOverride(string collection)
         {
-            Journaling.SetAttribute("collection", collection);
+            ConfigureAttribute("collection", collection);
         }
-        
-        public async Task WhenMessageJournaled()
+
+        protected async Task WhenMessageJournaled()
         {
-            var messageJournal = await new MongoDBServicesProvider().CreateMessageJournal(Journaling);
+            var messageJournal = await new MongoDBServicesProvider().CreateMessageJournal(Configuration);
             await messageJournal.Append(Message, MessageJournalCategory.Sent);
         }
 
-        public async Task AssertMessageDocumentInserted(string collectionName, string database = null)
+        protected async Task AssertMessageDocumentInserted(string collectionName, string database = null)
         {
             var db = MongoDBHelper.Connect(_connectionStringSettings, database);
             var coll = db.GetCollection<BsonDocument>(collectionName);
             var filter = Builders<BsonDocument>.Filter.Eq("headers.Platibus-MessageId", Message.Headers.MessageId.ToString());
             var msg = await coll.Find(filter).FirstOrDefaultAsync();
             Assert.NotNull(msg);
+        }
+
+        protected void ConfigureAttribute(string name, string value)
+        {
+#if NET452
+            Configuration.SetAttribute(name, value);
+#endif
+#if NETCOREAPP2_0
+            Configuration[name] = value;
+#endif
         }
     }
 }

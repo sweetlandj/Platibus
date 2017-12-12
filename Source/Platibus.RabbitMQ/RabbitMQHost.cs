@@ -88,7 +88,6 @@ namespace Platibus.RabbitMQ
         private readonly IMessageJournal _messageJournal;
         private readonly ISecurityTokenService _securityTokenService;
         private readonly IDiagnosticService _diagnosticService;
-        private readonly Bus _bus;
         private readonly ConcurrentDictionary<SubscriptionKey, RabbitMQQueue> _subscriptions = new ConcurrentDictionary<SubscriptionKey, RabbitMQQueue>(); 
 
         private bool _disposed;
@@ -96,7 +95,7 @@ namespace Platibus.RabbitMQ
         /// <summary>
         /// The hosted bus instance
         /// </summary>
-        public Bus Bus => _bus;
+        public Bus Bus { get; }
 
         private RabbitMQHost(IRabbitMQHostConfiguration configuration)
         {
@@ -142,12 +141,12 @@ namespace Platibus.RabbitMQ
             _inboundQueue = new RabbitMQQueue(InboxQueueName, this, connection, _securityTokenService, _encoding,
                 _defaultQueueOptions, _diagnosticService);
 
-            _bus = new Bus(configuration, configuration.BaseUri, this, _messageQueueingService);
+            Bus = new Bus(configuration, configuration.BaseUri, this, _messageQueueingService);
         }
 
         private async Task Init(CancellationToken cancellationToken = default(CancellationToken))
         {
-            await _bus.Init(cancellationToken);
+            await Bus.Init(cancellationToken);
             _inboundQueue.Init();
         }
 
@@ -163,7 +162,7 @@ namespace Platibus.RabbitMQ
             CancellationToken cancellationToken = new CancellationToken())
         {
             // For now, allow exceptions to propagate and be handled by the RabbitMQQueue
-            await _bus.HandleMessage(message, null);
+            await Bus.HandleMessage(message, null);
             await context.Acknowledge();
         }
 
@@ -351,7 +350,7 @@ namespace Platibus.RabbitMQ
                     subscriptionQueue.Value.Dispose();
                 }
                 _inboundQueue.Dispose();
-                _bus.Dispose();
+                Bus.Dispose();
 
                 var disposableMessageQueueingService = _messageQueueingService as IDisposable;
                 if (disposableMessageQueueingService != null)

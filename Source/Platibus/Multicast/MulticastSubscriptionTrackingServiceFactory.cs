@@ -22,9 +22,6 @@
 
 using System.Threading.Tasks;
 using Platibus.Config;
-#if NET452
-using Platibus.Config;
-#endif
 #if NETSTANDARD2_0
 using System.Net;
 using Microsoft.Extensions.Configuration;

@@ -27,7 +27,7 @@ using Xunit;
 namespace Platibus.UnitTests
 {
     [Trait("Category", "UnitTests")]
-    internal class DataContractMessageNamingServiceTests
+    public class DataContractMessageNamingServiceTests
     {
         [DataContract]
         public class ContractA
@@ -48,7 +48,7 @@ namespace Platibus.UnitTests
             messageNamingService.Add(typeof(ContractA));
             var messageType = messageNamingService.GetTypeForName("http://schemas.datacontract.org/2004/07/Platibus.UnitTests:DataContractMessageNamingServiceTests.ContractA");
             Assert.NotNull(messageType);
-            Assert.IsType<ContractA>(messageType);
+            Assert.Equal(typeof(ContractA), messageType);
         }
 
         [Fact]
@@ -68,7 +68,7 @@ namespace Platibus.UnitTests
             messageNamingService.Add(typeof(ContractB));
             var messageType = messageNamingService.GetTypeForName("http://platibus/unittests:Contract-B");
             Assert.NotNull(messageType);
-            Assert.IsType<ContractB>(messageType);
+            Assert.Equal(typeof(ContractB), messageType);
         }
 
         [Fact]
@@ -87,7 +87,7 @@ namespace Platibus.UnitTests
             var messageNamingService = new DataContractMessageNamingService();
             var messageType = messageNamingService.GetTypeForName("http://schemas.datacontract.org/2004/07/Platibus.UnitTests:DataContractMessageNamingServiceTests.ContractA");
             Assert.NotNull(messageType);
-            Assert.IsType<ContractA>(messageType);
+            Assert.Equal(typeof(ContractA), messageType);
         }
 
         [Fact]
@@ -105,7 +105,7 @@ namespace Platibus.UnitTests
             var messageNamingService = new DataContractMessageNamingService();
             var messageType = messageNamingService.GetTypeForName("http://platibus/unittests:Contract-B");
             Assert.NotNull(messageType);
-            Assert.IsType<ContractB>(messageType);
+            Assert.Equal(typeof(ContractB), messageType);
         }
 
         [Fact]

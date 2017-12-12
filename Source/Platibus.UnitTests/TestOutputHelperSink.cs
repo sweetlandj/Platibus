@@ -62,7 +62,7 @@ namespace Platibus.UnitTests
         public Task ConsumeAsync(DiagnosticEvent @event, CancellationToken cancellationToken = new CancellationToken())
         {
             _outputHelper.WriteLine(FormatLogMessage(@event));
-            return Task.CompletedTask;
+            return Task.FromResult(0);
         }
 
         /// <summary>

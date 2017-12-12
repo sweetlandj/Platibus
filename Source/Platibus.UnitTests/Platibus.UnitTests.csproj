@@ -1,270 +1,83 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\xunit.runner.visualstudio.2.3.1\build\net20\xunit.runner.visualstudio.props" Condition="Exists('..\packages\xunit.runner.visualstudio.2.3.1\build\net20\xunit.runner.visualstudio.props')" />
-  <Import Project="..\packages\xunit.core.2.3.1\build\xunit.core.props" Condition="Exists('..\packages\xunit.core.2.3.1\build\xunit.core.props')" />
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{DF55E713-FCF5-439A-ACE8-81F3A2100C23}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Platibus.UnitTests</RootNamespace>
-    <AssemblyName>Platibus.UnitTests</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
-    <RestorePackages>true</RestorePackages>
-    <TargetFrameworkProfile />
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
+    <TargetFrameworks>netcoreapp2.0;net452</TargetFrameworks>
+    <RuntimeFrameworkVersion>2.0.3</RuntimeFrameworkVersion>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <LangVersion>5</LangVersion>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
+    <DefineConstants>NET452</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
+    <DefineConstants>NETCOREAPP2_0</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>false</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>
-    </AssemblyOriginatorKeyFile>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Castle.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
-      <HintPath>..\packages\Castle.Core.4.2.1\lib\net45\Castle.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="KellermanSoftware.Compare-NET-Objects, Version=4.0.0.0, Culture=neutral, PublicKeyToken=d970ace04cc85217, processorArchitecture=MSIL">
-      <HintPath>..\packages\CompareNETObjects.4.00.0.0\lib\net46\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Diagnostics.Tracing.EventSource, Version=1.1.28.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Diagnostics.Tracing.EventSource.Redist.1.1.28\lib\net46\Microsoft.Diagnostics.Tracing.EventSource.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.IdentityModel.Logging, Version=1.1.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.IdentityModel.Logging.1.1.5\lib\net451\Microsoft.IdentityModel.Logging.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.IdentityModel.Tokens, Version=5.1.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.IdentityModel.Tokens.5.1.5\lib\net451\Microsoft.IdentityModel.Tokens.dll</HintPath>
-    </Reference>
-    <Reference Include="Mongo2Go, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mongo2Go.2.2.1\lib\netstandard1.6\Mongo2Go.dll</HintPath>
-    </Reference>
-    <Reference Include="MongoDB.Bson, Version=2.4.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MongoDB.Bson.2.4.4\lib\net45\MongoDB.Bson.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="MongoDB.Driver, Version=2.4.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MongoDB.Driver.2.4.4\lib\net45\MongoDB.Driver.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="MongoDB.Driver.Core, Version=2.4.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MongoDB.Driver.Core.2.4.4\lib\net45\MongoDB.Driver.Core.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Moq, Version=4.7.145.0, Culture=neutral, PublicKeyToken=69f491c39445e920, processorArchitecture=MSIL">
-      <HintPath>..\packages\Moq.4.7.145\lib\net45\Moq.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="RabbitMQ.Client, Version=5.0.0.0, Culture=neutral, PublicKeyToken=89e7d7c5feba84ce, processorArchitecture=MSIL">
-      <HintPath>..\packages\RabbitMQ.Client.5.0.1\lib\net451\RabbitMQ.Client.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
+    <PackageReference Include="Castle.Core" Version="4.2.1" />
+    <PackageReference Include="CompareNETObjects" Version="4.00.0.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Logging" Version="1.1.5" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="5.1.5" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
+    <PackageReference Include="MongoDB.Bson" Version="2.4.4" />
+    <PackageReference Include="MongoDB.Driver" Version="2.4.4" />
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.4.4" />
+    <PackageReference Include="Moq" Version="4.7.145" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="RabbitMQ.Client" Version="5.0.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="5.1.5" />
+    <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+    <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.8.0" />
+    <PackageReference Include="xunit" Version="2.3.1" />
+    <PackageReference Include="xunit.abstractions" Version="2.0.1" />
+    <PackageReference Include="xunit.analyzers" Version="0.8.0" />
+    <PackageReference Include="xunit.assert" Version="2.3.1" />
+    <PackageReference Include="xunit.core" Version="2.3.1" />
+    <PackageReference Include="xunit.extensibility.core" Version="2.3.1" />
+    <PackageReference Include="xunit.extensibility.execution" Version="2.3.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" developmentDependency="true" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
     <Reference Include="System.Configuration" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data.SQLite, Version=1.0.106.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Data.SQLite.Core.1.0.106.0\lib\net46\System.Data.SQLite.dll</HintPath>
-    </Reference>
     <Reference Include="System.IdentityModel" />
-    <Reference Include="System.IdentityModel.Tokens.Jwt, Version=5.1.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.IdentityModel.Tokens.Jwt.5.1.5\lib\net451\System.IdentityModel.Tokens.Jwt.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Runtime.InteropServices.RuntimeInformation, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Threading.Tasks.Dataflow, Version=4.6.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Threading.Tasks.Dataflow.4.8.0\lib\netstandard2.0\System.Threading.Tasks.Dataflow.dll</HintPath>
-    </Reference>
+    <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <Reference Include="xunit.abstractions, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
-      <HintPath>..\packages\xunit.abstractions.2.0.1\lib\net35\xunit.abstractions.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="xunit.assert, Version=2.3.1.3858, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
-      <HintPath>..\packages\xunit.assert.2.3.1\lib\netstandard1.1\xunit.assert.dll</HintPath>
-    </Reference>
-    <Reference Include="xunit.core, Version=2.3.1.3858, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
-      <HintPath>..\packages\xunit.extensibility.core.2.3.1\lib\netstandard1.1\xunit.core.dll</HintPath>
-    </Reference>
-    <Reference Include="xunit.execution.desktop, Version=2.3.1.3858, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
-      <HintPath>..\packages\xunit.extensibility.execution.2.3.1\lib\net452\xunit.execution.desktop.dll</HintPath>
-    </Reference>
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
+    <Reference Include="netstandard" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
+    <PackageReference Include="Mongo2Go" Version="0.2.0" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.106.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
+    <PackageReference Include="Mongo2Go" Version="2.2.1" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
+    <PackageReference Include="Microsoft.Data.SQLite" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
+  </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="BusInitTests.cs" />
-    <Compile Include="BusSendTests.cs" />
-    <Compile Include="Config\ConfigurationValidationTests.cs" />
-    <Compile Include="Config\Extensibility\CommandBuildersFactoryTests.cs" />
-    <Compile Include="Config\Extensibility\DiagnosticEventSinkFactoryTests.cs" />
-    <Compile Include="Config\Extensibility\IFakeProvider.cs" />
-    <Compile Include="Config\Extensibility\ProviderFakes.cs" />
-    <Compile Include="Config\Extensibility\ProviderHelperTests.cs" />
-    <Compile Include="Http\HttpServerConfigurationManagerTests.cs" />
-    <Compile Include="Config\SendRuleValidationTests.cs" />
-    <Compile Include="Config\SubscriptionRuleValidationTests.cs" />
-    <Compile Include="DataContractMessageNamingServiceTests.cs" />
-    <Compile Include="DateTimeExtensions.cs" />
-    <Compile Include="Diagnostics\DiagnosticEventLevelSpecificationTests.cs" />
-    <Compile Include="Diagnostics\DiagnosticFakes.cs" />
-    <Compile Include="Diagnostics\FilteringSinkTests.cs" />
-    <Compile Include="Diagnostics\GelfLoggingSinkTests.cs" />
-    <Compile Include="Diagnostics\GelfTcpLoggingSinkTests.cs" />
-    <Compile Include="Diagnostics\GelfUdpLoggingSinkTests.cs" />
-    <Compile Include="Diagnostics\InfluxDBSinkTests.cs" />
-    <Compile Include="Diagnostics\UnixTimeTests.cs" />
-    <Compile Include="Http\HttpSubscriptionMetadataTests.cs" />
-    <Compile Include="MongoDB\MongoDBMessageJournalReadTests.cs" />
-    <Compile Include="MongoDB\MongoDBMessageJournalTests.cs" />
-    <Compile Include="MongoDB\MongoDBMessageQueueingServiceTests.cs" />
-    <Compile Include="MongoDB\MongoDBMessageQueueInspector.cs" />
-    <Compile Include="MongoDB\MongoDBServicesProviderMessageJournalTests.cs" />
-    <Compile Include="MongoDB\MongoDBServicesProviderMessageQueueingServiceTests.cs" />
-    <Compile Include="MongoDB\MongoDBServicesProviderSubscriptionTrackingServiceTests.cs" />
-    <Compile Include="MongoDB\MongoDBSubscriptionTrackingServiceTests.cs" />
-    <Compile Include="MongoDB\MongoDBCollection.cs" />
-    <Compile Include="MongoDB\MongoDBFixture.cs" />
-    <Compile Include="FileUtil.cs" />
-    <Compile Include="NearestSecondDateTimeEqualityComparer.cs" />
-    <Compile Include="Serialization\DataContractJsonSerializerAdapterTests.cs" />
-    <Compile Include="Serialization\DataContractSerializerAdapterTests.cs" />
-    <Compile Include="Serialization\NestedDataContractMessage.cs" />
-    <Compile Include="Serialization\NewtonsoftJsonSerializerTests.cs" />
-    <Compile Include="Serialization\SerializerTests.cs" />
-    <Compile Include="Serialization\DataContractMessage.cs" />
-    <Compile Include="Serialization\XmlSerializerAdapterTests.cs" />
-    <Compile Include="DefaultMessageNamingServiceTests.cs" />
-    <Compile Include="EndpointAddressEqualityComparerTests.cs" />
-    <Compile Include="Filesystem\FilesystemCollection.cs" />
-    <Compile Include="Filesystem\FilesystemFixture.cs" />
-    <Compile Include="Filesystem\FileSystemMessageQueueingServiceTests.cs" />
-    <Compile Include="Filesystem\FilesystemSubscriptionTrackingServiceTests.cs" />
-    <Compile Include="Filesystem\LegacyMessageFileWriter.cs" />
-    <Compile Include="Filesystem\MessageFileTests.cs" />
-    <Compile Include="Http\HttpClientPoolTests.cs" />
-    <Compile Include="Http\JournalControllerTests.cs" />
-    <Compile Include="Http\MessageJournalStub.cs" />
-    <Compile Include="InMemory\InMemorySubscriptionTrackingServiceTests.cs" />
-    <Compile Include="LocalDB\LocalDBCollection.cs" />
-    <Compile Include="LocalDB\LocalDBMessageJournalReadTests.cs" />
-    <Compile Include="LocalDB\LocalDBMessageJournalTests.cs" />
-    <Compile Include="LocalDB\LocalDBMessageQueueingServiceTests.cs" />
-    <Compile Include="LocalDB\LocalDBSubscriptionTrackingServiceTests.cs" />
-    <Compile Include="MessageHeadersTests.cs" />
-    <Compile Include="MessageJournalReadTests.cs" />
-    <Compile Include="MessageJournalTests.cs" />
-    <Compile Include="MessageQueueingServiceTests.cs" />
-    <Compile Include="LocalDB\LocalDBFixture.cs" />
-    <Compile Include="Multicast\MulticastSubscriptionTrackingServiceTests.cs" />
-    <Compile Include="Config\PlatibusConfigurationExtensionsTests.cs" />
-    <Compile Include="RabbitMQ\RabbitMQCollection.cs" />
-    <Compile Include="RabbitMQ\RabbitMQFixture.cs" />
-    <Compile Include="RabbitMQ\RabbitMQMessageQueueingServiceTests.cs" />
-    <Compile Include="Security\HexEncodingTests.cs" />
-    <Compile Include="Security\JwtSecurityTokenServiceTests.cs" />
-    <Compile Include="SQLite\SQLiteCollection.cs" />
-    <Compile Include="SQLite\SQLiteMessageJournalReadTests.cs" />
-    <Compile Include="SQLite\SQLiteMessageJournalTests.cs" />
-    <Compile Include="SQLite\SQLiteMessageQueueingServiceTests.cs" />
-    <Compile Include="SQLite\SQLiteFixture.cs" />
-    <Compile Include="Http\HttpTransportServiceTests.cs" />
-    <Compile Include="Http\MessageControllerTests.cs" />
-    <Compile Include="Config\PlatibusConfigurationManagerTests.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="MessageHandlerStub.cs" />
-    <Compile Include="SentMessageExtensionsTests.cs" />
-    <Compile Include="MessageContextExtensionsTests.cs" />
-    <Compile Include="SQLite\SQLiteMessageQueueInspector.cs" />
-    <Compile Include="LocalDB\SQLMessageQueueInspector.cs" />
-    <Compile Include="SQLite\SQLiteSubscriptionTrackingServiceTests.cs" />
-    <Compile Include="Stubs\SubscriptionAddedEventArgs.cs" />
-    <Compile Include="Stubs\SubscriptionAddedEventHandler.cs" />
-    <Compile Include="Stubs\SubscriptionRemovedEventArgs.cs" />
-    <Compile Include="Stubs\SubscriptionRemovedEventHandler.cs" />
-    <Compile Include="Stubs\SubscriptionTrackingServiceStub.cs" />
-    <Compile Include="SubscriptionTrackingServiceTests.cs" />
-    <Compile Include="TestOutputHelperSink.cs" />
-    <Compile Include="UnitTestLoggingCategories.cs" />
-    <Compile Include="Http\TopicControllerTests.cs" />
-    <Compile Include="VerificationSink.cs" />
+    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
   </ItemGroup>
+
   <ItemGroup>
-    <None Include="app.config" />
-    <None Include="packages.config" />
+    <ProjectReference Include="..\Platibus.MongoDB\Platibus.MongoDB.csproj" />
+    <ProjectReference Include="..\Platibus.RabbitMQ\Platibus.RabbitMQ.csproj" />
+    <ProjectReference Include="..\Platibus.SQLite\Platibus.SQLite.csproj" />
+    <ProjectReference Include="..\Platibus\Platibus.csproj" />
   </ItemGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\Platibus.MongoDB\Platibus.MongoDB.csproj">
-      <Project>{A5901B13-72A2-4A18-8660-6956052166E6}</Project>
-      <Name>Platibus.MongoDB</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Platibus.RabbitMQ\Platibus.RabbitMQ.csproj">
-      <Project>{ce776ec9-c665-44bf-8edd-45678d269112}</Project>
-      <Name>Platibus.RabbitMQ</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Platibus.SQLite\Platibus.SQLite.csproj">
-      <Project>{a23be958-6524-4c9c-8957-1c3debb0780c}</Project>
-      <Name>Platibus.SQLite</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Platibus\Platibus.csproj">
-      <Project>{73863b52-5751-4f75-8436-1cd3e6ac0d50}</Project>
-      <Name>Platibus</Name>
-    </ProjectReference>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
-  <ItemGroup>
-    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-    <Error Condition="!Exists('..\packages\System.Data.SQLite.Core.1.0.106.0\build\net46\System.Data.SQLite.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Data.SQLite.Core.1.0.106.0\build\net46\System.Data.SQLite.Core.targets'))" />
-    <Error Condition="!Exists('..\packages\xunit.core.2.3.1\build\xunit.core.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\xunit.core.2.3.1\build\xunit.core.props'))" />
-    <Error Condition="!Exists('..\packages\xunit.core.2.3.1\build\xunit.core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\xunit.core.2.3.1\build\xunit.core.targets'))" />
-    <Error Condition="!Exists('..\packages\xunit.runner.visualstudio.2.3.1\build\net20\xunit.runner.visualstudio.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\xunit.runner.visualstudio.2.3.1\build\net20\xunit.runner.visualstudio.props'))" />
-  </Target>
-  <Import Project="..\packages\System.Data.SQLite.Core.1.0.106.0\build\net46\System.Data.SQLite.Core.targets" Condition="Exists('..\packages\System.Data.SQLite.Core.1.0.106.0\build\net46\System.Data.SQLite.Core.targets')" />
-  <Import Project="..\packages\xunit.core.2.3.1\build\xunit.core.targets" Condition="Exists('..\packages\xunit.core.2.3.1\build\xunit.core.targets')" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

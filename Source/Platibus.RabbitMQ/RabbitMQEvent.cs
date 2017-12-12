@@ -8,30 +8,25 @@ namespace Platibus.RabbitMQ
     /// </summary>
     public class RabbitMQEvent : DiagnosticEvent
     {
-        private readonly string _exchange;
-        private readonly int? _channelNumber;
-        private readonly string _consumerTag;
-        private readonly ulong? _deliveryTag;
-
         /// <summary>
         /// The exchange to which the event pertains, if applicable
         /// </summary>
-        public string Exchange => _exchange;
+        public string Exchange { get; }
 
         /// <summary>
         /// The channel number to which the event pertains, if applicable
         /// </summary>
-        public int? ChannelNumber => _channelNumber;
+        public int? ChannelNumber { get; }
 
         /// <summary>
         /// The consumer tag to which the event pertains, if applicable
         /// </summary>
-        public string ConsumerTag => _consumerTag;
+        public string ConsumerTag { get; }
 
         /// <summary>
         /// The delivery tag to which the event pertains, if applicable
         /// </summary>
-        public ulong? DeliveryTag => _deliveryTag;
+        public ulong? DeliveryTag { get; }
 
         /// <summary>
         /// Initializes a new <see cref="RabbitMQEvent"/>
@@ -51,10 +46,10 @@ namespace Platibus.RabbitMQ
         public RabbitMQEvent(object source, DiagnosticEventType type, string detail = null, Exception exception = null, Message message = null, EndpointName endpoint = null, QueueName queue = null, TopicName topic = null, string exchange = null, int? channelNumber = null, string consumerTag = null, ulong? deliveryTag = null) 
             : base(source, type, detail, exception, message, endpoint, queue, topic)
         {
-            _exchange = exchange;
-            _channelNumber = channelNumber;
-            _consumerTag = consumerTag;
-            _deliveryTag = deliveryTag;
+            Exchange = exchange;
+            ChannelNumber = channelNumber;
+            ConsumerTag = consumerTag;
+            DeliveryTag = deliveryTag;
         }
     }
 }

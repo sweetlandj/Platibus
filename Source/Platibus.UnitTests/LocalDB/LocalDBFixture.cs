@@ -21,54 +21,43 @@
 // THE SOFTWARE.
 
 using System;
-using System.Configuration;
+
 using Platibus.SQL;
 using Platibus.SQL.Commands;
+#if NET452
+using System.Configuration;
+#endif
+#if NETCOREAPP2_0
+using Platibus.Config;
+#endif
 
 namespace Platibus.UnitTests.LocalDB
 {
     public class LocalDBFixture : IDisposable
     {
-        private readonly IDbConnectionProvider _connectionProvider;
-        private readonly SQLMessageQueueingService _messageQueueingService;
-        private readonly SQLSubscriptionTrackingService _subscriptionTrackingService;
-        private readonly SQLMessageJournal _messageJournal;
-
         private bool _disposed;
         
-        public IDbConnectionProvider ConnectionProvider
-        {
-            get { return _connectionProvider; }
-        }
-       
-        public SQLMessageJournal MessageJournal
-        {
-            get { return _messageJournal; }
-        }
+        public IDbConnectionProvider ConnectionProvider { get; }
 
-        public SQLMessageQueueingService MessageQueueingService
-        {
-            get { return _messageQueueingService; }
-        }
+        public SQLMessageJournal MessageJournal { get; }
 
-        public SQLSubscriptionTrackingService SubscriptionTrackingService
-        {
-            get { return _subscriptionTrackingService; }
-        }
+        public SQLMessageQueueingService MessageQueueingService { get; }
+
+        public SQLSubscriptionTrackingService SubscriptionTrackingService { get; }
 
         public LocalDBFixture()
         {
             var connectionStringSettings = ConfigurationManager.ConnectionStrings["PlatibusUnitTests.LocalDB"];
-            _connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
+            ConnectionProvider = new DefaultConnectionProvider(connectionStringSettings);
             
-            _messageJournal = new SQLMessageJournal(_connectionProvider, new MSSQLMessageJournalingCommandBuilders());
-            _messageJournal.Init();
+            MessageJournal = new SQLMessageJournal(ConnectionProvider, new MSSQLMessageJournalingCommandBuilders());
+            MessageJournal.Init();
 
-            _messageQueueingService = new SQLMessageQueueingService(_connectionProvider, new MSSQLMessageQueueingCommandBuilders());
-            _messageQueueingService.Init();
+            MessageQueueingService = new SQLMessageQueueingService(ConnectionProvider, new MSSQLMessageQueueingCommandBuilders());
+            MessageQueueingService.Init();
 
-            _subscriptionTrackingService = new SQLSubscriptionTrackingService(_connectionProvider, new MSSQLSubscriptionTrackingCommandBuilders());
-            _subscriptionTrackingService.Init();
+            SubscriptionTrackingService = new SQLSubscriptionTrackingService(ConnectionProvider, new MSSQLSubscriptionTrackingCommandBuilders());
+            SubscriptionTrackingService.Init();
 
             DeleteJournaledMessages();
             DeleteQueuedMessages();
@@ -85,13 +74,13 @@ namespace Platibus.UnitTests.LocalDB
 
         protected virtual void Dispose(bool disposing)
         {
-            _messageQueueingService.Dispose();
-            _subscriptionTrackingService.Dispose();
+            MessageQueueingService.Dispose();
+            SubscriptionTrackingService.Dispose();
         }
 
         public void DeleteQueuedMessages()
         {
-            using (var connection = _connectionProvider.GetConnection())
+            using (var connection = ConnectionProvider.GetConnection())
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = @"
@@ -106,7 +95,7 @@ namespace Platibus.UnitTests.LocalDB
 
         public void DeleteJournaledMessages()
         {
-            using (var connection = _connectionProvider.GetConnection())
+            using (var connection = ConnectionProvider.GetConnection())
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = @"
@@ -121,7 +110,7 @@ namespace Platibus.UnitTests.LocalDB
 
         public void DeleteSubscriptions()
         {
-            using (var connection = _connectionProvider.GetConnection())
+            using (var connection = ConnectionProvider.GetConnection())
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = @"

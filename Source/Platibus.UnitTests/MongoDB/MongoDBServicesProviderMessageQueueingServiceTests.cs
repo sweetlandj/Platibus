@@ -1,12 +1,17 @@
 ﻿using Moq;
-using Platibus.Config;
-using Platibus.MongoDB;
 using System;
-using System.Configuration;
 using System.Threading.Tasks;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Platibus.Config;
+using Platibus.MongoDB;
 using Xunit;
+#if NET452
+using System.Configuration;
+#endif
+#if NETCOREAPP2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Platibus.UnitTests.MongoDB
 {
@@ -21,12 +26,31 @@ namespace Platibus.UnitTests.MongoDB
         public QueueName Queue = Guid.NewGuid().ToString();
         public IQueueListener QueueListener = new Mock<IQueueListener>().Object;
 
-        public QueueingElement Queueing = new QueueingElement();
+#if NET452
+        public QueueingElement Configuration = new QueueingElement();
+#endif
+#if NETCOREAPP2_0
+        public IConfiguration Configuration;
+#endif
+
+#if NETCOREAPP2_0
+        public MongoDBServicesProviderMessageQueueingServiceTests()
+        {
+            Configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection()
+                .Build();
+        }
+#endif
 
         public MongoDBServicesProviderMessageQueueingServiceTests(MongoDBFixture fixture)
         {
             _connectionStringSettings = fixture.ConnectionStringSettings;
-            Queueing.SetAttribute("connectionName", _connectionStringSettings.Name);
+#if NET452
+            Configuration.SetAttribute("connectionName", _connectionStringSettings.Name);
+#endif
+#if NETCOREAPP2_0
+            Configuration["connectionName"] = _connectionStringSettings.Name;
+#endif
 
             Message = new Message(new MessageHeaders
             {
@@ -66,39 +90,49 @@ namespace Platibus.UnitTests.MongoDB
             await AssertMessageDocumentInserted(expectedCollectionName);
         }
         
-        public void GivenDatabaseOverride(string database)
+        protected void GivenDatabaseOverride(string database)
         {
-            Queueing.SetAttribute("database", database);
+            ConfigureAttribute("database", database);
         }
 
-        public void GivenCollectionOverride(string collection)
+        protected void GivenCollectionOverride(string collection)
         {
-            Queueing.SetAttribute("collection", collection);
+            ConfigureAttribute("collection", collection);
         }
 
-        public void GivenCollectionPerQueue(string prefix = null)
+        protected void GivenCollectionPerQueue(string prefix = null)
         {
-            Queueing.SetAttribute("collectionPerQueue", "true");
+            ConfigureAttribute("collectionPerQueue", "true");
             if (!string.IsNullOrWhiteSpace(prefix))
             {
-                Queueing.SetAttribute("collectionPrefix", prefix);
+                ConfigureAttribute("collectionPrefix", prefix);
             }
         }
 
-        public async Task WhenMessageEnqueued()
+        protected async Task WhenMessageEnqueued()
         {
-            var messageQueueingService = await new MongoDBServicesProvider().CreateMessageQueueingService(Queueing);
+            var messageQueueingService = await new MongoDBServicesProvider().CreateMessageQueueingService(Configuration);
             await messageQueueingService.CreateQueue(Queue, QueueListener);
             await messageQueueingService.EnqueueMessage(Queue, Message, null);
         }
 
-        public async Task AssertMessageDocumentInserted(string collectionName, string database = null)
+        protected async Task AssertMessageDocumentInserted(string collectionName, string database = null)
         {
             var db = MongoDBHelper.Connect(_connectionStringSettings, database);
             var coll = db.GetCollection<BsonDocument>(collectionName);
             var filter = Builders<BsonDocument>.Filter.Eq("headers.Platibus-MessageId", Message.Headers.MessageId.ToString());
             var msg = await coll.Find(filter).FirstOrDefaultAsync();
             Assert.NotNull(msg);
+        }
+
+        protected void ConfigureAttribute(string name, string value)
+        {
+#if NET452
+            Configuration.SetAttribute(name, value);
+#endif
+#if NETCOREAPP2_0
+            Configuration[name] = value;
+#endif
         }
     }
 }

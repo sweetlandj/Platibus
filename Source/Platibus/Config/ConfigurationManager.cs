@@ -24,6 +24,7 @@
 
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Platibus.Config
@@ -43,7 +44,7 @@ namespace Platibus.Config
         {
             ConfigurationRoot = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
+                .AddJsonFile("appsettings.json", true)
                 .Build();
         }
 
@@ -69,7 +70,8 @@ namespace Platibus.Config
         /// </summary>
         public class ConnectionStringSettingsCollection
         {
-            private readonly IConfigurationSection _connectionStrings;
+            private static readonly object SyncRoot = new object();
+            private readonly IDictionary<string, ConnectionStringSettings> _connectionStringSettings = new Dictionary<string, ConnectionStringSettings>();
 
             /// <summary>
             /// Returns the connection string settings for the specified named
@@ -83,26 +85,43 @@ namespace Platibus.Config
             {
                 get
                 {
-                    var connectionStringSection = _connectionStrings.GetSection(connectionName);
-                    if (connectionStringSection == null) return null;
-
-                    var connectionStringSettings = new ConnectionStringSettings
+                    var myConnectionName = connectionName?.Trim().ToLower();
+                    lock (SyncRoot)
                     {
-                        Name = connectionName,
-                        ProviderName = connectionStringSection["providerName"] ??
-                                       connectionStringSection["provider"],
-                        ConnectionString = connectionStringSection["connectionString"] ??
-                                           connectionStringSection.Value
-                    };
-
-                    return connectionStringSettings;
+                        _connectionStringSettings.TryGetValue(myConnectionName, out var connectionStringSettings);
+                        return connectionStringSettings;
+                    }
+                }
+                set
+                {
+                    var myConnectionName = connectionName?.Trim().ToLower();
+                    lock (SyncRoot)
+                    {
+                        _connectionStringSettings[myConnectionName] = value;
+                    }
                 }
             }
 
             public ConnectionStringSettingsCollection(IConfiguration configurationRoot)
             {
                 if (configurationRoot == null) throw new ArgumentNullException(nameof(configurationRoot));
-                _connectionStrings = configurationRoot.GetSection("ConnectionStrings");
+                var connectionStringsSection = configurationRoot.GetSection("ConnectionStrings");
+                if (connectionStringsSection == null) return;
+
+                var connectionStringSettingSections = connectionStringsSection.GetChildren();
+                foreach (var connectionStringSettingSection in connectionStringSettingSections)
+                {
+                    var connectionName = connectionStringSettingSection.Key.Trim().ToLower();
+                    var connectionStringSettings = new ConnectionStringSettings
+                    {
+                        Name = connectionName,
+                        ProviderName = connectionStringSettingSection["providerName"] ??
+                                       connectionStringSettingSection["provider"],
+                        ConnectionString = connectionStringSettingSection["connectionString"] ??
+                                           connectionStringSettingSection.Value
+                    };
+                    _connectionStringSettings[connectionName] = connectionStringSettings;
+                }
             }
         }
     }

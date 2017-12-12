@@ -27,19 +27,16 @@ namespace Platibus.RabbitMQ
 {
     internal class RabbitMQQueuedMessageContext : IQueuedMessageContext
     {
-        private readonly IMessageHeaders _headers;
-        private readonly IPrincipal _senderPrincipal;
+        public IMessageHeaders Headers { get; }
 
-        public IMessageHeaders Headers => _headers;
-
-        public IPrincipal Principal => _senderPrincipal;
+        public IPrincipal Principal { get; }
 
         public bool Acknowledged { get; private set; }
 
         public RabbitMQQueuedMessageContext(IMessageHeaders headers, IPrincipal senderPrincipal)
         {
-            _headers = headers;
-            _senderPrincipal = senderPrincipal;
+            Headers = headers;
+            Principal = senderPrincipal;
         }
 
         public Task Acknowledge()

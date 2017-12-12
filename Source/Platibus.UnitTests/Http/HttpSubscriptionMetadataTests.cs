@@ -46,7 +46,7 @@ namespace Platibus.UnitTests.Http
             GivenTopic();
             GivenNoTTL();
             WhenInitializingMetadata();
-            Assert.Equal(false, Metadata.Expires);
+            Assert.False(Metadata.Expires);
         }
 
         [Fact]
@@ -56,7 +56,7 @@ namespace Platibus.UnitTests.Http
             GivenTopic();
             GivenTTL();
             WhenInitializingMetadata();
-            Assert.Equal(true, Metadata.Expires);
+            Assert.True(Metadata.Expires);
         }
 
         [Fact]

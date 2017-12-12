@@ -193,11 +193,11 @@ namespace Platibus.UnitTests.Config
             
             var expectedASpec = new MessageNamePatternSpecification(@"^A$");
             var aRules = handlingRules.Where(r => expectedASpec.Equals(r.Specification)).ToList();
-            Assert.Equal(1, aRules.Count);
+            Assert.Single(aRules);
 
             var expectedBSpec = new MessageNamePatternSpecification(@"^B$");
             var bRules = handlingRules.Where(r => expectedBSpec.Equals(r.Specification)).ToList();
-            Assert.Equal(1, bRules.Count);
+            Assert.Single(bRules);
 
             var mockContext = new Mock<IMessageContext>();
             var cancellationToken = default(CancellationToken);
@@ -217,12 +217,12 @@ namespace Platibus.UnitTests.Config
 
             var expectedASpec = new MessageNamePatternSpecification(@"^A$");
             var aRules = handlingRules.Where(r => expectedASpec.Equals(r.Specification)).ToList();
-            Assert.Equal(1, aRules.Count);
+            Assert.Single(aRules);
             Assert.Equal((QueueName)"QHA", aRules[0].QueueName);
 
             var expectedBSpec = new MessageNamePatternSpecification(@"^B$");
             var bRules = handlingRules.Where(r => expectedBSpec.Equals(r.Specification)).ToList();
-            Assert.Equal(1, bRules.Count);
+            Assert.Single(bRules);
             Assert.Equal((QueueName)"QHB", bRules[0].QueueName);
         }
 

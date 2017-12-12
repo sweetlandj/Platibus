@@ -85,24 +85,24 @@ namespace Platibus.UnitTests.Http
         {
             var uri = new Uri("http://localhost:52179/platibus/");
             var clientPool = new HttpClientPool();
-            var cancellationSource = new TaskCompletionSource<int>();
-            var cancellation = cancellationSource.Task;
+            var testCompletionSource = new TaskCompletionSource<int>();
+            var testComplete = testCompletionSource.Task;
             var httpListener = new HttpListener
             {
                 AuthenticationSchemes = AuthenticationSchemes.Ntlm,
                 Prefixes = { uri.ToString() }
             };
 
-            Task httpLoopEnded = null;
+            Task httpListenerLoop = null;
             try
             {
                 httpListener.Start();
-                httpLoopEnded = Task.Run(async () =>
+                httpListenerLoop = Task.Run(async () =>
                 {
-                    while (httpListener.IsListening && !cancellation.IsCompleted)
+                    while (httpListener.IsListening)
                     {
                         var contextReceipt = httpListener.GetContextAsync();
-                        if (await Task.WhenAny(cancellation, contextReceipt) == cancellation)
+                        if (await Task.WhenAny(testComplete, contextReceipt) == testComplete)
                         {
                             break;
                         }
@@ -120,22 +120,28 @@ namespace Platibus.UnitTests.Http
                         using (var client = await clientPool.GetClient(uri, new DefaultCredentials()))
                         {
                             var content = "test" + (i + 1);
-                            var response1 = await client.PostAsync("test", new StringContent(content));
-                            Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
-                            Assert.Equal(content, await response1.Content.ReadAsStringAsync());
+                            var response = await client.PostAsync("test", new StringContent(content));
+                            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                            Assert.Equal(content, await response.Content.ReadAsStringAsync());
+                            return response;
                         }
                     }));
 
-                await Task.WhenAll(clientTasks);
+                var responses = await Task.WhenAll(clientTasks);
+                Assert.Equal(10, responses.Length);
             }
             finally
             {
-                if (httpLoopEnded != null)
+                if (httpListenerLoop != null)
                 {
-                    cancellationSource.TrySetResult(0);
-                    httpLoopEnded.Wait(TimeSpan.FromSeconds(5));
+                    testCompletionSource.TrySetResult(0);
+                    httpListenerLoop.Wait(TimeSpan.FromSeconds(5));
                 }
-                httpListener.Stop();
+
+                if (httpListener.IsListening)
+                {
+                    httpListener.Stop();
+                }
                 clientPool.Dispose();
             }
         }

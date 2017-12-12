@@ -1,6 +1,4 @@
-﻿
-
-#if NETSTANDARD2_0
+﻿#if NETSTANDARD2_0
 // The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland

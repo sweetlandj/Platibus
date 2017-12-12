@@ -76,7 +76,7 @@ namespace Platibus.Config
             {
 	            try
 	            {
-		            var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyFile.FullName);
+		            var assembly = Assembly.LoadFile(assemblyFile.FullName);
 		            subtypes.AddRange(AppDomain.CurrentDomain.Load(assembly.GetName())
 			            .GetTypes()
 			            .Where(typeof (TBase).IsAssignableFrom)

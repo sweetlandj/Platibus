@@ -213,7 +213,7 @@ namespace Platibus.UnitTests
 
         protected virtual void AssertSingleHeaderExists(HeaderName headerName)
         {
-            Assert.Equal(1, MessageHeaders.Count());
+            Assert.Single(MessageHeaders);
             Assert.Equal(headerName, MessageHeaders.Select(h => h.Key).FirstOrDefault());
         }
     }

@@ -78,8 +78,6 @@ namespace Platibus.Config
             get => (DiagnosticEventLevel)base[MaxLevelPropertyName];
             set => base[MaxLevelPropertyName] = value;
         }
-
-
     }
 }
 

@@ -27,7 +27,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 using Moq;
 using Xunit;
 using Platibus.Http;
@@ -116,7 +115,7 @@ namespace Platibus.UnitTests.Http
             var controller = new TopicController(mockSubscriptionTrackingService.Object, topics);
 
             var mockRequest = new Mock<IHttpResourceRequest>();
-            var encodedSubscriberUri = HttpUtility.UrlEncode("http://example.com/platibus");
+            var encodedSubscriberUri = new UrlEncoder().Encode("http://example.com/platibus");
             var requestUri = new UriBuilder
             {
                 Scheme = "http",
@@ -156,7 +155,7 @@ namespace Platibus.UnitTests.Http
             var controller = new TopicController(mockSubscriptionTrackingService.Object, topics);
 
             var mockRequest = new Mock<IHttpResourceRequest>();
-            var encodedSubscriberUri = HttpUtility.UrlEncode("http://example.com/platibus");
+            var encodedSubscriberUri = new UrlEncoder().Encode("http://example.com/platibus");
             var requestUri = new UriBuilder
             {
                 Scheme = "http",

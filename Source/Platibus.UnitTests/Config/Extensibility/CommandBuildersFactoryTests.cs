@@ -1,5 +1,10 @@
 ﻿using Platibus.SQL.Commands;
+#if NET452
 using System.Configuration;
+#endif
+#if NETCOREAPP2_0
+using Platibus.Config;
+#endif
 using Platibus.Config.Extensibility;
 using Platibus.SQLite.Commands;
 using Xunit;

@@ -3,9 +3,14 @@ using MongoDB.Driver;
 using Platibus.Config;
 using Platibus.MongoDB;
 using System;
-using System.Configuration;
 using System.Threading.Tasks;
 using Xunit;
+#if NET452
+using System.Configuration;
+#endif
+#if NETCOREAPP2_0
+using Microsoft.Extensions.Configuration;
+#endif
 
 namespace Platibus.UnitTests.MongoDB
 {
@@ -18,12 +23,26 @@ namespace Platibus.UnitTests.MongoDB
 
         public TopicName Topic = Guid.NewGuid().ToString();
         public Uri Subscriber = new Uri("http://localhost/" + Guid.NewGuid());
-        public SubscriptionTrackingElement SubscriptionTracking = new SubscriptionTrackingElement();
+#if NET452
+        public SubscriptionTrackingElement Configuration = new SubscriptionTrackingElement();
+#endif
+#if NETCOREAPP2_0
+        public IConfiguration Configuration;
+#endif
+
+#if NETCOREAPP2_0
+        public MongoDBServicesProviderSubscriptionTrackingServiceTests()
+        {
+            Configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection()
+                .Build();
+        }
+#endif
 
         public MongoDBServicesProviderSubscriptionTrackingServiceTests(MongoDBFixture fixture)
         {
             _connectionStringSettings = fixture.ConnectionStringSettings;
-            SubscriptionTracking.SetAttribute("connectionName", _connectionStringSettings.Name);
+            ConfigureAttribute("connectionName", _connectionStringSettings.Name);
         }
 
         [Fact]
@@ -44,25 +63,25 @@ namespace Platibus.UnitTests.MongoDB
             await AssertSubscriptionDocumentInserted(collectionOverride);
         }
         
-        public void GivenDatabaseOverride(string database)
+        protected void GivenDatabaseOverride(string database)
         {
-            SubscriptionTracking.SetAttribute("database", database);
+            ConfigureAttribute("database", database);
         }
 
-        public void GivenCollectionOverride(string collection)
+        protected void GivenCollectionOverride(string collection)
         {
-            SubscriptionTracking.SetAttribute("collection", collection);
+            ConfigureAttribute("collection", collection);
         }
-        
-        public async Task WhenAddingASubscription()
+
+        protected async Task WhenAddingASubscription()
         {
             var subscriptionTrackingService = await new MongoDBServicesProvider()
-                .CreateSubscriptionTrackingService(SubscriptionTracking);
+                .CreateSubscriptionTrackingService(Configuration);
 
             await subscriptionTrackingService.AddSubscription(Topic, Subscriber);
         }
 
-        public async Task AssertSubscriptionDocumentInserted(string collectionName, string database = null)
+        protected async Task AssertSubscriptionDocumentInserted(string collectionName, string database = null)
         {
             var db = MongoDBHelper.Connect(_connectionStringSettings, database);
             var coll = db.GetCollection<BsonDocument>(collectionName);
@@ -70,6 +89,16 @@ namespace Platibus.UnitTests.MongoDB
                 & Builders<BsonDocument>.Filter.Eq("subscriber", Subscriber.ToString());
             var msg = await coll.Find(filter).FirstOrDefaultAsync();
             Assert.NotNull(msg);
+        }
+
+        protected void ConfigureAttribute(string name, string value)
+        {
+#if NET452
+            Configuration.SetAttribute(name, value);
+#endif
+#if NETCOREAPP2_0
+            Configuration[name] = value;
+#endif
         }
     }
 }

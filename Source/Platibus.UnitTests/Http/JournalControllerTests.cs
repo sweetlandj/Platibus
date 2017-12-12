@@ -172,9 +172,9 @@ namespace Platibus.UnitTests.Http
             AssertSuccess();
 
             var responseModel = AssertResponseContentModel();
-            Assert.Equal(responseModel.Start, "0");
-            Assert.Equal(responseModel.Next, "1");
-            Assert.Equal(responseModel.EndOfJournal, true);
+            Assert.Equal("0", responseModel.Start);
+            Assert.Equal("1", responseModel.Next);
+            Assert.True(responseModel.EndOfJournal);
             Assert.Equal(1, responseModel.Entries.Count);
 
             var entryModel = responseModel.Entries[0];

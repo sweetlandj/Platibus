@@ -29,55 +29,33 @@ namespace Platibus.UnitTests.SQLite
 {
     public class SQLiteFixture : IDisposable
     {
-        private readonly DirectoryInfo _baseDirectory;
-        private readonly DirectoryInfo _queueDirectory;
-
-        private readonly SQLiteMessageQueueingService _messageQueueingService;
-        private readonly SQLiteSubscriptionTrackingService _subscriptionTrackingService;
-        private readonly SQLiteMessageJournal _messageJournal;
-
         private bool _disposed;
 
-        public DirectoryInfo BaseDirectory
-        {
-            get { return _baseDirectory; }
-        }
+        public DirectoryInfo BaseDirectory { get; }
 
-        public DirectoryInfo QueueDirectory
-        {
-            get { return _queueDirectory; }
-        }
+        public DirectoryInfo QueueDirectory { get; }
 
-        public SQLiteMessageQueueingService MessageQueueingService
-        {
-            get { return _messageQueueingService; }
-        }
+        public SQLiteMessageQueueingService MessageQueueingService { get; }
 
-        public SQLiteSubscriptionTrackingService SubscriptionTrackingService
-        {
-            get { return _subscriptionTrackingService; }
-        }
+        public SQLiteSubscriptionTrackingService SubscriptionTrackingService { get; }
 
-        public SQLiteMessageJournal MessageJournal
-        {
-            get { return _messageJournal; }
-        }
+        public SQLiteMessageJournal MessageJournal { get; }
 
         public SQLiteFixture()
         {
-            _baseDirectory = GetTempDirectory();
+            BaseDirectory = GetTempDirectory();
             
-            _queueDirectory = CreateSubdirectory(_baseDirectory, "queues");
-            _messageQueueingService = new SQLiteMessageQueueingService(_queueDirectory);
-            _messageQueueingService.Init();
+            QueueDirectory = CreateSubdirectory(BaseDirectory, "queues");
+            MessageQueueingService = new SQLiteMessageQueueingService(QueueDirectory);
+            MessageQueueingService.Init();
 
-            var subscriptionDirectory = CreateSubdirectory(_baseDirectory, "subscriptions");
-            _subscriptionTrackingService = new SQLiteSubscriptionTrackingService(subscriptionDirectory);
-            _subscriptionTrackingService.Init();
+            var subscriptionDirectory = CreateSubdirectory(BaseDirectory, "subscriptions");
+            SubscriptionTrackingService = new SQLiteSubscriptionTrackingService(subscriptionDirectory);
+            SubscriptionTrackingService.Init();
 
-            var journalDirectory = CreateSubdirectory(_baseDirectory, "journal");
-            _messageJournal = new SQLiteMessageJournal(journalDirectory);
-            _messageJournal.Init();
+            var journalDirectory = CreateSubdirectory(BaseDirectory, "journal");
+            MessageJournal = new SQLiteMessageJournal(journalDirectory);
+            MessageJournal.Init();
         }
 
         private static DirectoryInfo CreateSubdirectory(DirectoryInfo baseDirectory, string name)
@@ -114,7 +92,7 @@ namespace Platibus.UnitTests.SQLite
         public void DeleteJournaledMessages()
         {
             // Do not dispose connection.  Singleton connection provider used.
-            var connection = _messageJournal.ConnectionProvider.GetConnection();
+            var connection = MessageJournal.ConnectionProvider.GetConnection();
             using (var command = connection.CreateCommand())
             {
                 command.CommandType = CommandType.Text;
@@ -125,9 +103,9 @@ namespace Platibus.UnitTests.SQLite
 
         protected virtual void Dispose(bool disposing)
         {
-            _messageQueueingService.Dispose();
-            _subscriptionTrackingService.Dispose();
-            _messageJournal.Dispose();
+            MessageQueueingService.Dispose();
+            SubscriptionTrackingService.Dispose();
+            MessageJournal.Dispose();
         }
     }
 }

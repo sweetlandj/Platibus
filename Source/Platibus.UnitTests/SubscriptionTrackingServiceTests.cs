@@ -148,16 +148,13 @@ namespace Platibus.UnitTests
 
         protected class Subscription
         {
-            private readonly TopicName _topic;
-            private readonly Uri _subscriberUri;
-
-            public TopicName Topic { get { return _topic; } }
-            public Uri SubscriberUri { get { return _subscriberUri; } }
+            public TopicName Topic { get; }
+            public Uri SubscriberUri { get; }
 
             public Subscription(TopicName topic, Uri subscriberUri)
             {
-                _topic = topic;
-                _subscriberUri = subscriberUri;
+                Topic = topic;
+                SubscriberUri = subscriberUri;
             }
         }
     }

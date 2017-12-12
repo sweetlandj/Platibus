@@ -32,7 +32,7 @@ namespace Platibus.UnitTests.Config
         protected void AssertHandlingRulesAreAdded()
         {
             var handlingRules = Configuration.HandlingRules.ToList();
-            Assert.Equal(1, handlingRules.Count);
+            Assert.Single(handlingRules);
             Assert.IsType<MessageNamePatternSpecification>(handlingRules[0].Specification);
 
             var namePatternSpec = (MessageNamePatternSpecification)handlingRules[0].Specification;
