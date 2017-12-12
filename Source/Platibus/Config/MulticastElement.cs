@@ -14,8 +14,6 @@ namespace Platibus.Config
         private const string AddressPropertyName = "address";
         private const string PortPropertyName = "port";
 
-        private const string DefaultAddress = "239.255.21.80";
-        private const int DefaultPort = 52181;
 
         /// <summary>
         /// Whether to broadcast subscription changes to members of a multicast group
@@ -30,7 +28,7 @@ namespace Platibus.Config
         /// <summary>
         /// The IP address of the multicast group to join
         /// </summary>
-        [ConfigurationProperty(AddressPropertyName, DefaultValue = DefaultAddress)]
+        [ConfigurationProperty(AddressPropertyName, DefaultValue = MulticastDefaults.Address)]
         [TypeConverter(typeof(IPAddressConverter))]
         public IPAddress Address
         {
@@ -41,7 +39,7 @@ namespace Platibus.Config
         /// <summary>
         /// The port of the multicast group to join
         /// </summary>
-        [ConfigurationProperty(PortPropertyName, DefaultValue = DefaultPort)]
+        [ConfigurationProperty(PortPropertyName, DefaultValue = MulticastDefaults.Port)]
         public int Port
         {
             get => (int)base[PortPropertyName];

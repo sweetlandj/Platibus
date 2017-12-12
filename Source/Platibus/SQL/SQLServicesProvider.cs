@@ -20,7 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Net;
 using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
@@ -35,6 +34,9 @@ using Microsoft.Extensions.Configuration;
 
 namespace Platibus.SQL
 {
+    /// <inheritdoc cref="IMessageQueueingServiceProvider" />
+    /// <inheritdoc cref="IMessageJournalProvider" />
+    /// <inheritdoc cref="ISubscriptionTrackingServiceProvider" />
     /// <summary>
     /// A provider for SQL-based message queueing and subscription tracking services
     /// </summary>
@@ -55,7 +57,7 @@ namespace Platibus.SQL
             var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
             if (connectionStringSettings == null)
             {
-                throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
+                throw new ConfigurationErrorsException($"Connection string settings \"{connectionName}\" not found");
             }
 
             var securityTokenServiceFactory = new SecurityTokenServiceFactory();
@@ -80,7 +82,7 @@ namespace Platibus.SQL
             var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
             if (connectionStringSettings == null)
             {
-                throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
+                throw new ConfigurationErrorsException($"Connection string settings \"{connectionName}\" not found");
             }
             var sqlMessageJournalingService = new SQLMessageJournal(connectionStringSettings);
             sqlMessageJournalingService.Init();
@@ -101,21 +103,14 @@ namespace Platibus.SQL
             var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
             if (connectionStringSettings == null)
             {
-                throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
+                throw new ConfigurationErrorsException($"Connection string settings \"{connectionName}\" not found");
             }
             var sqlSubscriptionTrackingService = new SQLSubscriptionTrackingService(connectionStringSettings);
             sqlSubscriptionTrackingService.Init();
 
             var multicast = configuration.Multicast;
-            if (multicast == null || !multicast.Enabled)
-            {
-                return Task.FromResult<ISubscriptionTrackingService>(sqlSubscriptionTrackingService);
-            }
-
-            var multicastTrackingService = new MulticastSubscriptionTrackingService(
-                sqlSubscriptionTrackingService, multicast.Address, multicast.Port);
-
-            return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
+            var multicastFactory = new MulticastSubscriptionTrackingServiceFactory();
+            return multicastFactory.InitSubscriptionTrackingService(multicast, sqlSubscriptionTrackingService);
         }
 #endif
 #if NETSTANDARD2_0
@@ -132,7 +127,7 @@ namespace Platibus.SQL
             var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
             if (connectionStringSettings == null)
             {
-                throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
+                throw new ConfigurationErrorsException($"Connection string settings \"{connectionName}\" not found");
             }
 
             var securityTokenServiceFactory = new SecurityTokenServiceFactory();
@@ -157,7 +152,7 @@ namespace Platibus.SQL
             var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
             if (connectionStringSettings == null)
             {
-                throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
+                throw new ConfigurationErrorsException($"Connection string settings \"{connectionName}\" not found");
             }
             var sqlMessageJournalingService = new SQLMessageJournal(connectionStringSettings);
             sqlMessageJournalingService.Init();
@@ -177,24 +172,14 @@ namespace Platibus.SQL
             var connectionStringSettings = ConfigurationManager.ConnectionStrings[connectionName];
             if (connectionStringSettings == null)
             {
-                throw new ConfigurationErrorsException("Connection string settings \"" + connectionName + "\" not found");
+                throw new ConfigurationErrorsException($"Connection string settings \"{connectionName}\" not found");
             }
             var sqlSubscriptionTrackingService = new SQLSubscriptionTrackingService(connectionStringSettings);
             sqlSubscriptionTrackingService.Init();
 
             var multicastSection = configuration.GetSection("multicast");
-            var multicastEnabled = multicastSection?.GetValue("enabled", true) ?? false;
-            if (!multicastEnabled)
-            {
-                return Task.FromResult<ISubscriptionTrackingService>(sqlSubscriptionTrackingService);
-            }
-
-            var ipAddress = multicastSection.GetValue("address", IPAddress.Parse("239.255.21.80"));
-            var port = multicastSection.GetValue("port", 52181);
-            var multicastTrackingService = new MulticastSubscriptionTrackingService(
-                sqlSubscriptionTrackingService, ipAddress, port);
-
-            return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
+            var multicastFactory = new MulticastSubscriptionTrackingServiceFactory();
+            return multicastFactory.InitSubscriptionTrackingService(multicastSection, sqlSubscriptionTrackingService);
         }
 #endif
     }

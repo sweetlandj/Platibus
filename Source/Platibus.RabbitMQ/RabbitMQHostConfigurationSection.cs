@@ -27,17 +27,13 @@ using Platibus.Config;
 
 namespace Platibus.RabbitMQ
 {
+    /// <inheritdoc />
     /// <summary>
-    /// Extends the <see cref="PlatibusConfigurationSection"/> with configuration specific
+    /// Extends the <see cref="T:Platibus.Config.PlatibusConfigurationSection" /> with configuration specific
     /// to RabbitMQ
     /// </summary>
     public class RabbitMQHostConfigurationSection : PlatibusConfigurationSection
     {
-        /// <summary>
-        /// The default base URI
-        /// </summary>
-        public const string DefaultBaseUri = "amqp://localhost:5672";
-
         private const string BaseUriPropertyName = "baseUri";
         private const string EncodingPropertyName = "encoding";
         private const string AutoAcknowledgePropertyName = "autoAcknowledge";
@@ -54,7 +50,7 @@ namespace Platibus.RabbitMQ
         /// <remarks>
         /// This is the server URI.  The use of virtual hosts is recommended.
         /// </remarks>
-        [ConfigurationProperty(BaseUriPropertyName, DefaultValue = DefaultBaseUri)]
+        [ConfigurationProperty(BaseUriPropertyName, DefaultValue = RabbitMQDefaults.BaseUri)]
         public Uri BaseUri
         {
             get => (Uri)base[BaseUriPropertyName];
@@ -65,7 +61,7 @@ namespace Platibus.RabbitMQ
         /// The encoding used to convert strings to byte streams when publishing 
         /// and consuming messages
         /// </summary>
-        [ConfigurationProperty(EncodingPropertyName, DefaultValue = "UTF-8")]
+        [ConfigurationProperty(EncodingPropertyName, DefaultValue = RabbitMQDefaults.Encoding)]
         public string Encoding
         {
             get => (string)base[EncodingPropertyName];
@@ -76,7 +72,7 @@ namespace Platibus.RabbitMQ
         /// Whether queues should be configured to automatically acknowledge
         /// messages when read by a consumer
         /// </summary>
-        [ConfigurationProperty(AutoAcknowledgePropertyName, DefaultValue = false)]
+        [ConfigurationProperty(AutoAcknowledgePropertyName, DefaultValue = RabbitMQDefaults.AutoAcknowledge)]
         public bool AutoAcknowledge
         {
             get => (bool)base[AutoAcknowledgePropertyName];
@@ -87,7 +83,7 @@ namespace Platibus.RabbitMQ
         /// The maxiumum number of concurrent consumers that will be started
         /// for each queue
         /// </summary>
-        [ConfigurationProperty(ConcurrencyLimitPropertyName, DefaultValue = 1)]
+        [ConfigurationProperty(ConcurrencyLimitPropertyName, DefaultValue = RabbitMQDefaults.ConcurrencyLimit)]
         public int ConcurrencyLimit
         {
             get => (int)base[ConcurrencyLimitPropertyName];
@@ -98,7 +94,7 @@ namespace Platibus.RabbitMQ
         /// The maximum number of attempts to process a message before moving it to
         /// a dead letter queue
         /// </summary>
-        [ConfigurationProperty(MaxAttemptsPropertyName, DefaultValue = 10)]
+        [ConfigurationProperty(MaxAttemptsPropertyName, DefaultValue = RabbitMQDefaults.MaxAttempts)]
         public int MaxAttempts
         {
             get => (int)base[MaxAttemptsPropertyName];
@@ -108,7 +104,7 @@ namespace Platibus.RabbitMQ
         /// <summary>
         /// The amount of time to wait between redelivery attempts
         /// </summary>
-        [ConfigurationProperty(RetryDelayPropertyName, DefaultValue = "00:00:05")]
+        [ConfigurationProperty(RetryDelayPropertyName, DefaultValue = RabbitMQDefaults.RetryDelay)]
         public TimeSpan RetryDelay
         {
             get => (TimeSpan)base[RetryDelayPropertyName];
@@ -121,7 +117,7 @@ namespace Platibus.RabbitMQ
         /// <remarks>
         /// The default value of this property is <c>true</c>.
         /// </remarks>
-        [ConfigurationProperty(DurablePropertyName, DefaultValue = true)]
+        [ConfigurationProperty(DurablePropertyName, DefaultValue = RabbitMQDefaults.Durable)]
         public bool IsDurable
         {
             get => (bool)base[DurablePropertyName];

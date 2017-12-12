@@ -31,6 +31,7 @@ using Platibus.Security;
 
 namespace Platibus.Filesystem
 {
+    /// <inheritdoc />
     /// <summary>
     /// A message queue that persists messages to disk so that they survive application restarts
     /// </summary>
@@ -42,8 +43,9 @@ namespace Platibus.Filesystem
 
         private int _initialized;
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="FilesystemMessageQueue"/>
+        /// Initializes a new <see cref="T:Platibus.Filesystem.FilesystemMessageQueue" />
         /// </summary>
         /// <param name="directory">The directory into which message files will be persisted</param>
         /// <param name="securityTokenService">The service used to issue and validate security

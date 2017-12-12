@@ -29,6 +29,8 @@ using Platibus.Security;
 
 namespace Platibus.Http
 {
+    /// <inheritdoc cref="PlatibusConfiguration"/>
+    /// <inheritdoc cref="IHttpServerConfiguration"/>
     /// <summary>
     /// Configuration for hosting Platibus in a standalone HTTP server
     /// </summary>
@@ -36,6 +38,7 @@ namespace Platibus.Http
     {
         private Uri _baseUri;
 
+        /// <inheritdoc />
         /// <summary>
         /// The URI on which the HTTP server should listen
         /// </summary>
@@ -45,41 +48,28 @@ namespace Platibus.Http
             set => _baseUri = value;
         }
 
-        /// <summary>
-        /// The authentication schemes that should be supported
-        /// </summary>
+        /// <inheritdoc />
         public AuthenticationSchemes AuthenticationSchemes { get; set; } = AuthenticationSchemes.Anonymous;
 
-        /// <summary>
-        /// The subscription tracking service implementation
-        /// </summary>
+        /// <inheritdoc />
         public ISubscriptionTrackingService SubscriptionTrackingService { get; set; }
 
-        /// <summary>
-        /// The message queueing service implementation
-        /// </summary>
+        /// <inheritdoc />
         public IMessageQueueingService MessageQueueingService { get; set; }
 
-        /// <summary>
-        /// An optional component used to restrict access for callers to send
-        /// messages or subscribe to topics
-        /// </summary>
+        /// <inheritdoc />
         public IAuthorizationService AuthorizationService { get; set; }
 
-        /// <summary>
-        /// The maximum amount of HTTP requests to process at the same time.
-        /// </summary>
+        /// <inheritdoc />
         public int ConcurrencyLimit { get; set; }
 
-        /// <summary>
-        /// Whether the transport service can be bypassed when delivering messages
-        /// whose destination and origination is the same.
-        /// </summary>
+        /// <inheritdoc />
         public bool BypassTransportLocalDestination { get; set; }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="HttpServerConfiguration"/> with a preconfigured
-        /// <paramref name="diagnosticService"/>
+        /// Initializes a new <see cref="T:Platibus.Http.HttpServerConfiguration" /> with a preconfigured
+        /// <paramref name="diagnosticService" />
         /// </summary>
         /// <param name="diagnosticService">The service through which diagnostic events are
         /// reported and processed</param>

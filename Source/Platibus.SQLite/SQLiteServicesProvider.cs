@@ -22,7 +22,6 @@
 
 using System;
 using System.IO;
-using System.Net;
 using System.Threading.Tasks;
 using Platibus.Config.Extensibility;
 using Platibus.Journaling;
@@ -80,15 +79,8 @@ namespace Platibus.SQLite
             sqliteSubscriptionTrackingService.Init();
 
             var multicast = configuration.Multicast;
-            if (multicast == null || !multicast.Enabled)
-            {
-                return Task.FromResult<ISubscriptionTrackingService>(sqliteSubscriptionTrackingService);
-            }
-
-            var multicastTrackingService = new MulticastSubscriptionTrackingService(
-                sqliteSubscriptionTrackingService, multicast.Address, multicast.Port);
-
-            return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
+            var multicastFactory = new MulticastSubscriptionTrackingServiceFactory();
+            return multicastFactory.InitSubscriptionTrackingService(multicast, sqliteSubscriptionTrackingService);
         }
 #endif
 #if NETSTANDARD2_0
@@ -125,18 +117,8 @@ namespace Platibus.SQLite
             sqliteSubscriptionTrackingService.Init();
 
             var multicastSection = configuration?.GetSection("multicast");
-            var multicastEnabled = multicastSection?.GetValue("enabled", true) ?? false;
-            if (!multicastEnabled)
-            {
-                return Task.FromResult<ISubscriptionTrackingService>(sqliteSubscriptionTrackingService);
-            }
-
-            var ipAddress = multicastSection.GetValue("address", IPAddress.Parse("239.255.21.80"));
-            var port = multicastSection.GetValue("port", 52181);
-            var multicastTrackingService = new MulticastSubscriptionTrackingService(
-                sqliteSubscriptionTrackingService, ipAddress, port);
-
-            return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
+            var multicastFactory = new MulticastSubscriptionTrackingServiceFactory();
+            return multicastFactory.InitSubscriptionTrackingService(multicastSection, sqliteSubscriptionTrackingService);
         }
 #endif
 

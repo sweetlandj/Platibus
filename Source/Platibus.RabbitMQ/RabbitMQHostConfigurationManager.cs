@@ -70,8 +70,7 @@ namespace Platibus.RabbitMQ
         {
             await base.Initialize(configuration, configSection);
 
-            configuration.BaseUri = configSection.BaseUri
-                                    ?? new Uri(RabbitMQHostConfigurationSection.DefaultBaseUri);
+            configuration.BaseUri = configSection.BaseUri ?? new Uri(RabbitMQDefaults.BaseUri);
 
             configuration.Encoding = string.IsNullOrWhiteSpace(configSection.Encoding)
                 ? Encoding.UTF8
@@ -161,21 +160,21 @@ namespace Platibus.RabbitMQ
         {
             await base.Initialize(platibusConfiguration, configuration);
 
-            var defaultUri = new Uri("amqp://localhost:5672");
-            platibusConfiguration.BaseUri = configuration?.GetValue("baseUri", defaultUri) ?? defaultUri;
+            var defaultBaseUri = new Uri(RabbitMQDefaults.BaseUri);
+            platibusConfiguration.BaseUri = configuration?.GetValue<Uri>("baseUri") ?? defaultBaseUri;
 
-            var encodingName = configuration?["encoding"];
+            var encodingName = configuration?["encoding"] ?? RabbitMQDefaults.Encoding;
             platibusConfiguration.Encoding = string.IsNullOrWhiteSpace(encodingName)
                 ? Encoding.UTF8
                 : Encoding.GetEncoding(encodingName);
 
-            platibusConfiguration.AutoAcknowledge = configuration?.GetValue("autoAcknowledge", false) ?? false;
-            platibusConfiguration.ConcurrencyLimit = configuration?.GetValue("concurrencyLimit", 1) ?? 1;
-            platibusConfiguration.MaxAttempts = configuration?.GetValue("maxAttempts", 10) ?? 10;
+            platibusConfiguration.AutoAcknowledge = configuration?.GetValue<bool>("autoAcknowledge") ?? RabbitMQDefaults.AutoAcknowledge;
+            platibusConfiguration.ConcurrencyLimit = configuration?.GetValue<int>("concurrencyLimit") ?? RabbitMQDefaults.ConcurrencyLimit;
+            platibusConfiguration.MaxAttempts = configuration?.GetValue<int>("maxAttempts") ?? RabbitMQDefaults.MaxAttempts;
 
-            var defaultRetryDelay = TimeSpan.FromSeconds(5);
-            platibusConfiguration.RetryDelay = configuration?.GetValue("retryDelay", defaultRetryDelay) ?? defaultRetryDelay;
-            platibusConfiguration.IsDurable = configuration?.GetValue("durable", true) ?? true;
+            var defaultRetryDelay = TimeSpan.Parse(RabbitMQDefaults.RetryDelay);
+            platibusConfiguration.RetryDelay = configuration?.GetValue<TimeSpan>("retryDelay") ?? defaultRetryDelay;
+            platibusConfiguration.IsDurable = configuration?.GetValue<bool>("durable") ?? RabbitMQDefaults.Durable;
 
             var securityTokenServiceFactory = new SecurityTokenServiceFactory(platibusConfiguration.DiagnosticService);
             var securityTokensSection = configuration?.GetSection("securityTokens");

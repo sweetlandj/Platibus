@@ -22,7 +22,6 @@
 
 using System;
 using System.IO;
-using System.Net;
 using System.Threading.Tasks;
 using Platibus.Config.Extensibility;
 using Platibus.Multicast;
@@ -46,14 +45,15 @@ namespace Platibus.Filesystem
         ISubscriptionTrackingServiceProvider
     {
 #if NET452
+        /// <inheritdoc />
         /// <summary>
-        /// Creates an initializes a <see cref="IMessageQueueingService"/>
-        /// based on the provided <paramref name="configuration"/>
+        /// Creates an initializes a <see cref="T:Platibus.IMessageQueueingService" />
+        /// based on the provided <paramref name="configuration" />
         /// </summary>
         /// <param name="configuration">The journaling configuration
         /// element</param>
         /// <returns>Returns a task whose result is an initialized
-        /// <see cref="IMessageQueueingService"/></returns>
+        /// <see cref="T:Platibus.IMessageQueueingService" /></returns>
         public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
             var securityTokenServiceFactory = new SecurityTokenServiceFactory();
@@ -67,14 +67,15 @@ namespace Platibus.Filesystem
             return fsQueueingService;
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Creates an initializes a <see cref="ISubscriptionTrackingService"/>
-        /// based on the provided <paramref name="configuration"/>.
+        /// Creates an initializes a <see cref="T:Platibus.ISubscriptionTrackingService" />
+        /// based on the provided <paramref name="configuration" />.
         /// </summary>
         /// <param name="configuration">The journaling configuration
         /// element.</param>
         /// <returns>Returns a task whose result is an initialized
-        /// <see cref="ISubscriptionTrackingService"/>.</returns>
+        /// <see cref="T:Platibus.ISubscriptionTrackingService" />.</returns>
         public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(
             SubscriptionTrackingElement configuration)
         {
@@ -84,17 +85,11 @@ namespace Platibus.Filesystem
             fsTrackingService.Init();
 
             var multicast = configuration.Multicast;
-            if (multicast == null || !multicast.Enabled)
-            {
-                return Task.FromResult<ISubscriptionTrackingService>(fsTrackingService);
-            }
-             
-            var multicastTrackingService = new MulticastSubscriptionTrackingService(
-                fsTrackingService, multicast.Address, multicast.Port);
-
-            return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
+            var multicastFactory = new MulticastSubscriptionTrackingServiceFactory();
+            return multicastFactory.InitSubscriptionTrackingService(multicast, fsTrackingService);
         }
-#else
+#endif
+#if NETSTANDARD2_0
         /// <inheritdoc />
         /// <summary>
         /// Creates an initializes a <see cref="T:Platibus.IMessageQueueingService" />
@@ -117,14 +112,15 @@ namespace Platibus.Filesystem
             return fsQueueingService;
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Creates an initializes a <see cref="ISubscriptionTrackingService"/>
-        /// based on the provided <paramref name="configuration"/>.
+        /// Creates an initializes a <see cref="T:Platibus.ISubscriptionTrackingService" />
+        /// based on the provided <paramref name="configuration" />.
         /// </summary>
         /// <param name="configuration">The journaling configuration
         ///     element.</param>
         /// <returns>Returns a task whose result is an initialized
-        /// <see cref="ISubscriptionTrackingService"/>.</returns>
+        /// <see cref="T:Platibus.ISubscriptionTrackingService" />.</returns>
         public Task<ISubscriptionTrackingService> CreateSubscriptionTrackingService(IConfiguration configuration)
         {
             var path = configuration?["path"];
@@ -133,18 +129,8 @@ namespace Platibus.Filesystem
             fsTrackingService.Init();
 
             var multicastSection = configuration?.GetSection("multicast");
-            var multicastEnabled = multicastSection?.GetValue("enabled", true) ?? false;
-            if (!multicastEnabled)
-            {
-                return Task.FromResult<ISubscriptionTrackingService>(fsTrackingService);
-            }
-
-            var ipAddress = multicastSection.GetValue("address", IPAddress.Parse("239.255.21.80"));
-            var port = multicastSection.GetValue("port", 52181);
-            var multicastTrackingService = new MulticastSubscriptionTrackingService(
-                fsTrackingService, ipAddress, port);
-
-            return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
+            var multicastFactory = new MulticastSubscriptionTrackingServiceFactory();
+            return multicastFactory.InitSubscriptionTrackingService(multicastSection, fsTrackingService);
         }
 #endif
 
