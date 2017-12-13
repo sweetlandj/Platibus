@@ -37,6 +37,7 @@ namespace Platibus.Config.Extensibility
     public class DiagnosticEventSinkFactory
     {
         private readonly IDiagnosticService _diagnosticService;
+        private readonly IProviderService _providerService;
 
         /// <summary>
         /// Initializes a new <see cref="DiagnosticEventSinkFactory"/>
@@ -46,6 +47,7 @@ namespace Platibus.Config.Extensibility
         public DiagnosticEventSinkFactory(IDiagnosticService diagnosticService)
         {
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+            _providerService = new ReflectionBasedProviderService(_diagnosticService);
         }
 
 #if NET452
@@ -155,10 +157,10 @@ namespace Platibus.Config.Extensibility
         }
 #endif
 
-        private static IDiagnosticEventSinkProvider GetProvider(string providerName)
+        private IDiagnosticEventSinkProvider GetProvider(string providerName)
         {
             if (string.IsNullOrWhiteSpace(providerName)) throw new ArgumentNullException(nameof(providerName));
-            return ProviderHelper.GetProvider<IDiagnosticEventSinkProvider>(providerName);
+            return _providerService.GetProvider<IDiagnosticEventSinkProvider>(providerName);
         }
     }
 }

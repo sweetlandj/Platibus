@@ -35,6 +35,7 @@ namespace Platibus.Config.Extensibility
     public class SubscriptionTrackingServiceFactory
     {
         private readonly IDiagnosticService _diagnosticService;
+        private readonly IProviderService _providerService;
 
         /// <summary>
         /// Initializes a new <see cref="SubscriptionTrackingServiceFactory"/>
@@ -44,6 +45,7 @@ namespace Platibus.Config.Extensibility
         public SubscriptionTrackingServiceFactory(IDiagnosticService diagnosticService = null)
         {
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+            _providerService = new ReflectionBasedProviderService(_diagnosticService);
         }
 
 #if NET452
@@ -116,7 +118,7 @@ namespace Platibus.Config.Extensibility
 
                 return new FilesystemServicesProvider();
             }
-            return ProviderHelper.GetProvider<ISubscriptionTrackingServiceProvider>(providerName);
+            return _providerService.GetProvider<ISubscriptionTrackingServiceProvider>(providerName);
         }
     }
 }

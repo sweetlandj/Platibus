@@ -34,7 +34,7 @@ namespace Platibus.Config.Extensibility
     /// the same priority.
     /// </summary>
     /// <seealso cref="ProviderAttribute"/>
-    /// <seealso cref="ProviderHelper"/>
+    /// <seealso cref="ReflectionBasedProviderService"/>
     [Serializable]
     public class MultipleProvidersFoundException : Exception
     {

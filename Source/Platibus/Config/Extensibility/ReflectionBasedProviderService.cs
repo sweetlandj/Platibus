@@ -21,16 +21,36 @@
 // THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using Platibus.Diagnostics;
 
 namespace Platibus.Config.Extensibility
 {
     /// <summary>
     /// Factory class used to initialize service providers
     /// </summary>
-    public static class ProviderHelper
+    public class ReflectionBasedProviderService : IProviderService
     {
+        private readonly ReflectionService _reflectionService;
+
+        /// <summary>
+        /// Initializes a new <see cref="ReflectionBasedProviderService"/>
+        /// </summary>
+        public ReflectionBasedProviderService()
+        {
+            _reflectionService = new ReflectionService();
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="ReflectionBasedProviderService"/>
+        /// </summary>
+        /// <param name="diagnosticService">The diagnostic sedrvice to which diagnostic
+        /// events related to provider resolution will be directed</param>
+        public ReflectionBasedProviderService(IDiagnosticService diagnosticService)
+        {
+            _reflectionService = new ReflectionService(diagnosticService);
+        }
+
         /// <summary>
         /// Finds the most appropriate type or subtype of 
         /// <typeparamref name="TProvider"/> whose type name is <paramref name="providerName"/>
@@ -49,12 +69,12 @@ namespace Platibus.Config.Extensibility
         /// <exception cref="MultipleProvidersFoundException">Thrown if there are multiple
         /// providers found with the same priority.</exception>
         /// <seealso cref="ProviderAttribute"/>
-        public static TProvider GetProvider<TProvider>(string providerName)
+        public TProvider GetProvider<TProvider>(string providerName)
         {
             var providerType = Type.GetType(providerName);
             if (providerType == null)
             {
-                var prioritizedProviders = ReflectionHelper
+                var prioritizedProviders = _reflectionService
                     .FindConcreteSubtypes<TProvider>()
                     .WithProviderName(providerName)
                     .GroupByPriorityDescending()
@@ -70,20 +90,6 @@ namespace Platibus.Config.Extensibility
             }
 
             return (TProvider) Activator.CreateInstance(providerType);
-        }
-        
-        private static IEnumerable<Type> WithProviderName(this IEnumerable<Type> types, string providerName)
-        {
-            return string.IsNullOrWhiteSpace(providerName) 
-                ? Enumerable.Empty<Type>() 
-                : types.With<ProviderAttribute>(a => providerName.Equals(a.Name, StringComparison.OrdinalIgnoreCase));
-        }
-
-        private static IEnumerable<IGrouping<int, Type>> GroupByPriorityDescending(this IEnumerable<Type> types)
-        {
-            return types
-                .GroupBy<ProviderAttribute, int>(a => a.Priority)
-                .OrderByDescending(g => g.Key);
         }
     }
 }

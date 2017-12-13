@@ -36,6 +36,7 @@ namespace Platibus.Config.Extensibility
     public class SecurityTokenServiceFactory
     {
         private readonly IDiagnosticService _diagnosticService;
+        private readonly IProviderService _providerService;
 
         /// <summary>
         /// Initializes a new <see cref="SecurityTokenServiceFactory"/>
@@ -45,6 +46,7 @@ namespace Platibus.Config.Extensibility
         public SecurityTokenServiceFactory(IDiagnosticService diagnosticService = null)
         {
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+            _providerService = new ReflectionBasedProviderService(_diagnosticService);
         }
 
 #if NET452
@@ -114,7 +116,7 @@ namespace Platibus.Config.Extensibility
         private ISecurityTokenServiceProvider GetProvider(string providerName)
         {
             if (string.IsNullOrWhiteSpace(providerName)) throw new ArgumentNullException(nameof(providerName));
-            return ProviderHelper.GetProvider<ISecurityTokenServiceProvider>(providerName);
+            return _providerService.GetProvider<ISecurityTokenServiceProvider>(providerName);
         }
     }
 }

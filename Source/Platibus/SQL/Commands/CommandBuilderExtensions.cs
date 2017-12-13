@@ -51,7 +51,7 @@ namespace Platibus.SQL.Commands
         /// If no provider name is specified in the connection string settings, the 
         /// <see cref="MSSQLMessageQueueingCommandBuilders"/> will be returned by default.
         /// </remarks>
-        /// <seealso cref="ProviderHelper"/>
+        /// <seealso cref="ReflectionBasedProviderService"/>
         [Obsolete("Use instance method CommandBuildersFactory.InitMessageJournalingCommandBuilders")]
         public static IMessageJournalingCommandBuilders GetMessageJournalingCommandBuilders(this ConnectionStringSettings connectionStringSettings)
         {
@@ -72,7 +72,7 @@ namespace Platibus.SQL.Commands
         /// If no provider name is specified in the connection string settings, the 
         /// <see cref="MSSQLMessageQueueingCommandBuilders"/> will be returned by default.
         /// </remarks>
-        /// <seealso cref="ProviderHelper"/>
+        /// <seealso cref="ReflectionBasedProviderService"/>
         [Obsolete("Use instance method CommandBuildersFactory.InitMessageQueueingCommandBuilders")]
         public static IMessageQueueingCommandBuilders GetMessageQueueingCommandBuilders(this ConnectionStringSettings connectionStringSettings)
         {
@@ -93,7 +93,7 @@ namespace Platibus.SQL.Commands
         /// If no provider name is specified in the connection string settings, the 
         /// <see cref="MSSQLSubscriptionTrackingCommandBuilders"/> will be returned by default.
         /// </remarks>
-        /// <seealso cref="ProviderHelper"/>
+        /// <seealso cref="ReflectionBasedProviderService"/>
         [Obsolete("Use instance method CommandBuildersFactory.InitSubscriptionTrackingCommandBuilders")]
         public static ISubscriptionTrackingCommandBuilders GetSubscriptionTrackingCommandBuilders(this ConnectionStringSettings connectionStringSettings)
         {

@@ -35,6 +35,7 @@ namespace Platibus.Config.Extensibility
     public class MessageQueueingServiceFactory
     {
         private readonly IDiagnosticService _diagnosticService;
+        private readonly IProviderService _providerService;
 
         /// <summary>
         /// Initializes a new <see cref="MessageQueueingServiceFactory"/>
@@ -44,6 +45,7 @@ namespace Platibus.Config.Extensibility
         public MessageQueueingServiceFactory(IDiagnosticService diagnosticService = null)
         {
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+            _providerService = new ReflectionBasedProviderService(_diagnosticService);
         }
 
 #if NET452
@@ -104,7 +106,7 @@ namespace Platibus.Config.Extensibility
 
                 return new FilesystemServicesProvider();
             }
-            return ProviderHelper.GetProvider<IMessageQueueingServiceProvider>(providerName);
+            return _providerService.GetProvider<IMessageQueueingServiceProvider>(providerName);
         }
     }
 }

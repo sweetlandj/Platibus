@@ -49,7 +49,6 @@ namespace Platibus.Config
     {
     }
 
-
     /// <summary>
     /// Factory class used to initialize <see cref="PlatibusConfiguration"/> objects from
     /// declarative configuration elements in application configuration files.
@@ -68,7 +67,8 @@ namespace Platibus.Config
             if (configuration == null) return;
 
             var diagnosticService = configuration.DiagnosticService;
-            var hookTypes = ReflectionHelper.FindConcreteSubtypes<IConfigurationHook>();
+            var reflectionService = new ReflectionService(diagnosticService);
+            var hookTypes = reflectionService.FindConcreteSubtypes<IConfigurationHook>();
             foreach (var hookType in hookTypes.Distinct())
             {
                 try
@@ -98,7 +98,7 @@ namespace Platibus.Config
                 }
             }
 
-            var asyncHookTypes = ReflectionHelper.FindConcreteSubtypes<IAsyncConfigurationHook>();
+            var asyncHookTypes = reflectionService.FindConcreteSubtypes<IAsyncConfigurationHook>();
             foreach (var hookType in asyncHookTypes.Distinct())
             {
                 try

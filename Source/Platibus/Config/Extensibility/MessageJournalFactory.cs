@@ -37,6 +37,7 @@ namespace Platibus.Config.Extensibility
     public class MessageJournalFactory
     {
         private readonly IDiagnosticService _diagnosticService;
+        private readonly IProviderService _providerService;
 
         /// <summary>
         /// Initializes a new <see cref="MessageJournalFactory"/>
@@ -46,6 +47,7 @@ namespace Platibus.Config.Extensibility
         public MessageJournalFactory(IDiagnosticService diagnosticService = null)
         {
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+            _providerService = new ReflectionBasedProviderService(_diagnosticService);
         }
 
 #if NET452
@@ -134,10 +136,10 @@ namespace Platibus.Config.Extensibility
         }
 #endif
 
-        private static IMessageJournalProvider GetProvider(string providerName)
+        private IMessageJournalProvider GetProvider(string providerName)
         {
             if (string.IsNullOrWhiteSpace(providerName)) throw new ArgumentNullException(nameof(providerName));
-            return ProviderHelper.GetProvider<IMessageJournalProvider>(providerName);
+            return _providerService.GetProvider<IMessageJournalProvider>(providerName);
         }
     }
 }

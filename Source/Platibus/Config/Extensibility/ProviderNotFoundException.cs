@@ -31,7 +31,7 @@ namespace Platibus.Config.Extensibility
     /// in the application domain associated with a provider name.
     /// </summary>
     /// <seealso cref="ProviderAttribute"/>
-    /// <seealso cref="ProviderHelper"/>
+    /// <seealso cref="ReflectionBasedProviderService"/>
     [Serializable]
     public class ProviderNotFoundException : Exception
     {

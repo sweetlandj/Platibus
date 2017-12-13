@@ -1,11 +1,26 @@
-﻿using Platibus.Config.Extensibility;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using Moq;
+using Platibus.Config.Extensibility;
+using Platibus.Diagnostics;
 using Xunit;
 
 namespace Platibus.UnitTests.Config.Extensibility
 {
-    public class ProviderHelperTests
+    public class ReflectionBaseProviderServiceTests
     {
+        protected Mock<IDiagnosticService> MockDiagnosticService;
+        protected ReflectionBasedProviderService ProviderService;
         protected IFakeProvider Provider;
+
+        public ReflectionBaseProviderServiceTests()
+        {
+            MockDiagnosticService = new Mock<IDiagnosticService>();
+            MockDiagnosticService.Setup(s => s.EmitAsync(It.IsAny<DiagnosticEvent>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(0));
+
+            ProviderService = new ReflectionBasedProviderService(MockDiagnosticService.Object);
+        }
 
         [Fact]
         public void MultipleProvidersFoundExceptionThrownWhenMultipleProvidersWithSameNameAndInterface()
@@ -28,7 +43,7 @@ namespace Platibus.UnitTests.Config.Extensibility
 
         protected void WhenGetttingProvider(string providerName)
         {
-            Provider = ProviderHelper.GetProvider<IFakeProvider>(providerName);
+            Provider = ProviderService.GetProvider<IFakeProvider>(providerName);
         }
     }
 }

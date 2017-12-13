@@ -37,6 +37,7 @@ namespace Platibus.Config.Extensibility
     {
         private readonly ConnectionStringSettings _connectionStringSettings;
         private readonly IDiagnosticService _diagnosticService;
+        private readonly IProviderService _providerService;
 
         /// <summary>
         /// Initializes a new <see cref="CommandBuildersFactory"/>
@@ -49,6 +50,7 @@ namespace Platibus.Config.Extensibility
         {
             _connectionStringSettings = connectionStringSettings ?? throw new ArgumentNullException(nameof(connectionStringSettings));
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+            _providerService = new ReflectionBasedProviderService(_diagnosticService);
         }
 
         /// <summary>
@@ -71,7 +73,7 @@ namespace Platibus.Config.Extensibility
             }
             else
             {
-                provider = ProviderHelper.GetProvider<IMessageJournalingCommandBuildersProvider>(providerName);
+                provider = _providerService.GetProvider<IMessageJournalingCommandBuildersProvider>(providerName);
             }
             return provider.GetMessageJournalingCommandBuilders(_connectionStringSettings);
         }
@@ -96,7 +98,7 @@ namespace Platibus.Config.Extensibility
             }
             else
             {
-                provider = ProviderHelper.GetProvider<IMessageQueueingCommandBuildersProvider>(providerName);
+                provider = _providerService.GetProvider<IMessageQueueingCommandBuildersProvider>(providerName);
             }
             return provider.GetMessageQueueingCommandBuilders(_connectionStringSettings);
         }
@@ -121,7 +123,7 @@ namespace Platibus.Config.Extensibility
             }
             else
             {
-                provider = ProviderHelper.GetProvider<ISubscriptionTrackingCommandBuildersProvider>(providerName);
+                provider = _providerService.GetProvider<ISubscriptionTrackingCommandBuildersProvider>(providerName);
             }
             return provider.GetSubscriptionTrackingCommandBuilders(_connectionStringSettings);
         }
