@@ -67,6 +67,10 @@ namespace Platibus.IntegrationTests.RabbitMQHost
                 var response2 = httpClient.PutAsync("permissions/platibus0/guest", new StringContent(adminPerms)).Result;
                 var response3 = httpClient.PutAsync("vhosts/platibus1", new StringContent("")).Result;
                 var response4 = httpClient.PutAsync("permissions/platibus1/guest", new StringContent(adminPerms)).Result;
+                var response5 = httpClient.PutAsync("vhosts/platibus2", new StringContent("")).Result;
+                var response6 = httpClient.PutAsync("permissions/platibus2/guest", new StringContent(adminPerms)).Result;
+                var response7 = httpClient.PutAsync("vhosts/platibus3", new StringContent("")).Result;
+                var response8 = httpClient.PutAsync("permissions/platibus3/guest", new StringContent(adminPerms)).Result;
             }
         }
 

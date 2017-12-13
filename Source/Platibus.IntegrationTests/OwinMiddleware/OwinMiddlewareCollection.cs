@@ -1,4 +1,5 @@
-﻿// The MIT License (MIT)
+﻿#if NET452
+// The MIT License (MIT)
 // 
 // Copyright (c) 2017 Jesse Sweetland
 // 
@@ -30,3 +31,5 @@ namespace Platibus.IntegrationTests.OwinMiddleware
         public const string Name = "IntegrationTests.OwinMiddleware";
     }
 }
+
+#endif

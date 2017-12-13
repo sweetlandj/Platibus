@@ -19,10 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Platibus\Platibus.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
     <Reference Include="System.Configuration" />
   </ItemGroup>
 </Project>

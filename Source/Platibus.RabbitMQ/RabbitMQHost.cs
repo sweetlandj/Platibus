@@ -32,6 +32,9 @@ using Platibus.Security;
 
 namespace Platibus.RabbitMQ
 {
+    /// <inheritdoc cref="ITransportService" />
+    /// <inheritdoc cref="IQueueListener" />
+    /// <inheritdoc cref="IDisposable" />
     /// <summary>
     /// Hosts for a bus instance whose queueing and transport are based on RabbitMQ queues
     /// </summary>
@@ -48,7 +51,9 @@ namespace Platibus.RabbitMQ
         /// <param name="diagnosticService">The service through which diagnosic events are reported
         /// and processed</param>
         /// <returns>Returns the fully initialized and listening HTTP server</returns>
-        /// <seealso cref="RabbitMQHostConfigurationSection"/>
+#if NET452
+        /// <seealso cref="RabbitMQHostConfigurationSection"/> 
+#endif
         public static async Task<RabbitMQHost> Start(string configSectionName = "platibus.rabbitmq",
             CancellationToken cancellationToken = default(CancellationToken), 
             IDiagnosticService diagnosticService = null)
@@ -68,7 +73,9 @@ namespace Platibus.RabbitMQ
         /// <param name="cancellationToken">(Optional) A cancelation token that may be
         /// used by the caller to interrupt the HTTP server initialization process</param>
         /// <returns>Returns the fully initialized and listening HTTP server</returns>
-        /// <seealso cref="RabbitMQHostConfigurationSection"/>
+#if NET452
+        /// <seealso cref="RabbitMQHostConfigurationSection"/> 
+#endif
         public static async Task<RabbitMQHost> Start(IRabbitMQHostConfiguration configuration,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -115,7 +122,7 @@ namespace Platibus.RabbitMQ
                 IsDurable = configuration.IsDurable
             };
 
-            _securityTokenService = configuration.SecurityTokenService;
+            _securityTokenService = configuration.SecurityTokenService ?? new JwtSecurityTokenService();
             _messageJournal = configuration.MessageJournal;
             _messageQueueingService = new RabbitMQMessageQueueingService(_baseUri, _defaultQueueOptions,
                 _connectionManager, _encoding, _securityTokenService, _diagnosticService);
@@ -343,32 +350,29 @@ namespace Platibus.RabbitMQ
         /// </remarks>
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
+            if (!disposing) return;
+
+            foreach (var subscriptionQueue in _subscriptions)
             {
-                foreach (var subscriptionQueue in _subscriptions)
-                {
-                    subscriptionQueue.Value.Dispose();
-                }
-                _inboundQueue.Dispose();
-                Bus.Dispose();
+                subscriptionQueue.Value.Dispose();
+            }
 
-                var disposableMessageQueueingService = _messageQueueingService as IDisposable;
-                if (disposableMessageQueueingService != null)
-                {
-                    disposableMessageQueueingService.Dispose();
-                }
+            _inboundQueue.Dispose();
+            Bus.Dispose();
 
-                var disposableMessageJournal = _messageJournal as IDisposable;
-                if (disposableMessageJournal != null)
-                {
-                    disposableMessageJournal.Dispose();
-                }
+            if (_messageQueueingService is IDisposable disposableMessageQueueingService)
+            {
+                disposableMessageQueueingService.Dispose();
+            }
 
-                var disposableConnectionManager = _connectionManager as IDisposable;
-                if (disposableConnectionManager != null)
-                {
-                    disposableConnectionManager.Dispose();
-                }
+            if (_messageJournal is IDisposable disposableMessageJournal)
+            {
+                disposableMessageJournal.Dispose();
+            }
+
+            if (_connectionManager is IDisposable disposableConnectionManager)
+            {
+                disposableConnectionManager.Dispose();
             }
         }
 

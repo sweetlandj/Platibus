@@ -168,13 +168,13 @@ namespace Platibus.RabbitMQ
                 ? Encoding.UTF8
                 : Encoding.GetEncoding(encodingName);
 
-            platibusConfiguration.AutoAcknowledge = configuration?.GetValue<bool>("autoAcknowledge") ?? RabbitMQDefaults.AutoAcknowledge;
-            platibusConfiguration.ConcurrencyLimit = configuration?.GetValue<int>("concurrencyLimit") ?? RabbitMQDefaults.ConcurrencyLimit;
-            platibusConfiguration.MaxAttempts = configuration?.GetValue<int>("maxAttempts") ?? RabbitMQDefaults.MaxAttempts;
+            platibusConfiguration.AutoAcknowledge = configuration?.GetValue("autoAcknowledge", RabbitMQDefaults.AutoAcknowledge) ?? RabbitMQDefaults.AutoAcknowledge;
+            platibusConfiguration.ConcurrencyLimit = configuration?.GetValue("concurrencyLimit", RabbitMQDefaults.ConcurrencyLimit) ?? RabbitMQDefaults.ConcurrencyLimit;
+            platibusConfiguration.MaxAttempts = configuration?.GetValue("maxAttempts", RabbitMQDefaults.MaxAttempts) ?? RabbitMQDefaults.MaxAttempts;
 
             var defaultRetryDelay = TimeSpan.Parse(RabbitMQDefaults.RetryDelay);
-            platibusConfiguration.RetryDelay = configuration?.GetValue<TimeSpan>("retryDelay") ?? defaultRetryDelay;
-            platibusConfiguration.IsDurable = configuration?.GetValue<bool>("durable") ?? RabbitMQDefaults.Durable;
+            platibusConfiguration.RetryDelay = configuration?.GetValue("retryDelay", defaultRetryDelay) ?? defaultRetryDelay;
+            platibusConfiguration.IsDurable = configuration?.GetValue("durable", RabbitMQDefaults.Durable) ?? RabbitMQDefaults.Durable;
 
             var securityTokenServiceFactory = new SecurityTokenServiceFactory(platibusConfiguration.DiagnosticService);
             var securityTokensSection = configuration?.GetSection("securityTokens");

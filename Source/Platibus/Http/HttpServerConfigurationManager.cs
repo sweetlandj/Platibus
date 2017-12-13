@@ -171,7 +171,7 @@ namespace Platibus.Http
 
         private static void InitializeAuthenticationSchemes(HttpServerConfiguration platibusConfiguration, IConfiguration configuration)
         {
-            var authenticationSchemes = default(AuthenticationSchemes);
+            var authenticationSchemes = AuthenticationSchemes.Anonymous;
             var authenticationSchemesSection = configuration?.GetSection("authenticationSchemes");
             if (authenticationSchemesSection == null) return;
 

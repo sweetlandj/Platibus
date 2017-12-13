@@ -96,7 +96,7 @@ namespace Platibus.IntegrationTests
                 var sentMessage = await bus.Send(message, options, ct);
                 var reply = await sentMessage.GetReply(ct);
                 Assert.NotNull(reply);
-                Assert.IsType(typeof(TestReply), reply);
+                Assert.IsType<TestReply>(reply);
 
                 var testReply = (TestReply)reply;
                 Assert.Equal(message.GuidData, testReply.GuidData);

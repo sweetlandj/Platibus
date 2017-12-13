@@ -59,7 +59,9 @@ namespace Platibus.IntegrationTests.HttpServer
         protected async Task AssertMessageRetrievedByMessageJournalClient()
         {
             // From the platibus.http0 configuration section of app.config
-            var publisherBaseUri = new Uri("http://localhost:52180/platibus0/");
+            var http0Configuration = new HttpServerConfiguration();
+            await new HttpServerConfigurationManager().Initialize(http0Configuration, "platibus.http0");
+            var publisherBaseUri = http0Configuration.BaseUri;
             using (var messageJournalClient = new HttpMessageJournalClient(publisherBaseUri))
             {
                 var result = await messageJournalClient.Read(null, 100);
@@ -74,7 +76,9 @@ namespace Platibus.IntegrationTests.HttpServer
         protected async Task AssertTopicsCanBeRetrievedByHttpClient()
         {
             // From the platibus.http0 configuration section of app.config
-            var publisherBaseUri = new Uri("http://localhost:52180/platibus0/");
+            var http0Configuration = new HttpServerConfiguration();
+            await new HttpServerConfigurationManager().Initialize(http0Configuration, "platibus.http0");
+            var publisherBaseUri = http0Configuration.BaseUri;
             using (var httpClient = await _httpClientFactory.GetClient(publisherBaseUri, null))
             using (var responseMessage = await httpClient.GetAsync("topic"))
             {
