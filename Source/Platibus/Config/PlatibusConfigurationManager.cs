@@ -725,7 +725,7 @@ namespace Platibus.Config
             foreach (var sendRuleSection in sendRulesSection.GetChildren())
             {
                 var messageSpec = new MessageNamePatternSpecification(sendRuleSection["namePattern"]);
-                var endpointName = (EndpointName)sendRulesSection["endpoint"];
+                var endpointName = (EndpointName)sendRuleSection["endpoint"];
                 platibusConfiguration.AddSendRule(new SendRule(messageSpec, endpointName));
             }
         }
@@ -743,9 +743,9 @@ namespace Platibus.Config
             var topicsSection = configuration?.GetSection("topics");
             if (topicsSection == null) return;
 
-            foreach (var topicSection in topicsSection.GetChildren())
+            foreach (var topic in topicsSection.GetChildren())
             {
-                var topicName = topicSection["name"];
+                var topicName = topic.Value;
                 platibusConfiguration.AddTopic(topicName);
             }
         }
@@ -765,6 +765,9 @@ namespace Platibus.Config
 
             foreach (var endpointSection in endpointsSection.GetChildren())
             {
+                var name = endpointSection.Key ??
+                           endpointSection["name"];
+
                 var credentialType = endpointSection.GetValue<ClientCredentialType>("credentialType");
                 IEndpointCredentials credentials = null;
                 switch (credentialType)
@@ -780,8 +783,7 @@ namespace Platibus.Config
                         break;
                 }
 
-                var name = endpointsSection["name"];
-                var address = endpointsSection.GetValue<Uri>("address");
+                var address = endpointSection.GetValue<Uri>("address");
                 var endpoint = new Endpoint(address, credentials);
                 platibusConfiguration.AddEndpoint(name, endpoint);
             }

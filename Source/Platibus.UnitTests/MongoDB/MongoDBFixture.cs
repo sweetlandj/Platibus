@@ -21,7 +21,6 @@
 // THE SOFTWARE.
 
 using System;
-using Mongo2Go;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Platibus.MongoDB;
@@ -36,11 +35,9 @@ namespace Platibus.UnitTests.MongoDB
 {
     public class MongoDBFixture : IDisposable
     {
-        public const string DatabaseName = "platibus_UnitTests";
-
-        private readonly MongoDbRunner _mongoDbRunner;
-
         private bool _disposed;
+
+        public string DatabaseName { get; }
 
         public ConnectionStringSettings ConnectionStringSettings { get; }
 
@@ -52,12 +49,14 @@ namespace Platibus.UnitTests.MongoDB
 
         public MongoDBFixture()
         {
-            var dbPath = FileUtil.NewTempTestPath();
-            _mongoDbRunner = MongoDbRunner.Start(dbPath);
+            var rng = new Random();
+            DatabaseName = $"platibus{rng.Next(int.MaxValue):X}";
+
+            // docker run --rm --name mongodb -p 27017:27017 mongo:3.6.0-jessie
             ConnectionStringSettings = new ConnectionStringSettings
             {
                 Name = "MongoDBFixture",
-                ConnectionString = _mongoDbRunner.ConnectionString + DatabaseName + "?maxpoolsize=1000"
+                ConnectionString = $"mongodb://localhost:27017/{DatabaseName}?maxpoolsize=1000"
             };
 #if NET452
 
@@ -70,7 +69,7 @@ namespace Platibus.UnitTests.MongoDB
 #if NETCOREAPP2_0
             ConfigurationManager.ConnectionStrings[ConnectionStringSettings.Name] = ConnectionStringSettings;
 #endif
-
+            
             SubscriptionTrackingService = new MongoDBSubscriptionTrackingService(ConnectionStringSettings, DatabaseName);
             MessageQueueingService = new MongoDBMessageQueueingService(ConnectionStringSettings, databaseName: DatabaseName);
             MessageJournal = new MongoDBMessageJournal(ConnectionStringSettings, DatabaseName);
@@ -98,6 +97,19 @@ namespace Platibus.UnitTests.MongoDB
 
         protected virtual void Dispose(bool disposing)
         {
+            if (ConnectionStringSettings != null && !string.IsNullOrWhiteSpace(DatabaseName))
+            {
+                try
+                {
+                    var db = MongoDBHelper.Connect(ConnectionStringSettings, DatabaseName);
+                    db.Client.DropDatabase(DatabaseName);
+                }
+                catch (Exception)
+                {
+                    // Ignore
+                }
+            }
+
             if (disposing)
             {
                 if (MessageQueueingService != null)
@@ -105,7 +117,6 @@ namespace Platibus.UnitTests.MongoDB
                     MessageQueueingService.Dispose();
                 }
             }
-            _mongoDbRunner.Dispose();
         }
     }
 }

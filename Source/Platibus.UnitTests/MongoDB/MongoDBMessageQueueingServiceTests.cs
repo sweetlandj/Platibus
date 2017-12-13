@@ -42,7 +42,7 @@ namespace Platibus.UnitTests.MongoDB
             : base(fixture.MessageQueueingService)
         {
             var client = new MongoClient(fixture.ConnectionStringSettings.ConnectionString);
-            _database = client.GetDatabase(MongoDBFixture.DatabaseName);
+            _database = client.GetDatabase(fixture.DatabaseName);
         }
 
         private MongoDBMessageQueueInspector Inspect(QueueName queueName)

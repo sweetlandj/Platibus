@@ -60,7 +60,7 @@ namespace Platibus.Config.Extensibility
         {
             var myConfig = configuration ?? new SecurityTokensElement();
             var provider = GetProvider(myConfig.Provider);
-            if (string.IsNullOrWhiteSpace(myConfig.Provider))
+            if (provider == null)
             {
                 await _diagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
@@ -91,7 +91,7 @@ namespace Platibus.Config.Extensibility
         {
             var providerName = configuration?["provider"];
             var provider = GetProvider(providerName);
-            if (string.IsNullOrWhiteSpace(providerName))
+            if (provider == null)
             {
                 await _diagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
@@ -115,7 +115,7 @@ namespace Platibus.Config.Extensibility
 
         private ISecurityTokenServiceProvider GetProvider(string providerName)
         {
-            if (string.IsNullOrWhiteSpace(providerName)) throw new ArgumentNullException(nameof(providerName));
+            if (string.IsNullOrWhiteSpace(providerName)) return null;
             return _providerService.GetProvider<ISecurityTokenServiceProvider>(providerName);
         }
     }

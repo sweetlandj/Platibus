@@ -33,17 +33,13 @@ namespace Platibus.UnitTests.MongoDB
         public IConfiguration Configuration;
 #endif
 
-#if NETCOREAPP2_0
-        public MongoDBServicesProviderMessageQueueingServiceTests()
+        public MongoDBServicesProviderMessageQueueingServiceTests(MongoDBFixture fixture)
         {
+#if NETCOREAPP2_0
             Configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection()
                 .Build();
-        }
 #endif
-
-        public MongoDBServicesProviderMessageQueueingServiceTests(MongoDBFixture fixture)
-        {
             _connectionStringSettings = fixture.ConnectionStringSettings;
 #if NET452
             Configuration.SetAttribute("connectionName", _connectionStringSettings.Name);

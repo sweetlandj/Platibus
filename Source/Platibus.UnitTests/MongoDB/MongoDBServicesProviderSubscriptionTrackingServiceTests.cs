@@ -30,17 +30,14 @@ namespace Platibus.UnitTests.MongoDB
         public IConfiguration Configuration;
 #endif
 
-#if NETCOREAPP2_0
-        public MongoDBServicesProviderSubscriptionTrackingServiceTests()
+        public MongoDBServicesProviderSubscriptionTrackingServiceTests(MongoDBFixture fixture)
         {
+#if NETCOREAPP2_0
+
             Configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection()
                 .Build();
-        }
 #endif
-
-        public MongoDBServicesProviderSubscriptionTrackingServiceTests(MongoDBFixture fixture)
-        {
             _connectionStringSettings = fixture.ConnectionStringSettings;
             ConfigureAttribute("connectionName", _connectionStringSettings.Name);
         }

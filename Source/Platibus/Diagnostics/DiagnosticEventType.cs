@@ -207,9 +207,14 @@ namespace Platibus.Diagnostics
         public static readonly DiagnosticEventType InvalidSecurityToken = new DiagnosticEventType("InvalidSecurityToken", DiagnosticEventLevel.Error);
 
         /// <summary>
-        /// Emitted in response to errors loading types dynamical
+        /// Emitted in response to errors loading types or assemblies dynamically
         /// </summary>
         public static readonly DiagnosticEventType TypeLoadFailed = new DiagnosticEventType("TypeLoadError", DiagnosticEventLevel.Warn);
+
+        /// <summary>
+        /// Emitted when an invalid data contract is encountered
+        /// </summary>
+        public static readonly DiagnosticEventType InvalidDataContract = new DiagnosticEventType("InvalidDataContract", DiagnosticEventLevel.Warn);
 
         /// <summary>
         /// The name of the diagnostic event type

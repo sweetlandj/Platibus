@@ -604,6 +604,25 @@ namespace Platibus.Http
                                 throw new ConnectionRefusedException(uri.Host, uri.Port, ex.InnerException ?? ex);
                         }
                         break;
+                    default:
+                        // Because .NET Core applications have platform specific exceptions and
+                        // error codes, some fuzzy logic is needed to determine whether a known
+                        // category of transport exception has occurred.
+
+                        var message = ex.Message?.ToLower() ?? "";
+                        if (message.Contains("connection"))
+                        {
+                            throw new ConnectionRefusedException(uri.Host, uri.Port, ex.InnerException ?? ex);
+                        }
+
+                        var concernsHostname = message.Contains("host") || message.Contains("name");
+                        var resolutionFailure = message.Contains("unknown") || message.Contains("resolve");
+                        if (concernsHostname && resolutionFailure)
+                        {
+                            throw new NameResolutionFailedException(uri.Host);
+                        }
+                        break;
+
                 }
                 handled = true;
             }

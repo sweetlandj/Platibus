@@ -88,7 +88,7 @@ namespace Platibus.UnitTests
             return SubscriptionTrackingService.AddSubscription(topic, subscriber, ttl);
         }
 
-        protected IEnumerable<Subscription> GivenManySubscriptions(int topicCount = 10, int subscribersPerTopic = 100)
+        protected IEnumerable<Subscription> GivenManySubscriptions(int topicCount = 10, int subscribersPerTopic = 10)
         {
             var topicNames = Enumerable.Range(0, topicCount)
                 .Select(i => new TopicName("Topic-" + i));

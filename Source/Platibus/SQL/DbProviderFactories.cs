@@ -37,6 +37,11 @@ namespace Platibus.SQL
         private static readonly object SyncRoot = new object();
         private static readonly IDictionary<string, Func<DbProviderFactory>> Factories = new Dictionary<string, Func<DbProviderFactory>>();
 
+        static DbProviderFactories()
+        {
+            Add("System.Data.SqlClient", () => System.Data.SqlClient.SqlClientFactory.Instance);
+        }
+
         public static void Add(string invariantName, Func<DbProviderFactory> factory)
         {
             if (string.IsNullOrWhiteSpace(invariantName)) throw new ArgumentNullException(nameof(invariantName));

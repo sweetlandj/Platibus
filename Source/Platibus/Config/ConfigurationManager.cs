@@ -37,6 +37,8 @@ namespace Platibus.Config
     {
         private static readonly IConfigurationRoot ConfigurationRoot;
 
+        public static ConnectionStringSettingsCollection ConnectionStrings { get; }
+
         /// <summary>
         /// Static initializer that loads configuration from the <c>appsettings.json</c> file
         /// </summary>
@@ -46,14 +48,10 @@ namespace Platibus.Config
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", true)
                 .Build();
+
+            ConnectionStrings = new ConnectionStringSettingsCollection(ConfigurationRoot);
         }
-
-        /// <summary>
-        /// The collection of configured connection strings
-        /// </summary>
-        public static ConnectionStringSettingsCollection ConnectionStrings => 
-            new ConnectionStringSettingsCollection(ConfigurationRoot);
-
+        
         /// <summary>
         /// Returns the configuration with the specified name
         /// </summary>

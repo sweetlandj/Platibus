@@ -25,17 +25,39 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Runtime.Serialization;
+using Platibus.Diagnostics;
 
 namespace Platibus
 {
+    /// <inheritdoc />
     /// <summary>
     /// A message naming service based on known types annotated with data contracts
     /// </summary>
-    /// <seealso cref="DataContractAttribute"/>
+    /// <seealso cref="T:System.Runtime.Serialization.DataContractAttribute" />
     public class DataContractMessageNamingService : IMessageNamingService
     {
+        private readonly XsdDataContractExporter _dataContractExporter = new XsdDataContractExporter();
+        private readonly IDiagnosticService _diagnosticService;
         private readonly ConcurrentDictionary<Type, MessageName> _messageNamesByType = new ConcurrentDictionary<Type, MessageName>();
         private readonly ConcurrentDictionary<MessageName, Type> _typesByMessageName = new ConcurrentDictionary<MessageName, Type>();
+
+        /// <summary>
+        /// Initializes a new <see cref="DataContractMessageNamingService"/>
+        /// </summary>
+        public DataContractMessageNamingService()
+        {
+            _diagnosticService = DiagnosticService.DefaultInstance;
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="DataContractMessageNamingService"/>
+        /// </summary>
+        /// <param name="diagnosticService">The diagnostic service to which events
+        /// related to data contract resolution will be directed</param>
+        public DataContractMessageNamingService(IDiagnosticService diagnosticService)
+        {
+            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+        }
 
         /// <summary>
         /// Adds a known message type 
@@ -48,13 +70,14 @@ namespace Platibus
             _typesByMessageName.TryAdd(messageName, messageType);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Returns the canonical message name for a given type
         /// </summary>
         /// <param name="messageType">The message type</param>
         /// <returns>The canonical name associated with the type</returns>
         /// <remarks>
-        /// For types annotated with <see cref="DataContractAttribute"/>, the
+        /// For types annotated with <see cref="T:System.Runtime.Serialization.DataContractAttribute" />, the
         /// message name will be the schema type name
         /// </remarks>
         public MessageName GetNameForType(Type messageType)
@@ -62,15 +85,16 @@ namespace Platibus
             return _messageNamesByType.GetOrAdd(messageType, GetSchemaTypeName);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Returns the type associated with a canonical message name
         /// </summary>
         /// <param name="messageName">The canonical message name</param>
         /// <returns>The type best suited to deserialized content for messages
-        /// with the specified <paramref name="messageName"/></returns>
+        /// with the specified <paramref name="messageName" /></returns>
         /// <remarks>
         /// If the message name is not associated with a known type that was added 
-        /// via the <see cref="Add"/> method, the application domain will be scanned
+        /// via the <see cref="M:Platibus.DataContractMessageNamingService.Add(System.Type)" /> method, the application domain will be scanned
         /// for a type with a matching data contract and the result (if found)
         /// will be added to the known types collection.
         /// </remarks>
@@ -79,13 +103,26 @@ namespace Platibus
             return _typesByMessageName.GetOrAdd(messageName, FindTypeBySchemaTypeName);
         }
 
-        private static MessageName GetSchemaTypeName(Type type)
+        private MessageName GetSchemaTypeName(Type type)
         {
-            var dataContractExporter = new XsdDataContractExporter();
-            return dataContractExporter.GetSchemaTypeName(type).ToString();
+            try
+            {
+                return _dataContractExporter.GetSchemaTypeName(type).ToString();
+            }
+            catch (Exception ex)
+            {
+                _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.InvalidDataContract)
+                {
+                    Detail = $"Error determining schema type name for {type}",
+                    Exception = ex
+                }.Build());
+
+                // Applly the default namespace convention
+                return $"http://schemas.datacontract.org/2004/07/{type.Namespace}:{type.Name}";
+            }
         }
 
-        private static Type FindTypeBySchemaTypeName(MessageName messageName)
+        private Type FindTypeBySchemaTypeName(MessageName messageName)
         {
             // Search through all of the types in the current app domain for
             // a type whose schema type name is equal to the message name
