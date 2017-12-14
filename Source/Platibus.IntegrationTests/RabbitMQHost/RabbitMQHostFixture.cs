@@ -47,7 +47,7 @@ namespace Platibus.IntegrationTests.RabbitMQHost
 
         public RabbitMQHostFixture()
         {
-            // docker run --rm--name rabbitmq -p 5672:5672 - p 15672:15672 rabbitmq: 3 - management
+            // docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 
             CreateVHosts();
             
@@ -63,10 +63,14 @@ namespace Platibus.IntegrationTests.RabbitMQHost
             using (var httpClient = new HttpClient{BaseAddress = baseAddress})
             {
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", basicAuthCreds);
+
+                // net452
                 var response1 = httpClient.PutAsync("vhosts/platibus0", new StringContent("")).Result;
                 var response2 = httpClient.PutAsync("permissions/platibus0/guest", new StringContent(adminPerms)).Result;
                 var response3 = httpClient.PutAsync("vhosts/platibus1", new StringContent("")).Result;
                 var response4 = httpClient.PutAsync("permissions/platibus1/guest", new StringContent(adminPerms)).Result;
+
+                // netcoreapp2.0
                 var response5 = httpClient.PutAsync("vhosts/platibus2", new StringContent("")).Result;
                 var response6 = httpClient.PutAsync("permissions/platibus2/guest", new StringContent(adminPerms)).Result;
                 var response7 = httpClient.PutAsync("vhosts/platibus3", new StringContent("")).Result;

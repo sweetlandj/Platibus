@@ -14,12 +14,13 @@ namespace Platibus.UnitTests.Diagnostics
     {
         protected TimeSpan SampleRate = TimeSpan.FromSeconds(1);
 
-        // docker run --rm --name influxdb -e INFLUXDB_ADMIN_ENABLED=true -p 8086:8086 -p 8083:8083 influxdb
+        // docker run -it --rm --name influxdb -e INFLUXDB_ADMIN_ENABLED=true -p 8086:8086 -p 8083:8083 influxdb
         protected InfluxDBOptions Options = new InfluxDBOptions(new Uri("http://localhost:8086"), "platibus");
         protected List<DiagnosticEvent> DiagnosticEvents = new List<DiagnosticEvent>();
 
         public InfluxDBSinkTests()
         {
+            
             CreateDatabase();
         }
 
