@@ -1,59 +1,53 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
-using System.Web.Http;
-using System.Web.Http.Description;
-using Newtonsoft.Json;
-using Platibus.Owin;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Platibus.SampleMessages;
 using Platibus.SampleMessages.Widgets;
+using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace Platibus.SampleApi.Widgets
 {
     [Authorize]
-    [RoutePrefix("api/widgets")]
-    public class WidgetsApiController : ApiController
+    [Route("api/widgets")]
+    public class WidgetsApiController : Controller
     {
         private readonly IWidgetRepository _widgetRepository;
 
-        private IBus Bus => Request.GetOwinContext().GetBus();
+        private readonly IBus _bus;
 
-        public WidgetsApiController(IWidgetRepository widgetRepository)
+        public WidgetsApiController(IWidgetRepository widgetRepository, IBus bus)
         {
             _widgetRepository = widgetRepository;
+            _bus = bus;
         }
 
         [HttpPost]
         [Route("")]
-        [ResponseType(typeof(ResponseDocument<WidgetResource>))]
-        public async Task<IHttpActionResult> Post(RequestDocument<WidgetResource> request)
+        public async Task<IActionResult> Post(RequestDocument<WidgetResource> request)
         {
             try
             {
                 var widget = WidgetMap.ToEntity(request.Data ?? new WidgetResource());
                 await _widgetRepository.Add(widget);
                 var createdResource = WidgetMap.ToResource(widget);
-                await Bus.Publish(new WidgetEvent("WidgetCreated", createdResource, GetRequestor()), "WidgetEvents");
-                return ResourceCreated(createdResource);
+                await _bus.Publish(new WidgetEvent("WidgetCreated", createdResource, GetRequestor()), "WidgetEvents");
+                return CreatedAtAction("Post", createdResource);
             }
             catch (WidgetAlreadyExistsException)
             {
-                return Conflict();
+                return new StatusCodeResult((int)HttpStatusCode.Conflict);
             }
         }
 
         [HttpPatch]
         [Route("{id}")]
-        [ResponseType(typeof(ResponseDocument<WidgetResource>))]
-        public async Task<IHttpActionResult> Patch(string id, RequestDocument<WidgetResource> request)
+        public async Task<IActionResult> Patch(string id, RequestDocument<WidgetResource> request)
         {
             try
             {
                 var resource = request.Data;
-                if (resource == null || string.IsNullOrWhiteSpace(resource.Id))
+                if (string.IsNullOrWhiteSpace(resource?.Id))
                 {
                     return BadRequest();
                 }
@@ -62,8 +56,8 @@ namespace Platibus.SampleApi.Widgets
                 WidgetMap.ApplyUpdates(widget, resource);
                 await _widgetRepository.Update(widget);
                 var updatedResource = WidgetMap.ToResource(widget);
-                await Bus.Publish(new WidgetEvent("WidgetUpdated", updatedResource, GetRequestor()), "WidgetEvents");
-                return Ok(ResponseDocument.Containing(resource));
+                await _bus.Publish(new WidgetEvent("WidgetUpdated", updatedResource, GetRequestor()), "WidgetEvents");
+                return Ok(updatedResource);
             }
             catch (WidgetNotFoundException)
             {
@@ -73,14 +67,13 @@ namespace Platibus.SampleApi.Widgets
 
         [HttpDelete]
         [Route("{id}")]
-        [ResponseType(typeof(ResponseDocument<WidgetResource>))]
-        public async Task<IHttpActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(string id)
         {
             try
             {
                 await _widgetRepository.Remove(id);
-                await Bus.Publish(new WidgetEvent("WidgetDeleted", null, GetRequestor()), "WidgetEvents");
-                return StatusCode(HttpStatusCode.NoContent);
+                await _bus.Publish(new WidgetEvent("WidgetDeleted", null, GetRequestor()), "WidgetEvents");
+                return NoContent();
             }
             catch (WidgetNotFoundException)
             {
@@ -90,8 +83,7 @@ namespace Platibus.SampleApi.Widgets
         
         [HttpGet]
         [Route("{id}")]
-        [ResponseType(typeof(ResponseDocument<WidgetResource>))]
-        public async Task<IHttpActionResult> Get(string id)
+        public async Task<IActionResult> Get(string id)
         {
             try
             {
@@ -107,37 +99,18 @@ namespace Platibus.SampleApi.Widgets
 
         [HttpGet]
         [Route("")]
-        [ResponseType(typeof(ResponseDocument<IList<WidgetResource>>))]
-        public async Task<IHttpActionResult> Get()
+        public async Task<IActionResult> Get()
         {
             var widgets = await _widgetRepository.List();
             var resources = widgets.Select(WidgetMap.ToResource);
             return Ok(ResponseDocument.Containing(resources));
         }
-
-        private IHttpActionResult ResourceCreated(WidgetResource resource)
-        {
-            var responseContent = ResponseDocument.Containing(resource);
-            var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(JsonConvert.SerializeObject(responseContent))
-            };
-            responseMessage.Headers.Location = new UriBuilder(Request.RequestUri)
-            {
-                Path = Request.RequestUri.AbsolutePath + "/" + resource.Id
-            }.Uri;
-            return ResponseMessage(responseMessage);
-        }
-
+        
         private string GetRequestor()
         {
-            var principal = RequestContext.Principal;
-            if (principal == null) return null;
-
-            var identity = principal.Identity;
-            if (identity == null) return null;
-
-            return identity.Name;
+            var principal = ControllerContext.HttpContext.User;
+            var identity = principal?.Identity;
+            return identity?.Name;
         }
         
         

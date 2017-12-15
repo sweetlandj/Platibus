@@ -1,5 +1,4 @@
-﻿using System;
-using MongoDB.Bson;
+﻿using MongoDB.Bson;
 using Platibus.Journaling;
 
 namespace Platibus.MongoDB
@@ -10,7 +9,7 @@ namespace Platibus.MongoDB
 
         public MongoDBMessageJournalPosition(ObjectId id)
         {
-            Id = id ?? throw new ArgumentNullException(nameof(id));
+            Id = id;
         }
 
         public override string ToString()
@@ -21,9 +20,8 @@ namespace Platibus.MongoDB
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(this, obj)) return true;
-            if (ReferenceEquals(obj, null)) return false;
-            var other = obj as MongoDBMessageJournalPosition;
-            return other != null && Id.Equals(other.Id);
+            if (obj is null) return false;
+            return obj is MongoDBMessageJournalPosition other && Id.Equals(other.Id);
         }
 
         public override int GetHashCode()

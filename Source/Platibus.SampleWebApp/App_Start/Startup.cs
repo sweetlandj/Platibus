@@ -1,5 +1,5 @@
 ﻿using System;
-using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
@@ -130,8 +130,8 @@ namespace Platibus.SampleWebApp
 
         public static async Task AddUserInfoClaims(ClaimsIdentity identity, OpenIdConnectAuthenticationOptions options, string accessToken)
         {
-            var userInfoClient = new UserInfoClient(new Uri(options.Authority + "/connect/userinfo"), accessToken);
-            var userInfo = await userInfoClient.GetAsync();
+            var userInfoClient = new UserInfoClient(options.Authority + "/connect/userinfo");
+            var userInfo = await userInfoClient.GetAsync(accessToken);
             foreach (var claim in userInfo.Claims)
             {
                 // JWT specifies claim types like "sub", "iss", "aud", etc. whereas the .NET
@@ -140,13 +140,13 @@ namespace Platibus.SampleWebApp
                 // ensure good interop with Windows/.NET claims and other security primitives the
                 // JwtSecurityTokenHandler.InboundClaimsMap can be leveraged to map the JWT claims
                 // onto their .NET equivalents.
-                var inboundClaimType = claim.Item1;
+                var inboundClaimType = claim.Type;
                 string mappedClaimType;
-                if (!JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.TryGetValue(inboundClaimType, out mappedClaimType))
+                if (!JwtSecurityTokenHandler.InboundClaimTypeMap.TryGetValue(inboundClaimType, out mappedClaimType))
                 {
                     mappedClaimType = inboundClaimType;
                 }
-                identity.AddClaim(new Claim(mappedClaimType, claim.Item2));
+                identity.AddClaim(new Claim(mappedClaimType, claim.Value, claim.ValueType, claim.Issuer, claim.OriginalIssuer, claim.Subject));
             }
 
             // The "sub" claim is (rightly) mapped to the .NET

@@ -56,7 +56,7 @@ namespace Platibus.SampleApi.Widgets
 
         public Task Remove(string id)
         {
-            if (!_widgets.TryRemove(id, out Widget widget))
+            if (!_widgets.TryRemove(id, out var _))
             {
                 throw new WidgetNotFoundException(id);
             }
