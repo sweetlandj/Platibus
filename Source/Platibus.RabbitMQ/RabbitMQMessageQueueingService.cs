@@ -72,9 +72,7 @@ namespace Platibus.RabbitMQ
             ISecurityTokenService securityTokenService = null, 
             IDiagnosticService diagnosticService = null)
         {
-            if (uri == null) throw new ArgumentNullException("uri");
-
-            _uri = uri;
+            _uri = uri ?? throw new ArgumentNullException("uri");
             _defaultQueueOptions = defaultQueueOptions ?? new QueueOptions();
             if (connectionManager == null)
             {

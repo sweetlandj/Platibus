@@ -148,7 +148,7 @@ namespace Platibus.Http
             public PoolKey(Uri uri, IEndpointCredentials credentials)
             {
                 _uri = uri;
-                _credentialType = credentials == null ? null : credentials.GetType();
+                _credentialType = credentials?.GetType();
             }
 
             public bool Equals(PoolKey other)

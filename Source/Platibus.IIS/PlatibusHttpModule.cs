@@ -23,23 +23,24 @@
 using System;
 using System.Threading.Tasks;
 using System.Web;
-using Platibus.Http;
 
 namespace Platibus.IIS
 {
+    /// <inheritdoc cref="IHttpModule" />
+    /// <inheritdoc cref="IDisposable" />
     /// <summary>
     /// HTTP module for routing Platibus resource requests
     /// </summary>
     public class PlatibusHttpModule : IHttpModule, IDisposable
     {
-        private readonly HttpMetricsCollector _metricsCollector = new HttpMetricsCollector();
         private readonly Task<IIISConfiguration> _configuration;
         private readonly Task<Bus> _bus;
 
         private bool _disposed;
         
+		/// <inheritdoc />
 		/// <summary>
-		/// Initializes a new <see cref="PlatibusHttpModule"/> with the default configuration
+		/// Initializes a new <see cref="T:Platibus.IIS.PlatibusHttpModule" /> with the default configuration
 		/// using any configuration hooks present in the app domain assemblies
 		/// </summary>
 		public PlatibusHttpModule()
@@ -47,8 +48,9 @@ namespace Platibus.IIS
 		{
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="PlatibusHttpModule"/> with the default configuration
+        /// Initializes a new <see cref="T:Platibus.IIS.PlatibusHttpModule" /> with the default configuration
         /// using any configuration hooks present in the app domain assemblies
         /// </summary>
         /// <param name="configurationSectionName">(Optional) The name of the configuration
@@ -58,8 +60,9 @@ namespace Platibus.IIS
         {
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="PlatibusHttpModule"/> with the specified configuration
+        /// Initializes a new <see cref="T:Platibus.IIS.PlatibusHttpModule" /> with the specified configuration
         /// and any configuration hooks present in the app domain assemblies
         /// </summary>
         public PlatibusHttpModule(IIISConfiguration configuration)
@@ -79,10 +82,9 @@ namespace Platibus.IIS
             _bus = InitBus(configuration);
         }
 
-        private async Task<IIISConfiguration> Configure(Task<IIISConfiguration> loadConfiguration)
+        private static async Task<IIISConfiguration> Configure(Task<IIISConfiguration> loadConfiguration)
         {
             var configuration = await loadConfiguration;
-            configuration.DiagnosticService.AddSink(_metricsCollector);
             return configuration;
         }
 
@@ -106,10 +108,11 @@ namespace Platibus.IIS
             return await managedBus.GetBus();
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Initializes a module and prepares it to handle requests.
         /// </summary>
-        /// <param name="context">An <see cref="T:System.Web.HttpApplication"/> that provides access to the methods, properties, and events common to all application objects within an ASP.NET application </param>
+        /// <param name="context">An <see cref="T:System.Web.HttpApplication" /> that provides access to the methods, properties, and events common to all application objects within an ASP.NET application </param>
         public void Init(HttpApplication context)
 		{
             var beginRequest = new EventHandlerTaskAsyncHelper(OnBeginRequest);
@@ -149,6 +152,7 @@ namespace Platibus.IIS
             return uriPath.StartsWith(baseUriPath);
         }
         
+		/// <inheritdoc cref="IDisposable.Dispose"/>
 		/// <summary>
 		/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
 		/// </summary>
@@ -172,10 +176,6 @@ namespace Platibus.IIS
 		/// </remarks>
 		protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                _metricsCollector.Dispose();
-            }
 		}
 	}
 }

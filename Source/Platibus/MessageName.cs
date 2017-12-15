@@ -150,7 +150,7 @@ namespace Platibus
         /// specified <paramref name="messageName"/>.</returns>
         public static implicit operator string(MessageName messageName)
         {
-            return messageName == null ? null : messageName._value;
+            return messageName?._value;
         }
     }
 }

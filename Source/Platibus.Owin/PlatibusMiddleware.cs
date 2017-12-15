@@ -21,7 +21,6 @@
 // THE SOFTWARE.
 
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Owin;
 using Platibus.Diagnostics;
@@ -75,22 +74,21 @@ namespace Platibus.Owin
         public async Task Invoke(IOwinContext context, Func<Task> next)
         {
             var configuration = await Configuration ?? new OwinConfiguration();
-            var baseUri = configuration.BaseUri;
             var bus = await Bus;
             context.SetBus(bus);
 
-            if (IsPlatibusUri(context.Request.Uri, baseUri))
-            {
-                await HandlePlatibusRequest(context, configuration.DiagnosticService);
-            }
-            else if (next != null)
+            var handled = await HandlePlatibusRequest(context, configuration.DiagnosticService);
+            if (!handled && next != null)
             {
                 await next();
             }
         }
 
-        private async Task HandlePlatibusRequest(IOwinContext context, IDiagnosticService diagnosticService)
+        private async Task<bool> HandlePlatibusRequest(IOwinContext context, IDiagnosticService diagnosticService)
         {
+            var router = await _resourceRouter;
+            if (!router.IsRoutable(context.Request.Uri)) return false;
+            
             await diagnosticService.EmitAsync(
                 new HttpEventBuilder(this, HttpEventType.HttpRequestReceived)
                 {
@@ -104,7 +102,6 @@ namespace Platibus.Owin
 
             try
             {
-                var router = await _resourceRouter;
                 await router.Route(resourceRequest, resourceResponse);
             }
             catch (Exception ex)
@@ -121,6 +118,8 @@ namespace Platibus.Owin
                     Method = context.Request.Method,
                     Status = context.Response.StatusCode
                 }.Build());
+
+            return true;
         }
 
         private static async Task<IOwinConfiguration> LoadConfiguration(string sectionName)
@@ -150,10 +149,10 @@ namespace Platibus.Owin
                 _messageQueueingService,
                 _messageJournal, _subscriptionTrackingService,
                 configuration.BypassTransportLocalDestination, 
-                HandleMessage, 
                 configuration.DiagnosticService);
 
             var bus = new Bus(configuration, baseUri, _transportService, _messageQueueingService);
+            _transportService.LocalDelivery += (sender, args) => bus.HandleMessage(args.Message, args.Principal);
 
             await _transportService.Init();
             await bus.Init();
@@ -170,7 +169,7 @@ namespace Platibus.Owin
         {
             var authorizationService = configuration.AuthorizationService;
             var subscriptionTrackingService = configuration.SubscriptionTrackingService;
-            return new ResourceTypeDictionaryRouter
+            return new ResourceTypeDictionaryRouter(configuration.BaseUri)
             {
                 {"message", new MessageController(bus.HandleMessage, authorizationService)},
                 {"topic", new TopicController(subscriptionTrackingService, configuration.Topics, authorizationService)},
@@ -178,20 +177,7 @@ namespace Platibus.Owin
                 {"metrics", new MetricsController(_metricsCollector)},
             };
         }
-
-        private async Task HandleMessage(Message message, CancellationToken cancellationToken)
-        {
-            var bus = await Bus;
-            await bus.HandleMessage(message, Thread.CurrentPrincipal);
-        }
-
-        private static bool IsPlatibusUri(Uri uri, Uri baseUri)
-        {
-            var baseUriPath = baseUri.AbsolutePath.ToLower();
-            var uriPath = uri.AbsolutePath.ToLower();
-            return uriPath.StartsWith(baseUriPath);
-        }
-
+        
         /// <summary>
         /// Finalizer that ensures resources are released
         /// </summary>
@@ -229,20 +215,17 @@ namespace Platibus.Owin
             _transportService.Dispose();
             _metricsCollector.Dispose();
 
-            var disposableMessageQueueingService = _messageQueueingService as IDisposable;
-            if (disposableMessageQueueingService != null)
+            if (_messageQueueingService is IDisposable disposableMessageQueueingService)
             {
                 disposableMessageQueueingService.Dispose();
             }
 
-            var disposableMessageJournal = _messageJournal as IDisposable;
-            if (disposableMessageJournal != null)
+            if (_messageJournal is IDisposable disposableMessageJournal)
             {
                 disposableMessageJournal.Dispose();
             }
 
-            var disposableSubscriptionTrackingService = _subscriptionTrackingService as IDisposable;
-            if (disposableSubscriptionTrackingService != null)
+            if (_subscriptionTrackingService is IDisposable disposableSubscriptionTrackingService)
             {
                 disposableSubscriptionTrackingService.Dispose();
             }

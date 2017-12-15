@@ -45,11 +45,8 @@ namespace Platibus.Config
         /// <paramref name="topic"/> are <c>null</c></exception>
         public Subscription(EndpointName endpoint, TopicName topic, TimeSpan ttl = default(TimeSpan))
         {
-            if (endpoint == null) throw new ArgumentNullException(nameof(endpoint));
-            if (topic == null) throw new ArgumentNullException(nameof(topic));
-            
-            Topic = topic;
-            Endpoint = endpoint;
+            Topic = topic ?? throw new ArgumentNullException(nameof(topic));
+            Endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
             TTL = ttl;
         }
 

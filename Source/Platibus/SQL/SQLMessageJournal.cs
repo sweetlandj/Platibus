@@ -158,15 +158,9 @@ namespace Platibus.SQL
                 commandBuilder.Category = category;
                 commandBuilder.TopicName = headers.Topic;
                 commandBuilder.MessageName = headers.MessageName;
-                commandBuilder.Origination = headers.Origination == null
-                    ? null
-                    : headers.Origination.WithTrailingSlash().ToString();
-                commandBuilder.Destination = headers.Destination == null
-                    ? null
-                    : headers.Destination.WithTrailingSlash().ToString();
-                commandBuilder.ReplyTo = headers.ReplyTo == null 
-                    ? null 
-                    : headers.ReplyTo.ToString();
+                commandBuilder.Origination = headers.Origination?.WithTrailingSlash().ToString();
+                commandBuilder.Destination = headers.Destination?.WithTrailingSlash().ToString();
+                commandBuilder.ReplyTo = headers.ReplyTo?.ToString();
                 commandBuilder.RelatedTo = headers.RelatedTo;
                 commandBuilder.ContentType = headers.ContentType;
                 commandBuilder.Headers = SerializeHeaders(headers);

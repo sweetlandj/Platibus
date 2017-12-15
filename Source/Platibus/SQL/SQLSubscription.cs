@@ -42,10 +42,8 @@ namespace Platibus.SQL
         /// or <paramref name="subscriber"/> is <c>null</c></exception>
         public SQLSubscription(TopicName topicName, Uri subscriber, DateTime expires)
         {
-            if (topicName == null) throw new ArgumentNullException(nameof(topicName));
-            if (subscriber == null) throw new ArgumentNullException(nameof(subscriber));
-            TopicName = topicName;
-            Subscriber = subscriber;
+            TopicName = topicName ?? throw new ArgumentNullException(nameof(topicName));
+            Subscriber = subscriber ?? throw new ArgumentNullException(nameof(subscriber));
             Expires = expires;
         }
 

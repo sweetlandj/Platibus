@@ -141,9 +141,8 @@ namespace Platibus.Serialization
         public void Add(string contentType, ISerializer serializer)
         {
             if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentNullException(nameof(contentType));
-            if (serializer == null) throw new ArgumentNullException(nameof(serializer));
             var key = NormalizeContentType(contentType);
-            _serializers[key] = serializer;
+            _serializers[key] = serializer ?? throw new ArgumentNullException(nameof(serializer));
         }
 
         /// <summary>

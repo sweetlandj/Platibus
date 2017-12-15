@@ -150,7 +150,7 @@ namespace Platibus.Security
         /// otherwise returns the string representation of the sender role</returns>
         public static implicit operator string(SenderRole role)
         {
-            return role == null ? null : role.Name;
+            return role?.Name;
         }
     }
 }

@@ -94,9 +94,8 @@ namespace Platibus.Diagnostics
         /// <param name="database">The database to which points will be written</param>
         public InfluxDBOptions(Uri uri, string database)
         {
-            if (uri == null) throw new ArgumentNullException(nameof(uri));
             if (string.IsNullOrWhiteSpace(database)) throw new ArgumentNullException(nameof(database));
-            Uri = uri;
+            Uri = uri ?? throw new ArgumentNullException(nameof(uri));
             Database = database.Trim();
         }
     }

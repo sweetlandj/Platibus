@@ -31,6 +31,7 @@ using Platibus.Journaling;
 
 namespace Platibus.Http
 {
+    /// <inheritdoc />
     /// <summary>
     /// A standalone HTTP server bus host
     /// </summary>
@@ -45,7 +46,9 @@ namespace Platibus.Http
         /// <param name="cancellationToken">(Optional) A cancelation token that may be
         /// used by the caller to interrupt the HTTP server initialization process</param>
         /// <returns>Returns the fully initialized and listening HTTP server</returns>
-        /// <seealso cref="HttpServerConfigurationSection"/>
+#if NET452
+        /// <seealso cref="HttpServerConfigurationSection"/> 
+#endif
         public static async Task<HttpServer> Start(string configSectionName = "platibus.httpserver",
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -64,7 +67,9 @@ namespace Platibus.Http
         /// <param name="cancellationToken">(Optional) A cancelation token that may be
         /// used by the caller to interrupt the HTTP server initialization process</param>
         /// <returns>Returns the fully initialized and listening HTTP server</returns>
-        /// <seealso cref="HttpServerConfigurationSection"/>
+#if NET452
+        /// <seealso cref="HttpServerConfigurationSection"/> 
+#endif
         public static async Task<HttpServer> Start(IHttpServerConfiguration configuration,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -114,13 +119,14 @@ namespace Platibus.Http
             TransportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, 
                 _messageJournal, _subscriptionTrackingService,
                 configuration.BypassTransportLocalDestination, 
-                HandleMessage,
                 _diagnosticService);
 
             _bus = new Bus(configuration, _baseUri, TransportService, _messageQueueingService);
 
+            TransportService.LocalDelivery += (sender, args) => _bus.HandleMessage(args.Message, args.Principal);
+
             var authorizationService = configuration.AuthorizationService;
-            _resourceRouter = new ResourceTypeDictionaryRouter
+            _resourceRouter = new ResourceTypeDictionaryRouter(configuration.BaseUri)
             {
                 {"message", new MessageController(_bus.HandleMessage, authorizationService)},
                 {"topic", new TopicController(_subscriptionTrackingService, configuration.Topics, authorizationService)},
@@ -140,21 +146,6 @@ namespace Platibus.Http
             }
 
             _acceptBlock = new ActionBlock<HttpListenerContext>(async ctx => await Accept(ctx), acceptBlockOptions);
-        }
-
-        private async Task HandleMessage(Message message, CancellationToken cancellationToken)
-        {
-            if (_bus == null)
-            {
-                await _diagnosticService.EmitAsync(
-                    new DiagnosticEventBuilder(this, DiagnosticEventType.BusNotInitialized)
-                    {
-                        Detail = "Unable to delivery message: bus not initialized",
-                        Message = message
-                    }.Build(), cancellationToken);
-                return;
-            }
-            await _bus.HandleMessage(message, Thread.CurrentPrincipal);
         }
         
         private static HttpListener InitHttpListener(Uri baseUri, AuthenticationSchemes authenticationSchemes)
@@ -211,7 +202,7 @@ namespace Platibus.Http
 
                     var context = await contextReceived;
                     var request = context.Request;
-                    var remote = request.RemoteEndPoint == null ? null : request.RemoteEndPoint.ToString();
+                    var remote = request.RemoteEndPoint?.ToString();
                     await _diagnosticService.EmitAsync(
                         new HttpEventBuilder(this, HttpEventType.HttpRequestReceived)
                         {
@@ -242,7 +233,7 @@ namespace Platibus.Http
         protected async Task Accept(HttpListenerContext context)
         {
             var request = context.Request;
-            var remote = request.RemoteEndPoint == null ? null : request.RemoteEndPoint.ToString();
+            var remote = request.RemoteEndPoint?.ToString();
             var resourceRequest = new HttpListenerRequestAdapter(context.Request, context.User);
             var resourceResponse = new HttpListenerResponseAdapter(context.Response);
             try
@@ -329,21 +320,18 @@ namespace Platibus.Http
             
             _bus.Dispose();
             TransportService.Dispose();
-            
-            var disposableMessageQueueingService = _messageQueueingService as IDisposable;
-            if (disposableMessageQueueingService != null)
+
+            if (_messageQueueingService is IDisposable disposableMessageQueueingService)
             {
                 disposableMessageQueueingService.Dispose();
             }
 
-            var disposableMessageJournal = _messageJournal as IDisposable;
-            if (disposableMessageJournal != null)
+            if (_messageJournal is IDisposable disposableMessageJournal)
             {
                 disposableMessageJournal.Dispose();
             }
 
-            var disposableSubscriptionTrackingService = _subscriptionTrackingService as IDisposable;
-            if (disposableSubscriptionTrackingService != null)
+            if (_subscriptionTrackingService is IDisposable disposableSubscriptionTrackingService)
             {
                 disposableSubscriptionTrackingService.Dispose();
             }

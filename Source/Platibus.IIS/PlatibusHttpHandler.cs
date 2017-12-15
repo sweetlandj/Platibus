@@ -30,6 +30,7 @@ using Platibus.Http.Controllers;
 
 namespace Platibus.IIS
 {
+    /// <inheritdoc />
     /// <summary>
     /// HTTP handler used to handle requests in IIS
     /// </summary>
@@ -70,6 +71,7 @@ namespace Platibus.IIS
         /// </summary>
         public Uri BaseUri { get; private set; }
 
+        /// <inheritdoc />
         /// <summary>
         /// When overridden in a derived class, gets a value that indicates whether the task handler class instance can be reused for another asynchronous task.
         /// </summary>
@@ -78,8 +80,9 @@ namespace Platibus.IIS
         /// </returns>
         public override bool IsReusable => true;
 
+        /// <inheritdoc />
         /// <summary>
-        /// Inititializes a new <see cref="PlatibusHttpHandler"/> with the default
+        /// Inititializes a new <see cref="T:Platibus.IIS.PlatibusHttpHandler" /> with the default
         /// configuration and configuration hooks
         /// </summary>
         public PlatibusHttpHandler()
@@ -87,8 +90,9 @@ namespace Platibus.IIS
         {
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Inititializes a new <see cref="PlatibusHttpHandler"/> with the configuration
+        /// Inititializes a new <see cref="T:Platibus.IIS.PlatibusHttpHandler" /> with the configuration
         /// loaded from the named <paramref name="configurationSectionName">
         /// configuration section</paramref>
         /// </summary>
@@ -99,9 +103,10 @@ namespace Platibus.IIS
         {
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="PlatibusHttpHandler"/> with the configuration that will
-        /// eventually be returned by the supplied <paramref name="configuration"/> task.
+        /// Initializes a new <see cref="T:Platibus.IIS.PlatibusHttpHandler" /> with the configuration that will
+        /// eventually be returned by the supplied <paramref name="configuration" /> task.
         /// </summary>
         /// <param name="configuration">A task whose result is the configuration to use for this
         /// handler</param>
@@ -112,14 +117,15 @@ namespace Platibus.IIS
             _resourceRouter = InitResourceRouter(configuration, bus);
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Inititializes a new <see cref="PlatibusHttpHandler"/> with the specified
-        /// <paramref name="bus"/> and <paramref name="configuration"/>
+        /// Inititializes a new <see cref="T:Platibus.IIS.PlatibusHttpHandler" /> with the specified
+        /// <paramref name="bus" /> and <paramref name="configuration" />
         /// </summary>
         /// <param name="bus">The initialized bus instance</param>
         /// <param name="configuration">The bus configuration</param>
         /// <remarks>
-        /// Used internally by <see cref="PlatibusHttpModule"/>.  This method bypasses the
+        /// Used internally by <see cref="T:Platibus.IIS.PlatibusHttpModule" />.  This method bypasses the
         /// configuration cache and singleton diagnostic service and metrics collector. 
         /// </remarks>
         internal PlatibusHttpHandler(Bus bus, IIISConfiguration configuration)
@@ -166,7 +172,7 @@ namespace Platibus.IIS
         {
             var authorizationService = configuration.AuthorizationService;
             var subscriptionTrackingService = configuration.SubscriptionTrackingService;
-            return new ResourceTypeDictionaryRouter
+            return new ResourceTypeDictionaryRouter(configuration.BaseUri)
             {
                 {"message", new MessageController(bus.HandleMessage, authorizationService)},
                 {"topic", new TopicController(subscriptionTrackingService, configuration.Topics, authorizationService)},
@@ -175,6 +181,7 @@ namespace Platibus.IIS
             };
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// When overridden in a derived class, provides code that handles an asynchronous task.
         /// </summary>
@@ -189,6 +196,7 @@ namespace Platibus.IIS
 
         private async Task ProcessRequestAsync(HttpContextBase context)
         {
+            var resourceRouter = await _resourceRouter;
             var configuration = await _configuration;
             var diagnosticService = configuration.DiagnosticService;
 
@@ -204,7 +212,6 @@ namespace Platibus.IIS
             var resourceResponse = new HttpResponseAdapter(context.Response);
             try
             {
-                var resourceRouter = await _resourceRouter;
                 await resourceRouter.Route(resourceRequest, resourceResponse);
             }
             catch (Exception ex)

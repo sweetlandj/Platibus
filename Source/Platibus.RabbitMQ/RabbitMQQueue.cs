@@ -79,9 +79,7 @@ namespace Platibus.RabbitMQ
             Encoding encoding = null, QueueOptions options = null, 
             IDiagnosticService diagnosticService = null)
         {
-            if (queueName == null) throw new ArgumentNullException("queueName");
-
-            _queueName = queueName;
+            _queueName = queueName ?? throw new ArgumentNullException("queueName");
             _queueExchange = _queueName.GetExchangeName();
             _retryQueueName = queueName.GetRetryQueueName();
             _retryExchange = _queueName.GetRetryExchangeName();

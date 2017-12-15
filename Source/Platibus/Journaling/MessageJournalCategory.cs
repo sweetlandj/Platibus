@@ -93,7 +93,7 @@ namespace Platibus.Journaling
         /// returns the string representation of the specified category</returns>
         public static implicit operator string(MessageJournalCategory category)
         {
-            return category == null ? null : category.ToString();
+            return category?.ToString();
         }
 
         /// <summary>

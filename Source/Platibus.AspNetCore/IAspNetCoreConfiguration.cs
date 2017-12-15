@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2016 Jesse Sweetland
+// Copyright (c) 2017 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,32 +20,39 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Security.Claims;
-using System.Security.Principal;
+using System;
+using Platibus.Config;
+using Platibus.Security;
 
-namespace Platibus.Security
+namespace Platibus.AspNetCore
 {
-    /// <summary>
-    /// Helper methods for working with <see cref="System.Security.Principal.IPrincipal"/>
-    /// implementations
-    /// </summary>
-    public static class PrincipalExtensions
+    public interface IAspNetCoreConfiguration : IPlatibusConfiguration
     {
         /// <summary>
-        /// Returns a claim from the principal
+        /// The URI on which the HTTP server should listen
         /// </summary>
-        /// <param name="principal">The principal</param>
-        /// <param name="claimType">The type of claim</param>
-        /// <returns>The value of the specified claim as a string if present; <c>null</c>
-        /// otherwise</returns>
-        public static string GetClaimValue(this IPrincipal principal, string claimType)
-        {
-            if (principal == null) return null;
-            var claimsIdentity = principal.Identity as ClaimsIdentity;
-            if (claimsIdentity == null) return null;
+        Uri BaseUri { get; }
 
-            var claim = claimsIdentity.FindFirst(claimType);
-            return claim?.Value;
-        }
+        /// <summary>
+        /// The subscription tracking service implementation
+        /// </summary>
+        ISubscriptionTrackingService SubscriptionTrackingService { get; }
+
+        /// <summary>
+        /// The message queueing service implementation
+        /// </summary>
+        IMessageQueueingService MessageQueueingService { get; }
+
+        /// <summary>
+        /// An optional component used to restrict access for callers to send
+        /// messages or subscribe to topics
+        /// </summary>
+        IAuthorizationService AuthorizationService { get; }
+
+        /// <summary>
+        /// Whether the transport service can be bypassed when delivering messages
+        /// whose destination and origination is the same.
+        /// </summary>
+        bool BypassTransportLocalDestination { get; }
     }
 }

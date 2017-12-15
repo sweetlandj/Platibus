@@ -53,13 +53,17 @@ namespace Platibus.Http
         private readonly IMessageJournal _messageJournal;
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
         private readonly bool _bypassTransportLocalDestination;
-        private readonly Func<Message, CancellationToken, Task> _handleMessage;
         private readonly IDiagnosticService _diagnosticService;
         private readonly QueueName _outboundQueueName;
 
         private readonly IHttpClientFactory _httpClientFactory;
 
         private bool _disposed;
+
+        /// <summary>
+        /// Event raised when tranpsport is bypassed due to local delivery
+        /// </summary>
+        public event TransportMessageEventHandler LocalDelivery;
 
         /// <summary>
         /// Initializes a new <see cref="HttpTransportService"/>
@@ -72,11 +76,8 @@ namespace Platibus.Http
         /// <param name="subscriptionTrackingService">The service used to track subscriptions to
         /// local topics</param>
         /// <param name="bypassTransportLocalDestination">Whether to bypass HTTP transport and
-        /// instead pass messages to the supplied <paramref name="handleMessage"/> delegate for
-        /// messages whose destinations are equal to the <paramref name="baseUri"/></param>
-        /// <param name="handleMessage">A delegate used to handle messages locally rather than
-        /// incurring the costs of sending them over HTTP if 
-        /// <paramref name="bypassTransportLocalDestination"/> is <c>true</c></param>
+        /// instead raise the <see cref="LocalDelivery"/> event for messages whose destinations are 
+        /// equal to the <paramref name="baseUri"/></param>
         /// <param name="diagnosticService">(Optional) The service through which diagnostic events
         /// are reported and processed</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="baseUri"/>, 
@@ -86,15 +87,10 @@ namespace Platibus.Http
             IMessageQueueingService messageQueueingService, IMessageJournal messageJournal, 
             ISubscriptionTrackingService subscriptionTrackingService, 
             bool bypassTransportLocalDestination = false, 
-            Func<Message, CancellationToken, Task> handleMessage = null, 
             IDiagnosticService diagnosticService = null)
         {
             if (baseUri == null) throw new ArgumentNullException(nameof(baseUri));
-            if (bypassTransportLocalDestination && handleMessage == null)
-            {
-                throw new ArgumentNullException(nameof(handleMessage), "A message handler is required if bypassTransportLocalDestination is true");
-            }
-
+            
             _baseUri = baseUri.WithTrailingSlash();
             _endpoints = endpoints == null
                 ? ReadOnlyEndpointCollection.Empty
@@ -104,7 +100,6 @@ namespace Platibus.Http
             _messageJournal = messageJournal;
             _subscriptionTrackingService = subscriptionTrackingService ?? throw new ArgumentNullException(nameof(subscriptionTrackingService));
             _bypassTransportLocalDestination = bypassTransportLocalDestination;
-            _handleMessage = handleMessage;
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
             _outboundQueueName = "Outbound";
             
@@ -127,6 +122,7 @@ namespace Platibus.Http
                 }.Build(), cancellationToken);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Handles a message that is received off of a queue
         /// </summary>
@@ -135,8 +131,8 @@ namespace Platibus.Http
         /// <param name="cancellationToken">A cancellation token provided by the
         /// queue that can be used to cancel message processing</param>
         /// <returns>Returns a task that completes when the message is processed</returns>
-        public async Task MessageReceived(Message message, IQueuedMessageContext context,
-            CancellationToken cancellationToken = new CancellationToken())
+        async Task IQueueListener.MessageReceived(Message message, IQueuedMessageContext context,
+            CancellationToken cancellationToken)
         {
             IEndpointCredentials credentials = null;
             if (_endpoints.TryGetEndpointByAddress(message.Headers.Destination, out IEndpoint endpoint))
@@ -149,9 +145,10 @@ namespace Platibus.Http
             await context.Acknowledge();
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Sends a message directly to the application identified by the
-        /// <see cref="IMessageHeaders.Destination"/> header.
+        /// <see cref="P:Platibus.IMessageHeaders.Destination" /> header.
         /// </summary>
         /// <param name="message">The message to send.</param>
         /// <param name="credentials">The credentials required to send a 
@@ -175,6 +172,7 @@ namespace Platibus.Http
             await _messageQueueingService.EnqueueMessage(_outboundQueueName, message, Thread.CurrentPrincipal, cancellationToken);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Publishes a message to a topic.
         /// </summary>
@@ -239,8 +237,13 @@ namespace Platibus.Http
                             Message = message,
                             Uri = endpointBaseUri
                         }.Build(), cancellationToken);
-                    
-                    await _handleMessage(message, cancellationToken);
+
+                    var localDeliveryHandlers = LocalDelivery;
+                    if (localDeliveryHandlers != null)
+                    {
+                        var args = new TransportMessageEventArgs(message, Thread.CurrentPrincipal, cancellationToken);
+                        await localDeliveryHandlers(this, args);
+                    }
                     delivered = true;
                     return;
                 }

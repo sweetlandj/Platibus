@@ -50,7 +50,7 @@ namespace Platibus
         /// specified <paramref name="address"/>
         /// </summary>
         /// <param name="address">The address of the endpoint that could not be found</param>
-        public EndpointNotFoundException(Uri address) : base(address == null ? null : address.ToString())
+        public EndpointNotFoundException(Uri address) : base(address?.ToString())
         {
             Address = address;
         }
@@ -88,7 +88,7 @@ namespace Platibus
         {
             base.GetObjectData(info, context);
             info.AddValue("Endpoint", (string)Endpoint);
-            info.AddValue("Address", Address == null ? null : Address.ToString());
+            info.AddValue("Address", Address?.ToString());
         }
     }
 }

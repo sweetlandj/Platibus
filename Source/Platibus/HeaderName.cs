@@ -241,7 +241,7 @@ namespace Platibus
         /// otherwise returns the value of the <paramref name="headerName"/> object</returns>
         public static implicit operator string(HeaderName headerName)
         {
-            return headerName == null ? null : headerName._value;
+            return headerName?._value;
         }
     }
 }

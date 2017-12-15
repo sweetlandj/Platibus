@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2016 Jesse Sweetland
+// Copyright (c) 2017 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,14 +26,15 @@ using Platibus.Diagnostics;
 using Platibus.InMemory;
 using Platibus.Security;
 
-namespace Platibus.Owin
+namespace Platibus.AspNetCore
 {
     /// <inheritdoc cref="PlatibusConfiguration"/>
-    /// <inheritdoc cref="IOwinConfiguration"/>
+    /// <inheritdoc cref="IAspNetCoreConfiguration"/>
     /// <summary>
-    /// Extends the base <see cref="T:Platibus.Config.PlatibusConfiguration" /> with Owin-specific configuration
+    /// Extends the base <see cref="T:Platibus.Config.PlatibusConfiguration" /> with configuration
+    /// specific to ASP.NET Core hosted applications
     /// </summary>
-    public class OwinConfiguration : PlatibusConfiguration, IOwinConfiguration
+    public class AspNetCoreConfiguration : PlatibusConfiguration, IAspNetCoreConfiguration
     {
         private Uri _baseUri;
 
@@ -75,10 +76,10 @@ namespace Platibus.Owin
 
         /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="T:Platibus.Owin.OwinConfiguration" /> with a preconfigured
-        /// <paramref name="diagnosticService" />
+        /// Initializes a new <see cref="T:Platibus.AspNetCore.AspNetCoreConfiguration" /> with a 
+        /// preconfigured <paramref name="diagnosticService" />
         /// </summary>
-        public OwinConfiguration(IDiagnosticService diagnosticService = null) : base(diagnosticService)
+        public AspNetCoreConfiguration(IDiagnosticService diagnosticService = null) : base(diagnosticService)
         {
             SubscriptionTrackingService = new InMemorySubscriptionTrackingService();
             MessageQueueingService = new InMemoryMessageQueueingService();

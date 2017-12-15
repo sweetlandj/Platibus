@@ -303,7 +303,7 @@ namespace Platibus.Diagnostics
         /// otherwise returns the value of the <paramref name="eventType"/> object</returns>
         public static implicit operator string(DiagnosticEventType eventType)
         {
-            return eventType == null ? null : eventType.Name;
+            return eventType?.Name;
         }
     }
 }

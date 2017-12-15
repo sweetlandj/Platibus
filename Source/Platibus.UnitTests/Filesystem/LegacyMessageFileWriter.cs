@@ -21,8 +21,7 @@ namespace Platibus.UnitTests.Filesystem
 
         public LegacyMessageFileWriter(TextWriter writer, bool leaveOpen = false)
         {
-            if (writer == null) throw new ArgumentNullException("writer");
-            _writer = writer;
+            _writer = writer ?? throw new ArgumentNullException("writer");
             _leaveOpen = leaveOpen;
         }
 

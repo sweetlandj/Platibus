@@ -56,13 +56,12 @@ namespace Platibus.Config
         /// is empty or contains only <c>null</c> elements</exception>
         public SendRule(IMessageSpecification specification, IEnumerable<EndpointName> endpoints)
         {
-            if (specification == null) throw new ArgumentNullException(nameof(specification));
             if (endpoints == null) throw new ArgumentNullException(nameof(endpoints));
 
             var endpointList = endpoints as IList<EndpointName> ?? endpoints.ToList();
             if (endpointList.All(x => x == null)) throw new EndpointRequiredException();
 
-            Specification = specification;
+            Specification = specification ?? throw new ArgumentNullException(nameof(specification));
             Endpoints = endpointList.Where(x => x != null).ToList();
         }
 

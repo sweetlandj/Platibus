@@ -383,10 +383,8 @@ namespace Platibus.RabbitMQ
 
             public SubscriptionKey(Uri publisherUri, QueueName subscriptionQueueName)
             {
-                if (publisherUri == null) throw new ArgumentNullException("publisherUri");
-                if (subscriptionQueueName == null) throw new ArgumentNullException("subscriptionQueueName");
-                _publisherUri = publisherUri;
-                _subscriptionQueueName = subscriptionQueueName;
+                _publisherUri = publisherUri ?? throw new ArgumentNullException("publisherUri");
+                _subscriptionQueueName = subscriptionQueueName ?? throw new ArgumentNullException("subscriptionQueueName");
             }
 
             public bool Equals(SubscriptionKey other)

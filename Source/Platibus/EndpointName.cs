@@ -144,7 +144,7 @@ namespace Platibus
         /// otherwise returns the value of the <paramref name="endpointName"/> object</returns>
         public static implicit operator string(EndpointName endpointName)
         {
-            return endpointName == null ? null : endpointName._value;
+            return endpointName?._value;
         }
     }
 }

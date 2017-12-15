@@ -61,12 +61,10 @@ namespace Platibus.Multicast
 
         public SubscriptionTrackingDatagram(NodeId nodeId, ActionType action, TopicName topic, Uri subscriberUri, TimeSpan ttl = default(TimeSpan))
         {
-            if (topic == null) throw new ArgumentNullException(nameof(topic));
-            if (subscriberUri == null) throw new ArgumentNullException(nameof(subscriberUri));
             NodeId = nodeId;
             Action = action;
-            Topic = topic;
-            SubscriberUri = subscriberUri;
+            Topic = topic ?? throw new ArgumentNullException(nameof(topic));
+            SubscriberUri = subscriberUri ?? throw new ArgumentNullException(nameof(subscriberUri));
             TTL = ttl;
         }
 
@@ -145,7 +143,7 @@ namespace Platibus.Multicast
 
         public static implicit operator byte[](SubscriptionTrackingDatagram datagram)
         {
-            return datagram == null ? null : datagram.Encode();
+            return datagram?.Encode();
         }
 
         public static implicit operator SubscriptionTrackingDatagram(byte[] buffer)

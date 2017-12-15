@@ -296,7 +296,7 @@ namespace Platibus
         /// <param name="uri">The header value</param>
         public void SetUri(HeaderName headerName, Uri uri)
         {
-            this[headerName] = uri == null ? null : uri.AbsoluteUri;
+            this[headerName] = uri?.AbsoluteUri;
         }
 
         /// <summary>
@@ -306,9 +306,7 @@ namespace Platibus
         /// <param name="dateTime">The header value</param>
         public void SetDateTime(HeaderName headerName, DateTime? dateTime)
         {
-            this[headerName] = dateTime == null
-                ? null
-                : dateTime.Value.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
+            this[headerName] = dateTime?.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
         }
 
         /// <summary>

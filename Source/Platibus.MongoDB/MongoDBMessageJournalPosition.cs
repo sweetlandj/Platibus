@@ -10,8 +10,7 @@ namespace Platibus.MongoDB
 
         public MongoDBMessageJournalPosition(ObjectId id)
         {
-            if (id == null) throw new ArgumentNullException(nameof(id));
-            Id = id;
+            Id = id ?? throw new ArgumentNullException(nameof(id));
         }
 
         public override string ToString()

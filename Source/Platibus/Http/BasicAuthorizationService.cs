@@ -85,10 +85,10 @@ namespace Platibus.Http
 
         private Task<bool> Authenticate(IPrincipal principal)
         {
-            var identity = principal == null ? null : principal.Identity;
+            var identity = principal?.Identity;
             var basicIdentity = identity as HttpListenerBasicIdentity;
-            var username = identity == null ? null : identity.Name;
-            var password = basicIdentity == null ? null : basicIdentity.Password;
+            var username = identity?.Name;
+            var password = basicIdentity?.Password;
             return Authenticate(username, password);
         }
 

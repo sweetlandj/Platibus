@@ -90,9 +90,7 @@ namespace Platibus.Queueing
         /// <paramref name="listener"/> are <c>null</c></exception>
         protected AbstractMessageQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null, IDiagnosticService diagnosticService = null)
         {
-            if (queueName == null) throw new ArgumentNullException(nameof(queueName));
-
-            QueueName = queueName;
+            QueueName = queueName ?? throw new ArgumentNullException(nameof(queueName));
             _listener = listener ?? throw new ArgumentNullException(nameof(listener));
             DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
 

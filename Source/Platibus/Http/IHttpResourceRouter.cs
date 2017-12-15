@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Threading.Tasks;
 
 namespace Platibus.Http
@@ -31,6 +32,13 @@ namespace Platibus.Http
     /// <seealso cref="IHttpResourceController"/>
     public interface IHttpResourceRouter
     {
+        /// <summary>
+        /// Indicates whether the URI contains a path supported by this router
+        /// </summary>
+        /// <param name="uri">The URI in question</param>
+        /// <returns>Returns <c>true</c> if this resource can be routed; <c>false</c> otherwise</returns>
+        bool IsRoutable(Uri uri);
+
         /// <summary>
         /// Routes a <paramref name="request"/> and <paramref name="response"/> to
         /// the appropriate controller

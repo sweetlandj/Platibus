@@ -28,16 +28,35 @@ using System.Threading.Tasks;
 
 namespace Platibus.Http
 {
+    /// <inheritdoc cref="IHttpResourceRouter"/>
     /// <summary>
-    /// An <see cref="IHttpResourceRouter"/> that treats the first segment of the
-    /// request URL path as the <see cref="ResourceType"/> and routes to the
-    /// <see cref="IHttpResourceController"/> associated with that resource type
+    /// An <see cref="T:Platibus.Http.IHttpResourceRouter" /> that treats the first segment of the
+    /// request URL path as the <see cref="T:Platibus.Http.ResourceType" /> and routes to the
+    /// <see cref="T:Platibus.Http.IHttpResourceController" /> associated with that resource type
     /// </summary>
     public sealed class ResourceTypeDictionaryRouter : IHttpResourceRouter,
         IEnumerable<KeyValuePair<ResourceType, IHttpResourceController>>
     {
+        private readonly Uri _baseUri;
         private readonly IDictionary<ResourceType, IHttpResourceController> _resourceHandlers =
             new Dictionary<ResourceType, IHttpResourceController>();
+
+        /// <summary>
+        /// Initializes a new <see cref="ResourceTypeDictionaryRouter"/>
+        /// </summary>
+        /// <param name="baseUri">The base URI of the application</param>
+        public ResourceTypeDictionaryRouter(Uri baseUri)
+        {
+            _baseUri = baseUri;
+        }
+
+        /// <inheritdoc />
+        public bool IsRoutable(Uri uri)
+        {
+            var baseUriPath = _baseUri.AbsolutePath.ToLower();
+            var uriPath = uri.AbsolutePath.ToLower();
+            return uriPath.StartsWith(baseUriPath);
+        }
 
         /// <summary>
         /// The resource types that can be routed
@@ -65,11 +84,12 @@ namespace Platibus.Http
             return _resourceHandlers.GetEnumerator();
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Returns an enumerator that iterates through a collection.
         /// </summary>
         /// <returns>
-        /// An <see cref="T:System.Collections.IEnumerator"/> object that can be used to iterate through the collection.
+        /// An <see cref="T:System.Collections.IEnumerator" /> object that can be used to iterate through the collection.
         /// </returns>
         /// <filterpriority>2</filterpriority>
         IEnumerator IEnumerable.GetEnumerator()
@@ -77,8 +97,9 @@ namespace Platibus.Http
             return _resourceHandlers.GetEnumerator();
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Routes a <paramref name="request"/> and <paramref name="response"/> to
+        /// Routes a <paramref name="request" /> and <paramref name="response" /> to
         /// the appropriate controller
         /// </summary>
         /// <param name="request">The request to route</param>
@@ -145,7 +166,7 @@ namespace Platibus.Http
 
         private IHttpResourceController GetController(ResourceType resourceType)
         {
-            if (_resourceHandlers.TryGetValue(resourceType, out IHttpResourceController resourceHandler))
+            if (_resourceHandlers.TryGetValue(resourceType, out var resourceHandler))
             {
                 return resourceHandler;
             }

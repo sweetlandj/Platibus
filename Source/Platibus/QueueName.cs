@@ -143,7 +143,7 @@ namespace Platibus
         /// specified <paramref name="queueName"/>.</returns>
         public static implicit operator string(QueueName queueName)
         {
-            return queueName == null ? null : queueName._value;
+            return queueName?._value;
         }
     }
 }

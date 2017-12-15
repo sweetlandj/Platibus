@@ -135,7 +135,7 @@ namespace Platibus.Http
         /// otherwise returns the string representation of the resource type</returns>
         public static implicit operator string(ResourceType resourceType)
         {
-            return resourceType == null ? null : resourceType._value;
+            return resourceType?._value;
         }
     }
 }

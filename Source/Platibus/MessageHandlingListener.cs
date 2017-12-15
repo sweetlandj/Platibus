@@ -40,7 +40,6 @@ namespace Platibus
 
         public MessageHandlingListener(Bus bus, IMessageNamingService namingService, ISerializationService serializationService, QueueName queueName, IEnumerable<IMessageHandler> messageHandlers, IDiagnosticService diagnosticService = null)
         {
-            if (bus == null) throw new ArgumentNullException(nameof(bus));
             if (namingService == null) throw new ArgumentNullException(nameof(namingService));
             if (serializationService == null) throw new ArgumentNullException(nameof(serializationService));
             if (messageHandlers == null) throw new ArgumentNullException(nameof(messageHandlers));
@@ -48,7 +47,7 @@ namespace Platibus
             var handlerList = messageHandlers.Where(h => h != null).ToList();
             if (!handlerList.Any()) throw new ArgumentNullException(nameof(messageHandlers));
 
-            _bus = bus;
+            _bus = bus ?? throw new ArgumentNullException(nameof(bus));
             _queueName = queueName;
             _messageHandlers = handlerList;
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;

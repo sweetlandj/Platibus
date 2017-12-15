@@ -20,32 +20,35 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Security.Claims;
-using System.Security.Principal;
+using Microsoft.AspNetCore.Http;
 
-namespace Platibus.Security
+namespace Platibus.AspNetCore
 {
     /// <summary>
-    /// Helper methods for working with <see cref="System.Security.Principal.IPrincipal"/>
-    /// implementations
+    /// Extension methods for working with Platibus components within an HTTP context
     /// </summary>
-    public static class PrincipalExtensions
+    public static class HttpContextExtensions
     {
         /// <summary>
-        /// Returns a claim from the principal
+        /// Returns the Platibus bus instance for the current HTTP context
         /// </summary>
-        /// <param name="principal">The principal</param>
-        /// <param name="claimType">The type of claim</param>
-        /// <returns>The value of the specified claim as a string if present; <c>null</c>
-        /// otherwise</returns>
-        public static string GetClaimValue(this IPrincipal principal, string claimType)
+        /// <param name="context">The HTTP context</param>
+        /// <returns>Returns the Platibus bus instance for the current HTTP context</returns>
+        public static IBus GetBus(this HttpContext context)
         {
-            if (principal == null) return null;
-            var claimsIdentity = principal.Identity as ClaimsIdentity;
-            if (claimsIdentity == null) return null;
+            if (context == null) return null;
+            context.Items.TryGetValue(HttpContextItemKeys.Bus, out var bus);
+            return bus as IBus;
+        }
 
-            var claim = claimsIdentity.FindFirst(claimType);
-            return claim?.Value;
+        /// <summary>
+        /// Used internally to intialize the bus instance for the current HTTP context
+        /// </summary>
+        /// <param name="context">The HTTP context</param>
+        /// <param name="bus">The bus instance in scope for the HTTP context</param>
+        internal static void SetBus(this HttpContext context, Bus bus)
+        {
+            context.Items[HttpContextItemKeys.Bus] = bus;
         }
     }
 }

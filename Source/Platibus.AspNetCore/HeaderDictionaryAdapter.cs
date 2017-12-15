@@ -20,32 +20,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Security.Claims;
-using System.Security.Principal;
+using Microsoft.AspNetCore.Http;
 
-namespace Platibus.Security
+namespace Platibus.AspNetCore
 {
-    /// <summary>
-    /// Helper methods for working with <see cref="System.Security.Principal.IPrincipal"/>
-    /// implementations
-    /// </summary>
-    public static class PrincipalExtensions
+    internal sealed class HeaderDictionaryAdapter : System.Collections.Specialized.NameValueCollection
     {
-        /// <summary>
-        /// Returns a claim from the principal
-        /// </summary>
-        /// <param name="principal">The principal</param>
-        /// <param name="claimType">The type of claim</param>
-        /// <returns>The value of the specified claim as a string if present; <c>null</c>
-        /// otherwise</returns>
-        public static string GetClaimValue(this IPrincipal principal, string claimType)
+        public HeaderDictionaryAdapter(IHeaderDictionary headerDictionary)
         {
-            if (principal == null) return null;
-            var claimsIdentity = principal.Identity as ClaimsIdentity;
-            if (claimsIdentity == null) return null;
-
-            var claim = claimsIdentity.FindFirst(claimType);
-            return claim?.Value;
+            
+            if (headerDictionary != null)
+            {
+                foreach (var entry in headerDictionary)
+                {
+                    foreach (var value in entry.Value)
+                    {
+                        Add(entry.Key, value);
+                    }
+                }
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2003
+VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platibus", "Platibus\Platibus.csproj", "{73863B52-5751-4F75-8436-1CD3E6AC0D50}"
 EndProject
@@ -25,7 +25,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platibus.UnitTests", "Plati
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platibus.IntegrationTests", "Platibus.IntegrationTests\Platibus.IntegrationTests.csproj", "{6C6C810F-5E72-43E0-A79A-776382A047D1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus.SampleWebApp", "Platibus.SampleWebApp\Platibus.SampleWebApp.csproj", "{87D62B09-0F75-4AED-B6AE-C89DDEEBD1CC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platibus.SampleWebApp", "Platibus.SampleWebApp\Platibus.SampleWebApp.csproj", "{87D62B09-0F75-4AED-B6AE-C89DDEEBD1CC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platibus.SQLite", "Platibus.SQLite\Platibus.SQLite.csproj", "{A23BE958-6524-4C9C-8957-1C3DEBB0780C}"
 EndProject
@@ -41,9 +41,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platibus.Owin", "Platibus.O
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus.SampleApi", "Platibus.SampleApi\Platibus.SampleApi.csproj", "{F78BE8B4-115D-41FE-AB0C-D54869437050}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus.SampleMessages", "Platibus.SampleMessages\Platibus.SampleMessages.csproj", "{09395808-AD45-4D5A-BB77-D09D156F7BDA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platibus.SampleMessages", "Platibus.SampleMessages\Platibus.SampleMessages.csproj", "{09395808-AD45-4D5A-BB77-D09D156F7BDA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platibus.MongoDB", "Platibus.MongoDB\Platibus.MongoDB.csproj", "{A5901B13-72A2-4A18-8660-6956052166E6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus.AspNetCore", "Platibus.AspNetCore\Platibus.AspNetCore.csproj", "{F22009F5-4C5F-4A43-8862-0C5736C392E2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -95,6 +97,10 @@ Global
 		{A5901B13-72A2-4A18-8660-6956052166E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5901B13-72A2-4A18-8660-6956052166E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A5901B13-72A2-4A18-8660-6956052166E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F22009F5-4C5F-4A43-8862-0C5736C392E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F22009F5-4C5F-4A43-8862-0C5736C392E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F22009F5-4C5F-4A43-8862-0C5736C392E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F22009F5-4C5F-4A43-8862-0C5736C392E2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -111,6 +117,7 @@ Global
 		{F78BE8B4-115D-41FE-AB0C-D54869437050} = {51BBF662-851D-477B-9885-E668F832B2E7}
 		{09395808-AD45-4D5A-BB77-D09D156F7BDA} = {51BBF662-851D-477B-9885-E668F832B2E7}
 		{A5901B13-72A2-4A18-8660-6956052166E6} = {04F31F54-4A18-4129-8CF2-78B975ABC8FA}
+		{F22009F5-4C5F-4A43-8862-0C5736C392E2} = {04F31F54-4A18-4129-8CF2-78B975ABC8FA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FCBD4A54-CF0D-4154-BBBA-A9AA101F3BE8}

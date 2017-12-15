@@ -67,11 +67,10 @@ namespace Platibus.Http
         /// <param name="ttl">The non-negative time-to-live for the subscription</param>
         public HttpSubscriptionMetadata(IEndpoint endpoint, TopicName topic, TimeSpan ttl)
         {
-            if (topic == null) throw new ArgumentNullException(nameof(topic));
             if (ttl < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(ttl));
 
             Endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
-            Topic = topic;
+            Topic = topic ?? throw new ArgumentNullException(nameof(topic));
             
             if (ttl > TimeSpan.Zero)
             {

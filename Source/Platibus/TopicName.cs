@@ -135,7 +135,7 @@ namespace Platibus
         /// otherwise returns the string representation of the topic name</returns>
         public static implicit operator string(TopicName topicName)
         {
-            return topicName == null ? null : topicName._value;
+            return topicName?._value;
         }
     }
 }

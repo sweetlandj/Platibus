@@ -195,9 +195,9 @@ namespace Platibus.SQL
                 var commandBuilder = CommandBuilders.NewInsertQueuedMessageCommandBuilder();
                 commandBuilder.MessageId = headers.MessageId;
                 commandBuilder.QueueName = QueueName;
-                commandBuilder.Origination = headers.Origination == null ? null : headers.Origination.ToString();
-                commandBuilder.Destination = headers.Destination == null ? null : headers.Destination.ToString();
-                commandBuilder.ReplyTo = headers.ReplyTo == null ? null : headers.ReplyTo.ToString();
+                commandBuilder.Origination = headers.Origination?.ToString();
+                commandBuilder.Destination = headers.Destination?.ToString();
+                commandBuilder.ReplyTo = headers.ReplyTo?.ToString();
                 commandBuilder.Expires = headers.Expires;
                 commandBuilder.ContentType = headers.ContentType;
                 commandBuilder.Headers = SerializeHeaders(headers);

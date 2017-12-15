@@ -72,17 +72,14 @@ namespace Platibus
         public Bus(IPlatibusConfiguration configuration, Uri baseUri, ITransportService transportService, IMessageQueueingService messageQueueingService)
         {
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
-            if (baseUri == null) throw new ArgumentNullException(nameof(baseUri));
-            if (transportService == null) throw new ArgumentNullException(nameof(transportService));
-            if (messageQueueingService == null) throw new ArgumentNullException(nameof(messageQueueingService));
 
             // Validate the provided configuration and throw exceptions for missing or invalid
             // configurations
             configuration.Validate();
 
-            _baseUri = baseUri;
-            _transportService = transportService;
-            _messageQueueingService = messageQueueingService;
+            _baseUri = baseUri ?? throw new ArgumentNullException(nameof(baseUri));
+            _transportService = transportService ?? throw new ArgumentNullException(nameof(transportService));
+            _messageQueueingService = messageQueueingService ?? throw new ArgumentNullException(nameof(messageQueueingService));
             _defaultContentType = string.IsNullOrWhiteSpace(configuration.DefaultContentType)
                 ? "application/json"
                 : configuration.DefaultContentType;
@@ -361,7 +358,7 @@ namespace Platibus
                 headers.Expires = DateTime.UtcNow.Add(options.TTL);
             }
 
-            var contentType = options == null ? null : options.ContentType;
+            var contentType = options?.ContentType;
             if (string.IsNullOrWhiteSpace(contentType))
             {
                 contentType = _defaultContentType;

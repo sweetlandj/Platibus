@@ -73,7 +73,7 @@ namespace Platibus.IIS
             
             _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService,
                 _messageJournal, _subscriptionTrackingService, _configuration.BypassTransportLocalDestination,
-                HandleMessage, configuration.DiagnosticService);
+                configuration.DiagnosticService);
 
             _initialization = Init();
         }
@@ -81,14 +81,9 @@ namespace Platibus.IIS
         private async Task Init(CancellationToken cancellationToken = default(CancellationToken))
         {
             _bus = new Bus(_configuration, _baseUri, _transportService, _messageQueueingService);
+            _transportService.LocalDelivery += (sender, args) => _bus.HandleMessage(args.Message, args.Principal);
             await _transportService.Init(cancellationToken);
             await _bus.Init(cancellationToken);
-        }
-
-        private async Task HandleMessage(Message message, CancellationToken cancellationToken)
-        {
-            await _initialization;
-            await _bus.HandleMessage(message, Thread.CurrentPrincipal);
         }
 
         /// <summary>
@@ -126,20 +121,17 @@ namespace Platibus.IIS
 
             _bus.Dispose();
             _transportService.Dispose();
-            var disposableMessageQueueingService = _messageQueueingService as IDisposable;
-            if (disposableMessageQueueingService != null)
+            if (_messageQueueingService is IDisposable disposableMessageQueueingService)
             {
                 disposableMessageQueueingService.Dispose();
             }
 
-            var disposableMessageJournal = _messageJournal as IDisposable;
-            if (disposableMessageJournal != null)
+            if (_messageJournal is IDisposable disposableMessageJournal)
             {
                 disposableMessageJournal.Dispose();
             }
 
-            var disposableSubscriptionTrackingService = _subscriptionTrackingService as IDisposable;
-            if (disposableSubscriptionTrackingService != null)
+            if (_subscriptionTrackingService is IDisposable disposableSubscriptionTrackingService)
             {
                 disposableSubscriptionTrackingService.Dispose();
             }

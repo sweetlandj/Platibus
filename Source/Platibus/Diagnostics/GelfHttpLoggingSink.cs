@@ -49,8 +49,7 @@ namespace Platibus.Diagnostics
         /// Graylog server if needed</param>
         public GelfHttpLoggingSink(Uri uri, IEndpointCredentials credentials = null)
         {
-            if (uri == null) throw new ArgumentNullException(nameof(uri));
-            _uri = uri;
+            _uri = uri ?? throw new ArgumentNullException(nameof(uri));
             var httpClientHandler = new HttpClientHandler();
             _httpClient = new HttpClient(httpClientHandler, true);
             if (credentials != null)
