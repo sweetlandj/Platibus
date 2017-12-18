@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -24,8 +23,6 @@ namespace Platibus.SampleApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<IWidgetRepository>(new InMemoryWidgetRepository());
-
             services.AddAuthentication(options =>
                 {
                     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -38,24 +35,16 @@ namespace Platibus.SampleApi
                     {
                         ValidateAudience = false
                     };
-                    options.Events = new JwtBearerEvents
-                    {
-                        OnAuthenticationFailed = context =>
-                        {
-                            var e = context.Exception;
-                            return Task.CompletedTask;
-                        },
-                        OnTokenValidated = context =>
-                        {
-                            var t = context.SecurityToken;
-                            var p = context.Principal;
-                            return Task.CompletedTask;
-                        }
-                    };
                 });
 
             services.AddMvc();
 
+            // Widget services
+            services.AddSingleton<IWidgetRepository>(new InMemoryWidgetRepository());
+            services.AddSingleton<WidgetCreationCommandHandler>();
+            services.AddSingleton<SimulatedRequestHandler>();
+
+            // Platibus services
             var serviceProvider = services.BuildServiceProvider();
             services.AddPlatibusServices(configure: configuration =>
             {

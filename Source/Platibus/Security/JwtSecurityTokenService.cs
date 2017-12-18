@@ -22,13 +22,19 @@
 
 using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using Platibus.Diagnostics;
+#if NET452
+using System.IdentityModel.Tokens;
+using System.IdentityModel.Protocols.WSTrust;
+#endif
+#if NETSTANDARD2_0
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+#endif
 
 namespace Platibus.Security
 {
@@ -45,6 +51,9 @@ namespace Platibus.Security
         private readonly SecurityKey _signingKey;
         private readonly SecurityKey _fallbackSigningKey;
         private readonly string _signingAlgorithm = "http://www.w3.org/2001/04/xmldsig-more#hmac-sha256";
+#if NET452
+        private readonly string _digestAlgorithm = "http://www.w3.org/2001/04/xmlenc#sha256";
+#endif
         private readonly IDiagnosticService _diagnosticService;
         private readonly TimeSpan _defaultTtl;
 
@@ -101,15 +110,29 @@ namespace Platibus.Security
             var identity = principal.Identity;
             var claimsIdentity = identity as ClaimsIdentity ?? new ClaimsIdentity(identity);
 
+#if NET452
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = claimsIdentity,
+                Lifetime = new Lifetime(DateTime.UtcNow, myExpires)
+            };
+#endif
+#if NETSTANDARD2_0
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = claimsIdentity,
                 Expires = myExpires
             };
+#endif
 
             if (_signingKey != null)
             {
+#if NET452
+                var signingCredentials = new SigningCredentials(_signingKey, _signingAlgorithm, _digestAlgorithm);
+#endif
+#if NETSTANDARD2_0
                 var signingCredentials = new SigningCredentials(_signingKey, _signingAlgorithm);
+#endif
                 tokenDescriptor.SigningCredentials = signingCredentials;
             }
 

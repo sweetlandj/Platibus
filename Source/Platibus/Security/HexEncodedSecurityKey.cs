@@ -20,7 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#if NET452
+using System.IdentityModel.Tokens;
+#endif
+#if NETSTANDARD2_0
 using Microsoft.IdentityModel.Tokens;
+#endif
 
 namespace Platibus.Security
 {
@@ -29,11 +34,17 @@ namespace Platibus.Security
     /// A <see cref="T:System.IdentityModel.Tokens.SecurityKey" /> implementation based on a bytes represented as hexadecimal
     /// degits
     /// </summary>
+#if NET452
+    public class HexEncodedSecurityKey : InMemorySymmetricSecurityKey
+#endif
+#if NETSTANDARD2_0
     public class HexEncodedSecurityKey : SymmetricSecurityKey
+#endif
     {
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="HexEncodedSecurityKey"/> based on the specified
-        /// <paramref name="hex"/> string representation
+        /// Initializes a new <see cref="T:Platibus.Security.HexEncodedSecurityKey" /> based on the specified
+        /// <paramref name="hex" /> string representation
         /// </summary>
         /// <param name="hex">The hexadecimal string representation of the key bytes</param>
         public HexEncodedSecurityKey(string hex) : base(HexEncoding.GetBytes(hex))

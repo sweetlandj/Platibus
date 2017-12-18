@@ -128,8 +128,7 @@ namespace Platibus.RabbitMQ
         public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
-            RabbitMQQueue queue;
-            if (!_queues.TryGetValue(queueName, out queue)) throw new QueueNotFoundException(queueName);
+            if (!_queues.TryGetValue(queueName, out var queue)) throw new QueueNotFoundException(queueName);
 
             await queue.Enqueue(message, senderPrincipal);
         }
@@ -141,8 +140,7 @@ namespace Platibus.RabbitMQ
         public void DeleteQueue(QueueName queueName)
         {
             CheckDisposed();
-            RabbitMQQueue queue;
-            if (!_queues.TryRemove(queueName, out queue)) return;
+            if (!_queues.TryRemove(queueName, out var queue)) return;
 
             queue.Delete();
         }
@@ -191,8 +189,7 @@ namespace Platibus.RabbitMQ
                     queue.Dispose();
                 }
 
-                var disposableConnectionManager = _connectionManager as IDisposable;
-                if (_disposeConnectionManager && disposableConnectionManager != null)
+                if (_disposeConnectionManager && _connectionManager is IDisposable disposableConnectionManager)
                 {
                     disposableConnectionManager.Dispose();
                 }
