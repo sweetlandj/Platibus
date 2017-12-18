@@ -124,6 +124,7 @@ namespace Platibus.Http.Controllers
 
             var serializedContent = _serializer.Serialize(responseModel);
             var encodedContent = encoding.GetBytes(serializedContent);
+            response.StatusCode = 200;
             await response.OutputStream.WriteAsync(encodedContent, 0, encodedContent.Length);
         }
 

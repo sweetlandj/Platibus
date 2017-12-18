@@ -1,9 +1,4 @@
-﻿using System;
-using System.IdentityModel.Tokens;
-using System.Security.Claims;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
-using IdentityModel.Client;
+﻿using IdentityModel.Client;
 using IdentityServer3.Core.Configuration;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.Owin;
@@ -12,8 +7,14 @@ using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security.Notifications;
 using Microsoft.Owin.Security.OpenIdConnect;
 using Owin;
+using Platibus.Owin;
 using Platibus.SampleWebApp;
 using Platibus.SampleWebApp.IdentityServer;
+using System;
+using System.IdentityModel.Tokens;
+using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using AuthenticationOptions = IdentityServer3.Core.Configuration.AuthenticationOptions;
 
 [assembly: OwinStartup(typeof(Startup))]
@@ -25,6 +26,7 @@ namespace Platibus.SampleWebApp
         public void Configuration(IAppBuilder app)
         {
             ConfigureIdentityServer3(app);
+            ConfigurePlatibus(app);
         }
 
         public void ConfigureIdentityServer3(IAppBuilder app)
@@ -50,7 +52,7 @@ namespace Platibus.SampleWebApp
                     }
                 });
             });
-            
+
             app.UseCookieAuthentication(new CookieAuthenticationOptions
             {
                 AuthenticationType = "Cookies",
@@ -59,11 +61,11 @@ namespace Platibus.SampleWebApp
 
             app.UseOpenIdConnectAuthentication(new OpenIdConnectAuthenticationOptions
             {
-                Authority = "https://localhost:44359/identity",
+                Authority = "https://localhost:44335/identity",
                 ClientId = "sample",
                 Scope = "openid profile roles api",
                 ResponseType = "id_token token",
-                RedirectUri = "https://localhost:44359/",
+                RedirectUri = "https://localhost:44335/",
                 SignInAsAuthenticationType = "Cookies",
                 UseTokenLifetime = false,
                 Notifications = new OpenIdConnectAuthenticationNotifications
@@ -74,6 +76,11 @@ namespace Platibus.SampleWebApp
             });
         }
 
+        private static void ConfigurePlatibus(IAppBuilder app)
+        {
+            app.UsePlatibusMiddleware();
+        }
+
         private static Task OnRedirectToIdentityProvider(RedirectToIdentityProviderNotification<OpenIdConnectMessage, OpenIdConnectAuthenticationOptions> notification)
         {
             SetIdTokenHintForLogoutRequest(notification);
@@ -82,13 +89,15 @@ namespace Platibus.SampleWebApp
 
         private static void SetIdTokenHintForLogoutRequest(RedirectToIdentityProviderNotification<OpenIdConnectMessage, OpenIdConnectAuthenticationOptions> notification)
         {
-            if (notification.ProtocolMessage.RequestType == OpenIdConnectRequestType.LogoutRequest)
+            if (notification.ProtocolMessage.RequestType != OpenIdConnectRequestType.LogoutRequest)
             {
-                var idTokenHint = notification.OwinContext.Authentication.User.FindFirst("id_token");
-                if (idTokenHint != null)
-                {
-                    notification.ProtocolMessage.IdTokenHint = idTokenHint.Value;
-                }
+                return;
+            }
+
+            var idTokenHint = notification.OwinContext.Authentication.User.FindFirst("id_token");
+            if (idTokenHint != null)
+            {
+                notification.ProtocolMessage.IdTokenHint = idTokenHint.Value;
             }
         }
 
@@ -100,7 +109,7 @@ namespace Platibus.SampleWebApp
             var identity = CreateIdentity(notification.AuthenticationTicket);
 
             await AddUserInfoClaims(identity, notification.Options, accessToken);
-            
+
             // Keep the id_token for logout
             identity.AddClaim(new Claim("id_token", idToken));
 
@@ -118,7 +127,7 @@ namespace Platibus.SampleWebApp
                 var expries = DateTimeOffset.UtcNow.Add(expiresIn);
                 identity.AddClaim(new Claim("expires", expries.ToString("O")));
             }
-            
+
             notification.AuthenticationTicket = new AuthenticationTicket(identity, notification.AuthenticationTicket.Properties);
         }
 
@@ -169,7 +178,7 @@ namespace Platibus.SampleWebApp
         private static X509Certificate2 LoadCertificate()
         {
             return new X509Certificate2(
-                string.Format(@"{0}\bin\identityServer\idsrv3test.pfx", AppDomain.CurrentDomain.BaseDirectory), "idsrv3test");
+                $@"{AppDomain.CurrentDomain.BaseDirectory}\bin\identityServer\idsrv3test.pfx", "idsrv3test");
         }
     }
 }

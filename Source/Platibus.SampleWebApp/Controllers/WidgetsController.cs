@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
+using System.Web;
 using System.Web.Mvc;
-using Platibus.IIS;
+using Platibus.Owin;
 using Platibus.SampleMessages.Widgets;
 using Platibus.Security;
 
@@ -12,7 +13,7 @@ namespace Platibus.SampleWebApp.Controllers
         {
             get
             {
-                var bus = HttpContext.GetBus();
+                var bus = HttpContext.GetOwinContext().GetBus();
                 return new WidgetsClient(GetAccessToken(), bus);
             }
         }

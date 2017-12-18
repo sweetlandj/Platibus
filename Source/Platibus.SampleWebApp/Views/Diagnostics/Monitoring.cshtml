@@ -11,8 +11,12 @@
 </div>
 
 <style>
-    .dl-horizontal dt {
-        white-space: normal
+    .dl-wide dt {
+        white-space: normal;
+        width:300px;
+    }
+    .dl-wide dd {
+        margin-left: 320px;
     }
 </style>
 
@@ -42,7 +46,7 @@
     }
 
     function updateMetrics(metrics) {
-        var html = "<dl class='dl-horizontal'>";
+        var html = "<dl class='dl-horizontal dl-wide'>";
         for (var metric in metrics) {
             if (metrics.hasOwnProperty(metric)) {
                 html += "<dt>" + metric + "</dt>";

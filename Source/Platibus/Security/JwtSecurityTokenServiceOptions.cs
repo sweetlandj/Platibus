@@ -1,6 +1,11 @@
 ﻿using System;
 using Platibus.Diagnostics;
+#if NET452
+using System.IdentityModel.Tokens;
+#endif
+#if NETSTANDARD2_0
 using Microsoft.IdentityModel.Tokens;
+#endif
 
 namespace Platibus.Security
 {

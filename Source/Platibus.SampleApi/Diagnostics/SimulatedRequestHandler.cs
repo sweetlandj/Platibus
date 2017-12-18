@@ -16,7 +16,7 @@ namespace Platibus.SampleApi.Diagnostics
 
             if (content.Error)
             {
-                throw new Exception("Simulating ynhandled exception thrown from handler");
+                throw new Exception("Simulating unhandled exception thrown from handler");
             }
 
             if (content.Reply)

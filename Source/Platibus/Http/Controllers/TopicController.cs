@@ -108,8 +108,8 @@ namespace Platibus.Http.Controllers
             var topicList = _topics.Select(t => t.ToString()).ToArray();
             var responseContent = _serializer.Serialize(topicList);
             var encodedContent = encoding.GetBytes(responseContent);
-            await response.OutputStream.WriteAsync(encodedContent, 0, encodedContent.Length);
             response.StatusCode = 200;
+            await response.OutputStream.WriteAsync(encodedContent, 0, encodedContent.Length);
         }
 
         private async Task PostOrDeleteSubscriber(IHttpResourceRequest request, IHttpResourceResponse response,

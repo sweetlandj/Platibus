@@ -22,13 +22,18 @@
 
 using System;
 using System.Collections.Generic;
+#if NET452
+using System.IdentityModel.Tokens;
+#endif
+#if NETCOREAPP2_0
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+#endif
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Threading.Tasks;
-using Microsoft.IdentityModel.Tokens;
 using Xunit;
 using Platibus.Security;
 
@@ -111,7 +116,18 @@ namespace Platibus.UnitTests.Security
             AssertIssuedTokenIsValid();
         }
 
-        protected SecurityKey GenerateSecurityKey()
+#if NET452
+        protected SymmetricSecurityKey GenerateSecurityKey()
+        {
+            var signingKeyBytes = new byte[16];
+            RNG.GetBytes(signingKeyBytes);
+            // Output for testing/verification on jwt.io
+            Console.WriteLine(Convert.ToBase64String(signingKeyBytes));
+            return new InMemorySymmetricSecurityKey(signingKeyBytes);
+        }
+#endif
+#if NETCOREAPP2_0
+        protected SymmetricSecurityKey GenerateSecurityKey()
         {
             var signingKeyBytes = new byte[16];
             RNG.GetBytes(signingKeyBytes);
@@ -119,6 +135,7 @@ namespace Platibus.UnitTests.Security
             Console.WriteLine(Convert.ToBase64String(signingKeyBytes));
             return new SymmetricSecurityKey(signingKeyBytes);
         }
+#endif
 
         protected void GivenNoSigningKey()
         {

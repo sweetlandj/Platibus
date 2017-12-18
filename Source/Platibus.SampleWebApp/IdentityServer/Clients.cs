@@ -18,11 +18,11 @@ namespace Platibus.SampleWebApp.IdentityServer
                     RequireConsent = false,
                     RedirectUris = new List<string>
                     {
-                        "https://localhost:44359/"
+                        "https://localhost:44335/"
                     },
                     PostLogoutRedirectUris = new List<string>
                     {
-                        "https://localhost:44359/"
+                        "https://localhost:44335/"
                     },
                     AllowedScopes = new List<string>
                     {

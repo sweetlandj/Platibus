@@ -1,6 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Web;
 using System.Web.Mvc;
-using Platibus.IIS;
+using Platibus.Owin;
 using Platibus.SampleWebApp.Models;
 
 namespace Platibus.SampleWebApp.Controllers
@@ -24,7 +24,7 @@ namespace Platibus.SampleWebApp.Controllers
         [HttpPost]
         public ActionResult Index(DiagnosticsIndexModel model)
         {
-            var bus = HttpContext.GetBus();
+            var bus = HttpContext.GetOwinContext().GetBus();
             var simulator = new RequestSimulator(bus, model.Requests, model.MinTime, model.MaxTime,
                 model.AcknowledgementRate, model.ReplyRate, model.ErrorRate);
 

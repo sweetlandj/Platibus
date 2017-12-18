@@ -25,7 +25,6 @@
   <ItemGroup>
     <PackageReference Include="MongoDB.Driver" Version="2.5.0" />
     <PackageReference Include="RabbitMQ.Client" Version="5.0.1" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="5.1.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,6 +33,7 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
     <Reference Include="System.Configuration" />
+    <Reference Include="System.IdentityModel" />
   </ItemGroup>
 
 </Project>

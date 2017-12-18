@@ -69,8 +69,8 @@ namespace Platibus.Http.Controllers
             var metrics = _metricsCollector.Sample;
             var responseContent = _serializer.Serialize(metrics);
             var encodedContent = encoding.GetBytes(responseContent);
-            await response.OutputStream.WriteAsync(encodedContent, 0, encodedContent.Length);
             response.StatusCode = 200;
+            await response.OutputStream.WriteAsync(encodedContent, 0, encodedContent.Length);
         }
     }
 }
