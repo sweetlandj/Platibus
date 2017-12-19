@@ -60,7 +60,7 @@ namespace Platibus.IntegrationTests.OwinMiddleware
         protected async Task AssertMessageRetrievedByMessageJournalClient()
         {
             // From the platibus.owin0 configuration section of app.config
-            var publisherBaseUri = new Uri("http://localhost:52182/platibus0/");
+            var publisherBaseUri = new Uri("http://localhost:52190/");
             using (var messageJournalClient = new HttpMessageJournalClient(publisherBaseUri))
             {
                 var result = await messageJournalClient.Read(null, 100);
@@ -75,7 +75,7 @@ namespace Platibus.IntegrationTests.OwinMiddleware
         protected async Task AssertTopicsCanBeRetrievedByHttpClient()
         {
             // From the platibus.owin0 configuration section of app.config
-            var publisherBaseUri = new Uri("http://localhost:52182/platibus0/");
+            var publisherBaseUri = new Uri("http://localhost:52190/");
             using (var httpClient = await _httpClientFactory.GetClient(publisherBaseUri, null))
             using (var responseMessage = await httpClient.GetAsync("topic"))
             {

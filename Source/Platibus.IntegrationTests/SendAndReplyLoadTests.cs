@@ -74,38 +74,56 @@ namespace Platibus.IntegrationTests
 
             var sw = Stopwatch.StartNew();
             cts.CancelAfter(Timeout);
-            Task.WhenAll(sends).Wait(ct);
+            var sendResults = Task.WhenAll(sends).Result;
             sw.Stop();
+
+            foreach (var sendResult in sendResults)
+            {
+                Assert.NotNull(sendResult.Reply);
+                Assert.IsType<TestReply>(sendResult.Reply);
+
+                var testReply = (TestReply)sendResult.Reply;
+                Assert.Equal(sendResult.Message.GuidData, testReply.GuidData);
+                Assert.Equal(sendResult.Message.IntData, testReply.IntData);
+            }
+
             Output.WriteLine("Completed in {0}", sw.Elapsed);
         }
 
-        protected virtual async Task SendMessageAndAwaitReply(int i, CancellationToken ct, SendOptions options = null)
+        protected virtual async Task<SendResult> SendMessageAndAwaitReply(int i, CancellationToken ct, SendOptions options = null)
         {
+            var message = new TestMessage
+            {
+                DateData = DateTime.UtcNow,
+                GuidData = Guid.NewGuid(),
+                IntData = i,
+                StringData = "TestMessage_" + i
+            };
+
             try
             {
-                var message = new TestMessage
-                {
-                    DateData = DateTime.UtcNow,
-                    GuidData = Guid.NewGuid(),
-                    IntData = i,
-                    StringData = "TestMessage_" + i
-                };
-
                 var bus = await Sender;
-
                 var sentMessage = await bus.Send(message, options, ct);
                 var reply = await sentMessage.GetReply(ct);
-                Assert.NotNull(reply);
-                Assert.IsType<TestReply>(reply);
-
-                var testReply = (TestReply)reply;
-                Assert.Equal(message.GuidData, testReply.GuidData);
-                Assert.Equal(message.IntData, testReply.IntData);
+                return new SendResult(message, reply, null);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Output.WriteLine("Send/receive error: {0}", e);
-                throw;
+                return new SendResult(message, null, ex);
+            }
+        }
+
+        protected class SendResult
+        {
+            public TestMessage Message { get; }
+            public object Reply { get; }
+            public Exception Exception { get; }
+
+            public SendResult(TestMessage message, object reply, Exception exception)
+            {
+                Message = message;
+                Reply = reply;
+                Exception = exception;
             }
         }
     }

@@ -155,7 +155,7 @@ namespace Platibus.Http
             await base.Initialize(platibusConfiguration, configuration);
 
             platibusConfiguration.BaseUri = configuration?.GetValue<Uri>("baseUri");
-            platibusConfiguration.ConcurrencyLimit = configuration?.GetValue<int>("concurrencyLimit") ?? 0;
+            platibusConfiguration.ConcurrencyLimit = configuration?.GetValue("concurrencyLimit", 0) ?? 0;
 
             InitializeAuthenticationSchemes(platibusConfiguration, configuration);
             platibusConfiguration.BypassTransportLocalDestination = configuration?.GetValue<bool>("bypassTransportLocalDestination") ?? false;
