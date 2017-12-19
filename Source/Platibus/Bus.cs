@@ -33,8 +33,9 @@ using Platibus.Serialization;
 
 namespace Platibus
 {
+    /// <inheritdoc cref="IBus"/>
     /// <summary>
-    /// Default <see cref="IBus"/> implementation
+    /// Default <see cref="T:Platibus.IBus" /> implementation
     /// </summary>
     public class Bus : IBus, IDisposable
     {
@@ -429,19 +430,21 @@ namespace Platibus
         /// </summary>
         /// <param name="message">The new message</param>
         /// <param name="principal">The sender principal</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token supplied by the
+        /// caller that can be used to request cancellation of the message handling request</param>
         /// <returns>Returns a task that completes when message handling is complete</returns>
-        public async Task HandleMessage(Message message, IPrincipal principal)
+        public async Task HandleMessage(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (_messageJournal != null)
             {
-                await _messageJournal.Append(message, MessageJournalCategory.Received);
+                await _messageJournal.Append(message, MessageJournalCategory.Received, cancellationToken);
             }
 
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.MessageReceived)
                 {
                     Message = message
-                }.Build());
+                }.Build(), cancellationToken);
 
             var tasks = new List<Task>();
             var isReply = message.Headers.RelatedTo != default(MessageId);
@@ -461,7 +464,7 @@ namespace Platibus
                     .Where(r => r.Specification.IsSatisfiedBy(message))
                     .Select(rule => rule.QueueName)
                     .Distinct()
-                    .Select(q => _messageQueueingService.EnqueueMessage(q, message, principal)));
+                    .Select(q => _messageQueueingService.EnqueueMessage(q, message, principal, cancellationToken)));
             }
 
             await Task.WhenAll(tasks);
@@ -499,7 +502,7 @@ namespace Platibus
         {
             // TODO: Handle special "last reply" message.  Presently we only support a single reply.
             // This will probably be a special function of the ITransportService and will likely
-            // be, for example, an empty POST to {baseUri}/message/{messageId}?lastReply=true, which
+            // be, for example, an empty POST to {baseUri}/message/{messageId}/lastReply, which
             // will trigger the OnComplete event in the IObservable reply stream.  However, we need
             // to put some thought into potential issues around the sequence and timing of replies
             // vs. the final lastReply POST to ensure that all replies are processed before the

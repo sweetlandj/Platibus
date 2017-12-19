@@ -61,7 +61,7 @@ namespace Platibus.UnitTests.Http
 
             var messageReceivedEvent = new ManualResetEvent(false);
             Message receivedMessage = null;
-            var controller = new MessageController((m, p) =>
+            var controller = new MessageController((m, p, ct) =>
             {
                 receivedMessage = m;
                 messageReceivedEvent.Set();

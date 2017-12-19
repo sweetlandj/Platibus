@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -85,5 +86,15 @@ namespace Platibus
         /// <param name="topic">The topic to which the message should be published.</param>
         /// <param name="cancellationToken">An optional cancellation token</param>
         Task Publish(object content, TopicName topic, CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <summary>
+        /// Invokes message handlers to process a message on demand
+        /// </summary>
+        /// <param name="message">The message to process</param>
+        /// <param name="principal">The sender principal</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token supplied by the
+        /// caller that can be used to request cancellation of the message handling request</param>
+        /// <returns>Returns a task that completes when message handling is complete</returns>
+        Task HandleMessage(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

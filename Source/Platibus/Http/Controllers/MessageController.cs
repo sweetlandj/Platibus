@@ -31,12 +31,13 @@ using Platibus.Security;
 
 namespace Platibus.Http.Controllers
 {
+    /// <inheritdoc />
     /// <summary>
     /// An HTTP resource controller for messages and related resources
     /// </summary>
     public class MessageController : IHttpResourceController
     {
-        private readonly Func<Message, IPrincipal, Task> _accept;
+        private readonly Func<Message, IPrincipal, CancellationToken, Task> _accept;
         private readonly IAuthorizationService _authorizationService;
 
         /// <summary>
@@ -47,22 +48,13 @@ namespace Platibus.Http.Controllers
         /// a requestor is authorized to post messages</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="accept"/> is
         /// <c>null</c></exception>
-        public MessageController(Func<Message, IPrincipal, Task> accept, IAuthorizationService authorizationService = null)
+        public MessageController(Func<Message, IPrincipal, CancellationToken, Task> accept, IAuthorizationService authorizationService = null)
         {
             _accept = accept ?? throw new ArgumentNullException(nameof(accept));
             _authorizationService = authorizationService;
         }
 
-        /// <summary>
-        /// Processes the specified <paramref name="request"/> and updates the supplied
-        /// <paramref name="response"/>
-        /// </summary>
-        /// <param name="request">The HTTP resource request to process</param>
-        /// <param name="response">The HTTP response to update</param>
-        /// <param name="subPath">The portion of the request path that remains after the
-        /// request was routed to this controller</param>
-        /// <returns>Returns a task that completes when the request has been processed and the
-        /// response has been updated</returns>
+        /// <inheritdoc />
         public async Task Process(IHttpResourceRequest request, IHttpResourceResponse response, IEnumerable<string> subPath)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
@@ -112,7 +104,7 @@ namespace Platibus.Http.Controllers
             var content = await request.ReadContentAsString();
             var message = new Message(messageHeaders, content);
             Thread.CurrentPrincipal = request.Principal;
-            await _accept(message, request.Principal);
+            await _accept(message, request.Principal, default(CancellationToken));
             response.StatusCode = 202;
         }
     }
