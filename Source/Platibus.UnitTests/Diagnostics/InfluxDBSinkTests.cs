@@ -12,7 +12,7 @@ namespace Platibus.UnitTests.Diagnostics
     [Trait("Dependency", "InfluxDB")]
     public class InfluxDBSinkTests
     {
-        protected TimeSpan SampleRate = TimeSpan.FromSeconds(1);
+        protected TimeSpan SampleRate = TimeSpan.FromSeconds(5);
 
         // docker run -it --rm --name influxdb -e INFLUXDB_ADMIN_ENABLED=true -p 8086:8086 -p 8083:8083 influxdb
         protected InfluxDBOptions Options = new InfluxDBOptions(new Uri("http://localhost:8086"), "platibus");
@@ -20,7 +20,6 @@ namespace Platibus.UnitTests.Diagnostics
 
         public InfluxDBSinkTests()
         {
-            
             CreateDatabase();
         }
 
@@ -35,7 +34,7 @@ namespace Platibus.UnitTests.Diagnostics
             using (var client = new HttpClient())
             {
                 var response = client.PostAsync(uri, new StringContent("")).Result;
-                Assert.True(response.IsSuccessStatusCode);
+                Assert.True(response.IsSuccessStatusCode, $"Error creating InfluxDB database '{Options.Database}': {response}");
             }
         }
 
@@ -56,7 +55,7 @@ namespace Platibus.UnitTests.Diagnostics
         protected async Task WhenConsumingEvents()
         {
             var sink = new InfluxDBSink(Options, SampleRate);
-            var consumeTasks = DiagnosticEvents.Select(async e => await sink.ConsumeAsync(e));
+            var consumeTasks = DiagnosticEvents.Select(async e => await sink.ConsumeAsync(e)).ToList();
             await Task.WhenAll(consumeTasks);
             sink.RecordMeasurements();
         }

@@ -9,10 +9,11 @@ using Platibus.Http;
 
 namespace Platibus.Diagnostics
 {
+    /// <inheritdoc />
     /// <summary>
-    /// A <see cref="IDiagnosticService"/> implementation that records measurements in InfluxDB
+    /// A <see cref="T:Platibus.Diagnostics.IDiagnosticService" /> implementation that records measurements in InfluxDB
     /// </summary>
-    public class InfluxDBSink : IDiagnosticEventSink, IDisposable
+    public class InfluxDBSink : IDiagnosticEventSink
     {
         private static readonly IDictionary<string, string> DefaultTags;
 
@@ -29,15 +30,15 @@ namespace Platibus.Diagnostics
             };
         }
 
+        private readonly object _syncRoot = new object();
         private readonly string _measurement;
         private readonly InfluxDBPrecision _precision;
         private readonly string _tagSet;
-        private readonly Timer _measurementTimer;
+        private readonly TimeSpan _sampleRate;
         private readonly HttpClient _client;
        
         private Fields _fields = new Fields();
-        
-        private bool _disposed;
+        private DateTime _nextMeasurement = DateTime.UtcNow;
 
         /// <summary>
         /// Initializes a new <see cref="InfluxDBSink"/>
@@ -55,7 +56,7 @@ namespace Platibus.Diagnostics
 
             _precision = options.Precision ?? InfluxDBPrecision.Nanosecond;
 
-            var mySampleRate = sampleRate <= TimeSpan.Zero
+            _sampleRate = sampleRate <= TimeSpan.Zero
                 ? TimeSpan.FromSeconds(5)
                 : sampleRate;
 
@@ -81,8 +82,6 @@ namespace Platibus.Diagnostics
             var myTags = options.Tags.Any() ? options.Tags : DefaultTags;
             var validTags = myTags.Where(tag => !string.IsNullOrWhiteSpace(tag.Key));
             _tagSet = string.Join(",", validTags.Select(tag => TagEscape(tag.Key) + "=" + TagEscape(tag.Value)));
-
-            _measurementTimer = new Timer(_ => RecordMeasurements(), null, mySampleRate, mySampleRate);
         }
 
         private static string TagEscape(string tagKeyOrValue)
@@ -160,6 +159,21 @@ namespace Platibus.Diagnostics
             {
                 Interlocked.Increment(ref _fields.Dead);
             }
+
+            bool takeMeasurement;
+            lock (_syncRoot)
+            {
+                takeMeasurement = DateTime.UtcNow >= _nextMeasurement;
+                if (takeMeasurement)
+                {
+                    _nextMeasurement += _sampleRate;
+                }
+            }
+
+            if (takeMeasurement)
+            {
+                RecordMeasurements();
+            }
         }
 
         /// <summary>
@@ -170,47 +184,21 @@ namespace Platibus.Diagnostics
             var timestamp = _precision.GetTimestamp();
             var fields = Interlocked.Exchange(ref _fields, new Fields());
             var fieldSet = "requests=" + fields.Requests
-                           + ",received=" + fields.Received
-                           + ",acknowledgements=" + fields.Acknowledgements
-                           + ",acknowledgement_failures=" + fields.AcknowledgementFailures
-                           + ",expired=" + fields.Expired
-                           + ",dead=" + fields.Dead
-                           + ",sent=" + fields.Sent
-                           + ",delivered=" + fields.Delivered
-                           + ",delivery_failures=" + fields.DeliveryFailures
-                           + ",errors=" + fields.Errors
-                           + ",warnings=" + fields.Warnings;
+                                        + ",received=" + fields.Received
+                                        + ",acknowledgements=" + fields.Acknowledgements
+                                        + ",acknowledgement_failures=" + fields.AcknowledgementFailures
+                                        + ",expired=" + fields.Expired
+                                        + ",dead=" + fields.Dead
+                                        + ",sent=" + fields.Sent
+                                        + ",delivered=" + fields.Delivered
+                                        + ",delivery_failures=" + fields.DeliveryFailures
+                                        + ",errors=" + fields.Errors
+                                        + ",warnings=" + fields.Warnings;
 
             var point = string.Join(",", _measurement, _tagSet) + " " + fieldSet + " " + timestamp;
             var response = _client.PostAsync("", new StringContent(point)).Result;
             response.EnsureSuccessStatusCode();
-        }
 
-        /// <summary>
-        /// Releases or frees managed and unmanaged resources
-        /// </summary>
-        /// <param name="disposing">Whether this method is called from <see cref="Dispose()"/></param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                _measurementTimer.Dispose();
-            }
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            if (_disposed) return;
-            Dispose(true);
-            _disposed = true;
-            GC.SuppressFinalize(this);
-        }
-
-        /// <inheritdoc />
-        ~InfluxDBSink()
-        {
-            Dispose(false);
         }
         
         private class Fields

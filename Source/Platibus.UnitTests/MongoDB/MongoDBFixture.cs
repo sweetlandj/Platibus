@@ -52,7 +52,7 @@ namespace Platibus.UnitTests.MongoDB
             var rng = new Random();
             DatabaseName = $"platibus{rng.Next(int.MaxValue):X}";
 
-            // docker run --rm --name mongodb -p 27017:27017 mongo:3.6.0-jessie
+            // docker run -it --rm --name mongodb -p 27017:27017 mongo:3.6.0-jessie
             ConnectionStringSettings = new ConnectionStringSettings
             {
                 Name = "MongoDBFixture",
