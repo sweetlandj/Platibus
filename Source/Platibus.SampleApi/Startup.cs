@@ -35,6 +35,7 @@ namespace Platibus.SampleApi
                     {
                         ValidateAudience = false
                     };
+
                     //options.Events = new JwtBearerEvents
                     //{
                     //    OnAuthenticationFailed = context =>
