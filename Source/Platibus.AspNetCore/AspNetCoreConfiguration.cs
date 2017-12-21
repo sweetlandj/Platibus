@@ -23,6 +23,7 @@
 using System;
 using Platibus.Config;
 using Platibus.Diagnostics;
+using Platibus.Http;
 using Platibus.InMemory;
 using Platibus.Security;
 
@@ -38,40 +39,26 @@ namespace Platibus.AspNetCore
     {
         private Uri _baseUri;
 
-        /// <inheritdoc />
-        /// <summary>
-        /// The URI on which the HTTP server should listen
-        /// </summary>
+        /// <inheritdoc/>
         public Uri BaseUri
         {
             get => _baseUri ?? (_baseUri = new Uri("http://localhost/platibus"));
             set => _baseUri = value;
         }
 
-        /// <inheritdoc />
-        /// <summary>
-        /// The subscription tracking service implementation
-        /// </summary>
+        /// <inheritdoc/>
         public ISubscriptionTrackingService SubscriptionTrackingService { get; set; }
 
-        /// <inheritdoc />
-        /// <summary>
-        /// The message queueing service implementation
-        /// </summary>
+        /// <inheritdoc/>
         public IMessageQueueingService MessageQueueingService { get; set; }
 
-        /// <inheritdoc />
-        /// <summary>
-        /// An optional component used to restrict access for callers to send
-        /// messages or subscribe to topics
-        /// </summary>
+        /// <inheritdoc/>
         public IAuthorizationService AuthorizationService { get; set; }
 
-        /// <inheritdoc />
-        /// <summary>
-        /// Whether the transport service can be bypassed when delivering messages
-        /// whose destination and origination is the same.
-        /// </summary>
+        /// <inheritdoc/>
+        public IHttpClientFactory HttpClientFactory { get; set; }
+
+        /// <inheritdoc/>
         public bool BypassTransportLocalDestination { get; set; }
 
         /// <inheritdoc />

@@ -35,6 +35,18 @@ namespace Platibus.Http.Clients
             if (baseUri == null) throw new ArgumentNullException(nameof(baseUri));
             _httpClient = new BasicHttpClientFactory().GetClient(baseUri, credentials);
         }
+
+        /// <summary>
+        /// Initializes a new <see cref="HttpMessageJournalClient"/> for the instance using a
+        /// previously configured <paramref name="httpClient"/>
+        /// </summary>
+        /// <param name="httpClient">An HTTP client configured with a base URI and 
+        /// necessary default headers</param>
+        public HttpMessageJournalClient(HttpClient httpClient)
+        {
+            if (httpClient == null) throw new ArgumentNullException(nameof(httpClient));
+            _httpClient = Task.FromResult(httpClient);
+        }
         
         /// <summary>
         /// Reads messages from the journal

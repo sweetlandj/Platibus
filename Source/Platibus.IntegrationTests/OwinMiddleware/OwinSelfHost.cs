@@ -30,21 +30,17 @@ namespace Platibus.IntegrationTests.OwinMiddleware
 {
     public class OwinSelfHost : IDisposable
     {
-        private readonly IDisposable _webApp;
-        private readonly PlatibusMiddleware _middleware;
-        private readonly IBus _bus;
-
         private bool _disposed;
 
-        public IDisposable WebApp { get { return _webApp; } }
-        public PlatibusMiddleware Middleware { get { return _middleware; } }
-        public IBus Bus { get { return _bus; } }
+        public IDisposable WebApp { get; }
+        public PlatibusMiddleware Middleware { get; }
+        public IBus Bus { get; }
 
         private OwinSelfHost(IDisposable webApp, PlatibusMiddleware middleware, IBus bus)
         {
-            _webApp = webApp;
-            _middleware = middleware;
-            _bus = bus;
+            WebApp = webApp;
+            Middleware = middleware;
+            Bus = bus;
         }
 
         public static async Task<OwinSelfHost> Start(string configSectionName)
@@ -77,13 +73,12 @@ namespace Platibus.IntegrationTests.OwinMiddleware
         {
             if (!disposing) return;
             
-            _webApp.Dispose();
-            var disposableBus = _bus as IDisposable;
-            if (disposableBus != null)
+            WebApp.Dispose();
+            Middleware.Dispose();
+            if (Bus is IDisposable disposableBus)
             {
                 disposableBus.Dispose();
             }
-            _middleware.Dispose();
         }
     }
 }

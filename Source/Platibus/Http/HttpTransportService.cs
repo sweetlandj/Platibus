@@ -68,6 +68,29 @@ namespace Platibus.Http
         /// <summary>
         /// Initializes a new <see cref="HttpTransportService"/>
         /// </summary>
+        /// <param name="options">The HTTP transport service configuration</param>
+        public HttpTransportService(HttpTransportServiceOptions options)
+        {
+            if (options == null) throw new ArgumentNullException(nameof(options));
+
+            _baseUri = options.BaseUri.WithTrailingSlash();
+            _endpoints = options.Endpoints == null
+                ? ReadOnlyEndpointCollection.Empty
+                : new ReadOnlyEndpointCollection(options.Endpoints);
+
+            _messageQueueingService = options.MessageQueueingService;
+            _messageJournal = options.MessageJournal;
+            _subscriptionTrackingService = options.SubscriptionTrackingService;
+            _bypassTransportLocalDestination = options.BypassTransportLocalDestination;
+            _diagnosticService = options.DiagnosticService ?? DiagnosticService.DefaultInstance;
+            _httpClientFactory = options.HttpClientFactory ?? new BasicHttpClientFactory();
+            _outboundQueueName = "Outbound";
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new <see cref="T:Platibus.Http.HttpTransportService" />
+        /// </summary>
         /// <param name="baseUri">The base URI of the local Platibus instance</param>
         /// <param name="endpoints">The configured endpoints for the local Platibus instance</param>
         /// <param name="messageQueueingService">The service used to queue outbound messages</param>
@@ -76,34 +99,28 @@ namespace Platibus.Http
         /// <param name="subscriptionTrackingService">The service used to track subscriptions to
         /// local topics</param>
         /// <param name="bypassTransportLocalDestination">Whether to bypass HTTP transport and
-        /// instead raise the <see cref="LocalDelivery"/> event for messages whose destinations are 
-        /// equal to the <paramref name="baseUri"/></param>
+        /// instead raise the <see cref="E:Platibus.Http.HttpTransportService.LocalDelivery" /> event for messages whose destinations are 
+        /// equal to the <paramref name="baseUri" /></param>
         /// <param name="diagnosticService">(Optional) The service through which diagnostic events
         /// are reported and processed</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="baseUri"/>, 
-        /// <paramref name="messageQueueingService"/>, or <paramref name="subscriptionTrackingService"/>
+        /// <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="baseUri" />, 
+        /// <paramref name="messageQueueingService" />, or <paramref name="subscriptionTrackingService" />
         /// are <c>null</c></exception>
+        [Obsolete("Use HttpTransportService(HttpTransportServiceOptions options)")]
         public HttpTransportService(Uri baseUri, IEndpointCollection endpoints, 
             IMessageQueueingService messageQueueingService, IMessageJournal messageJournal, 
-            ISubscriptionTrackingService subscriptionTrackingService, 
+            ISubscriptionTrackingService subscriptionTrackingService,
             bool bypassTransportLocalDestination = false, 
             IDiagnosticService diagnosticService = null)
+        : this(new HttpTransportServiceOptions(baseUri, messageQueueingService, subscriptionTrackingService)
         {
-            if (baseUri == null) throw new ArgumentNullException(nameof(baseUri));
-            
-            _baseUri = baseUri.WithTrailingSlash();
-            _endpoints = endpoints == null
-                ? ReadOnlyEndpointCollection.Empty
-                : new ReadOnlyEndpointCollection(endpoints);
-
-            _messageQueueingService = messageQueueingService ?? throw new ArgumentNullException(nameof(messageQueueingService));
-            _messageJournal = messageJournal;
-            _subscriptionTrackingService = subscriptionTrackingService ?? throw new ArgumentNullException(nameof(subscriptionTrackingService));
-            _bypassTransportLocalDestination = bypassTransportLocalDestination;
-            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
-            _outboundQueueName = "Outbound";
-            
-            _httpClientFactory = new BasicHttpClientFactory();
+            DiagnosticService = diagnosticService,
+            Endpoints = endpoints,
+            MessageJournal = messageJournal,
+            BypassTransportLocalDestination = bypassTransportLocalDestination,
+            HttpClientFactory = new BasicHttpClientFactory()
+        })
+        {
         }
 
         /// <summary>

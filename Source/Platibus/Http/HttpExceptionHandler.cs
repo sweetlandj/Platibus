@@ -68,15 +68,13 @@ namespace Platibus.Http
         /// </remarks>
         public bool HandleException(Exception ex)
         {
-            var aggregateException = ex as AggregateException;
-            if (aggregateException != null)
+            if (ex is AggregateException aggregateException)
             {
                 aggregateException.Handle(HandleException);
                 return true;
             }
 
-            var unauthorizedAccessException = ex as UnauthorizedAccessException;
-            if (unauthorizedAccessException != null)
+            if (ex is UnauthorizedAccessException unauthorizedAccessException)
             {
                 _response.StatusCode = 401;
                 _diagnosticService.Emit(new HttpEventBuilder(_source, DiagnosticEventType.AccessDenied)
@@ -90,8 +88,7 @@ namespace Platibus.Http
                 return true;
             }
 
-            var notAcknowledgedException = ex as MessageNotAcknowledgedException;
-            if (notAcknowledgedException != null)
+            if (ex is MessageNotAcknowledgedException notAcknowledgedException)
             {
                 // HTTP 422: Unprocessable Entity
                 _response.StatusCode = 422;

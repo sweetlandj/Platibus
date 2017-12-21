@@ -43,7 +43,7 @@ namespace Platibus.UnitTests.Http
             {
                 Scheme = "http",
                 Host = "localhost",
-                Port = 52180,
+                Port = 53061,
                 Path = "/platibus.test/"
             }.Uri;
 
@@ -92,11 +92,12 @@ namespace Platibus.UnitTests.Http
             {
                 Scheme = "http",
                 Host = "localhost",
-                Port = 52180,
+                Port = 53062,
                 Path = "/platibus.test/"
             }.Uri;
 
-            var transportService = new HttpTransportService(endpoint, ReadOnlyEndpointCollection.Empty, new InMemoryMessageQueueingService(), null, new InMemorySubscriptionTrackingService());
+            var transportServiceOptions = new HttpTransportServiceOptions(endpoint, new InMemoryMessageQueueingService(), new InMemorySubscriptionTrackingService());
+            var transportService = new HttpTransportService(transportServiceOptions);
 
             var message = new Message(new MessageHeaders
             {
@@ -116,11 +117,12 @@ namespace Platibus.UnitTests.Http
             {
                 Scheme = "http",
                 Host = "dne.example.test",
-                Port = 52180,
+                Port = 53063,
                 Path = "/platibus.test/"
             }.Uri;
 
-            var transportService = new HttpTransportService(endpoint, ReadOnlyEndpointCollection.Empty, new InMemoryMessageQueueingService(), null, new InMemorySubscriptionTrackingService());
+            var transportServiceOptions = new HttpTransportServiceOptions(endpoint, new InMemoryMessageQueueingService(), new InMemorySubscriptionTrackingService());
+            var transportService = new HttpTransportService(transportServiceOptions);
 
             var message = new Message(new MessageHeaders
             {

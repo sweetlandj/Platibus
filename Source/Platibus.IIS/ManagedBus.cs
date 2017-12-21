@@ -68,12 +68,15 @@ namespace Platibus.IIS
             _subscriptionTrackingService = _configuration.SubscriptionTrackingService;
             _messageQueueingService = _configuration.MessageQueueingService;
             _messageJournal = _configuration.MessageJournal;
-
-            var endpoints = _configuration.Endpoints;
             
-            _transportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService,
-                _messageJournal, _subscriptionTrackingService, _configuration.BypassTransportLocalDestination,
-                configuration.DiagnosticService);
+            var transportServiceOptions = new HttpTransportServiceOptions(_baseUri, _messageQueueingService, _subscriptionTrackingService)
+            {
+                DiagnosticService = configuration.DiagnosticService,
+                Endpoints = configuration.Endpoints,
+                MessageJournal = configuration.MessageJournal,
+                BypassTransportLocalDestination = configuration.BypassTransportLocalDestination
+            };
+            _transportService = new HttpTransportService(transportServiceOptions);
 
             _initialization = Init();
         }

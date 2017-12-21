@@ -114,12 +114,15 @@ namespace Platibus.Http
             _subscriptionTrackingService = configuration.SubscriptionTrackingService;
             _messageQueueingService = configuration.MessageQueueingService;
             _messageJournal = configuration.MessageJournal;
-
-            var endpoints = configuration.Endpoints;
-            TransportService = new HttpTransportService(_baseUri, endpoints, _messageQueueingService, 
-                _messageJournal, _subscriptionTrackingService,
-                configuration.BypassTransportLocalDestination, 
-                _diagnosticService);
+            
+            var transportServiceOptions = new HttpTransportServiceOptions(_baseUri, _messageQueueingService, _subscriptionTrackingService)
+            {
+                DiagnosticService = configuration.DiagnosticService,
+                Endpoints = configuration.Endpoints,
+                MessageJournal = configuration.MessageJournal,
+                BypassTransportLocalDestination = configuration.BypassTransportLocalDestination
+            };
+            TransportService = new HttpTransportService(transportServiceOptions);
 
             _bus = new Bus(configuration, _baseUri, TransportService, _messageQueueingService);
 

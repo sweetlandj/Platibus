@@ -67,7 +67,9 @@ namespace Platibus.AspNetCore
         public static async Task AddPlatibusServicesAsync(this IServiceCollection services, string sectionName = null, Action<AspNetCoreConfiguration> configure = null)
         {
             var configuration = new AspNetCoreConfiguration();
-            await new AspNetCoreConfigurationManager().Initialize(configuration, sectionName);
+            var configurationManager = new AspNetCoreConfigurationManager();
+            await configurationManager.Initialize(configuration, sectionName);
+            await configurationManager.FindAndProcessConfigurationHooks(configuration);
             configure?.Invoke(configuration);
             await services.AddPlatibusServicesAsync(configuration);
         }
@@ -96,13 +98,17 @@ namespace Platibus.AspNetCore
             configuration.DiagnosticService.AddSink(metricsCollector);
 
             var baseUri = configuration.BaseUri;
-            var endpoints = configuration.Endpoints;
-            var transportService = new HttpTransportService(baseUri, endpoints,
-                configuration.MessageQueueingService,
-                configuration.MessageJournal,
-                configuration.SubscriptionTrackingService,
-                configuration.BypassTransportLocalDestination,
-                configuration.DiagnosticService);
+            var mqs = configuration.MessageQueueingService;
+            var sts = configuration.SubscriptionTrackingService;
+            var transportServiceOptions = new HttpTransportServiceOptions(baseUri, mqs, sts)
+            {
+                DiagnosticService = configuration.DiagnosticService,
+                Endpoints = configuration.Endpoints,
+                MessageJournal = configuration.MessageJournal,
+                HttpClientFactory = configuration.HttpClientFactory,
+                BypassTransportLocalDestination = configuration.BypassTransportLocalDestination
+            };
+            var transportService = new HttpTransportService(transportServiceOptions);
 
             services.AddSingleton(transportService);
 

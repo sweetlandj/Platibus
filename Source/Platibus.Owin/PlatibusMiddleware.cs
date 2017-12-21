@@ -144,12 +144,14 @@ namespace Platibus.Owin
             _messageQueueingService = configuration.MessageQueueingService;
             _messageJournal = configuration.MessageJournal;
             
-            var endpoints = configuration.Endpoints;
-            _transportService = new HttpTransportService(baseUri, endpoints, 
-                _messageQueueingService,
-                _messageJournal, _subscriptionTrackingService,
-                configuration.BypassTransportLocalDestination, 
-                configuration.DiagnosticService);
+            var transportServiceOptions = new HttpTransportServiceOptions(baseUri, _messageQueueingService, _subscriptionTrackingService)
+            {
+                DiagnosticService = configuration.DiagnosticService,
+                Endpoints = configuration.Endpoints,
+                MessageJournal = configuration.MessageJournal,
+                BypassTransportLocalDestination = configuration.BypassTransportLocalDestination
+            };
+            _transportService = new HttpTransportService(transportServiceOptions);
 
             var bus = new Bus(configuration, baseUri, _transportService, _messageQueueingService);
             _transportService.LocalDelivery += (sender, args) => bus.HandleMessage(args.Message, args.Principal);

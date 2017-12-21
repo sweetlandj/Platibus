@@ -22,6 +22,7 @@
 
 using System;
 using Platibus.Config;
+using Platibus.Http;
 using Platibus.Security;
 
 namespace Platibus.AspNetCore
@@ -48,6 +49,12 @@ namespace Platibus.AspNetCore
         /// messages or subscribe to topics
         /// </summary>
         IAuthorizationService AuthorizationService { get; }
+
+        /// <summary>
+        /// The factory class used to get or create <see cref="System.Net.Http.HttpClient"/>
+        /// instances used to send messages to other applications.
+        /// </summary>
+        IHttpClientFactory HttpClientFactory { get; }
 
         /// <summary>
         /// Whether the transport service can be bypassed when delivering messages
