@@ -25,7 +25,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using Platibus.Diagnostics;
 using Platibus.Queueing;
 using Platibus.Security;
@@ -40,13 +39,14 @@ using Platibus.Config;
 
 namespace Platibus.SQLite
 {
+    /// <inheritdoc />
     /// <summary>
     /// A message queue based on a SQLite database
     /// </summary>
     public class SQLiteMessageQueue : SQLMessageQueue
     {
         private readonly CancellationTokenSource _cancellationTokenSource;
-        private readonly ActionBlock<ISQLiteOperation> _operationQueue;
+        private readonly ICommandExecutor _commandExecutor = new SynchronizingCommandExecutor();
 
         /// <summary>
         /// Initializes a new <see cref="SQLiteMessageQueue"/>
@@ -68,13 +68,6 @@ namespace Platibus.SQLite
                   securityTokenService, options, diagnosticService)
         {
             _cancellationTokenSource = new CancellationTokenSource();
-            _operationQueue = new ActionBlock<ISQLiteOperation>(
-                op => op.Execute(),
-                new ExecutionDataflowBlockOptions
-                {
-                    CancellationToken = _cancellationTokenSource.Token,
-                    MaxDegreeOfParallelism = 1
-                });
         }
 
         private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory, QueueName queueName, IDiagnosticService diagnosticService)
@@ -128,43 +121,48 @@ namespace Platibus.SQLite
         protected override Task InsertQueuedMessage(QueuedMessage queuedMessage, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
-            var op = new SQLiteOperation(() => base.InsertQueuedMessage(queuedMessage, cancellationToken));
-            _operationQueue.Post(op);
-            return op.Task;
+            return _commandExecutor.Execute(
+                () => base.InsertQueuedMessage(queuedMessage, cancellationToken), 
+                cancellationToken);
         }
 
         /// <inheritdoc />
         protected override Task DeleteQueuedMessage(QueuedMessage queuedMessage, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
-            var op = new SQLiteOperation(() => base.DeleteQueuedMessage(queuedMessage, cancellationToken));
-            _operationQueue.Post(op);
-            return op.Task;
+            return _commandExecutor.Execute(
+                () => base.DeleteQueuedMessage(queuedMessage, cancellationToken), 
+                cancellationToken);
         }
 
         /// <inheritdoc />
         protected override Task UpdateQueuedMessage(QueuedMessage queuedMessage, DateTime? abandoned, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
-            var op = new SQLiteOperation(() => base.UpdateQueuedMessage(queuedMessage, abandoned, cancellationToken));
-            _operationQueue.Post(op);
-            return op.Task;
+            return _commandExecutor.Execute(
+                () => base.UpdateQueuedMessage(queuedMessage, abandoned, cancellationToken),
+                cancellationToken);
         }
 
         /// <inheritdoc />
         protected override Task<IEnumerable<QueuedMessage>> GetPendingMessages(CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
-            var op = new SQLiteOperation<IEnumerable<QueuedMessage>>(() => base.GetPendingMessages(cancellationToken));
-            _operationQueue.Post(op);
-            return op.Task;
+            return _commandExecutor.ExecuteRead(
+                () => base.GetPendingMessages(cancellationToken),
+                cancellationToken);
         }
 
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
             _cancellationTokenSource.Cancel();
-            _operationQueue.Complete();
+
+            if (_commandExecutor is IDisposable disposableCommandExecutor)
+            {
+                disposableCommandExecutor.Dispose();
+            }
+
             if (disposing)
             {
                 _cancellationTokenSource.Dispose();

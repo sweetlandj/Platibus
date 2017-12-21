@@ -24,7 +24,6 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using Platibus.Diagnostics;
 using Platibus.SQL;
 using Platibus.SQLite.Commands;
@@ -44,7 +43,7 @@ namespace Platibus.SQLite
     public class SQLiteSubscriptionTrackingService : SQLSubscriptionTrackingService
     {
         private readonly CancellationTokenSource _cancellationTokenSource;
-        private readonly ActionBlock<ISQLiteOperation> _operationQueue;
+        private readonly ICommandExecutor _commandExecutor = new SynchronizingCommandExecutor();
 
         /// <summary>
         /// Initializes a new <see cref="SQLiteSubscriptionTrackingService"/>
@@ -63,13 +62,6 @@ namespace Platibus.SQLite
                   new SQLiteSubscriptionTrackingCommandBuilders(), diagnosticService)
         {
             _cancellationTokenSource = new CancellationTokenSource();
-            _operationQueue = new ActionBlock<ISQLiteOperation>(
-                op => op.Execute(),
-                new ExecutionDataflowBlockOptions
-                {
-                    CancellationToken = _cancellationTokenSource.Token,
-                    MaxDegreeOfParallelism = 1
-                });
         }
 
         private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory, IDiagnosticService diagnosticService)
@@ -109,10 +101,11 @@ namespace Platibus.SQLite
             return new SingletonConnectionProvider(connectionStringSettings, myDiagnosticsService);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Inserts or updates a subscription record in the SQL database
         /// </summary>
-        /// <param name="topic">The topic to which the <paramref name="subscriber"/> is subscribing</param>
+        /// <param name="topic">The topic to which the <paramref name="subscriber" /> is subscribing</param>
         /// <param name="subscriber">The base URI of the subscribing Platibus instance</param>
         /// <param name="expires">The date and time at which the subscription will expire</param>
         /// <returns>Returns a task that will complete when the subscription record has been inserted 
@@ -122,13 +115,11 @@ namespace Platibus.SQLite
             DateTime expires)
         {
             CheckDisposed();
-            var op =
-                new SQLiteOperation<SQLSubscription>(
-                    () => base.InsertOrUpdateSubscription(topic, subscriber, expires));
-            _operationQueue.Post(op);
-            return op.Task;
+            return _commandExecutor.ExecuteRead(
+                () => base.InsertOrUpdateSubscription(topic, subscriber, expires));
         }
         
+        /// <inheritdoc />
         /// <summary>
         /// Deletes a subscription record from the SQL database
         /// </summary>
@@ -139,23 +130,28 @@ namespace Platibus.SQLite
         protected override Task DeleteSubscription(TopicName topic, Uri subscriber)
         {
             CheckDisposed();
-            var op = new SQLiteOperation(() => base.DeleteSubscription(topic, subscriber));
-            _operationQueue.Post(op);
-            return op.Task;
+            return _commandExecutor.Execute(
+                () => base.DeleteSubscription(topic, subscriber));
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Called by the <see cref="SQLSubscriptionTrackingService.Dispose()"/> method 
+        /// Called by the <see cref="M:Platibus.SQL.SQLSubscriptionTrackingService.Dispose" /> method 
         /// or by the finalizer to free held resources
         /// </summary>
         /// <param name="disposing">Indicates whether this method is called from the 
-        /// <see cref="SQLSubscriptionTrackingService.Dispose()"/> method (<c>true</c>) or
+        /// <see cref="M:Platibus.SQL.SQLSubscriptionTrackingService.Dispose" /> method (<c>true</c>) or
         /// from the finalizer (<c>false</c>)</param>
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            _operationQueue.Complete();
             _cancellationTokenSource.Cancel();
+
+            if (_commandExecutor is IDisposable disposableCommandExecutor)
+            {
+                disposableCommandExecutor.Dispose();
+            }
+
             if (disposing)
             {
                 _cancellationTokenSource.Dispose();

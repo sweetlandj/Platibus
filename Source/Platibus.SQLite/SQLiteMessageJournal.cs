@@ -24,7 +24,6 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using Platibus.Diagnostics;
 using Platibus.Journaling;
 using Platibus.SQL;
@@ -47,7 +46,7 @@ namespace Platibus.SQLite
     public class SQLiteMessageJournal : SQLMessageJournal, IDisposable
     {
         private readonly CancellationTokenSource _cancellationTokenSource;
-        private readonly ActionBlock<ISQLiteOperation> _operationQueue;
+        private readonly ICommandExecutor _commandExecutor = new SynchronizingCommandExecutor();
 
         private bool _disposed;
 
@@ -68,13 +67,6 @@ namespace Platibus.SQLite
             : base(InitConnectionProvider(baseDirectory, diagnosticService), new SQLiteMessageJournalCommandBuilders(), diagnosticService)
         {
             _cancellationTokenSource = new CancellationTokenSource();
-            _operationQueue = new ActionBlock<ISQLiteOperation>(
-                op => op.Execute(),
-                new ExecutionDataflowBlockOptions
-                {
-                    CancellationToken = _cancellationTokenSource.Token,
-                    MaxDegreeOfParallelism = 1
-                });
         }
         
         private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory, IDiagnosticService diagnosticService)
@@ -114,23 +106,23 @@ namespace Platibus.SQLite
         }
 
         /// <inheritdoc />
-        public override async Task Append(Message message, MessageJournalCategory category,
+        public override Task Append(Message message, MessageJournalCategory category,
             CancellationToken cancellationToken = new CancellationToken())
         {
             CheckDisposed();
-            var op = new SQLiteOperation(() => base.Append(message, category, cancellationToken));
-            await _operationQueue.SendAsync(op, cancellationToken);
-            await op.Task;
+            return _commandExecutor.Execute(
+                () => base.Append(message, category, cancellationToken),
+                cancellationToken);
         }
 
         /// <inheritdoc />
-        public override async Task<MessageJournalReadResult> Read(MessageJournalPosition start, int count, MessageJournalFilter filter = null,
+        public override Task<MessageJournalReadResult> Read(MessageJournalPosition start, int count, MessageJournalFilter filter = null,
             CancellationToken cancellationToken = new CancellationToken())
         {
             CheckDisposed();
-            var op = new SQLiteOperation<MessageJournalReadResult>(() => base.Read(start, count, filter, cancellationToken));
-            await _operationQueue.SendAsync(op, cancellationToken);
-            return await op.Task;
+            return _commandExecutor.ExecuteRead(
+                () => base.Read(start, count, filter, cancellationToken),
+                cancellationToken);
         }
 
         /// <summary>
@@ -170,6 +162,12 @@ namespace Platibus.SQLite
         protected virtual void Dispose(bool disposing)
         {
             _cancellationTokenSource.Cancel();
+
+            if (_commandExecutor is IDisposable disposableCommandExecutor)
+            {
+                disposableCommandExecutor.Dispose();
+            }
+
             if (disposing)
             {
                 _cancellationTokenSource.Dispose();
