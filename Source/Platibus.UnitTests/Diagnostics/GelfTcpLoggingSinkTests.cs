@@ -32,12 +32,11 @@ namespace Platibus.UnitTests.Diagnostics
     /// the target log collector service.
     /// </summary>
     [Trait("Category", "UnitTests")]
-    [Trait("Category", "Explicit")]
     [Trait("Dependency", "Graylog2")]
     public class GelfTcpLoggingSinkTests : GelfLoggingSinkTests
     {
         protected const string Host = "localhost";
-        protected const int Port = 12202;
+        protected const int Port = 12201;
 
         public GelfTcpLoggingSinkTests() 
             : base(new GelfTcpLoggingSink(Host, Port))

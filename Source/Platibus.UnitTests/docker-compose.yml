@@ -1,0 +1,51 @@
+version: "3"
+services:
+  mongo:
+    image: mongo:3.6.0-jessie
+    ports:
+      - "27017:27017"
+    networks:
+      - "platibus-unit-tests"
+  rabbitmq:
+    image: rabbitmq:3
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - "platibus-unit-tests"
+  influxdb:
+    image: influxdb
+    ports:
+      - "8083:8083"
+      - "8086:8086"
+    networks:
+      - "platibus-unit-tests"
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:5.5.2
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - http.host=0.0.0.0
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - "platibus-unit-tests"
+  graylog:
+    image: graylog/graylog:2.3.2-1
+    links:
+      - mongo
+      - elasticsearch
+    ports:
+      - "9000:9000"
+      - "12201:12201"
+      - "12201:12201/udp"
+    networks:
+      - "platibus-unit-tests"
+networks:
+  platibus-unit-tests:
