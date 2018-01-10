@@ -1,15 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2010
+VisualStudioVersion = 15.0.27130.2020
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platibus", "Platibus\Platibus.csproj", "{73863B52-5751-4F75-8436-1CD3E6AC0D50}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".Solution Items", ".Solution Items", "{E57068F2-C14F-44AE-AE47-1728B5BCEBD1}"
 	ProjectSection(SolutionItems) = preProject
-		Copyright.cs = Copyright.cs
 		..\gitversion.yml = ..\gitversion.yml
-		..\Publish.proj = ..\Publish.proj
+		..\Publish.cmd = ..\Publish.cmd
+		..\README.md = ..\README.md
+		..\Test.cmd = ..\Test.cmd
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platibus.IIS", "Platibus.IIS\Platibus.IIS.csproj", "{BF2C4B39-5E10-4115-BEFF-8340982CDA72}"
