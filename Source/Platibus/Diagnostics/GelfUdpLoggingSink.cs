@@ -31,34 +31,54 @@ using System.Threading.Tasks;
 
 namespace Platibus.Diagnostics
 {
+    /// <inheritdoc />
     /// <summary>
-    /// A <see cref="IDiagnosticService"/> that formats events in Graylog Extended Log Format
+    /// A <see cref="T:Platibus.Diagnostics.IDiagnosticService" /> that formats events in Graylog Extended Log Format
     /// (GELF) and posts them to Graylog via its TCP endpoint
     /// </summary>
     public class GelfUdpLoggingSink : GelfLoggingSink
     {
-        private const int MaxDatagramLength = 8192;
         private static readonly Random RNG = new Random();
         private static readonly byte[] ChunkedGelfMagicBytes = {0x1e, 0x0f};
 
         private readonly string _host;
         private readonly int _port;
         private readonly bool _enableCompression;
+        private readonly int _chunkSize;
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new <see cref="T:Platibus.Diagnostics.GelfUdpLoggingSink" /> that will send GELF formatted
+        /// messages to the TCP endpoint at the specified <paramref name="host" /> and
+        /// <paramref name="port" />
+        /// </summary>
+        /// <param name="host">The hostname of the Graylog UDP endpoint</param>
+        /// <param name="port">(Optional) The port of the Gralog UDP endpoint (12201)</param>
+        /// <param name="enableCompression">(Optional) Whether to enable compression</param>
+        /// <see cref="M:Platibus.Diagnostics.GelfUdpLoggingSink.#ctor(Platibus.Diagnostics.GelfUdpOptions)" />
+        [Obsolete("Use GelfUdpLoggingSink(GelfUdpOptions)")]
+        public GelfUdpLoggingSink(string host, int port = 12201, bool enableCompression = false)
+        : this(new GelfUdpOptions(host)
+        {
+            Port = port,
+            EnableCompression = enableCompression
+        })
+        {
+        }
 
         /// <summary>
-        /// Initializes a new <see cref="GelfUdpLoggingSink"/> that will send GELF formatted
-        /// messages to the TCP endpoint at the specified <paramref name="host"/> and
-        /// <paramref name="port"/>
+        /// Initializes a new <see cref="GelfUdpLoggingSink"/>
         /// </summary>
-        /// <param name="host">The hostname of the Graylog TCP endpoint</param>
-        /// <param name="port">(Optional) The port of the Gralog TCP endpoint (12201)</param>
-        /// <param name="enableCompression">(Optional) Whether to enable compression</param>
-        public GelfUdpLoggingSink(string host, int port = 12201, bool enableCompression = false)
+        /// <param name="options">Options for configuring the GELF UDP logging sink</param>
+        public GelfUdpLoggingSink(GelfUdpOptions options)
         {
-            if (string.IsNullOrWhiteSpace(host)) throw new ArgumentNullException(nameof(host));
-            _host = host;
-            _port = port;
-            _enableCompression = enableCompression;
+            if (options == null) throw new ArgumentNullException(nameof(options));
+            _host = options.Host;
+            _port = options.Port;
+            _enableCompression = options.EnableCompression;
+            _chunkSize = options.ChunkSize <= 0 
+                ? GelfUdpOptions.DefaultChunkSize 
+                : Math.Min(options.ChunkSize, GelfUdpOptions.MaxChunkSize);
         }
         
         /// <inheritdoc />
@@ -121,7 +141,7 @@ namespace Platibus.Diagnostics
         protected virtual IEnumerable<byte[]> Chunk(byte[] gelfMessageBytes)
         {
             var messageLength = gelfMessageBytes.Length;
-            if (messageLength <= MaxDatagramLength)
+            if (messageLength <= _chunkSize)
             {
                 yield return gelfMessageBytes;
                 yield break;
@@ -129,8 +149,7 @@ namespace Platibus.Diagnostics
 
             var messageId = NewMessageId();
             var chunkHeader = new byte[12];
-            var maxChunkLength = MaxDatagramLength - chunkHeader.Length;
-            var sequenceCount = (byte)Math.Ceiling((decimal)gelfMessageBytes.Length / maxChunkLength);
+            var sequenceCount = (byte)Math.Ceiling((decimal)gelfMessageBytes.Length / _chunkSize);
             byte sequenceNumber = 0;
 
             chunkHeader[0] = ChunkedGelfMagicBytes[0];
@@ -142,17 +161,17 @@ namespace Platibus.Diagnostics
             var index = 0;
             while (index < messageLength)
             {
-                var chunkLength = messageLength - index;
-                if (chunkLength > maxChunkLength)
+                var myChunkSize = messageLength - index;
+                if (myChunkSize > _chunkSize)
                 {
-                    chunkLength = maxChunkLength;
+                    myChunkSize = _chunkSize;
                 }
-                var chunk = new byte[chunkLength + chunkHeader.Length];
+                var chunk = new byte[myChunkSize + chunkHeader.Length];
                 Array.Copy(chunkHeader, 0, chunk, 0, chunkHeader.Length);
-                Array.Copy(gelfMessageBytes, index, chunk, chunkHeader.Length, chunkLength);
+                Array.Copy(gelfMessageBytes, index, chunk, chunkHeader.Length, myChunkSize);
                 chunk[10] = sequenceNumber;
                 sequenceNumber++;
-                index += chunkLength;
+                index += myChunkSize;
                 yield return chunk;
             }
         }

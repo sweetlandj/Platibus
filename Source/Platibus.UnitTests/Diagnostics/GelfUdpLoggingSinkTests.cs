@@ -40,7 +40,7 @@ namespace Platibus.UnitTests.Diagnostics
         protected const int Port = 12201;
 
         public GelfUdpLoggingSinkTests() 
-            : base(new GelfUdpLoggingSink(Host, Port))
+            : base(new GelfUdpLoggingSink(new GelfUdpOptions(Host){Port = Port}))
         {
         }
 
@@ -84,7 +84,11 @@ namespace Platibus.UnitTests.Diagnostics
 
         protected void GivenCompressionEnabled()
         {
-            GelfLoggingSink = new GelfUdpLoggingSink(Host, Port, true);
+            GelfLoggingSink = new GelfUdpLoggingSink(new GelfUdpOptions(Host)
+            {
+                Port = Port, 
+                EnableCompression = true
+            });
         }
 
         protected void GivenMessageWithAllHeaders()

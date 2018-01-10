@@ -23,9 +23,9 @@
 #if NET452
 using System.Configuration;    
 #endif
-using System;
 using System.Threading.Tasks;
 #if NETSTANDARD2_0
+using System;
 using Microsoft.Extensions.Configuration;
 #endif
 using Platibus.Config;
@@ -40,8 +40,9 @@ namespace Platibus.Diagnostics
     /// </summary>
     public static class GelfLoggingSinkProviders
     {
+        /// <inheritdoc />
         /// <summary>
-        /// A <see cref="IDiagnosticEventSinkProvider"/> implementation that sends GELF formatted
+        /// A <see cref="T:Platibus.Config.Extensibility.IDiagnosticEventSinkProvider" /> implementation that sends GELF formatted
         /// messages via UDP datagrams
         /// </summary>
         [Provider("GelfUdp")]
@@ -52,32 +53,51 @@ namespace Platibus.Diagnostics
             public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(DiagnosticEventSinkElement configuration)
             {
                 var host = configuration.GetString("host");
-                var port = configuration.GetInt("port");
-                var enableCompression = configuration.GetBool("compress");
+                var port = configuration.GetInt("port") ?? GelfUdpOptions.DefaultPort;
+                var enableCompression = configuration.GetBool("compress") ?? true;
+                var chunkSize = configuration.GetInt("chunkSize") ?? GelfUdpOptions.DefaultChunkSize;
 
                 if (string.IsNullOrWhiteSpace(host)) throw new ConfigurationErrorsException("'host' attribute is required");
                 if (port == 0) throw new ConfigurationErrorsException("'port' attribute is required");
-                if (port < 0 || port > 65535) throw new ConfigurationErrorsException("Invalid port");
-                return Task.FromResult<IDiagnosticEventSink>(new GelfUdpLoggingSink(host, port, enableCompression));
+                if (port <= 0 || port > 65535) throw new ConfigurationErrorsException("Invalid port");
+                if (chunkSize <= 0 || chunkSize > GelfUdpOptions.MaxChunkSize) throw new ConfigurationErrorsException("Invalid chunk size");
+
+                var options = new GelfUdpOptions(host)
+                {
+                    Port = port,
+                    EnableCompression = enableCompression,
+                    ChunkSize = chunkSize
+                };
+                return Task.FromResult<IDiagnosticEventSink>(new GelfUdpLoggingSink(options));
             }
 #else
             /// <inheritdoc />
             public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(IConfiguration configuration)
             {
                 var host = configuration?["host"];
-                var port = configuration?.GetValue<int>("port") ?? 0;
-                var enableCompression = configuration?.GetValue<bool>("compress") ?? false;
+                var port = configuration?.GetValue<int>("port") ?? GelfUdpOptions.DefaultPort;
+                var enableCompression = configuration?.GetValue<bool>("compress") ?? true;
+                var chunkSize = configuration?.GetValue<int>("chunkSize", GelfUdpOptions.DefaultChunkSize) ?? GelfUdpOptions.DefaultChunkSize;
 
                 if (string.IsNullOrWhiteSpace(host)) throw new ConfigurationErrorsException("'host' attribute is required");
                 if (port == 0) throw new ConfigurationErrorsException("'port' attribute is required");
-                if (port < 0 || port > 65535) throw new ConfigurationErrorsException("Invalid port");
-                return Task.FromResult<IDiagnosticEventSink>(new GelfUdpLoggingSink(host, port, enableCompression));
+                if (port <= 0 || port > 65535) throw new ConfigurationErrorsException("Invalid port");
+                if (chunkSize <= 0 || chunkSize > GelfUdpOptions.MaxChunkSize) throw new ConfigurationErrorsException("Invalid chunk size");
+
+                var options = new GelfUdpOptions(host)
+                {
+                    Port = port,
+                    EnableCompression = enableCompression,
+                    ChunkSize = chunkSize
+                };
+                return Task.FromResult<IDiagnosticEventSink>(new GelfUdpLoggingSink(options));
             }
 #endif
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// A <see cref="IDiagnosticEventSinkProvider"/> implementation that sends GELF formatted
+        /// A <see cref="T:Platibus.Config.Extensibility.IDiagnosticEventSinkProvider" /> implementation that sends GELF formatted
         /// messages over a persistent TCP connection
         /// </summary>
         [Provider("GelfTcp")]
@@ -88,11 +108,11 @@ namespace Platibus.Diagnostics
             public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(DiagnosticEventSinkElement configuration)
             {
                 var host = configuration.GetString("host");
-                var port = configuration.GetInt("port");
+                var port = configuration.GetInt("port") ?? 12201;
 
                 if (string.IsNullOrWhiteSpace(host)) throw new ConfigurationErrorsException("'host' attribute is required");
                 if (port == 0) throw new ConfigurationErrorsException("'port' attribute is required");
-                if (port < 0 || port > 65535) throw new ConfigurationErrorsException("Invalid port");
+                if (port <= 0 || port > 65535) throw new ConfigurationErrorsException("Invalid port");
                 return Task.FromResult<IDiagnosticEventSink>(new GelfTcpLoggingSink(host, port));
             }
 #else
@@ -100,18 +120,19 @@ namespace Platibus.Diagnostics
             public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(IConfiguration configuration)
             {
                 var host = configuration?["host"];
-                var port = configuration?.GetValue<int>("port") ?? 0;
+                var port = configuration?.GetValue<int>("port") ?? 12201;
 
                 if (string.IsNullOrWhiteSpace(host)) throw new ConfigurationErrorsException("'host' attribute is required");
                 if (port == 0) throw new ConfigurationErrorsException("'port' attribute is required");
-                if (port < 0 || port > 65535) throw new ConfigurationErrorsException("Invalid port");
+                if (port <= 0 || port > 65535) throw new ConfigurationErrorsException("Invalid port");
                 return Task.FromResult<IDiagnosticEventSink>(new GelfTcpLoggingSink(host, port));
             }
 #endif
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// A <see cref="IDiagnosticEventSinkProvider"/> implementation that POSTs GELF formatted
+        /// A <see cref="T:Platibus.Config.Extensibility.IDiagnosticEventSinkProvider" /> implementation that POSTs GELF formatted
         /// messages to an HTTP endpoint
         /// </summary>
         [Provider("GelfHttp")]

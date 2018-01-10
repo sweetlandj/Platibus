@@ -58,7 +58,7 @@ namespace Platibus.MongoDB
             QueueCollectionNameFactory collectionNameFactory = null;
             var databaseName = configuration.GetString("database");
             var collectionName = configuration.GetString("collection");
-            var collectionPerQueue = configuration.GetBool("collectionPerQueue");
+            var collectionPerQueue = configuration.GetBool("collectionPerQueue") ?? false;
             if (!string.IsNullOrWhiteSpace(collectionName))
             {
                 collectionNameFactory = _ => collectionName;

@@ -110,14 +110,15 @@ namespace Platibus.Config
         /// cannot be cast or converted to an int</exception>
         /// <exception cref="FormatException">If the property value
         /// cannot be cast or converted to an int</exception>
-        public int GetInt(string name)
+        public int? GetInt(string name)
         {
             var val = GetObject(name);
-            if (val == null) return default(int);
-
-            if (val is int)
+            switch (val)
             {
-                return (int) val;
+                case null:
+                    return null;
+                case int i:
+                    return i;
             }
             return Convert.ToInt32(val);
         }
@@ -137,14 +138,15 @@ namespace Platibus.Config
         /// cannot be cast or converted to a bool</exception>
         /// <exception cref="FormatException">If the property value
         /// cannot be cast or converted to a bool</exception>
-        public bool GetBool(string name)
+        public bool? GetBool(string name)
         {
             var val = GetObject(name);
-            if (val == null) return default(bool);
-
-            if (val is bool)
+            switch (val)
             {
-                return (bool) val;
+                case null:
+                    return null;
+                case bool b:
+                    return b;
             }
             return Convert.ToBoolean(val);
         }
