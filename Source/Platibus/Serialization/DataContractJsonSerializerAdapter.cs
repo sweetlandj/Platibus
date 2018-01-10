@@ -22,7 +22,7 @@ namespace Platibus.Serialization
         {
             _settings = new DataContractJsonSerializerSettings
             {
-                DateTimeFormat = new DateTimeFormat("yyyy-MM-dd'T'HH:mm:ssK")
+                DateTimeFormat = new DateTimeFormat("yyyy-MM-dd'T'HH:mm:ss.FFFFFFFK")
                 {
                     DateTimeStyles = DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal
                 }

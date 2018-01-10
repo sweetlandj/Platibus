@@ -60,7 +60,7 @@ namespace Platibus.UnitTests.Serialization
             Message = new DataContractMessage
             {
                 GuidValue = Guid.NewGuid(),
-                DateValue = DateTime.UtcNow.TruncateMillis(),
+                DateValue = DateTime.UtcNow,
                 BoolValue = true,
                 IntValue = 192873,
                 FloatValue = 18197.942934f,
