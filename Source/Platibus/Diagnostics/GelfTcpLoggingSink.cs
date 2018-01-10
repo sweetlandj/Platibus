@@ -28,15 +28,19 @@ using System.Threading.Tasks;
 
 namespace Platibus.Diagnostics
 {
+    /// <inheritdoc cref="GelfLoggingSink"/>
+    /// <inheritdoc cref="IDisposable"/>
     /// <summary>
-    /// A <see cref="IDiagnosticService"/> that formats events in Graylog Extended Log Format
+    /// A <see cref="T:Platibus.Diagnostics.IDiagnosticService" /> that formats events in Graylog Extended Log Format
     /// (GELF) and posts them to Graylog via its TCP endpoint
     /// </summary>
     public class GelfTcpLoggingSink : GelfLoggingSink, IDisposable
     {
+        private readonly object _syncRoot = new object();
         private readonly string _host;
         private readonly int _port;
-        private readonly TcpClient _tcpClient;
+
+        private TcpClient _tcpClient;
         private bool _disposed;
 
         /// <summary>
@@ -49,7 +53,6 @@ namespace Platibus.Diagnostics
         public GelfTcpLoggingSink(string host, int port = 12201)
         {
             if (string.IsNullOrWhiteSpace(host)) throw new ArgumentNullException(nameof(host));
-            _tcpClient = new TcpClient();
             _host = host;
             _port = port;
         }
@@ -57,7 +60,7 @@ namespace Platibus.Diagnostics
         /// <inheritdoc />
         public override void Process(string gelfMessage)
         {
-            var bytes = Encoding.ASCII.GetBytes(gelfMessage);
+            var bytes = Encoding.UTF8.GetBytes(gelfMessage);
             var nullTerminatedBytes = new byte[bytes.Length + 1];
             Array.Copy(bytes, 0, nullTerminatedBytes, 0, bytes.Length);
             nullTerminatedBytes[bytes.Length] = 0;
@@ -73,13 +76,13 @@ namespace Platibus.Diagnostics
 
         private void Send(byte[] nullTerminatedGelfMessageBytes)
         {
-            lock (_tcpClient)
+            lock (_syncRoot)
             {
                 try
                 {
-                    if (!_tcpClient.Connected)
+                    if (_tcpClient == null || !_tcpClient.Connected)
                     {
-                        _tcpClient.Connect(_host, _port);
+                        _tcpClient = new TcpClient(_host, _port);
                     }
                     _tcpClient.GetStream().Write(nullTerminatedGelfMessageBytes, 0, nullTerminatedGelfMessageBytes.Length);
                 }
@@ -87,12 +90,13 @@ namespace Platibus.Diagnostics
                 {
                     try
                     {
-                        _tcpClient.Close();
+                        _tcpClient?.Close();
                     }
                     catch (Exception)
                     {
                         // Ignored
                     }
+                    _tcpClient = null;
                     throw;
                 }
             }

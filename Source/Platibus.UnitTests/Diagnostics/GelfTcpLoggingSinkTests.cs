@@ -44,7 +44,7 @@ namespace Platibus.UnitTests.Diagnostics
         }
 
         [Fact]
-        public async Task MessagesCanBeHandledConcurrently()
+        public async Task MessagesCanBeHandledConcurrentlyAsync()
         {
             const int count = 10;
             var tasks = Enumerable
@@ -63,7 +63,7 @@ namespace Platibus.UnitTests.Diagnostics
         }
 
         [Fact]
-        public async Task MessagesCanBeHandledConcurrentlyAsync()
+        public async Task MessagesCanBeHandledConcurrently()
         {
             const int count = 10;
             var tasks = Enumerable
