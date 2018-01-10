@@ -28,9 +28,6 @@ using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-#if NET452
-using System.Web;
-#endif
 using Platibus.Diagnostics;
 using Platibus.Journaling;
 
@@ -267,7 +264,7 @@ namespace Platibus.Http
 
                 var messageId = message.Headers.MessageId;
                 var urlEncodedMessageId = UrlEncoder.Encode(messageId);
-                var relativeUri = string.Format("message/{0}", urlEncodedMessageId);
+                var relativeUri = $"message/{urlEncodedMessageId}";
                 postUri = new Uri(endpointBaseUri, relativeUri);
 
                 var httpContent = new StringContent(message.Content);
@@ -629,7 +626,7 @@ namespace Platibus.Http
                         // error codes, some fuzzy logic is needed to determine whether a known
                         // category of transport exception has occurred.
 
-                        var message = ex.Message?.ToLower() ?? "";
+                        var message = ex.Message.ToLower();
                         if (message.Contains("connection"))
                         {
                             throw new ConnectionRefusedException(uri.Host, uri.Port, ex.InnerException ?? ex);
