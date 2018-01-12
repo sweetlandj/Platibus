@@ -89,10 +89,13 @@ namespace Platibus.Config
             {
                 try
                 {
-                    var assembly = Assembly.LoadFile(assemblyFile.FullName);
-                    var assemblyName = assembly.GetName();
-                    subtypes.AddRange(AppDomain.CurrentDomain.Load(assemblyName)
-                        .GetTypes()
+                    var assemblyName = AssemblyName.GetAssemblyName(assemblyFile.FullName);
+                    var appDomain = AppDomain.CurrentDomain;
+                    var assembly = appDomain.GetAssemblies()
+                        .FirstOrDefault(a => a.GetName() == assemblyName)
+                        ?? appDomain.Load(assemblyName);
+                    
+                    subtypes.AddRange(assembly.GetTypes()
                         .Where(typeof(TBase).IsAssignableFrom)
                         .Where(t => !t.IsInterface && !t.IsAbstract));
                 }
