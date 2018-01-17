@@ -28,7 +28,8 @@ using Platibus.Security;
 
 namespace Platibus.RabbitMQ
 {
-    /// <inheritdoc />
+    /// <inheritdoc cref="PlatibusConfiguration" />
+    /// <inheritdoc cref="IRabbitMQHostConfiguration" />
     public class RabbitMQHostConfiguration : PlatibusConfiguration, IRabbitMQHostConfiguration
     {
         /// <inheritdoc />

@@ -255,7 +255,10 @@ namespace Platibus.RabbitMQ
                             DeliveryTag = delivery.DeliveryTag
                         }.Build());
 
-                    channel.BasicAck(delivery.DeliveryTag, false);
+                    if (!_autoAcknowledge)
+                    {
+                        channel.BasicAck(delivery.DeliveryTag, false);
+                    }
                 }
                 else
                 {
@@ -297,8 +300,11 @@ namespace Platibus.RabbitMQ
                                 ConsumerTag = delivery.ConsumerTag,
                                 DeliveryTag = delivery.DeliveryTag
                             }.Build());
-                        
-                        channel.BasicNack(delivery.DeliveryTag, false, false);
+
+                        if (!_autoAcknowledge)
+                        {
+                            channel.BasicNack(delivery.DeliveryTag, false, false);
+                        }
 
                         _diagnosticService.Emit(
                             new RabbitMQEventBuilder(this, DiagnosticEventType.DeadLetter)
@@ -337,13 +343,16 @@ namespace Platibus.RabbitMQ
                         DeliveryTag = delivery.DeliveryTag
                     }.Build());
 
-                // Due to the complexity of managing retry counts and delays in
-                // RabbitMQ, listener exceptions are caught and handled in the
-                // DispatchToListener method and publication to the retry
-                // exchange is performed within the try block above.  If that
-                // fails then there is no other option but to nack the
-                // message.
-                channel.BasicNack(delivery.DeliveryTag, false, false);
+                if (!_autoAcknowledge)
+                {
+                    // Due to the complexity of managing retry counts and delays in
+                    // RabbitMQ, listener exceptions are caught and handled in the
+                    // DispatchToListener method and publication to the retry
+                    // exchange is performed within the try block above.  If that
+                    // fails then there is no other option but to nack the
+                    // message.
+                    channel.BasicNack(delivery.DeliveryTag, false, false);
+                }
             }
         }
 
