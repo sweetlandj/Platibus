@@ -63,7 +63,8 @@ namespace Platibus.RabbitMQ
             {
                 Uri = uri,
                 AutomaticRecoveryEnabled = true,
-                RequestedHeartbeat = 15
+                RequestedHeartbeat = 10,
+                NetworkRecoveryInterval = TimeSpan.FromSeconds(10)
             };
             _diagnosticService = diagnosticService ?? throw new ArgumentNullException("diagnosticService");
             _connection = connectionFactory.CreateConnection();

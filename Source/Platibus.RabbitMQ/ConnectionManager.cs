@@ -101,8 +101,7 @@ namespace Platibus.RabbitMQ
             {
                 foreach (var uri in _managedConnections.Keys)
                 {
-                    ManagedConnection connection;
-                    _managedConnections.TryRemove(uri, out connection);
+                    _managedConnections.TryRemove(uri, out var connection);
                     CloseManagedConnection(connection);
                 }
             }
