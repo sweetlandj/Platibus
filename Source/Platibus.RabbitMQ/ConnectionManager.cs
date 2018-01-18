@@ -56,7 +56,7 @@ namespace Platibus.RabbitMQ
         public IConnection GetConnection(Uri uri)
         {
             CheckDisposed();
-            if (uri == null) throw new ArgumentNullException("uri");
+            if (uri == null) throw new ArgumentNullException(nameof(uri));
             uri = uri.WithoutTrailingSlash();
             return _managedConnections.GetOrAdd(uri, CreateManagedConnection);
         }

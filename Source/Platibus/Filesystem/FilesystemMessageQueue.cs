@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Diagnostics;
@@ -99,12 +100,7 @@ namespace Platibus.Filesystem
                 {
                     var messageFile = new MessageFile(file);
                     var message = await messageFile.ReadMessage(cancellationToken);
-                    var principal = await messageFile.ReadPrincipal(cancellationToken);
-                    if (!string.IsNullOrWhiteSpace(message.Headers.SecurityToken))
-                    {
-                        principal = await _securityTokenService.NullSafeValidate(message.Headers.SecurityToken);
-                    }
-
+                    var principal = await _securityTokenService.NullSafeValidate(message.Headers.SecurityToken);
                     var queuedMessage = new QueuedMessage(message, principal);
                     pendingMessages.Add(queuedMessage);
                 }

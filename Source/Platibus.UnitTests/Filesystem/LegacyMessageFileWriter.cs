@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 
 namespace Platibus.UnitTests.Filesystem
 {
+    /// <inheritdoc />
     /// <summary>
     /// A copy of the MessageFileWriter class as it existed prior to the introduction of the
-    /// <see cref="Platibus.Security.ISecurityTokenService"/> interface and the 
-    /// <see cref="IMessageHeaders.SecurityToken"/> message header.
+    /// <see cref="T:Platibus.Security.ISecurityTokenService" /> interface and the 
+    /// <see cref="P:Platibus.IMessageHeaders.SecurityToken" /> message header.
     /// </summary>
     internal class LegacyMessageFileWriter : IDisposable
     {

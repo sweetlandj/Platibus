@@ -44,7 +44,7 @@ namespace Platibus.RabbitMQ
 
         public ManagedConnection(Uri uri, IDiagnosticService diagnosticService)
         {
-            if (uri == null) throw new ArgumentNullException("uri");
+            if (uri == null) throw new ArgumentNullException(nameof(uri));
 
             // Trailing slashes causes errors when connecting to RabbitMQ
             uri = uri.WithoutTrailingSlash();
@@ -66,7 +66,7 @@ namespace Platibus.RabbitMQ
                 RequestedHeartbeat = 10,
                 NetworkRecoveryInterval = TimeSpan.FromSeconds(10)
             };
-            _diagnosticService = diagnosticService ?? throw new ArgumentNullException("diagnosticService");
+            _diagnosticService = diagnosticService ?? throw new ArgumentNullException(nameof(diagnosticService));
             _connection = connectionFactory.CreateConnection();
 
             _diagnosticService.Emit(new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQConnectionOpened)

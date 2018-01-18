@@ -26,6 +26,7 @@ using System.Security.Permissions;
 
 namespace Platibus.Filesystem
 {
+    /// <inheritdoc />
     /// <summary>
     /// Thrown to indicate that a message file is not formatted correctly and cannot be
     /// read from the filesystem

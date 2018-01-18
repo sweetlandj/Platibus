@@ -25,9 +25,11 @@ using System.IO;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
+using Platibus.IO;
 
 namespace Platibus.Filesystem
 {
+    /// <inheritdoc />
     /// <summary>
     /// An abstraction that represents a message stored in a file on disk
     /// </summary>
@@ -37,7 +39,6 @@ namespace Platibus.Filesystem
         private readonly SemaphoreSlim _fileAccess = new SemaphoreSlim(1);
 
         private volatile Message _message;
-        private volatile IPrincipal _principal;
 
         /// <summary>
         /// The path and filename in which the message is stored
@@ -87,7 +88,7 @@ namespace Platibus.Filesystem
 
             string messageFileContent;
             using (var stringWriter = new StringWriter())
-            using (var messageFileWriter = new MessageFileWriter(stringWriter))
+            using (var messageFileWriter = new MessageWriter(stringWriter))
             {
                 await messageFileWriter.WriteMessage(message);
                 messageFileContent = stringWriter.ToString();
@@ -101,23 +102,6 @@ namespace Platibus.Filesystem
                 await fileWriter.WriteAsync(messageFileContent);
             }
             return new MessageFile(file);
-        }
-
-        /// <summary>
-        /// Reads the principal information stored with the message file
-        /// </summary>
-        /// <param name="cancellationToken">(Optional) A cancellation token through which the
-        /// caller can request cancellation of the read operation</param>
-        /// <returns>Returns a task whose result is the principal information read from the message
-        /// file</returns>
-        public async Task<IPrincipal> ReadPrincipal(
-            CancellationToken cancellationToken = default(CancellationToken))
-        {
-            CheckDisposed();
-            if (_message != null) return _principal;
-
-            await ReadFile(cancellationToken);
-            return _principal;
         }
 
         /// <summary>
@@ -160,9 +144,8 @@ namespace Platibus.Filesystem
                 cancellationToken.ThrowIfCancellationRequested();
 
                 using (var stringReader = new StringReader(messageFileContent))
-                using (var messageFileReader = new MessageFileReader(stringReader))
+                using (var messageFileReader = new MessageReader(stringReader))
                 {
-                    _principal = await messageFileReader.ReadLegacySenderPrincipal();
                     _message = await messageFileReader.ReadMessage();
                 }
             }

@@ -27,6 +27,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Platibus.IO;
 using RabbitMQ.Client;
 
 namespace Platibus.RabbitMQ
@@ -58,7 +59,7 @@ namespace Platibus.RabbitMQ
         /// <returns>Returns a valid RabbitMQ queue name</returns>
         public static string ReplaceInvalidQueueNameCharacters(string queueName)
         {
-            if (string.IsNullOrWhiteSpace(queueName)) throw new ArgumentNullException("queueName");
+            if (string.IsNullOrWhiteSpace(queueName)) throw new ArgumentNullException(nameof(queueName));
             return Regex.Replace(queueName, @"[^\w_\.\-\:]+", @"_");
         }
 
@@ -70,7 +71,7 @@ namespace Platibus.RabbitMQ
         /// <returns>Returns the name of the associated retry queue</returns>
         public static QueueName GetRetryQueueName(this QueueName queueName)
         {
-            if (queueName == null) throw new ArgumentNullException("queueName");
+            if (queueName == null) throw new ArgumentNullException(nameof(queueName));
             return ReplaceInvalidQueueNameCharacters(queueName) + "-R";
         }
 
@@ -82,7 +83,7 @@ namespace Platibus.RabbitMQ
         /// <returns>Returns the name of the associated exchange</returns>
         public static string GetExchangeName(this QueueName queueName)
         {
-            if (queueName == null) throw new ArgumentNullException("queueName");
+            if (queueName == null) throw new ArgumentNullException(nameof(queueName));
             return ReplaceInvalidQueueNameCharacters(queueName) + "-X";
         }
 
@@ -94,7 +95,7 @@ namespace Platibus.RabbitMQ
         /// <returns>Returns the name of the associated topic exchange</returns>
         public static string GetTopicExchangeName(this TopicName topic)
         {
-            if (topic == null) throw new ArgumentNullException("topic");
+            if (topic == null) throw new ArgumentNullException(nameof(topic));
             return "topic-" + ReplaceInvalidQueueNameCharacters(topic) + "-X";
         }
 
@@ -106,7 +107,7 @@ namespace Platibus.RabbitMQ
         /// <returns>Returns the name of the associated retry exchange</returns>
         public static string GetRetryExchangeName(this QueueName queueName)
         {
-            if (queueName == null) throw new ArgumentNullException("queueName");
+            if (queueName == null) throw new ArgumentNullException(nameof(queueName));
             return ReplaceInvalidQueueNameCharacters(queueName) + "-RX";
         }
 
@@ -118,7 +119,7 @@ namespace Platibus.RabbitMQ
         /// <returns>Returns the name of the associated dead letter exchange</returns>
         public static string GetDeadLetterExchangeName(this QueueName queueName)
         {
-            if (queueName == null) throw new ArgumentNullException("queueName");
+            if (queueName == null) throw new ArgumentNullException(nameof(queueName));
             return ReplaceInvalidQueueNameCharacters(queueName) + "-DLX";
         }
 
@@ -130,8 +131,8 @@ namespace Platibus.RabbitMQ
         /// <returns>Returns the name of the subscription queue</returns>
         public static string GetSubscriptionQueueName(this Uri subscriberUri, TopicName topicName)
         {
-            if (subscriberUri == null) throw new ArgumentNullException("subscriberUri");
-            if (topicName == null) throw new ArgumentNullException("topicName");
+            if (subscriberUri == null) throw new ArgumentNullException(nameof(subscriberUri));
+            if (topicName == null) throw new ArgumentNullException(nameof(topicName));
 
             var hostPortVhost = ReplaceInvalidQueueNameCharacters(subscriberUri.Host);
             if (subscriberUri.Port > 0)
@@ -192,8 +193,8 @@ namespace Platibus.RabbitMQ
         public static async Task PublishMessage(Message message, IPrincipal principal, IModel channel,
             QueueName queueName, string exchange = "", Encoding encoding = null, int attempts = 0)
         {
-            if (message == null) throw new ArgumentNullException("message");
-            if (channel == null) throw new ArgumentNullException("channel");
+            if (message == null) throw new ArgumentNullException(nameof(message));
+            if (channel == null) throw new ArgumentNullException(nameof(channel));
 
             if (encoding == null)
             {
@@ -235,15 +236,13 @@ namespace Platibus.RabbitMQ
         public static int GetDeliveryAttempts(this IBasicProperties basicProperties)
         {
             var headers = basicProperties.Headers;
-            if (headers == null) return 0;
 
-            var attempts = headers["x-platibus-attempts"];
+            var attempts = headers?["x-platibus-attempts"];
             if (attempts == null) return 0;
-            if (attempts is int) return (int) attempts;
+            if (attempts is int i) return i;
 
             var attemptStr = attempts.ToString();
-            int parsedInt;
-            if (int.TryParse(attemptStr, out parsedInt))
+            if (int.TryParse(attemptStr, out var parsedInt))
             {
                 return parsedInt;
             }

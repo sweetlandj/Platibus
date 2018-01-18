@@ -106,7 +106,7 @@ namespace Platibus.RabbitMQ
 
         private RabbitMQHost(IRabbitMQHostConfiguration configuration)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
 
             _diagnosticService = configuration.DiagnosticService;
             _baseUri = configuration.BaseUri.WithoutTrailingSlash();
@@ -383,8 +383,8 @@ namespace Platibus.RabbitMQ
 
             public SubscriptionKey(Uri publisherUri, QueueName subscriptionQueueName)
             {
-                _publisherUri = publisherUri ?? throw new ArgumentNullException("publisherUri");
-                _subscriptionQueueName = subscriptionQueueName ?? throw new ArgumentNullException("subscriptionQueueName");
+                _publisherUri = publisherUri ?? throw new ArgumentNullException(nameof(publisherUri));
+                _subscriptionQueueName = subscriptionQueueName ?? throw new ArgumentNullException(nameof(subscriptionQueueName));
             }
 
             public bool Equals(SubscriptionKey other)

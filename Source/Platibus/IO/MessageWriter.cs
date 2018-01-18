@@ -25,7 +25,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Platibus.RabbitMQ
+namespace Platibus.IO
 {
     /// <summary>
     /// An object that writes messages to streams
@@ -50,7 +50,7 @@ namespace Platibus.RabbitMQ
         /// </remarks>
         public MessageWriter(TextWriter writer, bool leaveOpen = false)
         {
-            _writer = writer ?? throw new ArgumentNullException("writer");
+            _writer = writer ?? throw new ArgumentNullException(nameof(writer));
             _leaveOpen = leaveOpen;
         }
 
@@ -69,9 +69,57 @@ namespace Platibus.RabbitMQ
         /// </remarks>
         public MessageWriter(Stream stream, Encoding encoding = null, bool leaveOpen = false)
         {
-            if (stream == null) throw new ArgumentNullException("stream");
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
             _writer = new StreamWriter(stream, encoding ?? Encoding.UTF8);
             _leaveOpen = leaveOpen;
+        }
+
+        /// <summary>
+        /// Writes message headers to the underlying stream or writer
+        /// </summary>
+        /// <param name="headers">The message headers</param>
+        /// <returns>Returns a task that completes when the message headers have been
+        /// written to the underlying stream or writer</returns>
+        public async Task WriteMessageHeaders(IMessageHeaders headers)
+        {
+            if (headers == null) throw new ArgumentNullException(nameof(headers));
+
+            foreach (var header in headers)
+            {
+                var headerName = header.Key;
+                var headerValue = header.Value;
+                await _writer.WriteAsync($"{headerName}: ");
+                using (var headerValueReader = new StringReader(headerValue))
+                {
+                    var multilineContinuation = false;
+                    string line;
+                    while ((line = await headerValueReader.ReadLineAsync()) != null)
+                    {
+                        if (multilineContinuation)
+                        {
+                            // Prefix continuation with whitespace so that subsequent
+                            // lines are not confused with different headers.
+                            line = "    " + line;
+                        }
+                        await _writer.WriteLineAsync(line);
+                        multilineContinuation = true;
+                    }
+                }
+            }
+
+            // Blank line to denote end of headers
+            await _writer.WriteLineAsync();
+        }
+
+        /// <summary>
+        /// Writes message content to the underlying stream or writer
+        /// </summary>
+        /// <param name="content">The message content</param>
+        /// <returns>Returns a task that completes when the message content has been
+        /// written to the underlying stream or writer</returns>
+        public Task WriteMessageContent(string content)
+        {
+            return _writer.WriteAsync(content ?? "");
         }
         
         /// <summary>
@@ -82,51 +130,10 @@ namespace Platibus.RabbitMQ
         /// written to the underlying stream </returns>
         public async Task WriteMessage(Message message)
         {
-            if (message == null) throw new ArgumentNullException("message");
+            if (message == null) throw new ArgumentNullException(nameof(message));
 
-            // Write a blank line to preserve backward compatibility with older messages that
-            // have a binary formatted SenderPrincipal.  The MessageFileReader will continue to
-            // support older messages for the forseeable future to ensure that older messages can
-            // still be processed following an update.
-            await _writer.WriteLineAsync();
-
-            var headers = message.Headers;
-            if (headers != null)
-            {
-                foreach (var header in headers)
-                {
-                    var headerName = header.Key;
-                    var headerValue = header.Value;
-                    await _writer.WriteAsync(string.Format("{0}: ", headerName));
-                    using (var headerValueReader = new StringReader(headerValue))
-                    {
-                        var multilineContinuation = false;
-                        string line;
-                        while ((line = await headerValueReader.ReadLineAsync()) != null)
-                        {
-                            if (multilineContinuation)
-                            {
-                                // Prefix continuation with whitespace so that subsequent
-                                // lines are not confused with different headers.
-                                line = "    " + line;
-                            }
-                            await _writer.WriteLineAsync(line);
-                            multilineContinuation = true;
-                        }
-                    }
-                }
-            }
-
-            // Blank line separates headers from content
-            await _writer.WriteLineAsync();
-
-            var content = message.Content;
-            if (!string.IsNullOrWhiteSpace(content))
-            {
-                // No special formatting required for content.  Content is defined as
-                // everything following the blank line.
-                await _writer.WriteAsync(content);
-            }
+            await WriteMessageHeaders(message.Headers);
+            await WriteMessageContent(message.Content);
         }
 
         /// <summary>
@@ -137,6 +144,7 @@ namespace Platibus.RabbitMQ
             Dispose(false);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
@@ -160,6 +168,7 @@ namespace Platibus.RabbitMQ
         /// </remarks>
         protected virtual void Dispose(bool disposing)
         {
+            _writer.Flush();
             if (disposing && !_leaveOpen)
             {
                 _writer.Dispose();

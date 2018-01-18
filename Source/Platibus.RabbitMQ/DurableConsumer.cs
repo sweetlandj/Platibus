@@ -50,10 +50,10 @@ namespace Platibus.RabbitMQ
             string consumerTag = null, int concurrencyLimit = 0,
             bool autoAcknowledge = false, IDiagnosticService diagnosticService = null)
         {
-            if (string.IsNullOrWhiteSpace(queueName)) throw new ArgumentNullException("queueName");
-            _connection = connection ?? throw new ArgumentNullException("connection");
+            if (string.IsNullOrWhiteSpace(queueName)) throw new ArgumentNullException(nameof(queueName));
+            _connection = connection ?? throw new ArgumentNullException(nameof(connection));
             _queueName = queueName;
-            _consume = consume ?? throw new ArgumentNullException("consume");
+            _consume = consume ?? throw new ArgumentNullException(nameof(consume));
             _consumerTag = consumerTag;
             _concurrencyLimit = concurrencyLimit > 0 
                 ? (ushort)concurrencyLimit

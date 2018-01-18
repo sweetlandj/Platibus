@@ -41,25 +41,7 @@ namespace Platibus.UnitTests.Filesystem
 
         protected MessageFile MessageFile;
 
-       [Fact]
-        public async Task LegacyMessageFileWithSenderPrincipalCanBeRead()
-        {
-            await GivenLegacyMessageFileWithSenderPrincipal();
-            WhenReadingTheMessageFileContent();
-            await ThenTheSenderPrincipalShouldBeReadSuccessfully();
-            await ThenTheMessageShouldBeReadSuccessfully();
-        }
-
-       [Fact]
-        public async Task LegacyMessageFileWithNoSenderPrincipalCanBeRead()
-        {
-            await GivenLegacyMessageFileWithNoPrincipal();
-            WhenReadingTheMessageFileContent();
-            await ThenThePrincipalShouldBeNull();
-            await ThenTheMessageShouldBeReadSuccessfully();
-        }
-
-       [Fact]
+        [Fact]
         public async Task MessageFileWithSecurityTokenCanBeRead()
         {
             await GivenMessageFileWithClaimsPrincipal();
@@ -68,12 +50,11 @@ namespace Platibus.UnitTests.Filesystem
             await ThenTheMessageShouldHaveASecurityTokenHeader();
         }
 
-       [Fact]
+        [Fact]
         public async Task MessageFileWithNoPrincipalCanBeRead()
         {
             await GivenMessageFileWithNoPrincipal();
             WhenReadingTheMessageFileContent();
-            await ThenThePrincipalShouldBeNull();
             await ThenTheMessageShouldBeReadSuccessfully();
             await ThenTheMessageShouldNotHaveASecurityTokenHeader();
         }
@@ -81,7 +62,7 @@ namespace Platibus.UnitTests.Filesystem
         protected IPrincipal GivenLegacySenderPrincipal()
         {
             var identity = new GenericIdentity("test@example.com", "basic");
-            var principal = new GenericPrincipal(identity, new [] {"user", "staff"});
+            var principal = new GenericPrincipal(identity, new[] { "user", "staff" });
             return Principal = new SenderPrincipal(principal);
         }
 
@@ -169,43 +150,13 @@ namespace Platibus.UnitTests.Filesystem
             var messageFile = await MessageFile.Create(directory, Message);
             return MessageFileInfo = messageFile.File;
         }
-        
+
         protected MessageFile WhenReadingTheMessageFileContent()
         {
             Assert.NotNull(MessageFileInfo);
             return MessageFile = new MessageFile(MessageFileInfo);
         }
-
-        protected async Task ThenTheSenderPrincipalShouldBeReadSuccessfully()
-        {
-            Assert.NotNull(MessageFileInfo);
-            var principal = await MessageFile.ReadPrincipal();
-            var principalAsSenderPrincipal = SenderPrincipal.From(principal);
-            Assert.Equal(Principal, principalAsSenderPrincipal);
-        }
-
-        protected async Task ThenTheClaimsPrincipalShouldBeReadSuccessfully()
-        {
-            Assert.NotNull(MessageFile);
-            var principal = await MessageFile.ReadPrincipal();
-
-            Assert.NotNull(principal);
-
-            Assert.True(principal.IsInRole("user"));
-            Assert.True(principal.IsInRole("staff"));
-
-            var readIdentity = principal.Identity;
-            Assert.NotNull(readIdentity);
-            Assert.Equal(Principal.Identity.Name, readIdentity.Name);
-        }
-
-        protected async Task ThenThePrincipalShouldBeNull()
-        {
-            Assert.NotNull(MessageFile);
-            var principal = await MessageFile.ReadPrincipal();
-            Assert.Null(principal);
-        }
-
+        
         protected async Task ThenTheMessageShouldBeReadSuccessfully()
         {
             Assert.NotNull(MessageFile);

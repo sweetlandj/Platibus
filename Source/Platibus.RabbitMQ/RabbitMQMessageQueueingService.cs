@@ -31,8 +31,10 @@ using Platibus.Security;
 
 namespace Platibus.RabbitMQ
 {
+    /// <inheritdoc cref="IMessageQueueingService" />
+    /// <inheritdoc cref="IDisposable" />
     /// <summary>
-    /// An <see cref="IMessageQueueingService"/> implementation based on RabbitMQ
+    /// An <see cref="T:Platibus.IMessageQueueingService" /> implementation based on RabbitMQ
     /// </summary>
     public class RabbitMQMessageQueueingService : IMessageQueueingService, IDisposable
     {
@@ -72,7 +74,7 @@ namespace Platibus.RabbitMQ
             ISecurityTokenService securityTokenService = null, 
             IDiagnosticService diagnosticService = null)
         {
-            _uri = uri ?? throw new ArgumentNullException("uri");
+            _uri = uri ?? throw new ArgumentNullException(nameof(uri));
             _defaultQueueOptions = defaultQueueOptions ?? new QueueOptions();
             if (connectionManager == null)
             {

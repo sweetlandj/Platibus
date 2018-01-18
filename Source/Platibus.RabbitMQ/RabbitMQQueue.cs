@@ -20,6 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Platibus.Diagnostics;
+using Platibus.IO;
+using Platibus.Security;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,14 +32,10 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Platibus.Diagnostics;
-using Platibus.Filesystem;
-using Platibus.Security;
-using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
 
 namespace Platibus.RabbitMQ
 {
+    /// <inheritdoc />
     /// <summary>
     /// A logical Platibus queue implemented with RabbitMQ queues and exchanges
     /// </summary>
@@ -79,15 +80,15 @@ namespace Platibus.RabbitMQ
             Encoding encoding = null, QueueOptions options = null, 
             IDiagnosticService diagnosticService = null)
         {
-            _queueName = queueName ?? throw new ArgumentNullException("queueName");
+            _queueName = queueName ?? throw new ArgumentNullException(nameof(queueName));
             _queueExchange = _queueName.GetExchangeName();
             _retryQueueName = queueName.GetRetryQueueName();
             _retryExchange = _queueName.GetRetryExchangeName();
             _deadLetterExchange = _queueName.GetDeadLetterExchangeName();
 
-            _listener = listener ?? throw new ArgumentNullException("listener");
-            _connection = connection ?? throw new ArgumentNullException("connection");
-            _securityTokenService = securityTokenService ?? throw new ArgumentNullException("securityTokenService");
+            _listener = listener ?? throw new ArgumentNullException(nameof(listener));
+            _connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            _securityTokenService = securityTokenService ?? throw new ArgumentNullException(nameof(securityTokenService));
             _encoding = encoding ?? Encoding.UTF8;
 
             var myOptions = options ?? new QueueOptions();
@@ -366,19 +367,12 @@ namespace Platibus.RabbitMQ
                 using (var reader = new StringReader(messageBody))
                 using (var messageReader = new MessageReader(reader))
                 {
-                    var principal = await messageReader.ReadLegacySenderPrincipal();
                     message = await messageReader.ReadMessage();
                     var securityToken = message.Headers.SecurityToken;
-                    if (!string.IsNullOrWhiteSpace(securityToken))
-                    {
-                        principal = await _securityTokenService.Validate(securityToken);
-                    }
+                    var principal = await _securityTokenService.NullSafeValidate(securityToken);
 
-                    var headers = new MessageHeaders(message.Headers)
-                    {
-                        SecurityToken = null
-                    };
-
+                    // Remove sensitive information from the header, including security token
+                    var headers = new MessageHeaders(message.Headers.Sanitize());
                     if (headers.Received == default(DateTime))
                     {
                         headers.Received = DateTime.UtcNow;
@@ -392,19 +386,6 @@ namespace Platibus.RabbitMQ
             }
             catch (OperationCanceledException)
             {
-            }
-            catch (MessageFileFormatException ex)
-            {
-                _diagnosticService.Emit(
-                    new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQDeliveryError)
-                    {
-                        Detail = "Message body could not be parsed",
-                        Message = message,
-                        Exception = ex,
-                        Queue = _queueName,
-                        ConsumerTag = delivery.ConsumerTag,
-                        DeliveryTag = delivery.DeliveryTag
-                    }.Build());
             }
             catch (Exception ex)
             {
