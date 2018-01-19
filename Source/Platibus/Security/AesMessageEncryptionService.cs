@@ -85,8 +85,8 @@ namespace Platibus.Security
             var iv = Convert.FromBase64String(encryptedHeaders.IV);
             var headerCiphertext = Convert.FromBase64String(encryptedHeaders.Ciphertext);
             var contentCiphertext = Convert.FromBase64String(encryptedMessage.Content);
-
-            var signature = Convert.FromBase64String(encryptedHeaders.Signature);
+            
+            var signature = DecodeSignature(encryptedMessage, encryptedHeaders);
             var keyNumber = 0;
             var keyCount = _decryptionKeys.Count;
             var innerExceptions = new List<Exception>();
@@ -117,9 +117,9 @@ namespace Platibus.Security
                     signatureVerified = Verify(key, headerCleartext, signature);
                     if (!signatureVerified)
                     {
-                        _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.SignatureVerficationError)
+                        _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.SignatureVerificationFailure)
                         {
-                            Detail = $"Signature verification mailed using key {keyNumber} of {keyCount}",
+                            Detail = $"Signature verification failed using key {keyNumber} of {keyCount}",
                             Message = encryptedMessage
                         }.Build());
                     }
@@ -127,7 +127,7 @@ namespace Platibus.Security
                 catch (Exception ex)
                 {
                     innerExceptions.Add(ex);
-                    _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.SignatureVerficationError)
+                    _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.SignatureVerificationFailure)
                     {
                         Detail = $"Unexpected error verifying message signature using key {keyNumber} of {keyCount}",
                         Message = encryptedMessage,
@@ -159,6 +159,39 @@ namespace Platibus.Security
             }
 
             throw new MessageEncryptionException($"Unable to decrypt and verify message using any of {keyCount} available decryption key(s)", innerExceptions);
+        }
+
+        private byte[] DecodeSignature(Message encryptedMessage, EncryptedMessageHeaders encryptedHeaders)
+        {
+            if (string.IsNullOrWhiteSpace(encryptedHeaders.Signature))
+            {
+                _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.SignatureVerificationFailure)
+                {
+                    Detail = "Missing signature",
+                    Message = encryptedMessage
+                }.Build());
+
+                throw new MessageEncryptionException("Missing signature");
+            }
+
+            byte[] signature;
+            try
+            {
+                signature = Convert.FromBase64String(encryptedHeaders.Signature);
+            }
+            catch (Exception ex)
+            {
+                _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.SignatureVerificationFailure)
+                {
+                    Detail = "Error decoding signature",
+                    Message = encryptedMessage,
+                    Exception = ex
+                }.Build());
+
+                throw new MessageEncryptionException("Error decoding signature", ex);
+            }
+
+            return signature;
         }
 
         private static async Task<byte[]> MarshalHeaders(IMessageHeaders headers)

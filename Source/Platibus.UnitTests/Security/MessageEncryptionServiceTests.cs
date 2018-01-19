@@ -7,15 +7,9 @@ namespace Platibus.UnitTests.Security
 {
     public abstract class MessageEncryptionServiceTests
     {
-        protected IMessageEncryptionService EncryptionService;
         protected Message Message;
         protected Message EncryptedMessage;
         protected Message DecryptedMessage;
-
-        protected MessageEncryptionServiceTests(IMessageEncryptionService encryptionService)
-        {
-            EncryptionService = encryptionService;
-        }
 
         [Fact]
         public async Task EncryptedMessageCanBeDecrypted()
@@ -41,13 +35,25 @@ namespace Platibus.UnitTests.Security
 
         protected async Task<Message> WhenMessageIsEncrypted()
         {
-            return EncryptedMessage = await EncryptionService.Encrypt(Message);
+            var encryptionService = GivenEncryptionService();
+            return EncryptedMessage = await encryptionService.Encrypt(Message);
+        }
+
+        protected async Task<Message> WhenMessageIsDecrypted()
+        {
+            var encryptionService = GivenEncryptionService();
+            return DecryptedMessage = await encryptionService.Decrypt(EncryptedMessage);
         }
 
         protected async Task AssertMessageCanBeDecrypted()
         {
-            DecryptedMessage = await EncryptionService.Decrypt(EncryptedMessage);
+            if (DecryptedMessage == null)
+            {
+                await WhenMessageIsDecrypted();
+            }
             Assert.Equal(Message, DecryptedMessage, new MessageEqualityComparer());
         }
+
+        protected abstract IMessageEncryptionService GivenEncryptionService();
     }
 }

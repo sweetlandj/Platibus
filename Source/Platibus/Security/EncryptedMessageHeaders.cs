@@ -6,7 +6,7 @@ namespace Platibus.Security
     /// <summary>
     /// Encrypted messages headers
     /// </summary>
-    internal class EncryptedMessageHeaders : MessageHeaders
+    public class EncryptedMessageHeaders : MessageHeaders
     {
         /// <summary>
         /// The base-64 encoded initialization vector used to encrypt the message

@@ -224,13 +224,7 @@ namespace Platibus.Diagnostics
         /// <summary>
         /// Emitted when an encrypted message signature could not be verified
         /// </summary>
-        public static readonly DiagnosticEventType SignatureVerficationFailure = new DiagnosticEventType("SignatureVerficationFailure", DiagnosticEventLevel.Warn);
-
-        /// <summary>
-        /// Emitted when an there is an unexpectedf error verifying a message signature
-        /// </summary>
-        public static readonly DiagnosticEventType SignatureVerficationError = new DiagnosticEventType("SignatureVerficationError", DiagnosticEventLevel.Error);
-
+        public static readonly DiagnosticEventType SignatureVerificationFailure = new DiagnosticEventType("SignatureVerificationFailure", DiagnosticEventLevel.Warn);
 
         /// <summary>
         /// The name of the diagnostic event type
