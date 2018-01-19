@@ -217,6 +217,22 @@ namespace Platibus.Diagnostics
         public static readonly DiagnosticEventType InvalidDataContract = new DiagnosticEventType("InvalidDataContract", DiagnosticEventLevel.Warn);
 
         /// <summary>
+        /// Emitted when an attempt to decrypt an encrypted message fails
+        /// </summary>
+        public static readonly DiagnosticEventType DecryptionError = new DiagnosticEventType("DecryptionError", DiagnosticEventLevel.Warn);
+
+        /// <summary>
+        /// Emitted when an encrypted message signature could not be verified
+        /// </summary>
+        public static readonly DiagnosticEventType SignatureVerficationFailure = new DiagnosticEventType("SignatureVerficationFailure", DiagnosticEventLevel.Warn);
+
+        /// <summary>
+        /// Emitted when an there is an unexpectedf error verifying a message signature
+        /// </summary>
+        public static readonly DiagnosticEventType SignatureVerficationError = new DiagnosticEventType("SignatureVerficationError", DiagnosticEventLevel.Error);
+
+
+        /// <summary>
         /// The name of the diagnostic event type
         /// </summary>
         public string Name { get; }

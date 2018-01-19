@@ -15,5 +15,15 @@
         /// </summary>
         public static readonly HeaderName Ciphertext = "Platibus-Ciphertext";
 
+        /// <summary>
+        /// The hash-based message authentication code used to verify the 
+        /// decrypted message
+        /// </summary>
+        public static readonly HeaderName Signature = "Platibus-Signature";
+        
+        /// <summary>
+        /// The signature algorithm (e.g. HMACSHA256)
+        /// </summary>
+        public static readonly HeaderName SignatureAlgorithm = "Platibus-SignatureAlgorithm";
     }
 }

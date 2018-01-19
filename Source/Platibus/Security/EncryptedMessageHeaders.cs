@@ -26,6 +26,24 @@ namespace Platibus.Security
             set => this[EncryptedHeaderName.Ciphertext] = value;
         }
 
+        /// <summary>
+        /// The base-64 encoded signature
+        /// </summary>
+        public string Signature
+        {
+            get => this[EncryptedHeaderName.Signature];
+            set => this[EncryptedHeaderName.Signature] = value;
+        }
+
+        /// <summary>
+        /// The signature algorithm
+        /// </summary>
+        public string SignatureAlgorithm
+        {
+            get => this[EncryptedHeaderName.SignatureAlgorithm];
+            set => this[EncryptedHeaderName.SignatureAlgorithm] = value;
+        }
+
         /// <inheritdoc />
         /// <summary>
         /// Initializes an empty <see cref="T:Platibus.Security.EncryptedMessageHeaders" /> instance

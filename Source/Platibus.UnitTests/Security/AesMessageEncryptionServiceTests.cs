@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using Platibus.Diagnostics;
 using Platibus.Security;
 #if NET452
 using System.IdentityModel.Tokens;
@@ -27,7 +28,8 @@ namespace Platibus.UnitTests.Security
 #if NETCOREAPP2_0
                 var key = new SymmetricSecurityKey(csp.Key);
 #endif
-                return new AesMessageEncryptionService(key);
+                var options = new AesMessageEncryptionOptions(DiagnosticService.DefaultInstance, key);
+                return new AesMessageEncryptionService(options);
             }
         }
     }

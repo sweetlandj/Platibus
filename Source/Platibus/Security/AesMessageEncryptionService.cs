@@ -1,14 +1,11 @@
-﻿#if NET452
-using System.IdentityModel.Tokens;
-#endif
-#if NETSTANDARD2_0
-using Microsoft.IdentityModel.Tokens;
-#endif
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Platibus.Diagnostics;
 using Platibus.IO;
 
 namespace Platibus.Security
@@ -19,22 +16,40 @@ namespace Platibus.Security
     /// </summary>
     public class AesMessageEncryptionService : IMessageEncryptionService
     {
-        private readonly byte[] _key;
+        private readonly IDiagnosticService _diagnosticService;
+        private readonly byte[] _encryptionKey;
+        private readonly IList<byte[]> _decryptionKeys;
 
         /// <summary>
         /// Initializes a new <see cref="AesMessageEncryptionService"/> with the specified
-        /// <paramref name="key"/>
+        /// <paramref name="options"/>
         /// </summary>
-        /// <param name="key">The 128, 192, or 256 bit key used to encrypt and decrypt 
-        /// byte streams</param>
-        public AesMessageEncryptionService(SymmetricSecurityKey key)
+        /// <param name="options">Options that influence the behavior of the AES message
+        /// encryption service</param>
+        public AesMessageEncryptionService(AesMessageEncryptionOptions options)
         {
-            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (options == null) throw new ArgumentNullException(nameof(options));
+
+            _diagnosticService = options.DiagnosticService;
 #if NET452
-                _key = key.GetSymmetricKey();
+            _encryptionKey = options.Key.GetSymmetricKey();
+            _decryptionKeys = new[] {_encryptionKey}.Union(
+                options.FallbackKeys?
+                    .Where(k => k != null)
+                    .Select(k => k.GetSymmetricKey())
+                    .ToList()
+                ?? Enumerable.Empty<byte[]>())
+                .ToList();
 #endif
 #if NETSTANDARD2_0
-                _key = key.Key;
+            _encryptionKey = options.Key.Key;
+            _decryptionKeys = new[] {_encryptionKey}.Union(
+                    options.FallbackKeys?
+                        .Where(k => k != null)
+                        .Select(k => k.Key)
+                        .ToList()
+                    ?? Enumerable.Empty<byte[]>())
+                .ToList();
 #endif
         }
 
@@ -47,26 +62,18 @@ namespace Platibus.Security
                 iv = csp.IV;
             }
 
-            var headerCiphertext = await Encrypt(iv, async cryptoStream =>
-            {
-                using (var messageWriter = new MessageWriter(cryptoStream, Encoding.UTF8, true))
-                {
-                    await messageWriter.WriteMessageHeaders(message.Headers);
-                }
-            });
-
-            var contentCiphertext = await Encrypt(iv, async cryptoStream =>
-            {
-                using (var messageWriter = new MessageWriter(cryptoStream, Encoding.UTF8, true))
-                {
-                    await messageWriter.WriteMessageContent(message.Content);
-                }
-            });
+            var headerCleartext = await MarshalHeaders(message.Headers);
+            var contentCleartext = await MarshalContent(message.Content);
+            var headerCiphertext = await Encrypt(iv, headerCleartext);
+            var contentCiphertext = await Encrypt(iv, contentCleartext);
+            var headerSignature = Sign(headerCleartext);
 
             var encryptedHeaders = new EncryptedMessageHeaders
             {
                 IV = Convert.ToBase64String(iv),
-                Ciphertext = Convert.ToBase64String(headerCiphertext)
+                Ciphertext = Convert.ToBase64String(headerCiphertext),
+                Signature = Convert.ToBase64String(headerSignature),
+                SignatureAlgorithm = "HMACSHA256"
             };
             var encryptedContent = Convert.ToBase64String(contentCiphertext);
             return new Message(encryptedHeaders, encryptedContent);
@@ -79,54 +86,183 @@ namespace Platibus.Security
             var headerCiphertext = Convert.FromBase64String(encryptedHeaders.Ciphertext);
             var contentCiphertext = Convert.FromBase64String(encryptedMessage.Content);
 
-            var headers = await Decrypt(headerCiphertext, iv, async cryptoStream =>
+            var signature = Convert.FromBase64String(encryptedHeaders.Signature);
+            var keyNumber = 0;
+            var keyCount = _decryptionKeys.Count;
+            var innerExceptions = new List<Exception>();
+            foreach (var key in _decryptionKeys)
             {
-                using (var messageReader = new MessageReader(cryptoStream, Encoding.UTF8, true))
+                keyNumber++;
+                byte[] headerCleartext;
+                byte[] contentCleartext;
+                try
+                {
+                    headerCleartext = await Decrypt(headerCiphertext, key, iv);
+                }
+                catch (Exception ex)
+                {
+                    innerExceptions.Add(ex);
+                    _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.DecryptionError)
+                    {
+                        Detail = $"Error decrypting message headers using key {keyNumber} of {keyCount}",
+                        Message = encryptedMessage,
+                        Exception = ex
+                    }.Build());
+                    continue;
+                }
+
+                var signatureVerified = false;
+                try
+                {
+                    signatureVerified = Verify(key, headerCleartext, signature);
+                    if (!signatureVerified)
+                    {
+                        _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.SignatureVerficationError)
+                        {
+                            Detail = $"Signature verification mailed using key {keyNumber} of {keyCount}",
+                            Message = encryptedMessage
+                        }.Build());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    innerExceptions.Add(ex);
+                    _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.SignatureVerficationError)
+                    {
+                        Detail = $"Unexpected error verifying message signature using key {keyNumber} of {keyCount}",
+                        Message = encryptedMessage,
+                        Exception = ex
+                    }.Build());
+                }
+
+                if (!signatureVerified) continue;
+
+                try
+                {
+                    contentCleartext = await Decrypt(contentCiphertext, key, iv);
+                }
+                catch (Exception ex)
+                {
+                    innerExceptions.Add(ex);
+                    _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.DecryptionError)
+                    {
+                        Detail = $"Error decrypting message content using key {keyNumber} of {keyCount}",
+                        Message = encryptedMessage,
+                        Exception = ex
+                    }.Build());
+                    continue;
+                }
+
+                var headers = await UnmarshalHeaders(headerCleartext);
+                var content = await UnmarshalContent(contentCleartext);
+                return new Message(headers, content);
+            }
+
+            throw new MessageEncryptionException($"Unable to decrypt and verify message using any of {keyCount} available decryption key(s)", innerExceptions);
+        }
+
+        private static async Task<byte[]> MarshalHeaders(IMessageHeaders headers)
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var messageWriter = new MessageWriter(stream, Encoding.UTF8, true))
+                {
+                    await messageWriter.WriteMessageHeaders(headers);
+                }
+                return stream.ToArray();
+            }
+        }
+
+        private static async Task<IMessageHeaders> UnmarshalHeaders(byte[] marshaledHeaders)
+        {
+            using (var stream = new MemoryStream(marshaledHeaders))
+            {
+                using (var messageReader = new MessageReader(stream, Encoding.UTF8, true))
                 {
                     return await messageReader.ReadMessageHeaders();
                 }
-            });
+            }
+        }
 
-            var content = await Decrypt(contentCiphertext, iv, async cryptoStream =>
+        private static async Task<byte[]> MarshalContent(string content)
+        {
+            using (var stream = new MemoryStream())
             {
-                using (var messageReader = new MessageReader(cryptoStream, Encoding.UTF8, true))
+                using (var messageWriter = new MessageWriter(stream, Encoding.UTF8, true))
+                {
+                    await messageWriter.WriteMessageContent(content);
+                }
+                return stream.ToArray();
+            }
+        }
+
+        private static async Task<string> UnmarshalContent(byte[] marshaledContent)
+        {
+            using (var stream = new MemoryStream(marshaledContent))
+            {
+                using (var messageReader = new MessageReader(stream, Encoding.UTF8, true))
                 {
                     return await messageReader.ReadMessageContent();
                 }
-            });
-
-            return new Message(headers, content);
+            }
         }
-
-        private async Task<byte[]> Encrypt(byte[] iv, Func<CryptoStream, Task> write)
+        
+        private async Task<byte[]> Encrypt(byte[] iv, byte[] cleartext)
         {
             using (var csp = new AesCryptoServiceProvider())
             {
-                var encryptor = csp.CreateEncryptor(_key, iv);
-                using (var stream = new MemoryStream())
+                var encryptor = csp.CreateEncryptor(_encryptionKey, iv);
+                using (var ciphertextStream = new MemoryStream())
                 {
-                    using (var cryptoStream = new CryptoStream(stream, encryptor, CryptoStreamMode.Write))
+                    using (var cryptoStream = new CryptoStream(ciphertextStream, encryptor, CryptoStreamMode.Write))
                     {
-                        await write(cryptoStream);
+                        await cryptoStream.WriteAsync(cleartext, 0, cleartext.Length);
                     }
-                    return stream.ToArray();
+                    return ciphertextStream.ToArray();
                 }
             }
         }
 
-        private async Task<TResult> Decrypt<TResult>(byte[] ciphertext, byte[] iv, Func<CryptoStream, Task<TResult>> read)
+        private byte[] Sign(byte[] message)
+        {
+            using (var alg = new HMACSHA256(_encryptionKey))
+            {
+                return alg.ComputeHash(message);
+            }
+        }
+
+        private static async Task<byte[]> Decrypt(byte[] ciphertext, byte[] key, byte[] iv)
         {
             using (var csp = new AesCryptoServiceProvider())
             {
-                var decryptor = csp.CreateDecryptor(_key, iv);
-                using (var stream = new MemoryStream(ciphertext))
+                var decryptor = csp.CreateDecryptor(key, iv);
+                using (var ciphertextStream = new MemoryStream(ciphertext))
+                using (var cryptoStream = new CryptoStream(ciphertextStream, decryptor, CryptoStreamMode.Read))
+                using (var cleartextStream = new MemoryStream())
                 {
-                    using (var cryptoStream = new CryptoStream(stream, decryptor, CryptoStreamMode.Read))
+                    await cryptoStream.CopyToAsync(cleartextStream);
+                    return cleartextStream.ToArray();
+                }
+            }
+        }
+
+        private static bool Verify(byte[] key, byte[] message, byte[] signature)
+        {
+            using (var alg = new HMACSHA256(key))
+            {
+                var hash = alg.ComputeHash(message);
+                if (hash.Length != signature.Length) return false;
+
+                for (var i = 0; i < hash.Length; i++)
+                {
+                    if (hash[i] != signature[i])
                     {
-                        return await read(cryptoStream);
+                        return false;
                     }
                 }
             }
+
+            return true;
         }
     }
 }
