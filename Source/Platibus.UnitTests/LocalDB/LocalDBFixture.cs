@@ -53,7 +53,8 @@ namespace Platibus.UnitTests.LocalDB
             MessageJournal = new SQLMessageJournal(ConnectionProvider, new MSSQLMessageJournalingCommandBuilders());
             MessageJournal.Init();
 
-            MessageQueueingService = new SQLMessageQueueingService(ConnectionProvider, new MSSQLMessageQueueingCommandBuilders());
+            var queueingOptions = new SQLMessageQueueingOptions(ConnectionProvider, new MSSQLMessageQueueingCommandBuilders());
+            MessageQueueingService = new SQLMessageQueueingService(queueingOptions);
             MessageQueueingService.Init();
 
             SubscriptionTrackingService = new SQLSubscriptionTrackingService(ConnectionProvider, new MSSQLSubscriptionTrackingCommandBuilders());

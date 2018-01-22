@@ -33,25 +33,27 @@ namespace Platibus.Config
     /// <summary>
     /// A collection of endpoint elements.
     /// </summary>
-    public class EndpointElementCollection : ConfigurationElementCollection, IEnumerable<EndpointElement>
+    public class KeyElementCollection : ConfigurationElementCollection, IEnumerable<KeyElement>
     {
+        /// <inheritdoc />
         /// <summary>
         /// Returns an enumerator that iterates through the collection.
         /// </summary>
         /// <returns>
-        /// A <see cref="T:System.Collections.Generic.IEnumerator`1"/> that can be used to iterate through the collection.
+        /// A <see cref="T:System.Collections.Generic.IEnumerator`1" /> that can be used to iterate through the collection.
         /// </returns>
         /// <filterpriority>1</filterpriority>
-        IEnumerator<EndpointElement> IEnumerable<EndpointElement>.GetEnumerator()
+        IEnumerator<KeyElement> IEnumerable<KeyElement>.GetEnumerator()
         {
-            return this.OfType<EndpointElement>().GetEnumerator();
+            return this.OfType<KeyElement>().GetEnumerator();
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Returns an enumerator that iterates through a collection.
         /// </summary>
         /// <returns>
-        /// An <see cref="T:System.Collections.IEnumerator"/> object that can be used to iterate through the collection.
+        /// An <see cref="T:System.Collections.IEnumerator" /> object that can be used to iterate through the collection.
         /// </returns>
         /// <filterpriority>2</filterpriority>
         IEnumerator IEnumerable.GetEnumerator()
@@ -59,27 +61,29 @@ namespace Platibus.Config
             return GetEnumerator();
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// When overridden in a derived class, creates a new <see cref="T:System.Configuration.ConfigurationElement"/>.
+        /// When overridden in a derived class, creates a new <see cref="T:System.Configuration.ConfigurationElement" />.
         /// </summary>
         /// <returns>
-        /// A new <see cref="T:System.Configuration.ConfigurationElement"/>.
+        /// A new <see cref="T:System.Configuration.ConfigurationElement" />.
         /// </returns>
         protected override ConfigurationElement CreateNewElement()
         {
-            return new EndpointElement();
+            return new KeyElement();
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Gets the element key for a specified configuration element when overridden in a derived class.
         /// </summary>
         /// <returns>
-        /// An <see cref="T:System.Object"/> that acts as the key for the specified <see cref="T:System.Configuration.ConfigurationElement"/>.
+        /// An <see cref="T:System.Object" /> that acts as the key for the specified <see cref="T:System.Configuration.ConfigurationElement" />.
         /// </returns>
-        /// <param name="element">The <see cref="T:System.Configuration.ConfigurationElement"/> to return the key for. </param>
+        /// <param name="element">The <see cref="T:System.Configuration.ConfigurationElement" /> to return the key for. </param>
         protected override object GetElementKey(ConfigurationElement element)
         {
-            return ((EndpointElement) element).Name;
+            return ((KeyElement) element).Key;
         }
     }
 }

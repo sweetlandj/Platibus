@@ -25,6 +25,7 @@ using System.Configuration;
 
 namespace Platibus.Config
 {
+    /// <inheritdoc />
     /// <summary>
     /// Configuration element for message queueing
     /// </summary>
@@ -32,6 +33,7 @@ namespace Platibus.Config
     {
         private const string ProviderPropertyName = "provider";
         private const string SecurityTokensPropertyName = "securityTokens";
+        private const string EncryptionPropertyName = "encryption";
 
         /// <summary>
         /// The name of the message journaling service provider
@@ -53,6 +55,16 @@ namespace Platibus.Config
         {
             get => (SecurityTokensElement)base[SecurityTokensPropertyName];
             set => base[SecurityTokensPropertyName] = value;
+        }
+
+        /// <summary>
+        /// Encryption configuration
+        /// </summary>
+        [ConfigurationProperty(EncryptionPropertyName)]
+        public EncryptionElement Encryption
+        {
+            get => (EncryptionElement)base[EncryptionPropertyName];
+            set => base[EncryptionPropertyName] = value;
         }
     }
 }

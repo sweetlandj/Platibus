@@ -25,6 +25,7 @@ using System.Linq;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using Platibus.Queueing;
+using Platibus.Security;
 using Platibus.SQL;
 using Xunit;
 
@@ -32,17 +33,20 @@ namespace Platibus.UnitTests.LocalDB
 {
     [Trait("Category", "UnitTests")]
     [Trait("Dependency", "LocalDB")]
-    [Collection(LocalDBCollection.Name)]
+    [Collection(AesEncryptedLocalDBCollection.Name)]
     public class LocalDBMessageQueueingServiceTests : MessageQueueingServiceTests<SQLMessageQueueingService>
     {
-        public LocalDBMessageQueueingServiceTests(LocalDBFixture fixture)
+        protected IMessageEncryptionService MessageEncryptionService;
+
+        public LocalDBMessageQueueingServiceTests(AesEncryptedLocalDBFixture fixture)
             : base(fixture.MessageQueueingService)
         {
+            MessageEncryptionService = fixture.MessageEncryptionService;
         }
 
         protected override async Task GivenExistingQueuedMessage(QueueName queueName, Message message, IPrincipal principal)
         {
-            using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, SecurityTokenService))
+            using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, SecurityTokenService, MessageEncryptionService))
             {
                 await queueInspector.Init();
                 await queueInspector.InsertMessage(new QueuedMessage(message, principal));
@@ -52,7 +56,7 @@ namespace Platibus.UnitTests.LocalDB
         protected override async Task<bool> MessageQueued(QueueName queueName, Message message)
         {
             var messageId = message.Headers.MessageId;
-            using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, SecurityTokenService))
+            using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, SecurityTokenService, MessageEncryptionService))
             {
                 await queueInspector.Init();
                 var messagesInQueue = await queueInspector.EnumerateMessages();
@@ -65,7 +69,7 @@ namespace Platibus.UnitTests.LocalDB
             var messageId = message.Headers.MessageId;
             var endDate = DateTime.UtcNow;
             var startDate = endDate.AddSeconds(-5);
-            using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, SecurityTokenService))
+            using (var queueInspector = new SQLMessageQueueInspector(MessageQueueingService, queueName, SecurityTokenService, MessageEncryptionService))
             {
                 await queueInspector.Init();
                 var messagesInQueue = await queueInspector.EnumerateAbandonedMessages(startDate, endDate);

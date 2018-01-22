@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 // 
-// Copyright (c) 2017 Jesse Sweetland
+// Copyright (c) 2016 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,26 +21,29 @@
 // THE SOFTWARE.
 
 using System.Threading.Tasks;
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
+using Platibus.Security;
 
-namespace Platibus.Security
+namespace Platibus.Config.Extensibility
 {
     /// <summary>
-    /// Service for encrypting and decrypting data
+    /// A factory for initializing a <see cref="IMessageEncryptionService"/> during bus initialization.
     /// </summary>
-    public interface IMessageEncryptionService
+    public interface IMessageEncryptionServiceProvider
     {
         /// <summary>
-        /// Encrypts or otherwise obfuscates the specified <paramref name="message"/>
+        /// Creates and initializes a <see cref="IMessageEncryptionService"/>
+        /// based on the provided <paramref name="configuration"/>.
         /// </summary>
-        /// <param name="message">The message to encrypt</param>
-        /// <returns>Returns an encrypted version of the message</returns>
-        Task<Message> Encrypt(Message message);
-
-        /// <summary>
-        /// Decrypts or deciphers an encrypted or obfuscated <paramref name="encryptedMessage"/>
-        /// </summary>
-        /// <param name="encryptedMessage">The message to decrypt</param>
-        /// <returns>Returns the decrypted message</returns>
-        Task<Message> Decrypt(Message encryptedMessage);
+        /// <param name="configuration">The encruption configuration element.</param>
+        /// <returns>Returns a task whose result is an initialized
+        /// <see cref="IMessageEncryptionService"/>.</returns>
+#if NET452
+        Task<IMessageEncryptionService> CreateMessageEncryptionService(EncryptionElement configuration);
+#else
+        Task<IMessageEncryptionService> CreateMessageEncryptionService(IConfiguration configuration);
+#endif
     }
 }

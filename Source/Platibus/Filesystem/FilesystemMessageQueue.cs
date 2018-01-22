@@ -20,15 +20,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Security.Principal;
-using System.Threading;
-using System.Threading.Tasks;
 using Platibus.Diagnostics;
 using Platibus.Queueing;
 using Platibus.Security;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Platibus.Filesystem
 {
@@ -41,6 +40,7 @@ namespace Platibus.Filesystem
         private readonly DirectoryInfo _directory;
         private readonly DirectoryInfo _deadLetterDirectory;
         private readonly ISecurityTokenService _securityTokenService;
+        private readonly IMessageEncryptionService _messageEncryptionService;
 
         private int _initialized;
 
@@ -48,18 +48,19 @@ namespace Platibus.Filesystem
         /// <summary>
         /// Initializes a new <see cref="T:Platibus.Filesystem.FilesystemMessageQueue" />
         /// </summary>
-        /// <param name="directory">The directory into which message files will be persisted</param>
-        /// <param name="securityTokenService">The service used to issue and validate security
-        /// tokens stored with the persisted messages to preserve the security context in which
-        /// the message was received</param>
         /// <param name="queueName">The name of the queue</param>
         /// <param name="listener">The listener that will consume messages from the queue</param>
         /// <param name="options">(Optional) Queueing options</param>
         /// <param name="diagnosticService">(Optional) The service through which diagnostic events
-        /// are reported and processed</param>
-        public FilesystemMessageQueue(DirectoryInfo directory, ISecurityTokenService securityTokenService, 
-            QueueName queueName, IQueueListener listener, QueueOptions options = null, 
-            IDiagnosticService diagnosticService = null)
+        ///     are reported and processed</param>
+        /// <param name="directory">The directory into which message files will be persisted</param>
+        /// <param name="securityTokenService">The service used to issue and validate security
+        ///     tokens stored with the persisted messages to preserve the security context in which
+        ///     the message was received</param>
+        /// <param name="messageEncryptionService"></param>
+        public FilesystemMessageQueue(QueueName queueName, IQueueListener listener, QueueOptions options,
+            IDiagnosticService diagnosticService, DirectoryInfo directory, ISecurityTokenService securityTokenService,
+            IMessageEncryptionService messageEncryptionService)
             : base(queueName, listener, options, diagnosticService)
         {
             if (queueName == null) throw new ArgumentNullException(nameof(queueName));
@@ -68,6 +69,7 @@ namespace Platibus.Filesystem
             _directory = directory ?? throw new ArgumentNullException(nameof(directory));
             _deadLetterDirectory = new DirectoryInfo(Path.Combine(directory.FullName, "dead"));
             _securityTokenService = securityTokenService ?? throw new ArgumentNullException(nameof(securityTokenService));
+            _messageEncryptionService = messageEncryptionService;
 
             MessageEnqueued += OnMessageEnqueued;
             MessageAcknowledged += OnMessageAcknowledged;
@@ -100,6 +102,10 @@ namespace Platibus.Filesystem
                 {
                     var messageFile = new MessageFile(file);
                     var message = await messageFile.ReadMessage(cancellationToken);
+                    if (message.IsEncrypted() && _messageEncryptionService != null)
+                    {
+                        message = await _messageEncryptionService.Decrypt(message);
+                    }
                     var principal = await _securityTokenService.NullSafeValidate(message.Headers.SecurityToken);
                     var queuedMessage = new QueuedMessage(message, principal);
                     pendingMessages.Add(queuedMessage);
@@ -122,9 +128,12 @@ namespace Platibus.Filesystem
             var message = queuedMessage.Message;
             var principal = queuedMessage.Principal;
             var securityToken = await _securityTokenService.NullSafeIssue(principal, message.Headers.Expires);
-            var messageWithSecurityToken = message.WithSecurityToken(securityToken);
-            var messageFile = await MessageFile.Create(_directory, messageWithSecurityToken);
-
+            var storedMessage = message.WithSecurityToken(securityToken);
+            if (_messageEncryptionService != null)
+            {
+                storedMessage = await _messageEncryptionService.Encrypt(storedMessage);
+            }
+            var messageFile = await MessageFile.Create(_directory, storedMessage);
             await DiagnosticService.EmitAsync(
                 new FilesystemEventBuilder(this, FilesystemEventType.MessageFileCreated)
                 {

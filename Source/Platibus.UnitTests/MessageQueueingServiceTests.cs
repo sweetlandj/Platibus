@@ -164,7 +164,7 @@ namespace Platibus.UnitTests
         {
             var queue = GivenUniqueQueueName();
             var message = GivenSampleMessage();
-            var listener = new QueueListenerStub((m, c) => { throw new Exception("Test"); });
+            var listener = new QueueListenerStub((m, c) => throw new Exception("Test"));
             var maxAttemptOptions = new QueueOptions
             {
                 MaxAttempts = 1,
@@ -208,7 +208,7 @@ namespace Platibus.UnitTests
         {
             var queue = GivenUniqueQueueName();
             var message = GivenSampleMessage();
-            var listener = new QueueListenerStub((m, c) => { throw new Exception("Test"); });
+            var listener = new QueueListenerStub((m, c) => throw new Exception("Test"));
             var autoAcknowledgeOptions = new QueueOptions
             {
                 AutoAcknowledge = true,
@@ -357,10 +357,7 @@ namespace Platibus.UnitTests
                 Sent = DateTime.UtcNow
             };
 
-            if (setCustomHeaders != null)
-            {
-                setCustomHeaders(headers);
-            }
+            setCustomHeaders?.Invoke(headers);
 
             return new Message(headers, "Hello, world!");
         }
@@ -373,15 +370,9 @@ namespace Platibus.UnitTests
 
             private bool _disposed;
 
-            public Task Completed
-            {
-                get { return _taskCompletionSource.Task; }
-            }
+            public Task Completed => _taskCompletionSource.Task;
 
-            public CancellationToken CancellationToken
-            {
-                get { return _cancellationTokenSource.Token; }
-            }
+            public CancellationToken CancellationToken => _cancellationTokenSource.Token;
 
             public Message Message { get; private set; }
             public IQueuedMessageContext Context { get; private set; }
@@ -442,15 +433,9 @@ namespace Platibus.UnitTests
             private int _count;
             private bool _disposed;
 
-            public Task Completed
-            {
-                get { return _taskCompletionSource.Task; }
-            }
+            public Task Completed => _taskCompletionSource.Task;
 
-            public int Count
-            {
-                get { return _count; }
-            }
+            public int Count => _count;
 
             public CountdownListenerStub(int target, TimeSpan timeout = default(TimeSpan))
             {

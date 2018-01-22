@@ -1,4 +1,26 @@
-﻿#if NET452
+﻿// The MIT License (MIT)
+// 
+// Copyright (c) 2017 Jesse Sweetland
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+#if NET452
 using System.IdentityModel.Tokens;
 #endif
 #if NETSTANDARD2_0
@@ -18,7 +40,7 @@ namespace Platibus.Security
         /// <summary>
         /// The diagnostic service through which diagnostic events will be raised
         /// </summary>
-        public IDiagnosticService DiagnosticService { get; }
+        public IDiagnosticService DiagnosticService { get; set; }
 
         /// <summary>
         /// The primary key used to encrypt and sign messages and the first key used
@@ -42,13 +64,10 @@ namespace Platibus.Security
         /// <summary>
         /// Initializes a new set of <see cref="AesMessageEncryptionOptions"/>
         /// </summary>
-        /// <param name="diagnosticService">The diagnostic service through which diagnostic 
-        /// events will be raised</param>
         /// <param name="key">The primary key used to encrypt and sign messages and the 
         /// first key used when decrypting messages and verifying signatures</param>
-        public AesMessageEncryptionOptions(IDiagnosticService diagnosticService, SymmetricSecurityKey key)
+        public AesMessageEncryptionOptions(SymmetricSecurityKey key)
         {
-            DiagnosticService = diagnosticService ?? throw new ArgumentNullException(nameof(diagnosticService));
             Key = key ?? throw new ArgumentNullException(nameof(key));
         }
     }

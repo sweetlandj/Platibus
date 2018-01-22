@@ -29,7 +29,6 @@ using Platibus.Config;
 #endif
 using System.Threading;
 using System.Threading.Tasks;
-using Platibus.Config.Extensibility;
 using Platibus.Diagnostics;
 using Platibus.Queueing;
 using Platibus.Security;
@@ -37,8 +36,9 @@ using Platibus.SQL.Commands;
 
 namespace Platibus.SQL
 {
+    /// <inheritdoc />
     /// <summary>
-    /// A <see cref="IMessageQueueingService"/> implementation that uses a SQL database to store
+    /// A <see cref="T:Platibus.IMessageQueueingService" /> implementation that uses a SQL database to store
     /// queued messages
     /// </summary>
     public class SQLMessageQueueingService : AbstractMessageQueueingService<SQLMessageQueue>
@@ -49,6 +49,7 @@ namespace Platibus.SQL
         protected readonly IDiagnosticService DiagnosticService;
 
         private readonly ISecurityTokenService _securityTokenService;
+        private readonly IMessageEncryptionService _messageEncryptionService;
 
         /// <summary>
         /// The connection provider used to obtain connections to the SQL database
@@ -64,6 +65,31 @@ namespace Platibus.SQL
         /// Initializes a new <see cref="SQLMessageQueueingService"/> with the specified connection
         /// string settings and dialect
         /// </summary>
+        /// <param name="options">Options influencing the behavior of this service</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="options"/>
+        /// is <c>null</c></exception>
+        /// <remarks>
+        /// <para>If a SQL dialect is not specified, then one will be selected based on the 
+        /// supplied connection string settings</para>
+        /// <para>If a security token service is not specified then a default implementation 
+        /// based on unsigned JWTs will be used.</para>
+        /// </remarks>
+        /// <seealso cref="Platibus.Config.Extensibility.IMessageQueueingCommandBuildersProvider"/>
+        public SQLMessageQueueingService(SQLMessageQueueingOptions options)
+        {
+            if (options == null) throw new ArgumentNullException(nameof(options));
+            DiagnosticService = options.DiagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
+            ConnectionProvider = options.ConnectionProvider;
+            CommandBuilders = options.CommandBuilders;
+            _securityTokenService = options.SecurityTokenService ?? new JwtSecurityTokenService();
+            _messageEncryptionService = options.MessageEncryptionService;
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new <see cref="T:Platibus.SQL.SQLMessageQueueingService" /> with the specified connection
+        /// string settings and dialect
+        /// </summary>
         /// <param name="connectionStringSettings">The connection string settings to use to connect
         ///     to the SQL database</param>
         /// <param name="commandBuilders">(Optional) A collection of factories capable of 
@@ -73,31 +99,32 @@ namespace Platibus.SQL
         ///     service to use to issue and validate security tokens for persisted messages.</param>
         /// <param name="diagnosticService">(Optional) The service through which diagnostic events
         ///     are reported and processed</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionStringSettings"/>
+        /// <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="connectionStringSettings" />
         /// is <c>null</c></exception>
         /// <remarks>
         /// <para>If a SQL dialect is not specified, then one will be selected based on the 
         /// supplied connection string settings</para>
-        /// <para>If a <paramref name="securityTokenService"/> is not specified then a
+        /// <para>If a <paramref name="securityTokenService" /> is not specified then a
         /// default implementation based on unsigned JWTs will be used.</para>
         /// </remarks>
-        /// <seealso cref="IMessageQueueingCommandBuildersProvider"/>
+        /// <seealso cref="T:Platibus.Config.Extensibility.IMessageQueueingCommandBuildersProvider" />
+        [Obsolete]
         public SQLMessageQueueingService(ConnectionStringSettings connectionStringSettings,
             IMessageQueueingCommandBuilders commandBuilders = null,
             ISecurityTokenService securityTokenService = null,
             IDiagnosticService diagnosticService = null)
+            : this(new SQLMessageQueueingOptions(new DefaultConnectionProvider(connectionStringSettings),
+                commandBuilders)
+            {
+                DiagnosticService = diagnosticService,
+                SecurityTokenService = securityTokenService
+            })
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
-            DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
-            ConnectionProvider = new DefaultConnectionProvider(connectionStringSettings, DiagnosticService);
-            CommandBuilders = commandBuilders ??
-                               new CommandBuildersFactory(connectionStringSettings, DiagnosticService)
-                                   .InitMessageQueueingCommandBuilders();
-            _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="SQLMessageQueueingService"/> with the specified connection
+        /// Initializes a new <see cref="T:Platibus.SQL.SQLMessageQueueingService" /> with the specified connection
         /// provider and dialect
         /// </summary>
         /// <param name="connectionProvider">The connection provider to use to connect to the SQL 
@@ -109,21 +136,24 @@ namespace Platibus.SQL
         ///     service to use to issue and validate security tokens for persisted messages.</param>
         /// <param name="diagnosticService">(Optional) The service through which diagnostic events
         ///     are reported and processed</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>
-        ///     or <paramref name="commandBuilders"/> is <c>null</c></exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="connectionProvider" />
+        ///     or <paramref name="commandBuilders" /> is <c>null</c></exception>
         /// <remarks>
-        /// <para>If a <paramref name="securityTokenService"/> is not specified then a
+        /// <para>If a <paramref name="securityTokenService" /> is not specified then a
         ///     default implementation based on unsigned JWTs will be used.</para>
         /// </remarks>
+        /// <seealso cref="T:Platibus.Config.Extensibility.IMessageQueueingCommandBuildersProvider" />
+        [Obsolete]
         public SQLMessageQueueingService(IDbConnectionProvider connectionProvider, 
             IMessageQueueingCommandBuilders commandBuilders, 
             ISecurityTokenService securityTokenService = null, 
             IDiagnosticService diagnosticService = null)
+            : this(new SQLMessageQueueingOptions(connectionProvider, commandBuilders)
+            {
+                DiagnosticService = diagnosticService,
+                SecurityTokenService = securityTokenService
+            })
         {
-            DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
-            ConnectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
-            CommandBuilders = commandBuilders ?? throw new ArgumentNullException(nameof(commandBuilders));
-            _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
         }
 
         /// <summary>
@@ -152,9 +182,8 @@ namespace Platibus.SQL
             QueueOptions options = null,
             CancellationToken cancellationToken = new CancellationToken())
         {
-            var queue = new SQLMessageQueue(ConnectionProvider, CommandBuilders, queueName, listener,
-                _securityTokenService, options, DiagnosticService);
-
+            var queue = new SQLMessageQueue(queueName, listener, options, DiagnosticService, ConnectionProvider,
+                CommandBuilders, _securityTokenService, _messageEncryptionService);
             return Task.FromResult(queue);
         }
 

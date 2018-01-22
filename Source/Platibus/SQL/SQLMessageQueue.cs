@@ -36,13 +36,12 @@ using Platibus.SQL.Commands;
 
 namespace Platibus.SQL
 {
+    /// <inheritdoc />
     /// <summary>
     /// A message queue based on a SQL database
     /// </summary>
     public class SQLMessageQueue : AbstractMessageQueue
     {
-        private readonly ISecurityTokenService _securityTokenService;
-        
         /// <summary>
         /// The connection provider
         /// </summary>
@@ -56,27 +55,40 @@ namespace Platibus.SQL
         public IMessageQueueingCommandBuilders CommandBuilders { get; }
 
         /// <summary>
-        /// Initializes a new <see cref="SQLMessageQueue"/> with the specified values
+        /// The service used to capture security context to store as a token with persisted messages
         /// </summary>
+        public ISecurityTokenService SecurityTokenService { get; }
+
+        /// <summary>
+        /// An optional service used to encrypt messages at rest
+        /// </summary>
+        public IMessageEncryptionService MessageEncryptionService { get; }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new <see cref="T:Platibus.SQL.SQLMessageQueue" /> with the specified values
+        /// </summary>
+        /// <param name="queueName">The name of the queue</param>
+        /// <param name="listener">The object that will be notified when messages are
+        ///     added to the queue</param>
+        /// <param name="options">(Optional) Settings that influence how the queue behaves</param>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        ///     are reported and processed</param>
         /// <param name="connectionProvider">The database connection provider</param>
         /// <param name="commandBuilders">A collection of factories capable of 
         ///     generating database commands for manipulating queued messages that conform to the SQL
         ///     syntax required by the underlying connection provider</param>
-        /// <param name="queueName">The name of the queue</param>
-        /// <param name="listener">The object that will be notified when messages are
-        ///     added to the queue</param>
         /// <param name="securityTokenService">(Optional) The message security token
         ///     service to use to issue and validate security tokens for persisted messages.</param>
-        /// <param name="options">(Optional) Settings that influence how the queue behaves</param>
-        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
-        ///     are reported and processed</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionProvider"/>,
-        /// <paramref name="commandBuilders"/>, <paramref name="queueName"/>, or <paramref name="listener"/>
+        /// <param name="messageEncryptionService"></param>
+        /// <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="connectionProvider" />,
+        /// <paramref name="commandBuilders" />, <paramref name="queueName" />, or <paramref name="listener" />
         /// are <c>null</c></exception>
-        public SQLMessageQueue(IDbConnectionProvider connectionProvider, 
-            IMessageQueueingCommandBuilders commandBuilders, QueueName queueName, 
-            IQueueListener listener, ISecurityTokenService securityTokenService, 
-            QueueOptions options = null, IDiagnosticService diagnosticService = null)
+        public SQLMessageQueue(QueueName queueName,
+            IQueueListener listener,
+            QueueOptions options, IDiagnosticService diagnosticService, IDbConnectionProvider connectionProvider,
+            IMessageQueueingCommandBuilders commandBuilders, ISecurityTokenService securityTokenService,
+            IMessageEncryptionService messageEncryptionService)
             : base(queueName, listener, options, diagnosticService)
         {
             if (queueName == null) throw new ArgumentNullException(nameof(queueName));
@@ -84,7 +96,8 @@ namespace Platibus.SQL
 
             ConnectionProvider = connectionProvider ?? throw new ArgumentNullException(nameof(connectionProvider));
             CommandBuilders = commandBuilders ?? throw new ArgumentNullException(nameof(commandBuilders));
-            _securityTokenService = securityTokenService ?? throw new ArgumentNullException(nameof(securityTokenService));
+            MessageEncryptionService = messageEncryptionService;
+            SecurityTokenService = securityTokenService ?? throw new ArgumentNullException(nameof(securityTokenService));
 
             MessageEnqueued += OnMessageEnqueued;
             MessageAcknowledged += OnMessageAcknowledged;
@@ -142,10 +155,15 @@ namespace Platibus.SQL
                                     var record = commandBuilder.BuildQueuedMessageRecord(reader);
                                     var messageContent = record.Content;
                                     var headers = DeserializeHeaders(record.Headers);
+                                    var message = new Message(headers, messageContent);
+                                    if (message.IsEncrypted() && MessageEncryptionService != null)
+                                    {
+                                        message = await MessageEncryptionService.Decrypt(message);
+                                    }
 #pragma warning disable 612
                                     var principal = await ResolvePrincipal(headers, record.SenderPrincipal);
 #pragma warning restore 612
-                                    var message = new Message(headers, messageContent).WithoutSecurityToken();
+                                    message = message.WithoutSecurityToken();
                                     var attempts = record.Attempts;
                                     var queuedMessage = new QueuedMessage(message, principal, attempts);
                                     queuedMessages.Add(queuedMessage);
@@ -187,11 +205,15 @@ namespace Platibus.SQL
             var principal = queuedMessage.Principal;
             var expires = message.Headers.Expires;
             var connection = ConnectionProvider.GetConnection();
-            var securityToken = await _securityTokenService.NullSafeIssue(principal, expires);
-            var messageWithSecurityToken = message.WithSecurityToken(securityToken);
+            var securityToken = await SecurityTokenService.NullSafeIssue(principal, expires);
+            var persistedMessage = message.WithSecurityToken(securityToken);
+            if (MessageEncryptionService != null)
+            {
+                persistedMessage = await MessageEncryptionService.Encrypt(message);
+            }
             try
             {
-                var headers = messageWithSecurityToken.Headers;
+                var headers = persistedMessage.Headers;
                 var commandBuilder = CommandBuilders.NewInsertQueuedMessageCommandBuilder();
                 commandBuilder.MessageId = headers.MessageId;
                 commandBuilder.QueueName = QueueName;
@@ -201,7 +223,7 @@ namespace Platibus.SQL
                 commandBuilder.Expires = headers.Expires;
                 commandBuilder.ContentType = headers.ContentType;
                 commandBuilder.Headers = SerializeHeaders(headers);
-                commandBuilder.Content = messageWithSecurityToken.Content;
+                commandBuilder.Content = persistedMessage.Content;
 
                 using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
                 {
@@ -393,7 +415,7 @@ namespace Platibus.SQL
         {
             if (!string.IsNullOrWhiteSpace(headers.SecurityToken))
             {
-                return await _securityTokenService.Validate(headers.SecurityToken);
+                return await SecurityTokenService.Validate(headers.SecurityToken);
             }
 
             try

@@ -1,21 +1,21 @@
-﻿using Platibus.Diagnostics;
-using Platibus.Filesystem;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Threading.Tasks;
+using Platibus.Diagnostics;
+using Platibus.Filesystem;
 using Xunit;
 
 namespace Platibus.UnitTests.Filesystem
 {
     [Trait("Category", "UnitTests")]
-    [Collection(FilesystemCollection.Name)]
-    public class FilesystemMessageQueueingServiceTests : MessageQueueingServiceTests<FilesystemMessageQueueingService>
+    [Collection(AesEncryptedFilesystemCollection.Name)]
+    public class AesEncryptedFilesystemMessageQueueingServiceTests : MessageQueueingServiceTests<FilesystemMessageQueueingService>
     {
         private readonly DirectoryInfo _baseDirectory;
         
-        public FilesystemMessageQueueingServiceTests(FilesystemFixture fixture)
+        public AesEncryptedFilesystemMessageQueueingServiceTests(AesEncryptedFilesystemFixture fixture)
             : base(fixture.MessageQueueingService)
         {
             _baseDirectory = fixture.BaseDirectory;

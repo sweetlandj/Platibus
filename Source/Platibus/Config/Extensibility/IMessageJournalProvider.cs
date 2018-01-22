@@ -34,7 +34,7 @@ namespace Platibus.Config.Extensibility
     public interface IMessageJournalProvider
     {
         /// <summary>
-        /// Creates an initializes a <see cref="IMessageJournal"/>
+        /// Creates and initializes a <see cref="IMessageJournal"/>
         /// based on the provided <paramref name="configuration"/>.
         /// </summary>
         /// <param name="configuration">The journaling configuration element.</param>

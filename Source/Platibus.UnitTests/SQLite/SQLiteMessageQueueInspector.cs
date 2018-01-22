@@ -33,8 +33,8 @@ namespace Platibus.UnitTests.SQLite
 {
     internal class SQLiteMessageQueueInspector : SQLiteMessageQueue
     {
-        public SQLiteMessageQueueInspector(DirectoryInfo baseDirectory, QueueName queueName, ISecurityTokenService securityTokenService)
-            : base(baseDirectory, queueName, new NoopQueueListener(), securityTokenService)
+        public SQLiteMessageQueueInspector(DirectoryInfo baseDirectory, QueueName queueName, ISecurityTokenService securityTokenService, IMessageEncryptionService messageEncryptionService)
+            : base(queueName, new NoopQueueListener(), null, null, baseDirectory, securityTokenService, messageEncryptionService)
         {
         }
 

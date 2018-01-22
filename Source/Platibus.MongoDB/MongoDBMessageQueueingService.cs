@@ -48,6 +48,7 @@ namespace Platibus.MongoDB
 
         private readonly IMongoDatabase _database;
         private readonly ISecurityTokenService _securityTokenService;
+        private readonly IMessageQueueingService _messageQueueingService;
         private readonly QueueCollectionNameFactory _collectionNameFactory;
 
         /// <summary>

@@ -48,24 +48,26 @@ namespace Platibus.SQLite
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly ICommandExecutor _commandExecutor = new SynchronizingCommandExecutor();
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="SQLiteMessageQueue"/>
+        /// Initializes a new <see cref="T:Platibus.SQLite.SQLiteMessageQueue" />
         /// </summary>
-        /// <param name="baseDirectory">The directory in which the SQLite database will be created</param>
         /// <param name="queueName">The name of the queue</param>
         /// <param name="listener">The object that will process messages off of the queue</param>
-        /// <param name="securityTokenService">(Optional) A service for issuing security tokens
-        ///     that can be stored with queued messages to preserve the security context in which
-        ///     they were enqueued</param>
         /// <param name="options">(Optional) Options for concurrency and retry limits</param>
         /// <param name="diagnosticService">(Optional) The service through which diagnostic events
         ///     are reported and processed</param>
-        public SQLiteMessageQueue(DirectoryInfo baseDirectory, QueueName queueName, 
-            IQueueListener listener, ISecurityTokenService securityTokenService, 
-            QueueOptions options = null, IDiagnosticService diagnosticService = null)
-            : base(InitConnectionProvider(baseDirectory, queueName, diagnosticService), 
-                  new SQLiteMessageQueueingCommandBuilders(), queueName, listener, 
-                  securityTokenService, options, diagnosticService)
+        /// <param name="baseDirectory">The directory in which the SQLite database will be created</param>
+        /// <param name="securityTokenService">(Optional) A service for issuing security tokens
+        ///     that can be stored with queued messages to preserve the security context in which
+        ///     they were enqueued</param>
+        /// <param name="messageEncryptionService"></param>
+        public SQLiteMessageQueue(QueueName queueName,
+            IQueueListener listener,
+            QueueOptions options, IDiagnosticService diagnosticService, DirectoryInfo baseDirectory,
+            ISecurityTokenService securityTokenService, IMessageEncryptionService messageEncryptionService)
+            : base(queueName, listener, options, diagnosticService, InitConnectionProvider(baseDirectory, queueName, diagnosticService), 
+                new SQLiteMessageQueueingCommandBuilders(), securityTokenService, messageEncryptionService)
         {
             _cancellationTokenSource = new CancellationTokenSource();
         }

@@ -1,6 +1,7 @@
-﻿// The MIT License (MIT)
+﻿#if NET452
+// The MIT License (MIT)
 // 
-// Copyright (c) 2017 Jesse Sweetland
+// Copyright (c) 2016 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,27 +21,29 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Threading.Tasks;
+using System.Configuration;
 
-namespace Platibus.Security
+namespace Platibus.Config
 {
+    /// <inheritdoc />
     /// <summary>
-    /// Service for encrypting and decrypting data
+    /// A configuration element used to define an endpoint to which messages can
+    /// be sent or from which messages can be received by way of subscription.
     /// </summary>
-    public interface IMessageEncryptionService
+    public class KeyElement : ConfigurationElement
     {
-        /// <summary>
-        /// Encrypts or otherwise obfuscates the specified <paramref name="message"/>
-        /// </summary>
-        /// <param name="message">The message to encrypt</param>
-        /// <returns>Returns an encrypted version of the message</returns>
-        Task<Message> Encrypt(Message message);
+        private const string KeyPropertyName = "key";
 
         /// <summary>
-        /// Decrypts or deciphers an encrypted or obfuscated <paramref name="encryptedMessage"/>
+        /// The base URI of the endpoint.  Format varies depending on the type
+        /// of transport.
         /// </summary>
-        /// <param name="encryptedMessage">The message to decrypt</param>
-        /// <returns>Returns the decrypted message</returns>
-        Task<Message> Decrypt(Message encryptedMessage);
+        [ConfigurationProperty(KeyPropertyName, IsRequired = true)]
+        public string Key
+        {
+            get => (string) base[KeyPropertyName];
+            set => base[KeyPropertyName] = value;
+        }
     }
 }
+#endif

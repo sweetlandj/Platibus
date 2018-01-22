@@ -24,6 +24,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Platibus.Config.Extensibility;
+using Platibus.Diagnostics;
 using Platibus.Multicast;
 #if NET452
 using Platibus.Config;
@@ -56,13 +57,23 @@ namespace Platibus.Filesystem
         /// <see cref="T:Platibus.IMessageQueueingService" /></returns>
         public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
-            var securityTokenServiceFactory = new SecurityTokenServiceFactory();
-            var securitTokenConfig = configuration.SecurityTokens;
-            var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securitTokenConfig);
-
             var path = configuration.GetString("path");
-            var fsQueueingBaseDir = GetRootedDirectory(path);
-            var fsQueueingService = new FilesystemMessageQueueingService(fsQueueingBaseDir, securityTokenService);
+
+            var securityTokenServiceFactory = new SecurityTokenServiceFactory();
+            var securityTokenConfig = configuration.SecurityTokens;
+            var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securityTokenConfig);
+
+            var messageEncryptionServiceFactory = new MessageEncryptionServiceFactory();
+            var messageEncryptionConfig = configuration.Encryption;
+            var messageEncryptionService = await messageEncryptionServiceFactory.InitMessageEncryptionService(messageEncryptionConfig);
+            
+            var fsQueueingOptions = new FilesystemMessageQueueingOptions()
+            {
+                BaseDirectory = GetRootedDirectory(path),
+                SecurityTokenService = securityTokenService,
+                MessageEncryptionService = messageEncryptionService
+            };
+            var fsQueueingService = new FilesystemMessageQueueingService(fsQueueingOptions);
             fsQueueingService.Init();
             return fsQueueingService;
         }
@@ -101,13 +112,24 @@ namespace Platibus.Filesystem
         /// <see cref="T:Platibus.IMessageQueueingService" /></returns>
         public async Task<IMessageQueueingService> CreateMessageQueueingService(IConfiguration configuration)
         {
-            var securityTokenServiceFactory = new SecurityTokenServiceFactory();
-            var securitTokenConfig = configuration?.GetSection("securityTokens");
-            var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securitTokenConfig);
-
             var path = configuration?["path"];
-            var fsQueueingBaseDir = GetRootedDirectory(path);
-            var fsQueueingService = new FilesystemMessageQueueingService(fsQueueingBaseDir, securityTokenService);
+
+            var securityTokenServiceFactory = new SecurityTokenServiceFactory();
+            var securityTokenConfig = configuration?.GetSection("securityTokens");
+            var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securityTokenConfig);
+
+            var messageEncryptionServiceFactory = new MessageEncryptionServiceFactory();
+            var messageEncryptionConfig = configuration?.GetSection("encryption");
+            var messageEncryptionService = await messageEncryptionServiceFactory.InitMessageEncryptionService(messageEncryptionConfig);
+
+            var fsQueueingOptions = new FilesystemMessageQueueingOptions()
+            {
+                BaseDirectory = GetRootedDirectory(path),
+                SecurityTokenService = securityTokenService,
+                MessageEncryptionService = messageEncryptionService
+            };
+
+            var fsQueueingService = new FilesystemMessageQueueingService(fsQueueingOptions);
             fsQueueingService.Init();
             return fsQueueingService;
         }

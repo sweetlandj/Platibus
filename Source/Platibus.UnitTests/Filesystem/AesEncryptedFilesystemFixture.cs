@@ -1,33 +1,37 @@
-﻿using Platibus.Filesystem;
-using System;
+﻿using System;
 using System.IO;
+using Platibus.Diagnostics;
+using Platibus.Filesystem;
+using Platibus.Security;
+using Platibus.UnitTests.Security;
 
 namespace Platibus.UnitTests.Filesystem
 {
-    public class FilesystemFixture : IDisposable
+    public class AesEncryptedFilesystemFixture : IDisposable
     {
         private bool _disposed;
 
         public DirectoryInfo BaseDirectory { get; }
 
+        public AesMessageEncryptionService MessageEncryptionService { get; }
+
         public FilesystemMessageQueueingService MessageQueueingService { get; }
 
-        public FilesystemSubscriptionTrackingService SubscriptionTrackingService { get; }
-
-        public FilesystemFixture()
+        public AesEncryptedFilesystemFixture()
         {
             BaseDirectory = GetTempDirectory();
 
+            var aesOptions = new AesMessageEncryptionOptions(KeyGenerator.GenerateAesKey());
+            MessageEncryptionService = new AesMessageEncryptionService(aesOptions);
+
             var fsQueueingOptions = new FilesystemMessageQueueingOptions
             {
-                BaseDirectory = BaseDirectory
+                BaseDirectory = BaseDirectory,
+                MessageEncryptionService = MessageEncryptionService
             };
             
             MessageQueueingService = new FilesystemMessageQueueingService(fsQueueingOptions);
             MessageQueueingService.Init();
-
-            SubscriptionTrackingService = new FilesystemSubscriptionTrackingService(BaseDirectory);
-            SubscriptionTrackingService.Init();
         }
 
         protected DirectoryInfo GetTempDirectory()
@@ -54,7 +58,6 @@ namespace Platibus.UnitTests.Filesystem
             if (disposing)
             {
                 MessageQueueingService.Dispose();
-                SubscriptionTrackingService.Dispose();
             }
         }
     }

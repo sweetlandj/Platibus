@@ -32,10 +32,10 @@ namespace Platibus.UnitTests.LocalDB
 {
     internal class SQLMessageQueueInspector : SQLMessageQueue
     {
-        public SQLMessageQueueInspector(SQLMessageQueueingService messageQueueingService, QueueName queueName, ISecurityTokenService securityTokenService)
-            : base(
-                messageQueueingService.ConnectionProvider, messageQueueingService.CommandBuilders, queueName,
-                new NoopQueueListener(), securityTokenService)
+        public SQLMessageQueueInspector(SQLMessageQueueingService messageQueueingService, QueueName queueName, 
+            ISecurityTokenService securityTokenService, IMessageEncryptionService messageEncryptionService)
+            : base(queueName, new NoopQueueListener(), null, null, messageQueueingService.ConnectionProvider, 
+                messageQueueingService.CommandBuilders, securityTokenService, messageEncryptionService)
         {
         }
         

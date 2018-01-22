@@ -1,7 +1,7 @@
 ﻿#if NET452
 // The MIT License (MIT)
 // 
-// Copyright (c) 2016 Jesse Sweetland
+// Copyright (c) 2017 Jesse Sweetland
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,21 +27,20 @@ namespace Platibus.Config
 {
     /// <inheritdoc />
     /// <summary>
-    /// Configuration element for message journaling
+    /// Configuration element for message encryption
     /// </summary>
-    public class JournalingElement : ExtensibleConfigurationElement
+    public class EncryptionElement : ExtensibleConfigurationElement
     {
         private const string EnabledPropertyName = "enabled";
         private const string ProviderPropertyName = "provider";
-        private const string SentPropertyName = "sent";
-        private const string ReceivedPropertyName = "received";
-        private const string PublishedPropertyName = "published";
+        private const string KeyPropertyName = "key";
+        private const string FallbackKeysPropertyName = "fallbackKeys";
 
         /// <summary>
         /// Indicates whether message journaling is enabled
         /// </summary>
         [ConfigurationProperty(EnabledPropertyName, DefaultValue = true)]
-        public bool IsEnabled
+        public bool Enabled
         {
             get => (bool) base[EnabledPropertyName];
             set => base[EnabledPropertyName] = value;
@@ -60,33 +59,24 @@ namespace Platibus.Config
         }
 
         /// <summary>
-        /// Whether to journal sent messages
+        /// The hexadecimal encoded key used to encrypt and decrypt messages
         /// </summary>
-        [ConfigurationProperty(SentPropertyName, DefaultValue = true)]
-        public bool JournalSentMessages
+        [ConfigurationProperty(KeyPropertyName)]
+        public string Key
         {
-            get => (bool)base[SentPropertyName];
-            set => base[SentPropertyName] = value;
+            get => (string) base[KeyPropertyName];
+            set => base[KeyPropertyName] = value;
         }
 
         /// <summary>
-        /// Whether to journal received messages
+        /// The hexadecimal encoded fallback keys used to decrypt messages
+        /// during key rotation
         /// </summary>
-        [ConfigurationProperty(ReceivedPropertyName, DefaultValue = true)]
-        public bool JournalReceivedMessages
+        [ConfigurationProperty(FallbackKeysPropertyName)]
+        public KeyElementCollection FallbackKeys
         {
-            get => (bool)base[ReceivedPropertyName];
-            set => base[ReceivedPropertyName] = value;
-        }
-
-        /// <summary>
-        /// Whether to journal published messages
-        /// </summary>
-        [ConfigurationProperty(PublishedPropertyName, DefaultValue = true)]
-        public bool JournalPublishedMessages
-        {
-            get => (bool)base[PublishedPropertyName];
-            set => base[PublishedPropertyName] = value;
+            get => (KeyElementCollection) base[FallbackKeysPropertyName];
+            set => base[FallbackKeysPropertyName] = value;
         }
     }
 }

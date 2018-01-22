@@ -20,27 +20,30 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Configuration;
+#endif
+using Platibus.Security;
 using System.Threading.Tasks;
 
-namespace Platibus.Security
+namespace Platibus.Config.Extensibility
 {
     /// <summary>
-    /// Service for encrypting and decrypting data
+    /// A factory for initializing a <see cref="IMessageEncryptionService"/> during bus initialization.
     /// </summary>
-    public interface IMessageEncryptionService
+    public interface IMessageSecurityServiceProvider
     {
         /// <summary>
-        /// Encrypts or otherwise obfuscates the specified <paramref name="message"/>
+        /// Creates an initializes a <see cref="IMessageEncryptionService"/>
+        /// based on the provided <paramref name="configuration"/>.
         /// </summary>
-        /// <param name="message">The message to encrypt</param>
-        /// <returns>Returns an encrypted version of the message</returns>
-        Task<Message> Encrypt(Message message);
-
-        /// <summary>
-        /// Decrypts or deciphers an encrypted or obfuscated <paramref name="encryptedMessage"/>
-        /// </summary>
-        /// <param name="encryptedMessage">The message to decrypt</param>
-        /// <returns>Returns the decrypted message</returns>
-        Task<Message> Decrypt(Message encryptedMessage);
+        /// <param name="configuration">The encryption configuration element.</param>
+        /// <returns>Returns a task whose result is an initialized
+        /// <see cref="IMessageEncryptionService"/>.</returns>
+#if NET452
+        Task<IMessageEncryptionService> CreateMessageEncryptionService(JournalingElement configuration);
+#else
+        Task<IMessageEncryptionService> CreateMessageEncryptionService(IConfiguration configuration);
+#endif
     }
 }

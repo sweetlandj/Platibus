@@ -30,18 +30,51 @@ using Platibus.Security;
 
 namespace Platibus.Filesystem
 {
+    /// <inheritdoc />
     /// <summary>
-    /// A see <see cref="IMessageQueueingService"/> that queues messages as files on disk
+    /// A see <see cref="T:Platibus.IMessageQueueingService" /> that queues messages as files on disk
     /// </summary>
     public class FilesystemMessageQueueingService : AbstractMessageQueueingService<FilesystemMessageQueue>
     {
         private readonly DirectoryInfo _baseDirectory;
         private readonly ISecurityTokenService _securityTokenService;
         private readonly IDiagnosticService _diagnosticService;
+        private readonly IMessageEncryptionService _messageEncryptionService;
 
         /// <summary>
-        /// Initializes a new <see cref="FilesystemMessageQueueingService"/> that will create
-        /// directories and files relative to the specified <paramref name="baseDirectory"/>
+        /// Initializes a new <see cref="FilesystemMessageQueueingService"/>
+        /// </summary>
+        /// <param name="options">Options affecting the behavior of the filesystem message queueing
+        /// service</param>
+        /// <remarks>
+        /// <para>If a base directory is not specified then the base directory will default to a
+        /// directory named <c>platibus\queues</c> beneath the current app domain base 
+        /// directory.  If the base directory does not exist it will be created in the
+        /// <see cref="Init"/> method.</para>
+        /// <para>If a security token service is not specified then a default implementation based 
+        /// on unsigned JWTs will be used.</para>
+        /// </remarks>
+        public FilesystemMessageQueueingService(FilesystemMessageQueueingOptions options)
+        {
+            if (options == null) throw new ArgumentNullException(nameof(options));
+
+            _diagnosticService = options.DiagnosticService ?? DiagnosticService.DefaultInstance;
+
+            var myBaseDirectory = options.BaseDirectory;
+            if (myBaseDirectory== null)
+            {
+                var appdomainDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                myBaseDirectory = new DirectoryInfo(Path.Combine(appdomainDirectory, "platibus", "queues"));
+            }
+            _baseDirectory = myBaseDirectory;
+            _securityTokenService = options.SecurityTokenService ?? new JwtSecurityTokenService();
+            _messageEncryptionService = options.MessageEncryptionService;
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new <see cref="T:Platibus.Filesystem.FilesystemMessageQueueingService" /> that will create
+        /// directories and files relative to the specified <paramref name="baseDirectory" />
         /// </summary>
         /// <param name="baseDirectory">(Optional) The directory in which queued message files
         /// will be stored</param>
@@ -53,28 +86,29 @@ namespace Platibus.Filesystem
         /// <para>If a base directory is not specified then the base directory will default to a
         /// directory named <c>platibus\queues</c> beneath the current app domain base 
         /// directory.  If the base directory does not exist it will be created in the
-        /// <see cref="Init"/> method.</para>
-        /// <para>If a <paramref name="securityTokenService"/> is not specified then a
+        /// <see cref="M:Platibus.Filesystem.FilesystemMessageQueueingService.Init" /> method.</para>
+        /// <para>If a <paramref name="securityTokenService" /> is not specified then a
         /// default implementation based on unsigned JWTs will be used.</para>
         /// </remarks>
-        public FilesystemMessageQueueingService(DirectoryInfo baseDirectory = null, ISecurityTokenService securityTokenService = null, IDiagnosticService diagnosticService = null)
-        {
-            if (baseDirectory == null)
+        [Obsolete]
+        public FilesystemMessageQueueingService(DirectoryInfo baseDirectory = null,
+            ISecurityTokenService securityTokenService = null, IDiagnosticService diagnosticService = null)
+            : this(new FilesystemMessageQueueingOptions
             {
-                var appdomainDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                baseDirectory = new DirectoryInfo(Path.Combine(appdomainDirectory, "platibus", "queues"));
-            }
-            _baseDirectory = baseDirectory;
-            _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
-            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+                DiagnosticService = diagnosticService,
+                BaseDirectory = baseDirectory,
+                SecurityTokenService = securityTokenService
+            })
+        {
         }
-        
+
         /// <inheritdoc />
         protected override Task<FilesystemMessageQueue> InternalCreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null,
             CancellationToken cancellationToken = new CancellationToken())
         {
             var queueDirectory = new DirectoryInfo(Path.Combine(_baseDirectory.FullName, queueName));
-            var queue = new FilesystemMessageQueue(queueDirectory, _securityTokenService, queueName, listener, options, _diagnosticService);
+            var queue = new FilesystemMessageQueue(queueName, listener, options, _diagnosticService,
+                queueDirectory, _securityTokenService, _messageEncryptionService);
             return Task.FromResult(queue);
         }
         

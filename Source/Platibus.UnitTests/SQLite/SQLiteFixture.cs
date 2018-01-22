@@ -46,7 +46,11 @@ namespace Platibus.UnitTests.SQLite
             BaseDirectory = GetTempDirectory();
             
             QueueDirectory = CreateSubdirectory(BaseDirectory, "queues");
-            MessageQueueingService = new SQLiteMessageQueueingService(QueueDirectory);
+            var queueingOptions = new SQLiteMessageQueueingOptions
+            {
+                BaseDirectory = QueueDirectory
+            };
+            MessageQueueingService = new SQLiteMessageQueueingService(queueingOptions);
             MessageQueueingService.Init();
 
             var subscriptionDirectory = CreateSubdirectory(BaseDirectory, "subscriptions");

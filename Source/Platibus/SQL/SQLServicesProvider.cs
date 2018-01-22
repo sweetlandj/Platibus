@@ -64,7 +64,19 @@ namespace Platibus.SQL
             var securityTokenConfig = configuration.SecurityTokens;
             var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securityTokenConfig);
 
-            var sqlMessageQueueingService = new SQLMessageQueueingService(connectionStringSettings, securityTokenService: securityTokenService);
+            var messageEncryptionServiceFactory = new MessageEncryptionServiceFactory();
+            var messageEncryptionConfig = configuration.Encryption;
+            var messageEncryptionService = await messageEncryptionServiceFactory.InitMessageEncryptionService(messageEncryptionConfig);
+            
+            var connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
+            var commandBuildersFactory = new CommandBuildersFactory(connectionStringSettings);
+            var messageQueueingCommandBuilders = commandBuildersFactory.InitMessageQueueingCommandBuilders();
+            var messageQueueingOptions = new SQLMessageQueueingOptions(connectionProvider, messageQueueingCommandBuilders)
+            {
+                SecurityTokenService = securityTokenService,
+                MessageEncryptionService = messageEncryptionService
+            };
+            var sqlMessageQueueingService = new SQLMessageQueueingService(messageQueueingOptions);
             sqlMessageQueueingService.Init();
             return sqlMessageQueueingService;
         }
@@ -134,7 +146,19 @@ namespace Platibus.SQL
             var securityTokensSection = configuration?.GetSection("securityTokens");
             var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securityTokensSection);
 
-            var sqlMessageQueueingService = new SQLMessageQueueingService(connectionStringSettings, securityTokenService: securityTokenService);
+            var messageEncryptionServiceFactory = new MessageEncryptionServiceFactory();
+            var messageEncryptionConfig = configuration?.GetSection("encryption");
+            var messageEncryptionService = await messageEncryptionServiceFactory.InitMessageEncryptionService(messageEncryptionConfig);
+
+            var connectionProvider = new DefaultConnectionProvider(connectionStringSettings);
+            var commandBuildersFactory = new CommandBuildersFactory(connectionStringSettings);
+            var messageQueueingCommandBuilders = commandBuildersFactory.InitMessageQueueingCommandBuilders();
+            var messageQueueingOptions = new SQLMessageQueueingOptions(connectionProvider, messageQueueingCommandBuilders)
+            {
+                SecurityTokenService = securityTokenService,
+                MessageEncryptionService = messageEncryptionService
+            };
+            var sqlMessageQueueingService = new SQLMessageQueueingService(messageQueueingOptions);
             sqlMessageQueueingService.Init();
             return sqlMessageQueueingService;
         }
