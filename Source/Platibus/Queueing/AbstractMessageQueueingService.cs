@@ -28,6 +28,8 @@ using System.Threading.Tasks;
 
 namespace Platibus.Queueing
 {
+    /// <inheritdoc cref="IMessageQueueingService" />
+    /// <inheritdoc cref="IDisposable"/>
     /// <summary>
     /// An abstract base class for implementing message queueing services
     /// </summary>
@@ -38,19 +40,7 @@ namespace Platibus.Queueing
 
         private bool _disposed;
 
-        /// <summary>
-        /// Establishes a named queue
-        /// </summary>
-        /// <param name="queueName">The name of the queue</param>
-        /// <param name="listener">An object that will receive messages off of the queue for processing</param>
-        /// <param name="options">(Optional) Options that govern how the queue behaves</param>
-        /// <param name="cancellationToken">(Optional) A cancellation token that can be used
-        /// by the caller to cancel queue creation if necessary</param>
-        /// <returns>Returns a task that will complete when the queue has been created</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown if <paramref name="queueName"/> or
-        /// <paramref name="listener"/> is <c>null</c></exception>
-        /// <exception cref="QueueAlreadyExistsException">Thrown if a queue with the specified
-        /// name already exists</exception>
+        /// <inheritdoc />
         public async Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             var queue = await InternalCreateQueue(queueName, listener, options, cancellationToken);
@@ -74,17 +64,7 @@ namespace Platibus.Queueing
         protected abstract Task<TQueue> InternalCreateQueue(QueueName queueName, IQueueListener listener,
             QueueOptions options = null, CancellationToken cancellationToken = default(CancellationToken));
 
-        /// <summary>
-        /// Enqueues a message on a queue
-        /// </summary>
-        /// <param name="queueName">The name of the queue</param>
-        /// <param name="message">The message to enqueue</param>
-        /// <param name="senderPrincipal">(Optional) The sender principal, if applicable</param>
-        /// <param name="cancellationToken">(Optional) A cancellation token that can be
-        /// used be the caller to cancel the enqueue operation if necessary</param>
-        /// <returns>Returns a task that will complete when the message has been enqueued</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown if <paramref name="queueName"/>
-        /// or <paramref name="message"/> is <c>null</c></exception>
+        /// <inheritdoc />
         public Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (!_queues.TryGetValue(queueName, out TQueue queue))
@@ -102,11 +82,7 @@ namespace Platibus.Queueing
             Dispose(false);
         }
 
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting 
-        /// unmanaged resources
-        /// </summary>
-        /// <filterpriority>2</filterpriority>
+        /// <inheritdoc />
         public void Dispose()
         {
             if (_disposed) return;

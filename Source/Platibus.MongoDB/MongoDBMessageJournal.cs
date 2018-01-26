@@ -56,30 +56,20 @@ namespace Platibus.MongoDB
         private readonly IDiagnosticService _diagnosticService;
         private readonly IMongoCollection<MessageJournalEntryDocument> _messageJournalEntries;
         private readonly bool _collationSupported;
-
+        
         /// <summary>
         /// Initializes a new <see cref="MongoDBMessageJournal"/> with the specified
-        /// <paramref name="connectionStringSettings"/> and <paramref name="databaseName"/>
+        /// <paramref name="options"/>
         /// </summary>
-        /// <param name="connectionStringSettings">The connection string to use to connect to the
-        /// MongoDB database</param>
-        /// <param name="databaseName">(Optional) The name of the database to use.  If omitted,
-        /// the default database identified in the <paramref name="connectionStringSettings"/>
-        /// will be used</param>
-        /// <param name="collectionName">(Optional) The name of the collection in which 
-        /// subscription documents will be stored.  If omitted, the
-        /// <see cref="DefaultCollectionName"/> will be used</param>
-        /// <param name="diagnosticService">(Optional) The diagnostic service through which
-        /// diagnostic events will be emitted</param>
-        public MongoDBMessageJournal(ConnectionStringSettings connectionStringSettings, string databaseName = null, string collectionName = null, IDiagnosticService diagnosticService = null)
+        /// <param name="options">The options for this service</param>
+        public MongoDBMessageJournal(MongoDBMessageJournalOptions options)
         {
-            _diagnosticService = diagnosticService;
-            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
-            var myCollectionName = string.IsNullOrWhiteSpace(collectionName)
+            _diagnosticService = options.DiagnosticService ?? DiagnosticService.DefaultInstance;
+            var myCollectionName = string.IsNullOrWhiteSpace(options.CollectionName)
                 ? DefaultCollectionName
-                : collectionName;
+                : options.CollectionName;
 
-            var database = MongoDBHelper.Connect(connectionStringSettings, databaseName);
+            var database = options.Database;
             
             _messageJournalEntries = database.GetCollection<MessageJournalEntryDocument>(
                 myCollectionName,
@@ -91,9 +81,33 @@ namespace Platibus.MongoDB
             var minServerVersion = database.Client.Cluster.Description.Servers.Min(s => s.Version);
             _collationSupported = Feature.Collation.IsSupported(minServerVersion);
 
-            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
-
             CreateIndexes();
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new <see cref="T:Platibus.MongoDB.MongoDBMessageJournal" /> with the specified
+        /// <paramref name="connectionStringSettings" /> and <paramref name="databaseName" />
+        /// </summary>
+        /// <param name="connectionStringSettings">The connection string to use to connect to the
+        /// MongoDB database</param>
+        /// <param name="databaseName">(Optional) The name of the database to use.  If omitted,
+        /// the default database identified in the <paramref name="connectionStringSettings" />
+        /// will be used</param>
+        /// <param name="collectionName">(Optional) The name of the collection in which 
+        /// subscription documents will be stored.  If omitted, the
+        /// <see cref="F:Platibus.MongoDB.MongoDBMessageJournal.DefaultCollectionName" /> will be used</param>
+        /// <param name="diagnosticService">(Optional) The diagnostic service through which
+        /// diagnostic events will be emitted</param>
+        [Obsolete]
+        public MongoDBMessageJournal(ConnectionStringSettings connectionStringSettings, string databaseName = null,
+            string collectionName = null, IDiagnosticService diagnosticService = null)
+            : this(new MongoDBMessageJournalOptions(MongoDBHelper.Connect(connectionStringSettings, databaseName))
+            {
+                DiagnosticService = diagnosticService,
+                CollectionName = collectionName
+            })
+        {
         }
 
         private void CreateIndexes()

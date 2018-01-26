@@ -33,8 +33,11 @@ namespace Platibus.UnitTests.MongoDB
 {
     internal class MongoDBMessageQueueInspector : MongoDBMessageQueue
     {
-        public MongoDBMessageQueueInspector(IMongoDatabase database, QueueName queueName, ISecurityTokenService securityTokenService, QueueOptions options = null, string collectionName = null) 
-            : base(database, queueName, new NoopQueueListener(), securityTokenService, options, collectionName)
+        public MongoDBMessageQueueInspector(QueueName queueName, QueueOptions options, IMongoDatabase database,
+            string collectionName, ISecurityTokenService securityTokenService,
+            IMessageEncryptionService messageEncryptionService) 
+            : base(queueName, new NoopQueueListener(), options, null, database, collectionName, 
+                securityTokenService, messageEncryptionService)
         {
         }
 

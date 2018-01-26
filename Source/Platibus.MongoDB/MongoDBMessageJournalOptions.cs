@@ -22,39 +22,38 @@
 
 using System;
 using MongoDB.Driver;
-#if NET452
-using System.Configuration;
-#endif
-#if NETSTANDARD2_0
-using Platibus.Config;
-#endif
+using Platibus.Diagnostics;
 
 namespace Platibus.MongoDB
 {
     /// <summary>
-    /// Helper class for working with MongoDB 
+    /// Options that influence the behavior of <see cref="MongoDBMessageJournal"/>
     /// </summary>
-    public static class MongoDBHelper
+    public class MongoDBMessageJournalOptions
     {
         /// <summary>
-        /// Connects to the MongoDB database specified by the supplied
-        /// <paramref name="connectionStringSettings"/> and <paramref name="databaseName"/>
+        /// The diagnostic service through which events related to MongoDB message
+        /// journaling will be raised and processed
         /// </summary>
-        /// <param name="connectionStringSettings"></param>
-        /// <param name="databaseName">(Optional) If omitted, the default database specified
-        /// in the <see cref="ConnectionStringSettings"/> will be used</param>
-        /// <returns>Returns the MongoDB database object</returns>
-        public static IMongoDatabase Connect(ConnectionStringSettings connectionStringSettings,
-            string databaseName = null)
-        {
-            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
-            var mongoUrl = new MongoUrl(connectionStringSettings.ConnectionString);
-            var myDatabaseName = string.IsNullOrWhiteSpace(databaseName)
-                ? mongoUrl.DatabaseName
-                : databaseName;
+        public IDiagnosticService DiagnosticService { get; set; }
+        
+        /// <summary>
+        /// The MongoDB database in which journaled messages will be persisted
+        /// </summary>
+        public IMongoDatabase Database { get; } 
+        
+        /// <summary>
+        /// The name of the collection in which journaled messages should be persisted
+        /// </summary>
+        public string CollectionName { get; set; }
 
-            var client = new MongoClient(mongoUrl);
-            return client.GetDatabase(myDatabaseName);
+        /// <summary>
+        /// Initializes a new <see cref="MongoDBMessageJournalOptions"/>
+        /// </summary>
+        /// <param name="database">The MongoDB database in which journaled messages should be persisted</param>
+        public MongoDBMessageJournalOptions(IMongoDatabase database)
+        {
+            Database = database ?? throw new ArgumentNullException(nameof(database));
         }
     }
 }

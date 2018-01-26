@@ -26,11 +26,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MongoDB.Driver;
+using Platibus.Diagnostics;
 using Platibus.Queueing;
 using Platibus.Security;
 
 namespace Platibus.MongoDB
 {
+    /// <inheritdoc />
     /// <summary>
     /// A message queue based on a SQL database
     /// </summary>
@@ -38,30 +40,38 @@ namespace Platibus.MongoDB
     {
         private readonly IMongoCollection<QueuedMessageDocument> _queuedMessages;
         private readonly ISecurityTokenService _securityTokenService;
+        private readonly IMessageEncryptionService _messageEncryptionService;
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="MongoDBMessageQueue"/> with the specified values
+        /// Initializes a new <see cref="T:Platibus.MongoDB.MongoDBMessageQueue" /> with the specified values
         /// </summary>
-        /// <param name="database">The MongoDB database</param>
         /// <param name="queueName">The name of the queue</param>
         /// <param name="listener">The object that will be notified when messages are
-        /// added to the queue</param>
-        /// <param name="securityTokenService"></param>
+        ///     added to the queue</param>
         /// <param name="options">(Optional) Settings that influence how the queue behaves</param>
+        /// <param name="diagnosticService"></param>
+        /// <param name="database">The MongoDB database</param>
         /// <param name="collectionName">(Optional) The name of the collection in which the
-        /// queued messages should be stored.  If omitted, the queue name will be used.</param>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown if <paramref name="database"/>, <paramref name="queueName"/>, or 
-        /// <paramref name="listener"/> are <c>null</c>
+        ///     queued messages should be stored.  If omitted, the queue name will be used.</param>
+        /// <param name="securityTokenService"></param>
+        /// <param name="messageEncryptionService">(Optional) The message encryption service used
+        /// to encrypt persistent messages at rest</param>
+        /// <exception cref="T:System.ArgumentNullException">
+        /// Thrown if <paramref name="database" />, <paramref name="queueName" />, or 
+        /// <paramref name="listener" /> are <c>null</c>
         /// </exception>
-        public MongoDBMessageQueue(IMongoDatabase database, QueueName queueName, IQueueListener listener, ISecurityTokenService securityTokenService, QueueOptions options = null, string collectionName = null)
-            : base(queueName, listener, options)
+        public MongoDBMessageQueue(QueueName queueName, IQueueListener listener, QueueOptions options,
+            IDiagnosticService diagnosticService, IMongoDatabase database, string collectionName, 
+            ISecurityTokenService securityTokenService, IMessageEncryptionService messageEncryptionService)
+            : base(queueName, listener, options, diagnosticService)
         {
             if (database == null) throw new ArgumentNullException(nameof(database));
             if (queueName == null) throw new ArgumentNullException(nameof(queueName));
             if (listener == null) throw new ArgumentNullException(nameof(listener));
 
             _securityTokenService = securityTokenService ?? throw new ArgumentNullException(nameof(securityTokenService));
+            _messageEncryptionService = messageEncryptionService;
 
             var myCollectionName = string.IsNullOrWhiteSpace(collectionName)
                 ? MapToCollectionName(queueName)
@@ -137,13 +147,17 @@ namespace Platibus.MongoDB
             var messageId = message.Headers.MessageId;
             var expires = message.Headers.Expires;
             var securityToken = await _securityTokenService.NullSafeIssue(principal, expires);
-            var messageWithSecurityToken = message.WithSecurityToken(securityToken);
+            var persistedMessage = message.WithSecurityToken(securityToken);
+            if (_messageEncryptionService != null)
+            {
+                persistedMessage = await _messageEncryptionService.Encrypt(persistedMessage);
+            }
             var queuedMessageDocument = new QueuedMessageDocument
             {
                 Queue = QueueName,
                 MessageId = messageId,
-                Headers = messageWithSecurityToken.Headers.ToDictionary(h => (string)h.Key, h => h.Value),
-                Content = messageWithSecurityToken.Content
+                Headers = persistedMessage.Headers.ToDictionary(h => (string)h.Key, h => h.Value),
+                Content = persistedMessage.Content
             };
 
             await _queuedMessages.InsertOneAsync(queuedMessageDocument, cancellationToken: cancellationToken);
@@ -220,7 +234,12 @@ namespace Platibus.MongoDB
                 {
                     var messageHeaders = new MessageHeaders(queuedMessage.Headers);
                     var principal = await _securityTokenService.NullSafeValidate(messageHeaders.SecurityToken);
-                    var message = new Message(messageHeaders, queuedMessage.Content).WithoutSecurityToken();
+                    var message = new Message(messageHeaders, queuedMessage.Content);
+                    if (message.IsEncrypted() && _messageEncryptionService != null)
+                    {
+                        message = await _messageEncryptionService.Decrypt(message);
+                    }
+                    message = message.WithoutSecurityToken();
                     queuedMessages.Add(new QueuedMessage(message, principal, queuedMessage.Attempts));
                 }
                 catch (Exception ex)

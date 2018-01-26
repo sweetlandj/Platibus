@@ -19,7 +19,7 @@ namespace Platibus.UnitTests.MongoDB
     [Collection(MongoDBCollection.Name)]
     public class MongoDBServicesProviderSubscriptionTrackingServiceTests
     {
-        private readonly ConnectionStringSettings _connectionStringSettings;
+        protected readonly ConnectionStringSettings ConnectionStringSettings;
 
         public TopicName Topic = Guid.NewGuid().ToString();
         public Uri Subscriber = new Uri("http://localhost/" + Guid.NewGuid());
@@ -38,8 +38,8 @@ namespace Platibus.UnitTests.MongoDB
                 .AddInMemoryCollection()
                 .Build();
 #endif
-            _connectionStringSettings = fixture.ConnectionStringSettings;
-            ConfigureAttribute("connectionName", _connectionStringSettings.Name);
+            ConnectionStringSettings = fixture.ConnectionStringSettings;
+            ConfigureAttribute("connectionName", fixture.ConnectionStringSettings.Name);
         }
 
         [Fact]
@@ -80,7 +80,7 @@ namespace Platibus.UnitTests.MongoDB
 
         protected async Task AssertSubscriptionDocumentInserted(string collectionName, string database = null)
         {
-            var db = MongoDBHelper.Connect(_connectionStringSettings, database);
+            var db = MongoDBHelper.Connect(ConnectionStringSettings, database);
             var coll = db.GetCollection<BsonDocument>(collectionName);
             var filter = Builders<BsonDocument>.Filter.Eq("topic", Topic.ToString())
                 & Builders<BsonDocument>.Filter.Eq("subscriber", Subscriber.ToString());

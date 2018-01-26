@@ -121,7 +121,7 @@ namespace Platibus.Diagnostics
         {
             if (disposing)
             {
-                lock (_tcpClient)
+                lock (_syncRoot)
                 {
                     if (_tcpClient.Connected)
                     {

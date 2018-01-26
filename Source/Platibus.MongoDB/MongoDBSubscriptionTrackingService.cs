@@ -26,6 +26,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MongoDB.Driver;
+using Platibus.Diagnostics;
 #if NET452
 using System.Configuration;
 #endif
@@ -35,8 +36,9 @@ using Platibus.Config;
 
 namespace Platibus.MongoDB
 {
+    /// <inheritdoc />
     /// <summary>
-    /// An implementation of <see cref="ISubscriptionTrackingService"/> that stores subscriptions
+    /// An implementation of <see cref="T:Platibus.ISubscriptionTrackingService" /> that stores subscriptions
     /// in a MongoDB database
     /// </summary>
     public class MongoDBSubscriptionTrackingService : ISubscriptionTrackingService
@@ -46,29 +48,44 @@ namespace Platibus.MongoDB
         /// </summary>
         public const string DefaultCollectionName = "platibus.subscriptions";
 
+        private readonly IDiagnosticService _diagnosticService;
         private readonly IMongoCollection<SubscriptionDocument> _subscriptions;
 
         /// <summary>
-        /// Initializes a new <see cref="MongoDBSubscriptionTrackingService"/> with the specified
-        /// <paramref name="connectionStringSettings"/> and <paramref name="databaseName"/>
+        /// Initializes a new <see cref="MongoDBSubscriptionTrackingService"/>
+        /// </summary>
+        /// <param name="options">Options governing the behavior of the service</param>
+        public MongoDBSubscriptionTrackingService(MongoDBSubscriptionTrackingOptions options)
+        {
+            if (options == null) throw new ArgumentNullException(nameof(options));
+            var myCollectionName = string.IsNullOrWhiteSpace(options.CollectionName)
+                ? DefaultCollectionName
+                : options.CollectionName;
+
+            _diagnosticService = options.DiagnosticService ?? DiagnosticService.DefaultInstance;
+            _subscriptions = options.Database.GetCollection<SubscriptionDocument>(myCollectionName);
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new <see cref="T:Platibus.MongoDB.MongoDBSubscriptionTrackingService" /> with the specified
+        /// <paramref name="connectionStringSettings" /> and <paramref name="databaseName" />
         /// </summary>
         /// <param name="connectionStringSettings">The connection string to use to connect to the
         /// MongoDB database</param>
         /// <param name="databaseName">(Optional) The name of the database to use.  If omitted,
-        /// the default database identified in the <paramref name="connectionStringSettings"/>
+        /// the default database identified in the <paramref name="connectionStringSettings" />
         /// will be used</param>
         /// <param name="collectionName">(Optional) The name of the collection in which 
         /// subscription documents will be stored.  If omitted, the
-        /// <see cref="DefaultCollectionName"/> will be used</param>
+        /// <see cref="F:Platibus.MongoDB.MongoDBSubscriptionTrackingService.DefaultCollectionName" /> will be used</param>
+        [Obsolete]
         public MongoDBSubscriptionTrackingService(ConnectionStringSettings connectionStringSettings, string databaseName = null, string collectionName = DefaultCollectionName)
+        : this(new MongoDBSubscriptionTrackingOptions(MongoDBHelper.Connect(connectionStringSettings, databaseName))
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
-            var myCollectionName = string.IsNullOrWhiteSpace(collectionName)
-                ? DefaultCollectionName
-                : collectionName;
-
-            var database = MongoDBHelper.Connect(connectionStringSettings, databaseName);
-            _subscriptions = database.GetCollection<SubscriptionDocument>(myCollectionName);
+            CollectionName = collectionName
+        })
+        {
         }
 
         /// <inheritdoc />
@@ -78,18 +95,34 @@ namespace Platibus.MongoDB
             if (topic == null) throw new ArgumentNullException(nameof(topic));
             if (subscriber == null) throw new ArgumentNullException(nameof(subscriber));
 
-            var expires = ttl <= TimeSpan.Zero
-                ? DateTime.MaxValue
-                : DateTime.UtcNow.Add(ttl);
+            try
+            {
+                var expires = ttl <= TimeSpan.Zero
+                    ? DateTime.MaxValue
+                    : DateTime.UtcNow.Add(ttl);
 
-            var fb = Builders<SubscriptionDocument>.Filter;
-            var filter = fb.Eq(s => s.Topic, topic.ToString()) &
-                         fb.Eq(s => s.Subscriber, subscriber.ToString());
+                var fb = Builders<SubscriptionDocument>.Filter;
+                var filter = fb.Eq(s => s.Topic, topic.ToString()) &
+                             fb.Eq(s => s.Subscriber, subscriber.ToString());
 
-            var update = Builders<SubscriptionDocument>.Update
-                .Set(s => s.Expires, expires);
+                var update = Builders<SubscriptionDocument>.Update
+                    .Set(s => s.Expires, expires);
 
-            return _subscriptions.UpdateOneAsync(filter, update, new UpdateOptions {IsUpsert = true}, cancellationToken);
+                return _subscriptions.UpdateOneAsync(filter, update, new UpdateOptions {IsUpsert = true}, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _diagnosticService.Emit(new MongoDBEventBuilder(this, MongoDBEventType.MongoDBUpdateFailed)
+                {
+                    Detail = $"Error uperting subscription to topic {topic} for subscriber {subscriber}",
+                    CollectionName = _subscriptions.CollectionNamespace.CollectionName,
+                    DatabaseName = _subscriptions.Database.DatabaseNamespace.DatabaseName,
+                    Exception = ex,
+                    Topic = topic
+                }.Build());
+
+                throw;
+            }
         }
 
         /// <inheritdoc />
@@ -98,22 +131,54 @@ namespace Platibus.MongoDB
             if (topic == null) throw new ArgumentNullException(nameof(topic));
             if (subscriber == null) throw new ArgumentNullException(nameof(subscriber));
 
-            var fb = Builders<SubscriptionDocument>.Filter;
-            var filter = fb.Eq(s => s.Topic, topic.ToString()) &
-                         fb.Eq(s => s.Subscriber, subscriber.ToString());
+            try
+            {
+                var fb = Builders<SubscriptionDocument>.Filter;
+                var filter = fb.Eq(s => s.Topic, topic.ToString()) &
+                             fb.Eq(s => s.Subscriber, subscriber.ToString());
 
-            return _subscriptions.DeleteManyAsync(filter, cancellationToken);
+                return _subscriptions.DeleteManyAsync(filter, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _diagnosticService.Emit(new MongoDBEventBuilder(this, MongoDBEventType.MongoDBDeleteFailed)
+                {
+                    Detail = $"Error deleting subscription(s) to topic {topic} for subscriber {subscriber}",
+                    CollectionName = _subscriptions.CollectionNamespace.CollectionName,
+                    DatabaseName = _subscriptions.Database.DatabaseNamespace.DatabaseName,
+                    Exception = ex,
+                    Topic = topic
+                }.Build());
+
+                throw;
+            }
         }
 
         /// <inheritdoc />
         public async Task<IEnumerable<Uri>> GetSubscribers(TopicName topic, CancellationToken cancellationToken = new CancellationToken())
         {
-            var fb = Builders<SubscriptionDocument>.Filter;
-            var filter = fb.Eq(s => s.Topic, topic.ToString()) &
-                         fb.Gt(s => s.Expires, DateTime.UtcNow);                
+            try
+            {
+                var fb = Builders<SubscriptionDocument>.Filter;
+                var filter = fb.Eq(s => s.Topic, topic.ToString()) &
+                             fb.Gt(s => s.Expires, DateTime.UtcNow);                
 
-            var subscrptionDocuments = await _subscriptions.Find(filter).ToListAsync(cancellationToken);
-            return subscrptionDocuments.Select(s => new Uri(s.Subscriber));
+                var subscrptionDocuments = await _subscriptions.Find(filter).ToListAsync(cancellationToken);
+                return subscrptionDocuments.Select(s => new Uri(s.Subscriber));
+            }
+            catch (Exception ex)
+            {
+                _diagnosticService.Emit(new MongoDBEventBuilder(this, MongoDBEventType.MongoDBFindFailed)
+                {
+                    Detail = $"Error finding subscription(s) to topic {topic}",
+                    CollectionName = _subscriptions.CollectionNamespace.CollectionName,
+                    DatabaseName = _subscriptions.Database.DatabaseNamespace.DatabaseName,
+                    Exception = ex,
+                    Topic = topic
+                }.Build());
+
+                throw;
+            }
         }
     }
 }

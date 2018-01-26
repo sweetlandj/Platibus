@@ -79,8 +79,19 @@ namespace Platibus.MongoDB
             var securitTokenConfig = configuration.SecurityTokens;
             var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securitTokenConfig);
 
-            var messageQueueingService = new MongoDBMessageQueueingService(connectionStringSettings, 
-                securityTokenService, databaseName, collectionNameFactory);
+            var messageEncrytionServiceFactory = new MessageEncryptionServiceFactory();
+            var encryptionSection = configuration.Encryption;
+            var messageEncryptionService = await messageEncrytionServiceFactory.InitMessageEncryptionService(encryptionSection);
+
+            var database = MongoDBHelper.Connect(connectionStringSettings, databaseName);
+            var queueingOptions = new MongoDBMessageQueueingOptions(database)
+            {
+                CollectionNameFactory = collectionNameFactory,
+                SecurityTokenService = securityTokenService,
+                MessageEncryptionService = messageEncryptionService
+            };
+
+            var messageQueueingService = new MongoDBMessageQueueingService(queueingOptions);
 
             return messageQueueingService;
         }
@@ -103,7 +114,12 @@ namespace Platibus.MongoDB
 
             var databaseName = configuration.GetString("database");
             var collectionName = configuration.GetString("collection");
-            var subscriptionTrackingService = new MongoDBSubscriptionTrackingService(connectionStringSettings, databaseName, collectionName);
+            var database = MongoDBHelper.Connect(connectionStringSettings, databaseName);
+            var subscriptionTrackingOptions = new MongoDBSubscriptionTrackingOptions(database)
+            {
+                CollectionName = collectionName
+            };
+            var subscriptionTrackingService = new MongoDBSubscriptionTrackingService(subscriptionTrackingOptions);
 
             var multicast = configuration.Multicast;
             if (multicast == null || !multicast.Enabled)
@@ -135,7 +151,12 @@ namespace Platibus.MongoDB
 
             var databaseName = configuration.GetString("database");
             var collectionName = configuration.GetString("collection");
-            var sqlMessageJournalingService = new MongoDBMessageJournal(connectionStringSettings, databaseName, collectionName);
+            var database = MongoDBHelper.Connect(connectionStringSettings, databaseName);
+            var journalOptions = new MongoDBMessageJournalOptions(database)
+            {
+                CollectionName = collectionName
+            };
+            var sqlMessageJournalingService = new MongoDBMessageJournal(journalOptions);
             return Task.FromResult<IMessageJournal>(sqlMessageJournalingService);
         }
 #endif
@@ -174,8 +195,19 @@ namespace Platibus.MongoDB
             var securityTokensSection = configuration?.GetSection("securityTokens");
             var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securityTokensSection);
 
-            var messageQueueingService = new MongoDBMessageQueueingService(connectionStringSettings, 
-                securityTokenService, databaseName, collectionNameFactory);
+            var messageEncrytionServiceFactory = new MessageEncryptionServiceFactory();
+            var encryptionSection = configuration?.GetSection("encryption");
+            var messageEncryptionService = await messageEncrytionServiceFactory.InitMessageEncryptionService(encryptionSection);
+
+            var database = MongoDBHelper.Connect(connectionStringSettings, databaseName);
+            var queueingOptions = new MongoDBMessageQueueingOptions(database)
+            {
+                CollectionNameFactory = collectionNameFactory,
+                SecurityTokenService = securityTokenService,
+                MessageEncryptionService = messageEncryptionService
+            };
+
+            var messageQueueingService = new MongoDBMessageQueueingService(queueingOptions);
 
             return messageQueueingService;
         }
@@ -198,7 +230,12 @@ namespace Platibus.MongoDB
 
             var databaseName = configuration?["database"];
             var collectionName = configuration?["collection"];
-            var subscriptionTrackingService = new MongoDBSubscriptionTrackingService(connectionStringSettings, databaseName, collectionName);
+            var database = MongoDBHelper.Connect(connectionStringSettings, databaseName);
+            var subscriptionTrackingOptions = new MongoDBSubscriptionTrackingOptions(database)
+            {
+                CollectionName = collectionName
+            };
+            var subscriptionTrackingService = new MongoDBSubscriptionTrackingService(subscriptionTrackingOptions);
 
             var multicastSection = configuration?.GetSection("multicast");
             var multicastEnabled = multicastSection?.GetValue("enabled", true) ?? false;
@@ -233,7 +270,12 @@ namespace Platibus.MongoDB
 
             var databaseName = configuration?["database"];
             var collectionName = configuration?["collection"];
-            var sqlMessageJournalingService = new MongoDBMessageJournal(connectionStringSettings, databaseName, collectionName);
+            var database = MongoDBHelper.Connect(connectionStringSettings, databaseName);
+            var journalOptions = new MongoDBMessageJournalOptions(database)
+            {
+                CollectionName = collectionName
+            };
+            var sqlMessageJournalingService = new MongoDBMessageJournal(journalOptions);
             return Task.FromResult<IMessageJournal>(sqlMessageJournalingService);
         }
 #endif

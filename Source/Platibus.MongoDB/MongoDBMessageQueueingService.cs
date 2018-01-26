@@ -24,6 +24,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MongoDB.Driver;
+using Platibus.Diagnostics;
 using Platibus.Queueing;
 using Platibus.Security;
 #if NET452
@@ -46,13 +47,32 @@ namespace Platibus.MongoDB
         /// </summary>
         public const string DefaultCollectionName = "platibus.queuedMessages";
 
+        private readonly IDiagnosticService _diagnosticService;
         private readonly IMongoDatabase _database;
         private readonly ISecurityTokenService _securityTokenService;
-        private readonly IMessageQueueingService _messageQueueingService;
+        private readonly IMessageEncryptionService _messageEncryptionService;
         private readonly QueueCollectionNameFactory _collectionNameFactory;
 
         /// <summary>
         ///     Initializes a new <see cref="MongoDBMessageQueueingService"/>
+        /// </summary>
+        /// <param name="options">Options governing the behavior of the service</param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown if  <paramref name="options"/> is <c>null</c>
+        /// </exception>
+        public MongoDBMessageQueueingService(MongoDBMessageQueueingOptions options)
+        {
+            if (options == null) throw new ArgumentNullException(nameof(options));
+            _diagnosticService = options.DiagnosticService ?? DiagnosticService.DefaultInstance;
+            _database = options.Database;
+            _collectionNameFactory = options.CollectionNameFactory ?? (_ => DefaultCollectionName);
+            _securityTokenService = options.SecurityTokenService ?? new JwtSecurityTokenService();
+            _messageEncryptionService = options.MessageEncryptionService;
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        ///     Initializes a new <see cref="T:Platibus.MongoDB.MongoDBMessageQueueingService" />
         /// </summary>
         /// <param name="connectionStringSettings">
         ///     The connection string to use to connect to the MongoDB database
@@ -63,24 +83,26 @@ namespace Platibus.MongoDB
         /// </param>
         /// <param name="databaseName">
         ///     (Optional) The name of the database to use.  If omitted, the default database
-        ///     identified in the <paramref name="connectionStringSettings"/> will be used
+        ///     identified in the <paramref name="connectionStringSettings" /> will be used
         /// </param>
         /// <param name="collectionNameFactory">
         ///     (Optional) A factory method used to generate a collection name corresponding 
         ///     to the specified queue.  The default is a single collection for all queues 
-        ///     with a <see cref="DefaultCollectionName"/>.
+        ///     with a <see cref="F:Platibus.MongoDB.MongoDBMessageQueueingService.DefaultCollectionName" />.
         /// </param>
-        /// <exception cref="ArgumentNullException">
-        ///     Thrown if  <paramref name="connectionStringSettings"/> is <c>null</c>
+        /// <exception cref="T:System.ArgumentNullException">
+        ///     Thrown if  <paramref name="connectionStringSettings" /> is <c>null</c>
         /// </exception>
-        public MongoDBMessageQueueingService(ConnectionStringSettings connectionStringSettings, 
-            ISecurityTokenService securityTokenService = null, 
+        [Obsolete]
+        public MongoDBMessageQueueingService(ConnectionStringSettings connectionStringSettings,
+            ISecurityTokenService securityTokenService = null,
             string databaseName = null, QueueCollectionNameFactory collectionNameFactory = null)
+            : this(new MongoDBMessageQueueingOptions(MongoDBHelper.Connect(connectionStringSettings, databaseName))
+            {
+                SecurityTokenService = securityTokenService,
+                CollectionNameFactory = collectionNameFactory
+            })
         {
-            if (connectionStringSettings == null) throw new ArgumentNullException(nameof(connectionStringSettings));
-            _database = MongoDBHelper.Connect(connectionStringSettings, databaseName);
-            _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
-            _collectionNameFactory = collectionNameFactory ?? (_ => DefaultCollectionName);
         }
 
         /// <inheritdoc />
@@ -88,7 +110,8 @@ namespace Platibus.MongoDB
             QueueOptions options = null, CancellationToken cancellationToken = new CancellationToken())
         {
             var collectionName = _collectionNameFactory(queueName);
-            var queue = new MongoDBMessageQueue(_database, queueName, listener, _securityTokenService, options, collectionName);
+            var queue = new MongoDBMessageQueue(queueName, listener, options, _diagnosticService, _database, collectionName, 
+                _securityTokenService, _messageEncryptionService);
             return Task.FromResult(queue);
         }
     }

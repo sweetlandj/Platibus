@@ -1,13 +1,11 @@
-﻿using MongoDB.Bson;
+﻿using System.Configuration;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Platibus.Config;
 using Platibus.Journaling;
 using Platibus.MongoDB;
 using System.Threading.Tasks;
 using Xunit;
-#if NET452
-using System.Configuration;
-#endif
 #if NETCOREAPP2_0
 using Microsoft.Extensions.Configuration;
 #endif
@@ -19,14 +17,14 @@ namespace Platibus.UnitTests.MongoDB
     [Collection(MongoDBCollection.Name)]
     public class MongoDBServicesProviderMessageJournalTests
     {
-        private readonly ConnectionStringSettings _connectionStringSettings;
+        protected readonly ConnectionStringSettings ConnectionStringSettings;
 
-        public Message Message;
+        protected Message Message;
 #if NET452
-        public JournalingElement Configuration = new JournalingElement();
+        protected JournalingElement Configuration = new JournalingElement();
 #endif
 #if NETCOREAPP2_0
-        public IConfiguration Configuration;
+        protected IConfiguration Configuration;
 #endif
 
         public MongoDBServicesProviderMessageJournalTests(MongoDBFixture fixture)
@@ -37,8 +35,8 @@ namespace Platibus.UnitTests.MongoDB
                 .AddInMemoryCollection()
                 .Build();
 #endif
-            _connectionStringSettings = fixture.ConnectionStringSettings;
-            ConfigureAttribute("connectionName", _connectionStringSettings.Name);
+            ConnectionStringSettings = fixture.ConnectionStringSettings;
+            ConfigureAttribute("connectionName", fixture.ConnectionStringSettings.Name);
 
             Message = new Message(new MessageHeaders
             {
@@ -82,7 +80,7 @@ namespace Platibus.UnitTests.MongoDB
 
         protected async Task AssertMessageDocumentInserted(string collectionName, string database = null)
         {
-            var db = MongoDBHelper.Connect(_connectionStringSettings, database);
+            var db = MongoDBHelper.Connect(ConnectionStringSettings, database);
             var coll = db.GetCollection<BsonDocument>(collectionName);
             var filter = Builders<BsonDocument>.Filter.Eq("headers.Platibus-MessageId", Message.Headers.MessageId.ToString());
             var msg = await coll.Find(filter).FirstOrDefaultAsync();

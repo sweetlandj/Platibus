@@ -20,11 +20,11 @@ namespace Platibus.UnitTests.MongoDB
     [Collection(MongoDBCollection.Name)]
     public class MongoDBServicesProviderMessageQueueingServiceTests
     {
-        private readonly ConnectionStringSettings _connectionStringSettings;
+        protected readonly ConnectionStringSettings ConnectionStringSettings;
 
-        public Message Message;
-        public QueueName Queue = Guid.NewGuid().ToString();
-        public IQueueListener QueueListener = new Mock<IQueueListener>().Object;
+        protected  Message Message;
+        protected QueueName Queue = Guid.NewGuid().ToString();
+        protected IQueueListener QueueListener = new Mock<IQueueListener>().Object;
 
 #if NET452
         public QueueingElement Configuration = new QueueingElement();
@@ -40,12 +40,12 @@ namespace Platibus.UnitTests.MongoDB
                 .AddInMemoryCollection()
                 .Build();
 #endif
-            _connectionStringSettings = fixture.ConnectionStringSettings;
+            ConnectionStringSettings = fixture.ConnectionStringSettings;
 #if NET452
-            Configuration.SetAttribute("connectionName", _connectionStringSettings.Name);
+            Configuration.SetAttribute("connectionName", fixture.ConnectionStringSettings.Name);
 #endif
 #if NETCOREAPP2_0
-            Configuration["connectionName"] = _connectionStringSettings.Name;
+            Configuration["connectionName"] = fixture.ConnectionStringSettings.Name;
 #endif
 
             Message = new Message(new MessageHeaders
@@ -114,7 +114,7 @@ namespace Platibus.UnitTests.MongoDB
 
         protected async Task AssertMessageDocumentInserted(string collectionName, string database = null)
         {
-            var db = MongoDBHelper.Connect(_connectionStringSettings, database);
+            var db = MongoDBHelper.Connect(ConnectionStringSettings, database);
             var coll = db.GetCollection<BsonDocument>(collectionName);
             var filter = Builders<BsonDocument>.Filter.Eq("headers.Platibus-MessageId", Message.Headers.MessageId.ToString());
             var msg = await coll.Find(filter).FirstOrDefaultAsync();

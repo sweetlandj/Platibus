@@ -24,6 +24,8 @@ using System;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Platibus.MongoDB;
+using Platibus.Security;
+using Platibus.UnitTests.Security;
 #if NET452
 using System.Configuration;
 #endif
@@ -33,7 +35,7 @@ using Platibus.Config;
 
 namespace Platibus.UnitTests.MongoDB
 {
-    public class MongoDBFixture : IDisposable
+    public class AesEncryptedMongoDBFixture : IDisposable
     {
         private bool _disposed;
 
@@ -43,13 +45,9 @@ namespace Platibus.UnitTests.MongoDB
 
         public IMongoDatabase Database { get; }
 
-        public MongoDBSubscriptionTrackingService SubscriptionTrackingService { get; }
-
         public MongoDBMessageQueueingService MessageQueueingService { get; }
 
-        public MongoDBMessageJournal MessageJournal { get; }
-
-        public MongoDBFixture()
+        public AesEncryptedMongoDBFixture()
         {
             var rng = new Random();
             DatabaseName = $"platibus{rng.Next(int.MaxValue):X}";
@@ -71,17 +69,15 @@ namespace Platibus.UnitTests.MongoDB
 #if NETCOREAPP2_0
             ConfigurationManager.ConnectionStrings[ConnectionStringSettings.Name] = ConnectionStringSettings;
 #endif
-
+            
             Database = MongoDBHelper.Connect(ConnectionStringSettings, DatabaseName);
             
-            var subscriptionTrackingOptions = new MongoDBSubscriptionTrackingOptions(Database);
-            SubscriptionTrackingService = new MongoDBSubscriptionTrackingService(subscriptionTrackingOptions);
-
-            var messageQueueingOptions = new MongoDBMessageQueueingOptions(Database);
+            var encryptionServiceOptions = new AesMessageEncryptionOptions(KeyGenerator.GenerateAesKey());
+            var messageQueueingOptions = new MongoDBMessageQueueingOptions(Database)
+            {
+                MessageEncryptionService = new AesMessageEncryptionService(encryptionServiceOptions)
+            };
             MessageQueueingService = new MongoDBMessageQueueingService(messageQueueingOptions);
-
-            var journalOptions = new MongoDBMessageJournalOptions(Database);
-            MessageJournal = new MongoDBMessageJournal(journalOptions);
         }
 
         public void DeleteJournaledMessages()
@@ -90,7 +86,7 @@ namespace Platibus.UnitTests.MongoDB
             journal.DeleteMany(Builders<BsonDocument>.Filter.Empty);
         }
 
-        ~MongoDBFixture()
+        ~AesEncryptedMongoDBFixture()
         {
             Dispose(false);
         }
