@@ -48,6 +48,16 @@ namespace Platibus.MongoDB
         public string CollectionName { get; set; }
 
         /// <summary>
+        /// The collation locale
+        /// </summary>
+        public string Locale { get; set; }
+        
+        /// <summary>
+        /// Whether collation should be case sensitive
+        /// </summary>
+        public bool CaseSensitive { get; set; }
+
+        /// <summary>
         /// Initializes a new <see cref="MongoDBMessageJournalOptions"/>
         /// </summary>
         /// <param name="database">The MongoDB database in which journaled messages should be persisted</param>

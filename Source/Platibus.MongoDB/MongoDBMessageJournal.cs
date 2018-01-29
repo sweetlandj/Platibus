@@ -40,20 +40,20 @@ using Platibus.Config;
 
 namespace Platibus.MongoDB
 {
+    /// <inheritdoc />
     /// <summary>
-    /// A <see cref="IMessageJournal"/> implementation that uses a MongoDB database to store
+    /// A <see cref="T:Platibus.Journaling.IMessageJournal" /> implementation that uses a MongoDB database to store
     /// journaled messages
     /// </summary>
     public class MongoDBMessageJournal : IMessageJournal
     {
-        private static readonly Collation Collation = new Collation("simple", strength: CollationStrength.Secondary);
-
         /// <summary>
         /// The default name of the collection that will be used to store message journal entries
         /// </summary>
         public const string DefaultCollectionName = "platibus.messageJournal";
 
         private readonly IDiagnosticService _diagnosticService;
+        private readonly Collation _collation;
         private readonly IMongoCollection<MessageJournalEntryDocument> _messageJournalEntries;
         private readonly bool _collationSupported;
         
@@ -80,6 +80,25 @@ namespace Platibus.MongoDB
 
             var minServerVersion = database.Client.Cluster.Description.Servers.Min(s => s.Version);
             _collationSupported = Feature.Collation.IsSupported(minServerVersion);
+            if (_collationSupported)
+            {
+                var locale = string.IsNullOrWhiteSpace(options.Locale)
+                    ? "en"
+                    : options.Locale.Trim().ToLower();
+
+                if ("simple".Equals(locale))
+                {
+                    _collation = Collation.Simple;
+                }
+                else if (options.CaseSensitive)
+                {
+                    _collation = new Collation(locale, true, strength: CollationStrength.Secondary);
+                }
+                else
+                {
+                    _collation = new Collation(locale);
+                }
+            }
 
             CreateIndexes();
         }
@@ -116,7 +135,7 @@ namespace Platibus.MongoDB
             var options = new CreateIndexOptions();
             if (_collationSupported)
             {
-                options.Collation = Collation;
+                options.Collation = _collation;
             }
 
             TryCreateIndex(ikb.Ascending(c => c.Category), "category_1");
@@ -137,7 +156,7 @@ namespace Platibus.MongoDB
 
             if (_collationSupported)
             {
-                options.Collation = Collation;
+                options.Collation = _collation;
             }
 
             try
@@ -188,7 +207,9 @@ namespace Platibus.MongoDB
                 RelatedTo = Normalize(message.Headers.RelatedTo)
             };
 
-            return _messageJournalEntries.InsertOneAsync(entry, cancellationToken: cancellationToken);
+            return _messageJournalEntries
+                .WithWriteConcern(WriteConcern.Acknowledged)
+                .InsertOneAsync(entry, cancellationToken: cancellationToken);
         }
 
         
@@ -204,7 +225,7 @@ namespace Platibus.MongoDB
             var options = new FindOptions();
             if (_collationSupported)
             {
-                options.Collation = Collation;
+                options.Collation = _collation;
             }
 
             var entryDocuments = await _messageJournalEntries.Find(filterDef, options)
