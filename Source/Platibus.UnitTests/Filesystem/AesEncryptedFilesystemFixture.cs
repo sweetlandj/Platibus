@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using Platibus.Diagnostics;
 using Platibus.Filesystem;
 using Platibus.Security;
 using Platibus.UnitTests.Security;

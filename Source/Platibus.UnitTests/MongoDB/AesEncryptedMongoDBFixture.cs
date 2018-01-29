@@ -50,12 +50,12 @@ namespace Platibus.UnitTests.MongoDB
         public AesEncryptedMongoDBFixture()
         {
             var rng = new Random();
-            DatabaseName = $"platibus{rng.Next(int.MaxValue):X}";
+            DatabaseName = $"AesEncryptedMongoDBFixture_{rng.Next(int.MaxValue):X}";
 
             // docker run -it --rm --name mongodb -p 27017:27017 mongo:3.6.0-jessie
             ConnectionStringSettings = new ConnectionStringSettings
             {
-                Name = "MongoDBFixture",
+                Name = DatabaseName,
                 ConnectionString = $"mongodb://localhost:27017/{DatabaseName}?maxpoolsize=1000"
             };
 #if NET452

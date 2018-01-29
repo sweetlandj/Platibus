@@ -47,7 +47,7 @@ namespace Platibus.UnitTests.MongoDB
         [Fact]
         public async Task DatabaseNameCanBeOverridden()
         {
-            const string databaseOverride = "pbtest1";
+            var databaseOverride = ConnectionStringSettings.Name + "_override";
             GivenDatabaseOverride(databaseOverride);
             await WhenMessageJournaled();
             await AssertMessageDocumentInserted(MongoDBMessageJournal.DefaultCollectionName, databaseOverride);
@@ -56,7 +56,7 @@ namespace Platibus.UnitTests.MongoDB
         [Fact]
         public async Task CollectionNameCanBeOverridden()
         {
-            const string collectionOverride = "platibus.testJournal";
+            const string collectionOverride = MongoDBMessageJournal.DefaultCollectionName + "_override";
             GivenCollectionOverride(collectionOverride);
             await WhenMessageJournaled();
             await AssertMessageDocumentInserted(collectionOverride);
