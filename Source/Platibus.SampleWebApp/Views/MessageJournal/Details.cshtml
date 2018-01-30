@@ -4,9 +4,20 @@
     ViewBag.Title = "Platibus Sample Web App - Journal Entry Details";
 }
 
+<style>
+    .dl-wide dt {
+        white-space: normal;
+        width: 300px;
+    }
+
+    .dl-wide dd {
+        margin-left: 320px;
+    }
+</style>
+
 <h4>Journal Entry Metadata</h4>
 <hr />
-<dl class="dl-horizontal">
+<dl class="dl-horizontal dl-wide">
     <dt>
         @Html.DisplayNameFor(model => model.Position)
     </dt>
@@ -29,7 +40,7 @@
 
 <h4>Message Headers</h4>
 <hr />
-<dl class="dl-horizontal">
+<dl class="dl-horizontal dl-wide">
     @foreach (var messageHeader in Model.Data.Headers)
     {
         <dt>

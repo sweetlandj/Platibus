@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using Platibus.Owin;
@@ -51,9 +52,10 @@ namespace Platibus.SampleWebApp.Controllers
                 await WidgetClient.CreateWidget(model);
                 return RedirectToAction("Index");
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                TempData["Error"] = "Error creating widget: " + ex.Message;
+                return View("Create", model);
             }
         }
 
@@ -66,9 +68,10 @@ namespace Platibus.SampleWebApp.Controllers
                 await WidgetClient.CreateWidgetAsync(model);
                 return RedirectToAction("Index");
             }
-            catch
+            catch (Exception ex)
             {
-                return View("Create");
+                TempData["Error"] = "Error creating widget: " + ex.Message;
+                return View("Create", model);
             }
         }
 
@@ -87,9 +90,10 @@ namespace Platibus.SampleWebApp.Controllers
                 await WidgetClient.UpdateWidget(id, model);
                 return RedirectToAction("Index");
             }
-            catch
+            catch(Exception ex)
             {
-                return View();
+                TempData["Error"] = "Error updating widget: " + ex.Message;
+                return View(model);
             }
         }
 
@@ -109,9 +113,10 @@ namespace Platibus.SampleWebApp.Controllers
                 await WidgetClient.DeleteWidget(id);
                 return RedirectToAction("Index");
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                TempData["Error"] = "Error deleting widget: " + ex.Message;
+                return View(model);
             }
         }
         

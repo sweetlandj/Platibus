@@ -2,6 +2,14 @@
 
 @{
     ViewBag.Title = "Platibus Sample Web App - Edit Widget";
+    var error = TempData["Error"] as string;
+}
+
+@if (!string.IsNullOrWhiteSpace(error))
+{
+    <div class="alert alert-danger" role="alert">
+        @TempData["Error"]
+    </div>
 }
 
 <h4>Edit Widget #@Model.Id</h4>

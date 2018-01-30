@@ -24,7 +24,7 @@ namespace Platibus.SampleApi.Widgets
 
         [HttpPost]
         [Route("")]
-        public async Task<IActionResult> Post(RequestDocument<WidgetResource> request)
+        public async Task<IActionResult> Post([FromBody] RequestDocument<WidgetResource> request)
         {
             try
             {
@@ -42,7 +42,7 @@ namespace Platibus.SampleApi.Widgets
 
         [HttpPatch]
         [Route("{id}")]
-        public async Task<IActionResult> Patch(string id, RequestDocument<WidgetResource> request)
+        public async Task<IActionResult> Patch(string id, [FromBody] RequestDocument<WidgetResource> request)
         {
             try
             {
