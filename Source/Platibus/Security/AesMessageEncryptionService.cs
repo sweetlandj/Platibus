@@ -92,6 +92,7 @@ namespace Platibus.Security
 
             var encryptedHeaders = new EncryptedMessageHeaders
             {
+                // Message ID must be available in cleartext
                 MessageId = message.Headers.MessageId,
                 IV = Convert.ToBase64String(iv),
                 Headers = Convert.ToBase64String(headerCiphertext),

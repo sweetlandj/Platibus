@@ -24,7 +24,6 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Platibus.Config.Extensibility;
-using Platibus.Diagnostics;
 using Platibus.Multicast;
 #if NET452
 using Platibus.Config;

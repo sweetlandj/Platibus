@@ -58,27 +58,31 @@ namespace Platibus.RabbitMQ
         private readonly DurableConsumer _consumer;
         private readonly IDiagnosticService _diagnosticService;
         private readonly IConnection _connection;
+        private readonly IMessageEncryptionService _messageEncryptionService;
         private bool _disposed;
 
         /// <summary>
         /// Initializes a new <see cref="RabbitMQQueue"/>
         /// </summary>
+        /// <param name="connection">The connection to the RabbitMQ server</param>
         /// <param name="queueName">The name of the queue</param>
         /// <param name="listener">The listener that will receive new messages off of the queue</param>
-        /// <param name="connection">The connection to the RabbitMQ server</param>
-        /// <param name="securityTokenService">(Optional) The message security token
-        /// service to use to issue and validate security tokens for persisted messages.</param>
         /// <param name="encoding">(Optional) The encoding to use when converting serialized message 
-        /// content to byte streams</param>
+        ///     content to byte streams</param>
         /// <param name="options">(Optional) Queueing options</param>
         /// <param name="diagnosticService">(Optional) The service through which diagnostic events
-        /// are reported and processed</param>
+        ///     are reported and processed</param>
+        /// <param name="securityTokenService">(Optional) The message security token
+        ///     service to use to issue and validate security tokens for persisted messages.</param>
+        /// <param name="messageEncryptionService"></param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/>, 
         /// <paramref name="listener"/>, or <paramref name="connection"/> is <c>null</c></exception>
-        public RabbitMQQueue(QueueName queueName, IQueueListener listener, IConnection connection,
+        public RabbitMQQueue(IConnection connection,
+            QueueName queueName, IQueueListener listener,
+            Encoding encoding, QueueOptions options,
+            IDiagnosticService diagnosticService,
             ISecurityTokenService securityTokenService,
-            Encoding encoding = null, QueueOptions options = null, 
-            IDiagnosticService diagnosticService = null)
+            IMessageEncryptionService messageEncryptionService)
         {
             _queueName = queueName ?? throw new ArgumentNullException(nameof(queueName));
             _queueExchange = _queueName.GetExchangeName();
@@ -102,6 +106,7 @@ namespace Platibus.RabbitMQ
             var concurrencyLimit = myOptions.ConcurrencyLimit;
             _cancellationTokenSource = new CancellationTokenSource();
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+            _messageEncryptionService = messageEncryptionService;
 
             var consumerTag = _queueName;
             _consumer = new DurableConsumer(_connection, queueName, HandleDelivery, consumerTag, 
@@ -207,10 +212,15 @@ namespace Platibus.RabbitMQ
             CheckDisposed();
             var expires = message.Headers.Expires;
             var securityToken = await _securityTokenService.NullSafeIssue(principal, expires);
-            var messageWithSecurityToken = message.WithSecurityToken(securityToken);
+            var persistedMessage = message.WithSecurityToken(securityToken);
+            if (_messageEncryptionService != null)
+            {
+                persistedMessage = await _messageEncryptionService.Encrypt(persistedMessage);
+            }
+
             using (var channel = _connection.CreateModel())
             {
-                await RabbitMQHelper.PublishMessage(messageWithSecurityToken, principal, channel, null, _queueExchange, _encoding);
+                await RabbitMQHelper.PublishMessage(persistedMessage, principal, channel, null, _queueExchange, _encoding);
                 await _diagnosticService.EmitAsync(
                     new RabbitMQEventBuilder(this, DiagnosticEventType.MessageEnqueued)
                     {
@@ -368,6 +378,11 @@ namespace Platibus.RabbitMQ
                 using (var messageReader = new MessageReader(reader))
                 {
                     message = await messageReader.ReadMessage();
+                    if (_messageEncryptionService != null && message.IsEncrypted())
+                    {
+                        message = await _messageEncryptionService.Decrypt(message);
+                    }
+
                     var securityToken = message.Headers.SecurityToken;
                     var principal = await _securityTokenService.NullSafeValidate(securityToken);
 

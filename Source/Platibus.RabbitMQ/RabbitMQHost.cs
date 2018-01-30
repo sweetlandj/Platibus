@@ -124,8 +124,16 @@ namespace Platibus.RabbitMQ
 
             _securityTokenService = configuration.SecurityTokenService ?? new JwtSecurityTokenService();
             _messageJournal = configuration.MessageJournal;
-            _messageQueueingService = new RabbitMQMessageQueueingService(_baseUri, _defaultQueueOptions,
-                _connectionManager, _encoding, _securityTokenService, _diagnosticService);
+
+            var queueingOptions = new RabbitMQMessageQueueingOptions(_baseUri)
+            {
+                ConnectionManager = _connectionManager,
+                DefaultQueueOptions = _defaultQueueOptions,
+                DiagnosticService = _diagnosticService,
+                Encoding = _encoding,
+                SecurityTokenService = _securityTokenService
+            };
+            _messageQueueingService = new RabbitMQMessageQueueingService(queueingOptions);
             
             var connection = _connectionManager.GetConnection(_baseUri);
             using (var channel = connection.CreateModel())
@@ -145,8 +153,8 @@ namespace Platibus.RabbitMQ
                 }
             }
 
-            _inboundQueue = new RabbitMQQueue(InboxQueueName, this, connection, _securityTokenService, _encoding,
-                _defaultQueueOptions, _diagnosticService);
+            _inboundQueue = new RabbitMQQueue(connection, InboxQueueName, this,
+                _encoding, _defaultQueueOptions, _diagnosticService, _securityTokenService, null);
 
             Bus = new Bus(configuration, configuration.BaseUri, this, _messageQueueingService);
         }
@@ -157,6 +165,7 @@ namespace Platibus.RabbitMQ
             _inboundQueue.Init();
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Handles a message that is received off of a queue
         /// </summary>
@@ -169,13 +178,14 @@ namespace Platibus.RabbitMQ
             CancellationToken cancellationToken = new CancellationToken())
         {
             // For now, allow exceptions to propagate and be handled by the RabbitMQQueue
-            await Bus.HandleMessage(message, null);
+            await Bus.HandleMessage(message, null, cancellationToken);
             await context.Acknowledge();
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Sends a message directly to the application identified by the
-        /// <see cref="IMessageHeaders.Destination"/> header.
+        /// <see cref="P:Platibus.IMessageHeaders.Destination" /> header.
         /// </summary>
         /// <param name="message">The message to send.</param>
         /// <param name="credentials">The credentials required to send a 
@@ -203,6 +213,7 @@ namespace Platibus.RabbitMQ
             }
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Publishes a message to a topic.
         /// </summary>
@@ -230,9 +241,10 @@ namespace Platibus.RabbitMQ
             }
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Subscribes to messages published to the specified <paramref name="topicName"/>
-        /// by the application at the provided <paramref name="endpoint"/>.
+        /// Subscribes to messages published to the specified <paramref name="topicName" />
+        /// by the application at the provided <paramref name="endpoint" />.
         /// </summary>
         /// <param name="endpoint">The publishing endpoint</param>
         /// <param name="topicName">The name of the topic to which the caller is
@@ -270,8 +282,8 @@ namespace Platibus.RabbitMQ
                         attempts++;
                         channel.ExchangeDeclarePassive(publisherTopicExchange);
 
-                        var subscriptionQueue = new RabbitMQQueue(subscriptionQueueName, this, connection,
-                            _securityTokenService, _encoding, _defaultQueueOptions, _diagnosticService);
+                        var subscriptionQueue = new RabbitMQQueue(connection,
+                            subscriptionQueueName, this, _encoding, _defaultQueueOptions, _diagnosticService, _securityTokenService, null);
 
                         subscriptionQueue.Init();
 

@@ -62,9 +62,20 @@ namespace Platibus.RabbitMQ
             {
                 encodingName = "UTF-8";
             }
-
             var encoding = ParseEncoding(encodingName);
-            var messageQueueingService = new RabbitMQMessageQueueingService(uri, encoding: encoding, securityTokenService: securityTokenService);
+
+            var messageEncryptionServiceFactory = new MessageEncryptionServiceFactory();
+            var messageEncryptionConfig = configuration.Encryption;
+            var messageEncryptionService = await messageEncryptionServiceFactory.InitMessageEncryptionService(messageEncryptionConfig);
+
+            var queueingOptions = new RabbitMQMessageQueueingOptions(uri)
+            {
+                Encoding = encoding,
+                SecurityTokenService = securityTokenService,
+                MessageEncryptionService = messageEncryptionService
+            };
+
+            var messageQueueingService = new RabbitMQMessageQueueingService(queueingOptions);
             return messageQueueingService;
         }
 #endif
@@ -91,9 +102,20 @@ namespace Platibus.RabbitMQ
             {
                 encodingName = "UTF-8";
             }
-
             var encoding = ParseEncoding(encodingName);
-            var messageQueueingService = new RabbitMQMessageQueueingService(uri, encoding: encoding, securityTokenService: securityTokenService);
+
+            var messageEncryptionServiceFactory = new MessageEncryptionServiceFactory();
+            var messageEncryptionConfig = configuration?.GetSection("encryption");
+            var messageEncryptionService = await messageEncryptionServiceFactory.InitMessageEncryptionService(messageEncryptionConfig);
+
+            var queueingOptions = new RabbitMQMessageQueueingOptions(uri)
+            {
+                Encoding = encoding,
+                SecurityTokenService = securityTokenService,
+                MessageEncryptionService = messageEncryptionService
+            };
+            
+            var messageQueueingService = new RabbitMQMessageQueueingService(queueingOptions);
             return messageQueueingService;
         }
 #endif

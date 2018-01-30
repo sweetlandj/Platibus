@@ -1,30 +1,9 @@
-﻿// The MIT License (MIT)
-// 
-// Copyright (c) 2017 Jesse Sweetland
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
+using Platibus.Diagnostics;
 using Platibus.RabbitMQ;
 using RabbitMQ.Client;
 using Xunit;
@@ -34,23 +13,23 @@ namespace Platibus.UnitTests.RabbitMQ
 {
     [Trait("Category", "UnitTests")]
     [Trait("Dependency", "RabbitMQ")]
-    [Collection(RabbitMQCollection.Name)]
-    public class RabbitMQMessageQueueingServiceTests : MessageQueueingServiceTests<RabbitMQMessageQueueingService>, IDisposable
+    [Collection(AesEncryptedRabbitMQCollection.Name)]
+    public class AesEncryptedRabbitMQMessageQueueingServiceTests : MessageQueueingServiceTests<RabbitMQMessageQueueingService>, IDisposable
     {
         private readonly Uri _uri;
         private readonly TestOutputHelperSink _diagnosticSink;
         
-        public RabbitMQMessageQueueingServiceTests(RabbitMQFixture fixture, ITestOutputHelper outputHelper)
+        public AesEncryptedRabbitMQMessageQueueingServiceTests(AesEncryptedRabbitMQFixture fixture, ITestOutputHelper outputHelper)
             : base(fixture.MessageQueueingService)
         {
             _uri = fixture.Uri;
             _diagnosticSink = new TestOutputHelperSink(outputHelper);
-            //DiagnosticService.DefaultInstance.AddSink(_diagnosticSink);
+            DiagnosticService.DefaultInstance.AddSink(_diagnosticSink);
         }
 
         public void Dispose()
         {
-            //DiagnosticService.DefaultInstance.RemoveSink(_diagnosticSink);
+            DiagnosticService.DefaultInstance.RemoveSink(_diagnosticSink);
         }
 
         protected override async Task GivenExistingQueuedMessage(QueueName queueName, Message message, IPrincipal principal)

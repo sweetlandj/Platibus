@@ -209,9 +209,18 @@ namespace Platibus.RabbitMQ
                 var properties = channel.CreateBasicProperties();
                 properties.Persistent = true;
                 properties.ContentEncoding = Encoding.UTF8.HeaderName;
-                properties.ContentType = message.Headers.ContentType;
                 properties.MessageId = message.Headers.MessageId.ToString();
-                properties.CorrelationId = message.Headers.RelatedTo.ToString();
+
+                if (!string.IsNullOrWhiteSpace(message.Headers.ContentType))
+                {
+                    properties.ContentType = message.Headers.ContentType;
+                }
+
+                if (!string.IsNullOrWhiteSpace(message.Headers.RelatedTo))
+                {
+                    properties.CorrelationId = message.Headers.RelatedTo.ToString();
+                }
+
                 var headers = properties.Headers;
                 if (headers == null)
                 {

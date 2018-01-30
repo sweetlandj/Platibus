@@ -48,11 +48,39 @@ namespace Platibus.RabbitMQ
         private readonly ISecurityTokenService _securityTokenService;
         private readonly bool _disposeConnectionManager;
         private readonly IDiagnosticService _diagnosticService;
+        private readonly IMessageEncryptionService _messageEncryptionService;
 
         private bool _disposed;
 
         /// <summary>
         /// Initializes a new <see cref="RabbitMQMessageQueueingService"/>
+        /// </summary>
+        /// <param name="options">Options influencing the configuration and behavior of the service</param>
+        /// <remarks>
+        /// <para>If a security token service is not specified then a default implementation based on
+        /// unsigned JWTs will be used.</para>
+        /// </remarks>
+        public RabbitMQMessageQueueingService(RabbitMQMessageQueueingOptions options)
+        {
+            _uri = options.Uri;
+            _defaultQueueOptions = options.DefaultQueueOptions ?? new QueueOptions();
+
+            var myConnectionManager = options.ConnectionManager;
+            if (myConnectionManager == null)
+            {
+                myConnectionManager = new ConnectionManager();
+                _disposeConnectionManager = true;
+            }
+            _connectionManager = myConnectionManager;
+            _encoding = options.Encoding ?? Encoding.UTF8;
+            _securityTokenService = options.SecurityTokenService ?? new JwtSecurityTokenService();
+            _diagnosticService = options.DiagnosticService ?? DiagnosticService.DefaultInstance;
+            _messageEncryptionService = options.MessageEncryptionService;
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new <see cref="T:Platibus.RabbitMQ.RabbitMQMessageQueueingService" />
         /// </summary>
         /// <param name="uri">The URI of the RabbitMQ server</param>
         /// <param name="defaultQueueOptions">(Optional) Default options for queues</param>
@@ -63,30 +91,29 @@ namespace Platibus.RabbitMQ
         /// service to use to issue and validate security tokens for persisted messages.</param>
         /// <param name="diagnosticService">(Optional) The service through which diagnostic events
         /// are reported and processed</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="uri"/> is
+        /// <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="uri" /> is
         /// <c>null</c></exception>
         /// <remarks>
-        /// <para>If a <paramref name="securityTokenService"/> is not specified then a
+        /// <para>If a <paramref name="securityTokenService" /> is not specified then a
         /// default implementation based on unsigned JWTs will be used.</para>
         /// </remarks>
+        [Obsolete]
         public RabbitMQMessageQueueingService(Uri uri, QueueOptions defaultQueueOptions = null, 
             IConnectionManager connectionManager = null, Encoding encoding = null, 
             ISecurityTokenService securityTokenService = null, 
             IDiagnosticService diagnosticService = null)
+        : this(new RabbitMQMessageQueueingOptions(uri)
         {
-            _uri = uri ?? throw new ArgumentNullException(nameof(uri));
-            _defaultQueueOptions = defaultQueueOptions ?? new QueueOptions();
-            if (connectionManager == null)
-            {
-                connectionManager = new ConnectionManager();
-                _disposeConnectionManager = true;
-            }
-            _connectionManager = connectionManager;
-            _encoding = encoding ?? Encoding.UTF8;
-            _securityTokenService = securityTokenService ?? new JwtSecurityTokenService();
-            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+            DiagnosticService = diagnosticService,
+            ConnectionManager = connectionManager,
+            Encoding = encoding,
+            DefaultQueueOptions = defaultQueueOptions,
+            SecurityTokenService = securityTokenService
+        })
+        {
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Establishes a named queue
         /// </summary>
@@ -96,16 +123,16 @@ namespace Platibus.RabbitMQ
         /// <param name="cancellationToken">(Optional) A cancellation token that can be used
         /// by the caller to cancel queue creation if necessary</param>
         /// <returns>Returns a task that will complete when the queue has been created</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/> or
-        /// <paramref name="listener"/> is <c>null</c></exception>
-        /// <exception cref="QueueAlreadyExistsException">Thrown if a queue with the specified
+        /// <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="queueName" /> or
+        /// <paramref name="listener" /> is <c>null</c></exception>
+        /// <exception cref="T:Platibus.QueueAlreadyExistsException">Thrown if a queue with the specified
         /// name already exists</exception>
         public Task CreateQueue(QueueName queueName, IQueueListener listener, QueueOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
             var connection = _connectionManager.GetConnection(_uri);
-            var queue = new RabbitMQQueue(queueName, listener, connection, _securityTokenService,
-                _encoding, options ?? _defaultQueueOptions, _diagnosticService);
+            var queue = new RabbitMQQueue(connection, queueName,
+                listener, _encoding, options ?? _defaultQueueOptions, _diagnosticService, _securityTokenService, _messageEncryptionService);
 
             if (!_queues.TryAdd(queueName, queue))
             {
@@ -116,6 +143,7 @@ namespace Platibus.RabbitMQ
             return Task.FromResult(true);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Enqueues a message on a queue
         /// </summary>
@@ -125,8 +153,8 @@ namespace Platibus.RabbitMQ
         /// <param name="cancellationToken">(Optional) A cancellation token that can be
         /// used be the caller to cancel the enqueue operation if necessary</param>
         /// <returns>Returns a task that will complete when the message has been enqueued</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="queueName"/>
-        /// or <paramref name="message"/> is <c>null</c></exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="queueName" />
+        /// or <paramref name="message" /> is <c>null</c></exception>
         public async Task EnqueueMessage(QueueName queueName, Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();

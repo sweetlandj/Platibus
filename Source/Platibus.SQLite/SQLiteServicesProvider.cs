@@ -54,7 +54,19 @@ namespace Platibus.SQLite
 
             var path = configuration.GetString("path");
             var sqliteBaseDir = GetRootedDirectory(path);
-            var sqliteMessageQueueingService = new SQLiteMessageQueueingService(sqliteBaseDir, securityTokenService);
+
+            var messageEncryptionServiceFactory = new MessageEncryptionServiceFactory();
+            var messageEncryptionConfig = configuration.Encryption;
+            var messageEncryptionService = await messageEncryptionServiceFactory.InitMessageEncryptionService(messageEncryptionConfig);
+
+            var queueingOptions = new SQLiteMessageQueueingOptions
+            {
+                BaseDirectory = sqliteBaseDir,
+                SecurityTokenService = securityTokenService,
+                MessageEncryptionService = messageEncryptionService
+            };
+
+            var sqliteMessageQueueingService = new SQLiteMessageQueueingService(queueingOptions);
             sqliteMessageQueueingService.Init();
             return sqliteMessageQueueingService;
         }
@@ -93,7 +105,19 @@ namespace Platibus.SQLite
 
             var path = configuration?["path"];
             var sqliteBaseDir = GetRootedDirectory(path);
-            var sqliteMessageQueueingService = new SQLiteMessageQueueingService(sqliteBaseDir, securityTokenService);
+
+            var messageEncryptionServiceFactory = new MessageEncryptionServiceFactory();
+            var messageEncryptionConfig = configuration?.GetSection("encryption");
+            var messageEncryptionService = await messageEncryptionServiceFactory.InitMessageEncryptionService(messageEncryptionConfig);
+
+            var queueingOptions = new SQLiteMessageQueueingOptions
+            {
+                BaseDirectory = sqliteBaseDir,
+                SecurityTokenService = securityTokenService,
+                MessageEncryptionService = messageEncryptionService
+            };
+
+            var sqliteMessageQueueingService = new SQLiteMessageQueueingService(queueingOptions);
             sqliteMessageQueueingService.Init();
             return sqliteMessageQueueingService;
         }

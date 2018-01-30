@@ -36,10 +36,16 @@ namespace Platibus.UnitTests.RabbitMQ
         {
             // docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
             Uri = new Uri("amqp://guest:guest@localhost:5672");
-            MessageQueueingService = new RabbitMQMessageQueueingService(Uri, new QueueOptions
+
+            var queueingOptions = new RabbitMQMessageQueueingOptions(Uri)
             {
-                IsDurable = false
-            });
+                DefaultQueueOptions = new QueueOptions
+                {
+                    IsDurable = false
+                }
+            };
+
+            MessageQueueingService = new RabbitMQMessageQueueingService(queueingOptions);
         }
 
         public void Dispose()
