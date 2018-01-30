@@ -25,23 +25,23 @@ namespace Platibus.UnitTests.Config.Extensibility
         [Fact]
         public void MultipleProvidersFoundExceptionThrownWhenMultipleProvidersWithSameNameAndInterface()
         {
-            Assert.Throws<MultipleProvidersFoundException>(() => WhenGetttingProvider("Multiple"));
+            Assert.Throws<MultipleProvidersFoundException>(() => WhenGettingProvider("Multiple"));
         }
 
         [Fact]
         public void ProviderNotFoundExceptionThrownWhenNoProviderWithNameAndInterface()
         {
-            Assert.Throws<ProviderNotFoundException>(() => WhenGetttingProvider("DoesNotExist"));
+            Assert.Throws<ProviderNotFoundException>(() => WhenGettingProvider("DoesNotExist"));
         }
 
         [Fact]
         public void SingleProviderFoundByName()
         {
-            WhenGetttingProvider("Single");
+            WhenGettingProvider("Single");
             Assert.IsType<ProviderFakes.SingleProvider>(Provider);
         }
 
-        protected void WhenGetttingProvider(string providerName)
+        protected void WhenGettingProvider(string providerName)
         {
             Provider = ProviderService.GetProvider<IFakeProvider>(providerName);
         }

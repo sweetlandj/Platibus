@@ -36,8 +36,9 @@ using Platibus.Config;
 
 namespace Platibus.MongoDB
 {
+    /// <inheritdoc />
     /// <summary>
-    /// A <see cref="IMessageQueueingService"/> implementation that uses a MongoDB database to 
+    /// A <see cref="T:Platibus.IMessageQueueingService" /> implementation that uses a MongoDB database to 
     /// store queued messages
     /// </summary>
     public class MongoDBMessageQueueingService : AbstractMessageQueueingService<MongoDBMessageQueue>

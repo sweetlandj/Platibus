@@ -1,10 +1,13 @@
 ﻿using Moq;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Platibus.Config;
 using Platibus.MongoDB;
+using Platibus.Security;
+using Platibus.UnitTests.Security;
 using Xunit;
 #if NET452
 using System.Configuration;
@@ -22,7 +25,7 @@ namespace Platibus.UnitTests.MongoDB
     {
         protected readonly ConnectionStringSettings ConnectionStringSettings;
 
-        protected  Message Message;
+        protected Message Message;
         protected QueueName Queue = Guid.NewGuid().ToString();
         protected IQueueListener QueueListener = new Mock<IQueueListener>().Object;
 
@@ -72,6 +75,14 @@ namespace Platibus.UnitTests.MongoDB
             await AssertMessageDocumentInserted(collectionOverride);
         }
 
+        [Fact]
+        public async Task MessagesCanBeEncrypted()
+        {
+            GivenEncryption();
+            await WhenMessageEnqueued();
+            await AssertEncryptedMessageDocumentInserted(MongoDBMessageQueueingService.DefaultCollectionName);
+        }
+
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -105,6 +116,24 @@ namespace Platibus.UnitTests.MongoDB
             }
         }
 
+        protected void GivenEncryption()
+        {
+#if NET452
+            Configuration.Encryption = new EncryptionElement
+            {
+                Enabled = true,
+                Provider = "AES",
+                Key = HexEncoding.GetString(KeyGenerator.GenerateAesKey().GetSymmetricKey())
+            };
+#endif
+#if NETCOREAPP2_0
+            var section = Configuration.GetSection("encryption");
+            section["enabled"] = "true";
+            section["provider"] = "aes";
+            section["key"] = HexEncoding.GetString(KeyGenerator.GenerateAesKey().Key);
+#endif
+        }
+
         protected async Task WhenMessageEnqueued()
         {
             var messageQueueingService = await new MongoDBServicesProvider().CreateMessageQueueingService(Configuration);
@@ -119,6 +148,29 @@ namespace Platibus.UnitTests.MongoDB
             var filter = Builders<BsonDocument>.Filter.Eq("headers.Platibus-MessageId", Message.Headers.MessageId.ToString());
             var msg = await coll.Find(filter).FirstOrDefaultAsync();
             Assert.NotNull(msg);
+        }
+
+        protected async Task AssertEncryptedMessageDocumentInserted(string collectionName, string database = null)
+        {
+            var db = MongoDBHelper.Connect(ConnectionStringSettings, database);
+            var coll = db.GetCollection<BsonDocument>(collectionName);
+            var filter = Builders<BsonDocument>.Filter.Eq("headers.Platibus-MessageId", Message.Headers.MessageId.ToString());
+            var journalEntry = await coll.Find(filter).FirstOrDefaultAsync();
+            Assert.NotNull(journalEntry);
+
+            var headers = ReadHeaders(journalEntry);
+            Assert.NotNull(headers.IV);
+            Assert.NotNull(headers.Signature);
+        }
+
+        private static EncryptedMessageHeaders ReadHeaders(BsonDocument journalEntry)
+        {
+            var headersSubdocument = journalEntry.GetElement("headers").Value.ToBsonDocument();
+            var headersDict = headersSubdocument.ToDictionary(
+                element => element.Name, 
+                element => element.Value.AsString);
+
+           return new EncryptedMessageHeaders(headersDict);
         }
 
         protected void ConfigureAttribute(string name, string value)

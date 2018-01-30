@@ -25,7 +25,7 @@ namespace Platibus.Security
     /// <summary>
     /// Well-known header names for encrypted messages
     /// </summary>
-    internal class EncryptedHeaderName
+    public class EncryptedHeaderName
     {
         /// <summary>
         /// The initialization vector used to encrypt the message and its headers
