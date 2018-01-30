@@ -66,7 +66,7 @@ namespace Platibus.Filesystem
             var messageEncryptionConfig = configuration.Encryption;
             var messageEncryptionService = await messageEncryptionServiceFactory.InitMessageEncryptionService(messageEncryptionConfig);
             
-            var fsQueueingOptions = new FilesystemMessageQueueingOptions()
+            var fsQueueingOptions = new FilesystemMessageQueueingOptions
             {
                 BaseDirectory = GetRootedDirectory(path),
                 SecurityTokenService = securityTokenService,
@@ -157,16 +157,20 @@ namespace Platibus.Filesystem
 
         private static DirectoryInfo GetRootedDirectory(string path)
         {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return null;
+            }
+
             var rootedPath = GetRootedPath(path);
             return rootedPath == null ? null : new DirectoryInfo(rootedPath);
         }
 
         private static string GetRootedPath(string path)
         {
-            var defaultRootedPath = AppDomain.CurrentDomain.BaseDirectory;
             if (string.IsNullOrWhiteSpace(path))
             {
-                return defaultRootedPath;
+                return null;
             }
 
             if (Path.IsPathRooted(path))
@@ -174,6 +178,7 @@ namespace Platibus.Filesystem
                 return path;
             }
 
+            var defaultRootedPath = AppDomain.CurrentDomain.BaseDirectory;
             return Path.Combine(defaultRootedPath, path);
         }
     }

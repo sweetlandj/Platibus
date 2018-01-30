@@ -30,10 +30,10 @@ namespace Platibus.UnitTests.MongoDB
         public MongoDBServicesProviderMessageJournalTests(MongoDBFixture fixture)
         {
 #if NETCOREAPP2_0
-
             Configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection()
                 .Build();
+
 #endif
             ConnectionStringSettings = fixture.ConnectionStringSettings;
             ConfigureAttribute("connectionName", fixture.ConnectionStringSettings.Name);

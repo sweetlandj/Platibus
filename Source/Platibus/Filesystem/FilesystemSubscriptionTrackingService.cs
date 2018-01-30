@@ -66,10 +66,11 @@ namespace Platibus.Filesystem
             _baseDirectory = baseDirectory;
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Adds or updates a subscription
         /// </summary>
-        /// <param name="topic">The topic to which the <paramref name="subscriber"/> is
+        /// <param name="topic">The topic to which the <paramref name="subscriber" /> is
         /// subscribing</param>
         /// <param name="subscriber">The base URI of the subscribing Platibus instance</param>
         /// <param name="ttl">(Optional) The maximum Time To Live (TTL) for the subscription</param>
@@ -77,8 +78,8 @@ namespace Platibus.Filesystem
         /// the caller to cancel the addition of the subscription</param>
         /// <returns>Returns a task that will complete when the subscription has been added or
         /// updated</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="topic"/> or
-        /// <paramref name="subscriber"/> is <c>null</c></exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="topic" /> or
+        /// <paramref name="subscriber" /> is <c>null</c></exception>
         public Task AddSubscription(TopicName topic, Uri subscriber, TimeSpan ttl = default(TimeSpan),
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -92,17 +93,18 @@ namespace Platibus.Filesystem
             return FlushSubscriptionsToDisk(topic);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Removes a subscription
         /// </summary>
-        /// <param name="topic">The topic to which the <paramref name="subscriber"/> is
+        /// <param name="topic">The topic to which the <paramref name="subscriber" /> is
         /// subscribing</param>
         /// <param name="subscriber">The base URI of the subscribing Platibus instance</param>
         /// <param name="cancellationToken">(Optional) A cancellation token that can be used by
         /// the caller to cancel the subscription removal</param>
         /// <returns>Returns a task that will complete when the subscription has been removed</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="topic"/> or
-        /// <paramref name="subscriber"/> is <c>null</c></exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="topic" /> or
+        /// <paramref name="subscriber" /> is <c>null</c></exception>
         public Task RemoveSubscription(TopicName topic, Uri subscriber,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -113,6 +115,7 @@ namespace Platibus.Filesystem
             return FlushSubscriptionsToDisk(topic);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Returns a list of the current, non-expired subscriber URIs for a topic
         /// </summary>
@@ -121,7 +124,7 @@ namespace Platibus.Filesystem
         /// to cancel the query</param>
         /// <returns>Returns a task whose result is the distinct set of base URIs of all Platibus
         /// instances subscribed to the specified local topic</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="topic"/> is <c>null</c>
+        /// <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="topic" /> is <c>null</c>
         /// </exception>
         public Task<IEnumerable<Uri>> GetSubscribers(TopicName topic,
             CancellationToken cancellationToken = default(CancellationToken))
@@ -248,6 +251,7 @@ namespace Platibus.Filesystem
             Dispose(false);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
