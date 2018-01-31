@@ -1,2 +1,6 @@
 assembly-informational-format: '{LegacySemVerPadded}'
 mode: ContinuousDeployment
+branches:
+    releases?[/-]:
+        tag: rc
+        mode: ContinuousDelivery
