@@ -14,19 +14,20 @@ if {%packageVersion%}=={} (
 
 set baseDir=%~dp0
 
-call :joinpath %baseDir% "Dist"
+call :joinPath %baseDir% "Dist"
 set distDir=%result%
 
-call :joinpath %distDir% %packageVersion%
+call :joinPath %distDir% %packageVersion%
 set outputDir=%result%
 
 if {%command%}=={pack} (
-	call :pack %%p
+	call :pack
 	goto :eof
 )
 
-if {%command%}=={publish} (
-	call :publish %%p
+if {%command%}=={push} (
+	set apiKey=%~3
+	call :push %apiKey%
 	goto :eof
 )
 
@@ -60,18 +61,24 @@ goto :eof
 	dotnet pack "%project%" -c Release --include-source --include-symbols /p:PackageVersion=%packageVersion% -o "%outputDir%"
 	goto :eof
 
-:publish
-	for %%p in (%outputDir%\*.nupkg) do (
-		call :publishPackage %%p
+:push
+	set apiKey=%~1
+		for %%p in (%outputDir%\*.nupkg) do (
+		call :pushPackage %%p %apikey%
 	)
 	goto :eof
 
-:publishPackage
+:pushPackage
 	set package=%~f1
-	echo %package%
+	set apiKey=%~2
+	set pushArgs=%package%
+	if "%apiKey%" neq "" (
+		set pushArgs=%pushArgs% -k %apiKey% 
+	)
+	dotnet push %pushArgs%
 	goto :eof
 
-:joinpath
+:joinPath
 	set basePath=%~1
 	set subPath=%~2
 	if {%basePath:~-1,1%}=={\} (
@@ -92,9 +99,9 @@ goto :eof
 	echo.
 	echo Arguments:
 	echo.
-	echo command            The command to execute ("pack" or "publish")
+	echo command            The command to execute ("pack" or "push")
 	echo.
 	echo packageVersion     The version number to assign to the package (e.g. "5.0.0-beta")
 	echo.
-	echo apiKey             The package server API key for the "publish" command
+	echo apiKey             The package server API key for the "push" command
 	goto :eof
