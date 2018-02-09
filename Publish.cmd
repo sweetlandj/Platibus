@@ -65,9 +65,6 @@ goto :eof
 	for %%p in (%outputDir%\*%packageVersion%.nupkg) do (
 		call :pushPackage %%p %apikey%
 	)
-	for %%s in (%outputDir%\*%packageVersion%.symbols.nupkg) do (
-		call :pushSymbolsPackage %%s %apikey%
-	)
 	goto :eof
 
 :pushPackage
