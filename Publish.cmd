@@ -62,20 +62,30 @@ goto :eof
 	goto :eof
 
 :push
-	set apiKey=%~1
-		for %%p in (%outputDir%\*.nupkg) do (
+	for %%p in (%outputDir%\*%packageVersion%.nupkg) do (
 		call :pushPackage %%p %apikey%
+	)
+	for %%s in (%outputDir%\*%packageVersion%.symbols.nupkg) do (
+		call :pushSymbolsPackage %%s %apikey%
 	)
 	goto :eof
 
 :pushPackage
 	set package=%~f1
-	set apiKey=%~2
-	set pushArgs=%package%
+	set pushArgs=%package% -s https://api.nuget.org/v3/index.json
 	if "%apiKey%" neq "" (
 		set pushArgs=%pushArgs% -k %apiKey% 
 	)
-	dotnet push %pushArgs%
+	dotnet nuget push %pushArgs%
+	goto :eof
+
+:pushSymbolsPackage
+	set symbolsPackage=%~f1
+	set pushArgs=%symbolsPackage% -ss https://nuget.smbsrc.net/
+	if "%apiKey%" neq "" (
+		set pushArgs=%pushArgs% -sk %apiKey% 
+	)
+	dotnet nuget push %pushArgs%
 	goto :eof
 
 :joinPath

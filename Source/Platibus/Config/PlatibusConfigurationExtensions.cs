@@ -24,9 +24,9 @@ using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Platibus.Diagnostics;
 
 namespace Platibus.Config
 {
@@ -403,32 +403,17 @@ namespace Platibus.Config
             {
                 var messageType = autoBindInterface.GetGenericArguments().First();
                 var messageName = configuration.MessageNamingService.GetNameForType(messageType);
-                var specification = new MessageNamePatternSpecification("^" + messageName + "$");
+                var specification = new MessageNamePatternSpecification("^" + Regex.Escape(messageName) + "$");
                 var queueName = queueNameFactory(handlerType, messageType);
 
-                var method = autoBindInterface.GetMethod("HandleMessage",
-                    new[] { messageType, typeof(IMessageContext), typeof(CancellationToken) });
+                var args = new[] {messageType, typeof(IMessageContext), typeof(CancellationToken)};
+                var method = autoBindInterface.GetMethod("HandleMessage", args);
 
-                if (method != null)
-                {
-                    configuration.AddHandlingRule(specification, (object msg, IMessageContext ctx, CancellationToken ct) =>
-                    {
-                        try
-                        {
-                            var handler = handlerFactory();
-                            return (Task)method.Invoke(handler, new[] { msg, ctx, ct });
-                        }
-                        catch (Exception e)
-                        {
-                            diagnosticService.Emit(new DiagnosticEventBuilder(null, DiagnosticEventType.ConfigurationError)
-                            {
-                                Detail = "Error activiting instance of message handler " + handlerType,
-                                Exception = e
-                            }.Build());
-                            throw;
-                        }
-                    }, queueName, queueOptions);
-                }
+                if (method == null) continue;
+
+                var handlerActivation = new HandlerActivation(diagnosticService, handlerType, handlerFactory, method);
+                var rule = new HandlingRule(specification, handlerActivation, queueName, queueOptions);
+                configuration.AddHandlingRule(rule);
             }
         }
 

@@ -227,6 +227,11 @@ namespace Platibus.Diagnostics
         public static readonly DiagnosticEventType SignatureVerificationFailure = new DiagnosticEventType("SignatureVerificationFailure", DiagnosticEventLevel.Warn);
 
         /// <summary>
+        /// Emitted when a handler cannot be activated (factory method returns null)
+        /// </summary>
+        public static readonly DiagnosticEventType HandlerActivationError = new DiagnosticEventType("HandlerActivationError", DiagnosticEventLevel.Error);
+
+        /// <summary>
         /// The name of the diagnostic event type
         /// </summary>
         public string Name { get; }

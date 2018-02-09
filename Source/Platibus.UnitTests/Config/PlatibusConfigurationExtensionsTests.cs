@@ -148,12 +148,9 @@ namespace Platibus.UnitTests.Config
         }
 
         [Fact]
-        public async Task HandlerResolutionErrorsEmitDiagnosticEvents()
+        public async Task UncaughtHandlerErrorsEmitDiagnosticEvents()
         {
-            Configuration.AddHandlingRulesForType(typeof(H), () =>
-            {
-                throw new Exception();
-            });
+            Configuration.AddHandlingRulesForType(typeof(H), () => throw new Exception());
 
             await WhenHandlerResolutionErrorsOccur();
             AssertDiagnosticEventEmitted();
@@ -163,7 +160,7 @@ namespace Platibus.UnitTests.Config
         {
             try
             {
-                await AssertRulesAdded();
+                await TryHandleMessages();
             }
             catch (Exception e)
             {
@@ -174,15 +171,15 @@ namespace Platibus.UnitTests.Config
         private void AssertDiagnosticEventEmitted()
         {
             Assert.NotNull(Exception);
-            MockDiagnosticService.Verify(x => x.Emit(It.Is<DiagnosticEvent>(e => IsHandlerResolutionError(e))), Times.AtLeastOnce);
+            MockDiagnosticService.Verify(x => x.Emit(It.Is<DiagnosticEvent>(e => IsHandlerActivationError(e))), Times.AtLeastOnce);
         }
 
-        private bool IsHandlerResolutionError(DiagnosticEvent e)
+        private bool IsHandlerActivationError(DiagnosticEvent e)
         {
             Assert.NotNull(e);
-            Assert.Equal(DiagnosticEventType.ConfigurationError, e.Type);
+            Assert.Equal(DiagnosticEventType.HandlerActivationError, e.Type);
             Assert.Equal(Exception, e.Exception);
-            Assert.StartsWith("Error activiting instance of message handler ", e.Detail);
+            Assert.StartsWith("Error activating instance of message handler ", e.Detail);
             return true;
         }
 
@@ -208,6 +205,26 @@ namespace Platibus.UnitTests.Config
             await bRules[0].MessageHandler.HandleMessage(new B(), mockContext.Object, cancellationToken);
 
             mockContext.Verify();
+        }
+
+        private async Task TryHandleMessages()
+        {
+            var handlingRules = Configuration.HandlingRules.ToList();
+            Assert.Equal(2, handlingRules.Count);
+            
+            var expectedASpec = new MessageNamePatternSpecification(@"^A$");
+            var aRules = handlingRules.Where(r => expectedASpec.Equals(r.Specification)).ToList();
+            Assert.Single(aRules);
+
+            var expectedBSpec = new MessageNamePatternSpecification(@"^B$");
+            var bRules = handlingRules.Where(r => expectedBSpec.Equals(r.Specification)).ToList();
+            Assert.Single(bRules);
+
+            var mockContext = new Mock<IMessageContext>();
+            var cancellationToken = default(CancellationToken);
+
+            await aRules[0].MessageHandler.HandleMessage(new A(), mockContext.Object, cancellationToken);
+            await bRules[0].MessageHandler.HandleMessage(new B(), mockContext.Object, cancellationToken);
         }
 
         private void AssertExplicitQueueNames()
