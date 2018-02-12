@@ -28,11 +28,12 @@ using Platibus.Diagnostics;
 
 namespace Platibus.IIS
 {
+    /// <inheritdoc />
     /// <summary>
-    /// Factory class used to initialize <see cref="IISConfiguration"/> objects from
+    /// Factory class used to initialize <see cref="T:Platibus.IIS.IISConfiguration" /> objects from
     /// declarative configuration elements in web configuration files.
     /// </summary>
-    public class IISConfigurationManager : PlatibusConfigurationManager<IISConfiguration>
+    public class IISConfigurationManager : NetFrameworkConfigurationManager<IISConfiguration>
     {
         /// <inheritdoc />
         public override async Task Initialize(IISConfiguration configuration, string configSectionName = null)
@@ -90,7 +91,7 @@ namespace Platibus.IIS
         /// <see cref="PlatibusConfiguration"/> object</returns>
         /// <seealso cref="PlatibusConfigurationSection"/>
         /// <seealso cref="IConfigurationHook"/>
-        public new static async Task<IISConfiguration> LoadConfiguration(string sectionName = null,
+        public static async Task<IISConfiguration> LoadConfiguration(string sectionName = null,
             bool processConfigurationHooks = true)
         {
             var configurationManager = new IISConfigurationManager();

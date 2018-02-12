@@ -21,7 +21,7 @@
 // THE SOFTWARE.
 
 using System.Threading.Tasks;
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using Microsoft.Extensions.Configuration;
 #endif
 using Platibus.Diagnostics;
@@ -34,7 +34,7 @@ namespace Platibus.Config.Extensibility
     /// </summary>
     public interface IDiagnosticEventSinkProvider
     {
-#if NET452
+#if NET452 || NET461
         /// <summary>
         /// Creates an initializes a <see cref="IDiagnosticEventSink"/> based on the 
         /// provided <paramref name="configuration"/>.
@@ -43,7 +43,8 @@ namespace Platibus.Config.Extensibility
         /// <returns>Returns a task whose result is an initialized
         /// <see cref="IDiagnosticEventSink"/>.</returns>
         Task<IDiagnosticEventSink> CreateDiagnosticEventSink(DiagnosticEventSinkElement configuration);
-#elif NETSTANDARD2_0
+#endif
+#if NETSTANDARD2_0 || NET461
         /// <summary>
         /// Creates an initializes a <see cref="IDiagnosticEventSink"/> based on the 
         /// provided <paramref name="configuration"/>.

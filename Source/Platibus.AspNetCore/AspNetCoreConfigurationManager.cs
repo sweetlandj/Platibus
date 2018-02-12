@@ -34,7 +34,7 @@ namespace Platibus.AspNetCore
     /// Factory class used to initialize <see cref="T:Platibus.AspNetCore.AspNetCoreConfiguration" /> objects from
     /// declarative configuration elements in web configuration files.
     /// </summary>
-    public class AspNetCoreConfigurationManager : PlatibusConfigurationManager<AspNetCoreConfiguration>
+    public class AspNetCoreConfigurationManager : NetStandardConfigurationManager<AspNetCoreConfiguration>
     {
         public override async Task Initialize(AspNetCoreConfiguration platibusConfiguration, string configSectionName = null)
         {
@@ -45,37 +45,23 @@ namespace Platibus.AspNetCore
                 await diagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
                     {
-                        Detail = "Using default configuration section \"" + configSectionName + "\""
+                        Detail = $"Using default configuration section \"{configSectionName}\""
                     }.Build());
             }
 
             var configSection = LoadConfigurationSection(configSectionName, diagnosticService);
             await Initialize(platibusConfiguration, configSection);
-        }
-        
-        /// <inheritdoc />
-        /// <summary>
-        /// Initializes the supplied HTTP server <paramref name="platibusConfiguration" /> based on the
-        /// properties of the provided <paramref name="configuration" />
-        /// </summary>
-        /// <param name="platibusConfiguration">The configuration to initialize</param>
-        /// <param name="configuration">The configuration section whose properties are to be used
-        /// to initialize the <paramref name="platibusConfiguration" /></param>
-        /// <returns>Returns a task that completes when the configuration has been initialized</returns>
-        public override async Task Initialize(AspNetCoreConfiguration platibusConfiguration, IConfiguration configuration)
-        {
-            await base.Initialize(platibusConfiguration, configuration);
-            platibusConfiguration.BaseUri = configuration?.GetValue<Uri>("baseUri");
-            platibusConfiguration.BypassTransportLocalDestination =
-                configuration?.GetValue("bypassTransportLocalDestination", false) ?? false;
+
+            platibusConfiguration.BaseUri = configSection?.GetValue<Uri>("baseUri");
+            platibusConfiguration.BypassTransportLocalDestination = configSection?.GetValue("BypassTransportLocalDestination", true) ?? true;
 
             var mqsFactory = new MessageQueueingServiceFactory(platibusConfiguration.DiagnosticService);
-            var queueingSection = configuration?.GetSection("queueing");
-            platibusConfiguration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(queueingSection);
+            var mqsConfig = configSection?.GetSection("queueing");
+            platibusConfiguration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(mqsConfig);
 
             var stsFactory = new SubscriptionTrackingServiceFactory(platibusConfiguration.DiagnosticService);
-            var subscriptionTrackingSection = configuration?.GetSection("subscriptionTracking");
-            platibusConfiguration.SubscriptionTrackingService = await stsFactory.InitSubscriptionTrackingService(subscriptionTrackingSection);
+            var stsConfig = configSection?.GetSection("subscriptionTracking");
+            platibusConfiguration.SubscriptionTrackingService = await stsFactory.InitSubscriptionTrackingService(stsConfig);
         }
     }
 }

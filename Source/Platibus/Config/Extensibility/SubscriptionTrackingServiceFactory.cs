@@ -21,7 +21,7 @@
 // THE SOFTWARE.
 
 using System.Threading.Tasks;
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using Microsoft.Extensions.Configuration;
 #endif
 using Platibus.Diagnostics;
@@ -48,7 +48,7 @@ namespace Platibus.Config.Extensibility
             _providerService = new ReflectionBasedProviderService(_diagnosticService);
         }
 
-#if NET452
+#if NET452 || NET461
         /// <summary>
         /// Initializes a subscription tracking service based on the supplied
         /// <paramref name="configuration"/>
@@ -76,7 +76,8 @@ namespace Platibus.Config.Extensibility
 
             return messageQueueingService;
         }
-#else
+#endif
+#if NETSTANDARD2_0 || NET461
         /// <summary>
         /// Initializes a subscription tracking service based on the supplied
         /// <paramref name="configuration"/>

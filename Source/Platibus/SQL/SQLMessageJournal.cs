@@ -22,7 +22,7 @@
 
 using System;
 using System.Collections.Generic;
-#if NET452
+#if NET452 || NET461
 using System.Configuration;    
 #endif
 using System.IO;

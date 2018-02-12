@@ -21,7 +21,7 @@
 // THE SOFTWARE.
 
 using System.Threading.Tasks;
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using Microsoft.Extensions.Configuration;
 #endif
 using Platibus.Security;
@@ -42,9 +42,10 @@ namespace Platibus.Config.Extensibility
         ///     element.</param>
         /// <returns>Returns a task whose result is an initialized
         /// <see cref="ISecurityTokenService"/>.</returns>
-#if NET452
+#if NET452 || NET461
         Task<ISecurityTokenService> CreateSecurityTokenService(SecurityTokensElement configuration);
-#else
+#endif
+#if NETSTANDARD2_0 || NET461
         Task<ISecurityTokenService> CreateSecurityTokenService(IConfiguration configuration);
 #endif
     }

@@ -20,11 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#if NET452
+#if NET452 || NET461
 using System.Configuration;    
 #endif
 using System.Threading.Tasks;
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using System;
 using Microsoft.Extensions.Configuration;
 #endif
@@ -48,7 +48,7 @@ namespace Platibus.Diagnostics
         [Provider("GelfUdp")]
         public class Udp : IDiagnosticEventSinkProvider
         {
-#if NET452
+#if NET452 || NET461
             /// <inheritdoc />
             public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(DiagnosticEventSinkElement configuration)
             {
@@ -70,7 +70,8 @@ namespace Platibus.Diagnostics
                 };
                 return Task.FromResult<IDiagnosticEventSink>(new GelfUdpLoggingSink(options));
             }
-#else
+#endif
+#if NETSTANDARD2_0 || NET461
             /// <inheritdoc />
             public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(IConfiguration configuration)
             {
@@ -103,7 +104,7 @@ namespace Platibus.Diagnostics
         [Provider("GelfTcp")]
         public class Tcp : IDiagnosticEventSinkProvider
         {
-#if NET452
+#if NET452 || NET461
             /// <inheritdoc />
             public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(DiagnosticEventSinkElement configuration)
             {
@@ -115,7 +116,8 @@ namespace Platibus.Diagnostics
                 if (port <= 0 || port > 65535) throw new ConfigurationErrorsException("Invalid port");
                 return Task.FromResult<IDiagnosticEventSink>(new GelfTcpLoggingSink(host, port));
             }
-#else
+#endif
+#if NETSTANDARD2_0 || NET461
             /// <inheritdoc />
             public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(IConfiguration configuration)
             {
@@ -138,7 +140,7 @@ namespace Platibus.Diagnostics
         [Provider("GelfHttp")]
         public class Http : IDiagnosticEventSinkProvider
         {
-#if NET452
+#if NET452 || NET461
             /// <inheritdoc />
             public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(DiagnosticEventSinkElement configuration)
             {
@@ -153,7 +155,8 @@ namespace Platibus.Diagnostics
                 if (uri == null) throw new ConfigurationErrorsException("'uri' attribute is required");
                 return Task.FromResult<IDiagnosticEventSink>(new GelfHttpLoggingSink(uri, credentials));
             }
-#else
+#endif
+#if NETSTANDARD2_0 || NET461
             /// <inheritdoc />
             public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(IConfiguration configuration)
             {

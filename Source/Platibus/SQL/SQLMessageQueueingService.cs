@@ -21,7 +21,7 @@
 // THE SOFTWARE.
 
 using System;
-#if NET452
+#if NET452 || NET461
 using System.Configuration;
 #endif
 #if NETSTANDARD2_0

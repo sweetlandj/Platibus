@@ -21,7 +21,7 @@
 // THE SOFTWARE.
 
 using System.Threading.Tasks;
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using Microsoft.Extensions.Configuration;
 #endif
 using Platibus.Security;
@@ -40,9 +40,10 @@ namespace Platibus.Config.Extensibility
         /// <param name="configuration">The encruption configuration element.</param>
         /// <returns>Returns a task whose result is an initialized
         /// <see cref="IMessageEncryptionService"/>.</returns>
-#if NET452
+#if NET452 || NET461
         Task<IMessageEncryptionService> CreateMessageEncryptionService(EncryptionElement configuration);
-#else
+#endif
+#if NETSTANDARD2_0 || NET461
         Task<IMessageEncryptionService> CreateMessageEncryptionService(IConfiguration configuration);
 #endif
     }

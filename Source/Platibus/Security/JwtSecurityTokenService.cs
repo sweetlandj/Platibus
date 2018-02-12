@@ -27,7 +27,7 @@ using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using Platibus.Diagnostics;
-#if NET452
+#if NET452 || NET461
 using System.IdentityModel.Tokens;
 using System.IdentityModel.Protocols.WSTrust;
 #endif
@@ -51,7 +51,7 @@ namespace Platibus.Security
         private readonly SecurityKey _signingKey;
         private readonly SecurityKey _fallbackSigningKey;
         private readonly string _signingAlgorithm = "http://www.w3.org/2001/04/xmldsig-more#hmac-sha256";
-#if NET452
+#if NET452 || NET461
         private readonly string _digestAlgorithm = "http://www.w3.org/2001/04/xmlenc#sha256";
 #endif
         private readonly IDiagnosticService _diagnosticService;
@@ -110,7 +110,7 @@ namespace Platibus.Security
             var identity = principal.Identity;
             var claimsIdentity = identity as ClaimsIdentity ?? new ClaimsIdentity(identity);
 
-#if NET452
+#if NET452 || NET461
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = claimsIdentity,
@@ -127,7 +127,7 @@ namespace Platibus.Security
 
             if (_signingKey != null)
             {
-#if NET452
+#if NET452 || NET461
                 var signingCredentials = new SigningCredentials(_signingKey, _signingAlgorithm, _digestAlgorithm);
 #endif
 #if NETSTANDARD2_0

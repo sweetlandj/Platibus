@@ -28,7 +28,7 @@ namespace Platibus.IntegrationTests.AspNetCore
     [CollectionDefinition(Name)]
     public class AspNetCoreMiddlewareCollection : ICollectionFixture<AspNetCoreMiddlewareFixture>
     {
-        public const string Name = "IntegrationTests.OwinMiddleware";
+        public const string Name = "IntegrationTests.AspNetCore";
     }
 }
 #endif

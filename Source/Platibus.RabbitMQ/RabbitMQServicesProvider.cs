@@ -24,10 +24,10 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 using Platibus.Config.Extensibility;
-#if NET452
+#if NET452 || NET461
 using Platibus.Config;
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -40,7 +40,7 @@ namespace Platibus.RabbitMQ
     [Provider("RabbitMQ")]
     public class RabbitMQServicesProvider : IMessageQueueingServiceProvider
     {
-#if NET452
+#if NET452 || NET461
         /// <summary>
         /// Creates an initializes a <see cref="IMessageQueueingService"/>
         /// based on the provided <paramref name="configuration"/>
@@ -79,7 +79,7 @@ namespace Platibus.RabbitMQ
             return messageQueueingService;
         }
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
         /// <summary>
         /// Creates an initializes a <see cref="IMessageQueueingService"/>
         /// based on the provided <paramref name="configuration"/>

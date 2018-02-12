@@ -22,10 +22,10 @@
 
 using System.Threading.Tasks;
 using Platibus.Config.Extensibility;
-#if NET452
+#if NET452 || NET461
 using Platibus.Config;
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using System;
 using Microsoft.Extensions.Configuration;
 #endif
@@ -40,7 +40,7 @@ namespace Platibus.Security
     [Provider("JWT")]
     public class JwtSecurityTokenServiceProvider : ISecurityTokenServiceProvider
     {
-#if NET452
+#if NET452 || NET461
         /// <inheritdoc />
         public Task<ISecurityTokenService> CreateSecurityTokenService(SecurityTokensElement configuration)
         {
@@ -57,7 +57,7 @@ namespace Platibus.Security
             return Task.FromResult<ISecurityTokenService>(securityTokenService);
         }
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
         /// <inheritdoc />
         public Task<ISecurityTokenService> CreateSecurityTokenService(IConfiguration configuration)
         {

@@ -1,4 +1,4 @@
-﻿#if NET452
+﻿#if NET452 || NET461
 using System.Configuration;
 
 namespace Platibus.Config

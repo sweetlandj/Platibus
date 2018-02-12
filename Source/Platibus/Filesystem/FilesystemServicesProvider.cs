@@ -25,10 +25,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Platibus.Config.Extensibility;
 using Platibus.Multicast;
-#if NET452
+#if NET452 || NET461
 using Platibus.Config;
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -44,7 +44,7 @@ namespace Platibus.Filesystem
     public class FilesystemServicesProvider : IMessageQueueingServiceProvider,
         ISubscriptionTrackingServiceProvider
     {
-#if NET452
+#if NET452 || NET461
         /// <inheritdoc />
         /// <summary>
         /// Creates an initializes a <see cref="T:Platibus.IMessageQueueingService" />
@@ -99,7 +99,7 @@ namespace Platibus.Filesystem
             return multicastFactory.InitSubscriptionTrackingService(multicast, fsTrackingService);
         }
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
         /// <inheritdoc />
         /// <summary>
         /// Creates an initializes a <see cref="T:Platibus.IMessageQueueingService" />

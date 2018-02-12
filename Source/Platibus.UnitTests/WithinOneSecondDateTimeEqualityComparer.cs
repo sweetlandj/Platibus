@@ -25,20 +25,23 @@ using System.Collections.Generic;
 
 namespace Platibus.UnitTests
 {
+    /// <inheritdoc />
     /// <summary>
     /// Rounds date time to precision supported by SQL server to ensure equality assertions
     /// pass where expected
     /// </summary>
-    internal class NearestSecondDateTimeEqualityComparer : IEqualityComparer<DateTime>
+    internal class WithinOneSecondDateTimeEqualityComparer : IEqualityComparer<DateTime>
     {
         public bool Equals(DateTime x, DateTime y)
         {
-            return x.ToNearestSecond().Equals(y.ToNearestSecond());
+            var diff = x - y;
+            return Math.Abs(diff.TotalSeconds) <= 1;
+
         }
 
         public int GetHashCode(DateTime obj)
         {
-            return obj.ToNearestSecond().GetHashCode();
+            return 0;
         }
     }
 }

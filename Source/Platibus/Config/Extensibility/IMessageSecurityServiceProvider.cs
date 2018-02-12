@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using Microsoft.Extensions.Configuration;
 #endif
 using Platibus.Security;
@@ -40,9 +40,10 @@ namespace Platibus.Config.Extensibility
         /// <param name="configuration">The encryption configuration element.</param>
         /// <returns>Returns a task whose result is an initialized
         /// <see cref="IMessageEncryptionService"/>.</returns>
-#if NET452
+#if NET452 || NET461
         Task<IMessageEncryptionService> CreateMessageEncryptionService(JournalingElement configuration);
-#else
+#endif
+#if NETSTANDARD2_0 || NET461
         Task<IMessageEncryptionService> CreateMessageEncryptionService(IConfiguration configuration);
 #endif
     }

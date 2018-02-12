@@ -7,12 +7,10 @@ using Newtonsoft.Json;
 using Platibus.Http.Models;
 using Platibus.Journaling;
 using System.Threading.Tasks;
-#if NET452
-using System.Web;
-#endif
 
 namespace Platibus.Http.Clients
 {
+    /// <inheritdoc />
     /// <summary>
     /// A client for consuming messages from a local or remote journal via HTTP endpoint
     /// </summary>

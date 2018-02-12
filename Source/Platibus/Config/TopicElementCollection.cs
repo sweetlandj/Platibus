@@ -1,4 +1,4 @@
-﻿#if NET452
+﻿#if NET452 || NET461
 // The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
@@ -28,8 +28,10 @@ using System.Linq;
 
 namespace Platibus.Config
 {
+    /// <inheritdoc cref="ConfigurationElementCollection"/>
+    /// <inheritdoc cref="IEnumerable{T}"/>
     /// <summary>
-    /// A collection of <see cref="TopicElement"/>s
+    /// A collection of <see cref="T:Platibus.Config.TopicElement" />s
     /// </summary>
     public class TopicElementCollection : ConfigurationElementCollection, IEnumerable<TopicElement>
     {

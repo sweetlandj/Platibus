@@ -25,7 +25,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Config.Extensibility;
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -38,7 +38,7 @@ namespace Platibus.Security
     [Provider("AES")]
     public class AesMessageEncryptionServiceProvider : IMessageEncryptionServiceProvider
     {
-#if NET452
+#if NET452 || NET461
         /// <inheritdoc />
         public Task<IMessageEncryptionService> CreateMessageEncryptionService(EncryptionElement configuration)
         {
@@ -62,7 +62,7 @@ namespace Platibus.Security
             return Task.FromResult(messageEncryptionService);
         }
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
         /// <inheritdoc />
         public Task<IMessageEncryptionService> CreateMessageEncryptionService(IConfiguration configuration)
         {

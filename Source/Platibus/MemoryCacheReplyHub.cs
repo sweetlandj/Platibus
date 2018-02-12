@@ -22,7 +22,7 @@
 
 using System;
 using System.Threading.Tasks;
-#if NET452
+#if NET452 || NET461
 using System.Runtime.Caching;
 #endif
 #if NETSTANDARD2_0
@@ -39,7 +39,7 @@ namespace Platibus
     public class MemoryCacheReplyHub : IDisposable
     {
         private bool _disposed;
-#if NET452
+#if NET452 || NET461
         private readonly MemoryCache _cache = new MemoryCache("MemoryCacheReplyHub");
 #endif
 #if NETSTANDARD2_0
@@ -74,7 +74,7 @@ namespace Platibus
 
             var messageId = message.Headers.MessageId;
             var replyStreamExpiration = DateTime.UtcNow.Add(_replyTimeout);
-#if NET452
+#if NET452 || NET461
             var newReplyStream = new ReplyStream();
             var replyStream = (ReplyStream) _cache.AddOrGetExisting(messageId, newReplyStream, replyStreamExpiration);
             // ReSharper disable once ConvertIfStatementToNullCoalescingExpression

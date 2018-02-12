@@ -20,18 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using System.Threading.Tasks;
-using Platibus.Config.Extensibility;
-using Platibus.Diagnostics;
-using Platibus.Serialization;
-#if NET452
-using System.Collections.Generic;
-#endif
-#if NETSTANDARD2_0
-using Microsoft.Extensions.Configuration;
-#endif
-
 namespace Platibus.Config
 {
     /// <inheritdoc />
@@ -39,149 +27,13 @@ namespace Platibus.Config
     /// Factory class used to initialize <see cref="T:Platibus.Config.LoopbackConfiguration" /> objects from
     /// declarative configuration elements in application configuration files.
     /// </summary>
-    public class LoopbackConfigurationManager : PlatibusConfigurationManager<LoopbackConfiguration>
-    {
-
-
-#if NET452
-        /// <inheritdoc />
-        public override async Task Initialize(LoopbackConfiguration platibusConfiguration, string sectionName = null)
-        {
-            var diagnosticService = platibusConfiguration.DiagnosticService;
-            if (string.IsNullOrWhiteSpace(sectionName))
-            {
-                sectionName = "platibus.loopback";
-                await diagnosticService.EmitAsync(
-                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
-                    {
-                        Detail = "Using default configuration section \"" + sectionName + "\""
-                    }.Build());
-            }
-
-            var configuration = LoadConfigurationSection<LoopbackConfigurationSection>(sectionName, diagnosticService);
-            await Initialize(platibusConfiguration, configuration);
-        }
-
-        /// <summary>
-        /// Initializes the specified <paramref name="platibusConfiguration"/> object according to the
-        /// values in the supplied loopback <paramref name="configSection"/>
-        /// </summary>
-        /// <param name="platibusConfiguration">The configuration object to initialize</param>
-        /// <param name="configSection">The <see cref="LoopbackConfigurationSection"/>
-        /// containing the values used to initialize the Platibus configuration</param>
-        public async Task Initialize(LoopbackConfiguration platibusConfiguration, LoopbackConfigurationSection configSection)
-        {
-            if (platibusConfiguration == null) throw new ArgumentNullException(nameof(platibusConfiguration));
-            if (configSection == null) throw new ArgumentNullException(nameof(configSection));
-
-            await InitializeDiagnostics(platibusConfiguration, configSection);
-
-            platibusConfiguration.ReplyTimeout = configSection.ReplyTimeout;
-            platibusConfiguration.SerializationService = new DefaultSerializationService();
-            platibusConfiguration.MessageNamingService = new DefaultMessageNamingService();
-            platibusConfiguration.DefaultContentType = configSection.DefaultContentType;
-
-            if (configSection.DefaultSendOptions != null)
-            {
-                platibusConfiguration.DefaultSendOptions = new SendOptions
-                {
-                    ContentType = configSection.DefaultSendOptions.ContentType,
-                    TTL = configSection.DefaultSendOptions.TTL,
-                    Synchronous = configSection.DefaultSendOptions.Synchronous
-                };
-            }
-
-            InitializeTopics(platibusConfiguration, configSection);
-
-            var messageJournalFactory = new MessageJournalFactory(platibusConfiguration.DiagnosticService);
-            platibusConfiguration.MessageJournal = await messageJournalFactory.InitMessageJournal(configSection.Journaling);
-
-            var mqsFactory = new MessageQueueingServiceFactory(platibusConfiguration.DiagnosticService);
-            platibusConfiguration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(configSection.Queueing);
-        }
-
-        /// <summary>
-        /// Initializes subscriptions in the supplied <paramref name="configuration"/> based on the
-        /// properties of the specified <paramref name="configSection"/>
-        /// </summary>
-        /// <param name="configuration">The configuration to initialize</param>
-        /// <param name="configSection">The configuration section containing the subscription
-        /// properties</param>
-        protected virtual async Task InitializeDiagnostics(LoopbackConfiguration configuration,
-            LoopbackConfigurationSection configSection)
-        {
-            var diagnosticsConfig = configSection.Diagnostics;
-            if (diagnosticsConfig == null) return;
-
-            var factory = new DiagnosticEventSinkFactory(configuration.DiagnosticService);
-            IEnumerable<DiagnosticEventSinkElement> sinkConfigs = diagnosticsConfig.Sinks;
-            foreach (var sinkConfig in sinkConfigs)
-            {
-                var sink = await factory.InitDiagnosticEventSink(sinkConfig);
-                configuration.DiagnosticService.AddSink(sink);
-            }
-        }
-
-        /// <summary>
-        /// Initializes topics in the supplied <paramref name="configuration"/> based on the
-        /// properties of the specified <paramref name="configSection"/>
-        /// </summary>
-        /// <param name="configuration">The configuration to initialize</param>
-        /// <param name="configSection">The configuration section containing the topic 
-        /// properties</param>
-        protected virtual void InitializeTopics(LoopbackConfiguration configuration, LoopbackConfigurationSection configSection)
-        {
-            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
-            if (configSection == null) throw new ArgumentNullException(nameof(configSection));
-            IEnumerable<TopicElement> topics = configSection.Topics;
-            foreach (var topic in topics)
-            {
-                configuration.AddTopic(topic.Name);
-            }
-        }
+    public class LoopbackConfigurationManager
+#if NET452 || NET461
+        : NetFrameworkLoopbackConfigurationManager
 #endif
 #if NETSTANDARD2_0
-        /// <inheritdoc />
-        public override async Task Initialize(LoopbackConfiguration platibusConfiguration, string sectionName = null)
-        {
-            var diagnosticService = platibusConfiguration.DiagnosticService;
-            if (string.IsNullOrWhiteSpace(sectionName))
-            {
-                sectionName = "platibus.loopback";
-                await diagnosticService.EmitAsync(
-                    new DiagnosticEventBuilder(this, DiagnosticEventType.ConfigurationDefault)
-                    {
-                        Detail = "Using default configuration section \"" + sectionName + "\""
-                    }.Build());
-            }
-
-            var configuration = LoadConfigurationSection(sectionName, diagnosticService);
-            await Initialize(platibusConfiguration, configuration);
-        }
-
-        public override async Task Initialize(LoopbackConfiguration platibusConfiguration, IConfiguration configuration)
-        {
-            if (platibusConfiguration == null) throw new ArgumentNullException(nameof(platibusConfiguration));
-
-            await InitializeDiagnostics(platibusConfiguration, configuration);
-            var diagnosticService = platibusConfiguration.DiagnosticService;
-
-            platibusConfiguration.ReplyTimeout = configuration?.GetValue<TimeSpan>("replyTimeout") ?? TimeSpan.Zero;
-            platibusConfiguration.SerializationService = new DefaultSerializationService();
-            platibusConfiguration.MessageNamingService = new DefaultMessageNamingService();
-            platibusConfiguration.DefaultContentType = configuration?["defaultContentType"];
-
-            InitializeDefaultSendOptions(platibusConfiguration, configuration);
-            InitializeTopics(platibusConfiguration, configuration);
-
-            var messageJournalFactory = new MessageJournalFactory(diagnosticService);
-            var journalingSection = configuration?.GetSection("journaling");
-            platibusConfiguration.MessageJournal = await messageJournalFactory.InitMessageJournal(journalingSection);
-
-            var mqsFactory = new MessageQueueingServiceFactory(platibusConfiguration.DiagnosticService);
-            var queueingSection = configuration?.GetSection("queueing");
-            platibusConfiguration.MessageQueueingService = await mqsFactory.InitMessageQueueingService(queueingSection);
-        }
+        : NetStandardLoopbackConfigurationManager
 #endif
+    {
     }
 }

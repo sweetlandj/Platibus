@@ -1,4 +1,4 @@
-﻿#if NET452
+﻿#if NET452 || NET461
 // The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
@@ -28,6 +28,8 @@ using System.Net;
 
 namespace Platibus.Http
 {
+    /// <inheritdoc cref="ConfigurationElementCollection" />
+    /// <inheritdoc cref="IEnumerable{T}"/>
     /// <summary>
     /// A configuration element collection that contains all of the authentication
     /// schemes that should be supported or enabled on the HTTP server

@@ -31,7 +31,7 @@ using System.Transactions;
 using Platibus.Config.Extensibility;
 using Platibus.Diagnostics;
 using Platibus.SQL.Commands;
-#if NET452
+#if NET452 || NET461
 using System.Configuration;
 #endif
 #if NETSTANDARD2_0
@@ -378,8 +378,7 @@ namespace Platibus.SQL
             if (disposing)
             {
                 // ReSharper disable once SuspiciousTypeConversion.Global
-                var disposableConnectionProvider = ConnectionProvider as IDisposable;
-                if (disposableConnectionProvider != null)
+                if (ConnectionProvider is IDisposable disposableConnectionProvider)
                 {
                     disposableConnectionProvider.Dispose();
                 }

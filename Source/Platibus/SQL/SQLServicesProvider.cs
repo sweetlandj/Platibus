@@ -25,10 +25,10 @@ using Platibus.Config;
 using Platibus.Config.Extensibility;
 using Platibus.Journaling;
 using Platibus.Multicast;
-#if NET452
+#if NET452 || NET461
 using System.Configuration;
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -43,7 +43,7 @@ namespace Platibus.SQL
     [Provider("SQL")]
     public class SQLServicesProvider : IMessageQueueingServiceProvider, IMessageJournalProvider, ISubscriptionTrackingServiceProvider
     {
-#if NET452
+#if NET452 || NET461
         /// <inheritdoc />
         public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
@@ -125,7 +125,7 @@ namespace Platibus.SQL
             return multicastFactory.InitSubscriptionTrackingService(multicast, sqlSubscriptionTrackingService);
         }
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
         /// <inheritdoc />
         public async Task<IMessageQueueingService> CreateMessageQueueingService(IConfiguration configuration)
         {
@@ -143,11 +143,11 @@ namespace Platibus.SQL
             }
 
             var securityTokenServiceFactory = new SecurityTokenServiceFactory();
-            var securityTokensSection = configuration?.GetSection("securityTokens");
+            var securityTokensSection = configuration.GetSection("securityTokens");
             var securityTokenService = await securityTokenServiceFactory.InitSecurityTokenService(securityTokensSection);
 
             var messageEncryptionServiceFactory = new MessageEncryptionServiceFactory();
-            var messageEncryptionConfig = configuration?.GetSection("encryption");
+            var messageEncryptionConfig = configuration.GetSection("encryption");
             var messageEncryptionService = await messageEncryptionServiceFactory.InitMessageEncryptionService(messageEncryptionConfig);
 
             var connectionProvider = new DefaultConnectionProvider(connectionStringSettings);

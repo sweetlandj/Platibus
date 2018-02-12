@@ -22,7 +22,7 @@
 
 using System.Threading.Tasks;
 using Platibus.Config;
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using System.Net;
 using Microsoft.Extensions.Configuration;
 #endif
@@ -35,7 +35,7 @@ namespace Platibus.Multicast
     /// </summary>
     public class MulticastSubscriptionTrackingServiceFactory
     {
-#if NET452
+#if NET452 || NET461
         /// <summary>
         /// Initializes a new <see cref="MulticastSubscriptionTrackingService"/> based on
         /// the specified <paramref name="configuration"/> and wrapping the supplied
@@ -59,7 +59,7 @@ namespace Platibus.Multicast
             return Task.FromResult<ISubscriptionTrackingService>(multicastTrackingService);
         }
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
         /// <summary>
         /// Initializes a new <see cref="MulticastSubscriptionTrackingService"/> based on
         /// the specified <paramref name="configuration"/> and wrapping the supplied

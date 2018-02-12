@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#if NET452
+#if NET452 || NET461
 using System.IdentityModel.Tokens;
 #endif
 #if NETSTANDARD2_0
@@ -34,7 +34,7 @@ namespace Platibus.Security
     /// A <see cref="T:System.IdentityModel.Tokens.SecurityKey" /> implementation based on a bytes represented as hexadecimal
     /// degits
     /// </summary>
-#if NET452
+#if NET452 || NET461
     public class HexEncodedSecurityKey : InMemorySymmetricSecurityKey
 #endif
 #if NETSTANDARD2_0

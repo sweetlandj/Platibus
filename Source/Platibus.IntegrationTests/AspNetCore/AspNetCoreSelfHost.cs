@@ -26,7 +26,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Platibus.AspNetCore;
 using System;
 using System.IO;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -39,14 +38,13 @@ namespace Platibus.IntegrationTests.AspNetCore
         
         public AspNetCoreSelfHost(AspNetCoreConfiguration configuration)
         {
-            
             var startup = new Startup(configuration);
-
             var busSource = new TaskCompletionSource<IBus>();
             var busInitialized = busSource.Task;
 
             var webHostBuilder = Microsoft.AspNetCore.WebHost
                 .CreateDefaultBuilder()
+                .UseUrls(configuration.BaseUri.WithoutTrailingSlash().ToString())
                 .ConfigureServices(services =>
                 {
                     startup.ConfigureServices(services);
@@ -54,7 +52,7 @@ namespace Platibus.IntegrationTests.AspNetCore
                     busSource.TrySetResult(bus);
                 })
                 .Configure(app => startup.Configure(app, null))
-                .UseKestrel(options => options.Listen(IPAddress.Any, configuration.BaseUri.Port));
+                .UseKestrel();
 
             WebHost = webHostBuilder.Build();
             Bus = busInitialized.Result;

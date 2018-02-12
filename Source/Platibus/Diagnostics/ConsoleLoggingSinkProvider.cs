@@ -22,29 +22,30 @@
 
 using System.Threading.Tasks;
 using Platibus.Config.Extensibility;
-#if NET452
+#if NET452 || NET461
 using Platibus.Config;
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using Microsoft.Extensions.Configuration;
 #endif
 
 namespace Platibus.Diagnostics
 {
+    /// <inheritdoc />
     /// <summary>
-    /// A <see cref="IDiagnosticEventSinkProvider"/> implementation that targets the console
+    /// A <see cref="T:Platibus.Config.Extensibility.IDiagnosticEventSinkProvider" /> implementation that targets the console
     /// </summary>
     [Provider("Console")]
     public class ConsoleLoggingSinkProvider : IDiagnosticEventSinkProvider
     {
-#if NET452
+#if NET452 || NET461
         /// <inheritdoc />
         public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(DiagnosticEventSinkElement configuration)
         {
             return Task.FromResult<IDiagnosticEventSink>(new ConsoleLoggingSink());
         }
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
         /// <inheritdoc />
         public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(IConfiguration configuration)
         {

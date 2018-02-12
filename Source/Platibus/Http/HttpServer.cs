@@ -46,7 +46,7 @@ namespace Platibus.Http
         /// <param name="cancellationToken">(Optional) A cancelation token that may be
         /// used by the caller to interrupt the HTTP server initialization process</param>
         /// <returns>Returns the fully initialized and listening HTTP server</returns>
-#if NET452
+#if NET452 || NET461
         /// <seealso cref="HttpServerConfigurationSection"/> 
 #endif
         public static async Task<HttpServer> Start(string configSectionName = "platibus.httpserver",
@@ -67,7 +67,7 @@ namespace Platibus.Http
         /// <param name="cancellationToken">(Optional) A cancelation token that may be
         /// used by the caller to interrupt the HTTP server initialization process</param>
         /// <returns>Returns the fully initialized and listening HTTP server</returns>
-#if NET452
+#if NET452 || NET461
         /// <seealso cref="HttpServerConfigurationSection"/> 
 #endif
         public static async Task<HttpServer> Start(IHttpServerConfiguration configuration,

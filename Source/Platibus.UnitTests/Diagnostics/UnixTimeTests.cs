@@ -35,7 +35,7 @@ namespace Platibus.UnitTests.Diagnostics
             var dateTime = DateTime.UtcNow;
             var unixTime = new UnixTime(dateTime);
             var roundTripDateTime = unixTime.ToDateTime();
-            Assert.Equal(dateTime, roundTripDateTime, new NearestSecondDateTimeEqualityComparer());
+            Assert.Equal(dateTime, roundTripDateTime, new WithinOneSecondDateTimeEqualityComparer());
 
         }
 

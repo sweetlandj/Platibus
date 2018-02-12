@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#if NET452
+#if NET452 || NET461
 using System.Web;
 #endif
 #if NETSTANDARD2_0
@@ -36,7 +36,7 @@ namespace Platibus.Http
     {
         public string Encode(string value)
         {
-#if NET452
+#if NET452 || NET461
             return HttpUtility.UrlEncode(value);
 #endif
 #if NETSTANDARD2_0

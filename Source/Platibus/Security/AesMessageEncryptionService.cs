@@ -53,7 +53,7 @@ namespace Platibus.Security
             if (options == null) throw new ArgumentNullException(nameof(options));
 
             _diagnosticService = options.DiagnosticService;
-#if NET452
+#if NET452 || NET461
             _encryptionKey = options.Key.GetSymmetricKey();
             _decryptionKeys = new[] {_encryptionKey}.Union(
                 options.FallbackKeys?

@@ -394,60 +394,13 @@ namespace Platibus.SQL
             }
         }
 
-#pragma warning disable 618
         /// <summary>
         /// Determines the principal stored with the queued message
         /// </summary>
-        /// <param name="headers">The message headers</param>
-        /// <param name="senderPrincipal">The serialized sender principal</param>
-        /// <returns></returns>
-        /// <remarks>
-        /// <para>This method first looks for a security token stored in the 
-        /// <see cref="IMessageHeaders.SecurityToken"/> header.  If present, the 
-        /// <see cref="ISecurityTokenService"/> provided in the constructor is used to validate it
-        /// and reconstruct the <see cref="IPrincipal"/>.</para>
-        /// <para>If a security token is not present in the message headers then the legacy
-        /// SenderPrincipal column is read.  If the value of the SenderPrincipal is not <c>null</c>
-        /// then it will be deserialized into a <see cref="SenderPrincipal"/>.
-        /// </para>
-        /// </remarks>
         protected async Task<IPrincipal> ResolvePrincipal(IMessageHeaders headers, string senderPrincipal)
         {
-            if (!string.IsNullOrWhiteSpace(headers.SecurityToken))
-            {
-                return await SecurityTokenService.Validate(headers.SecurityToken);
-            }
-
-            try
-            {
-                return string.IsNullOrWhiteSpace(senderPrincipal)
-                    ? null 
-                    : DeserializePrincipal(senderPrincipal);
-            }
-            catch (IndexOutOfRangeException)
-            {
-                return null;
-            }
+            return await SecurityTokenService.NullSafeValidate(headers.SecurityToken);
         }
-        
-        /// <summary>
-        /// Helper method to deserialize the sender principal from a record in the SQL database
-        /// </summary>
-        /// <param name="str">The serialized principal string</param>
-        /// <returns>Returns the deserialized principal</returns>
-        [Obsolete("For backward compatibility only")]
-        protected virtual IPrincipal DeserializePrincipal(string str)
-        {
-            if (string.IsNullOrWhiteSpace(str)) return null;
-
-            var bytes = Convert.FromBase64String(str);
-            using (var memoryStream = new MemoryStream(bytes))
-            {
-                var formatter = new BinaryFormatter();
-                return (SenderPrincipal)formatter.Deserialize(memoryStream);
-            }
-        }
-#pragma warning restore 618
 
         /// <summary>
         /// Helper method to deserialize message headers read from a record in the SQL database

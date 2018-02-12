@@ -23,10 +23,10 @@
 using System.Threading.Tasks;
 using Platibus.Config.Extensibility;
 using Platibus.Multicast;
-#if NET452
+#if NET452 || NET461
 using Platibus.Config;
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -38,7 +38,7 @@ namespace Platibus.InMemory
     [Provider("InMemory")]
     public class InMemoryServicesProvider : IMessageQueueingServiceProvider, ISubscriptionTrackingServiceProvider
     {
-#if NET452
+#if NET452 || NET461
         /// <summary>
         /// Returns an in-memory message queueing service
         /// </summary>
@@ -63,7 +63,7 @@ namespace Platibus.InMemory
             return multicastFactory.InitSubscriptionTrackingService(multicast, inMemoryTrackingService);
         }
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
         /// <inheritdoc />
         /// <summary>
         /// Returns an in-memory message queueing service

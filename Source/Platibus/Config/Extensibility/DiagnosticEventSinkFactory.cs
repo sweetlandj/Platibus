@@ -21,9 +21,10 @@
 // THE SOFTWARE.
 
 using System;
-#if NET452
+#if NET452 || NET461
 using System.Configuration;
-#elif NETSTANDARD2_0
+#endif
+#if NETSTANDARD2_0 || NET461
 using Microsoft.Extensions.Configuration;
 #endif
 using System.Threading.Tasks;
@@ -50,7 +51,7 @@ namespace Platibus.Config.Extensibility
             _providerService = new ReflectionBasedProviderService(_diagnosticService);
         }
 
-#if NET452
+#if NET452 || NET461
         /// <summary>
         /// Initializes a subscription tracking service based on the supplied
         /// <paramref name="configuration"/>
@@ -101,7 +102,8 @@ namespace Platibus.Config.Extensibility
 
             return filterSink;
         }
-#elif NETSTANDARD2_0
+#endif
+#if NETSTANDARD2_0 || NET461
         /// <summary>
         /// Initializes a subscription tracking service based on the supplied
         /// <paramref name="configuration"/>
@@ -141,8 +143,8 @@ namespace Platibus.Config.Extensibility
                     Detail = "Initializing diagnostic event sink '" + name + "'"
                 }.Build());
 
-            var minLevel = configuration?.GetValue<DiagnosticEventLevel>("minLevel") ?? DiagnosticEventLevel.Debug;
-            var maxLevel = configuration?.GetValue<DiagnosticEventLevel>("minLevel") ?? DiagnosticEventLevel.Error;
+            var minLevel = configuration.GetValue("minLevel", DiagnosticEventLevel.Debug);
+            var maxLevel = configuration.GetValue("minLevel", DiagnosticEventLevel.Error);
             var sink = await provider.CreateDiagnosticEventSink(configuration);
             var filterSpec = new DiagnosticEventLevelSpecification(minLevel, maxLevel);
             var filterSink = new FilteringSink(sink, filterSpec);

@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-#if NET452
+#if NET452 || NET461
 using System.Configuration;
 #endif
 using System.Threading.Tasks;
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using Microsoft.Extensions.Configuration;
 #endif
 using Platibus.Config;
@@ -19,7 +19,7 @@ namespace Platibus.Diagnostics
     [Provider("InfluxDB")]
     public class InfluxDBSinkProvider : IDiagnosticEventSinkProvider
     {
-#if NET452
+#if NET452 || NET461
         /// <inheritdoc/>
         public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(DiagnosticEventSinkElement configuration)
         {
@@ -67,7 +67,8 @@ namespace Platibus.Diagnostics
             
             return Task.FromResult<IDiagnosticEventSink>(new InfluxDBSink(options, sampleRate));
         }
-#else
+#endif
+#if NETSTANDARD2_0 || NET461
         /// <inheritdoc/>
         public Task<IDiagnosticEventSink> CreateDiagnosticEventSink(IConfiguration configuration)
         {

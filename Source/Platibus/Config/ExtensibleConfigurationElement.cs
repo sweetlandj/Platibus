@@ -1,4 +1,4 @@
-﻿#if NET452
+﻿#if NET452 || NET461
 // The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
@@ -26,14 +26,15 @@ using System.Configuration;
 
 namespace Platibus.Config
 {
+    /// <inheritdoc />
     /// <summary>
     /// An abstract base class for configuration elements designed to allow,
     /// capture, and record properties that are not explicitly defined.  These
     /// are used to gather additional provider-specific configuration details.
     /// </summary>
-    /// <seealso cref="JournalingElement"/>
-    /// <seealso cref="QueueingElement"/>
-    /// <seealso cref="SubscriptionTrackingElement"/>
+    /// <seealso cref="T:Platibus.Config.JournalingElement" />
+    /// <seealso cref="T:Platibus.Config.QueueingElement" />
+    /// <seealso cref="T:Platibus.Config.SubscriptionTrackingElement" />
     public abstract class ExtensibleConfigurationElement : ConfigurationElement
     {
         /// <summary>

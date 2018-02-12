@@ -1,4 +1,4 @@
-﻿#if NET452
+﻿#if NET452 || NET461
 // The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
@@ -28,8 +28,10 @@ using System.Linq;
 
 namespace Platibus.Config
 {
+    /// <inheritdoc cref="ConfigurationElementCollection"/>
+    /// <inheritdoc cref="IEnumerable{T}"/>
     /// <summary>
-    /// Collection of <see cref="SendRuleElement"/>s
+    /// Collection of <see cref="T:Platibus.Config.SendRuleElement" />s
     /// </summary>
     public class SendRuleElementCollection : ConfigurationElementCollection, IEnumerable<SendRuleElement>
     {

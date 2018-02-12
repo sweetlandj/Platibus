@@ -55,7 +55,7 @@ namespace Platibus.Diagnostics
         public Task ConsumeAsync(DiagnosticEvent @event, CancellationToken cancellationToken = default(CancellationToken))
         {
             _consume(@event);
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
             return Task.CompletedTask;
 #endif
 #if NET452

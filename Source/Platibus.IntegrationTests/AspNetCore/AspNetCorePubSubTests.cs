@@ -1,5 +1,4 @@
 ﻿#if NETCOREAPP2_0
-
 // The MIT License (MIT)
 // 
 // Copyright (c) 2017 Jesse Sweetland

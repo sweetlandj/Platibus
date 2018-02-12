@@ -58,14 +58,7 @@ namespace Platibus.UnitTests.Filesystem
             await ThenTheMessageShouldBeReadSuccessfully();
             await ThenTheMessageShouldNotHaveASecurityTokenHeader();
         }
-
-        protected IPrincipal GivenLegacySenderPrincipal()
-        {
-            var identity = new GenericIdentity("test@example.com", "basic");
-            var principal = new GenericPrincipal(identity, new[] { "user", "staff" });
-            return Principal = new SenderPrincipal(principal);
-        }
-
+        
         protected IPrincipal GivenClaimsPrincipal()
         {
             var claims = new[]
@@ -97,21 +90,7 @@ namespace Platibus.UnitTests.Filesystem
 
             return Message = new Message(headers, "Hello, world!");
         }
-
-        protected async Task<FileInfo> GivenLegacyMessageFileWithSenderPrincipal()
-        {
-            GivenLegacySenderPrincipal();
-            GivenSampleSentMessage();
-
-            var tempFile = Path.GetTempFileName();
-            using (var writer = new LegacyMessageFileWriter(File.OpenWrite(tempFile)))
-            {
-                await writer.WritePrincipal(Principal);
-                await writer.WriteMessage(Message);
-            }
-            return MessageFileInfo = new FileInfo(tempFile);
-        }
-
+        
         protected async Task<FileInfo> GivenLegacyMessageFileWithNoPrincipal()
         {
             GivenNoPrincipal();

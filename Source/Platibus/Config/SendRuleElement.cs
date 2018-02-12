@@ -1,4 +1,4 @@
-﻿#if NET452
+﻿#if NET452 || NET461
 // The MIT License (MIT)
 // 
 // Copyright (c) 2016 Jesse Sweetland
@@ -25,6 +25,7 @@ using System.Configuration;
 
 namespace Platibus.Config
 {
+    /// <inheritdoc />
     /// <summary>
     /// Configuration element for send rules
     /// </summary>
