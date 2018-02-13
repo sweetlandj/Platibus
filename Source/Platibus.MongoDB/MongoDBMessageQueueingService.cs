@@ -27,7 +27,7 @@ using MongoDB.Driver;
 using Platibus.Diagnostics;
 using Platibus.Queueing;
 using Platibus.Security;
-#if NET452
+#if NET452 || NET461
 using System.Configuration;
 #endif
 #if NETSTANDARD2_0

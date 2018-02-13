@@ -59,6 +59,11 @@ namespace Platibus.Security
         public static async Task<string> NullSafeIssue(this ISecurityTokenService service, IPrincipal principal, DateTime? expires = null)
         {
             if (principal == null) return null;
+
+            // Avoid creating a security token for anonymous/unauthenticated principals
+            var identity = principal.Identity;
+            if (!identity.IsAuthenticated) return null;
+              
             return await service.Issue(principal, expires);
         }
     }

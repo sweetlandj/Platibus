@@ -27,7 +27,7 @@ using System.Threading.Tasks;
 using Platibus.Diagnostics;
 using Platibus.SQL;
 using Platibus.SQLite.Commands;
-#if NET452
+#if NET452 || NET461
 using System.Configuration;
 #endif
 #if NETSTANDARD2_0
@@ -80,7 +80,7 @@ namespace Platibus.SQLite
             }
 
             var dbPath = Path.Combine(directory.FullName, "subscriptions.db");
-#if NET452
+#if NET452 || NET461
             var connectionStringSettings = new ConnectionStringSettings
             {
                 Name = dbPath,

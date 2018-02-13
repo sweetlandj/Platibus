@@ -31,7 +31,7 @@ using MongoDB.Driver;
 using MongoDB.Driver.Core.Misc;
 using Platibus.Diagnostics;
 using Platibus.Journaling;
-#if NET452
+#if NET452 || NET461
 using System.Configuration;
 #endif
 #if NETSTANDARD2_0

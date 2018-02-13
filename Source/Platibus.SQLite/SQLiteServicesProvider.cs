@@ -26,10 +26,10 @@ using System.Threading.Tasks;
 using Platibus.Config.Extensibility;
 using Platibus.Journaling;
 using Platibus.Multicast;
-#if NET452
+#if NET452 || NET461
 using Platibus.Config;
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using Microsoft.Extensions.Configuration;
 #endif
 
@@ -44,7 +44,7 @@ namespace Platibus.SQLite
     [Provider("SQLite")]
     public class SQLiteServicesProvider : IMessageQueueingServiceProvider, IMessageJournalProvider, ISubscriptionTrackingServiceProvider
     {
-#if NET452
+#if NET452 || NET461
         /// <inheritdoc />
         public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
@@ -95,7 +95,7 @@ namespace Platibus.SQLite
             return multicastFactory.InitSubscriptionTrackingService(multicast, sqliteSubscriptionTrackingService);
         }
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
         /// <inheritdoc />
         public async Task<IMessageQueueingService> CreateMessageQueueingService(IConfiguration configuration)
         {

@@ -23,15 +23,18 @@
 
 using Platibus.Config.Extensibility;
 using Platibus.SQL.Commands;
-#if NET452
+#if NET452 || NET461
 using System.Configuration;
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using Platibus.Config;
 #endif
 
 namespace Platibus.SQLite.Commands
 {
+    /// <inheritdoc cref="IMessageJournalingCommandBuildersProvider"/>
+    /// <inheritdoc cref="IMessageQueueingCommandBuildersProvider"/>
+    /// <inheritdoc cref="ISubscriptionTrackingCommandBuildersProvider"/>
     /// <summary>
     /// Provides command builders for message journaling, message queueing, and subscription
     /// tracking based on SQLite databases.

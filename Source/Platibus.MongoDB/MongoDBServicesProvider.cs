@@ -25,10 +25,10 @@ using Platibus.Config.Extensibility;
 using Platibus.Journaling;
 using Platibus.Multicast;
 using System.Threading.Tasks;
-#if NET452
+#if NET452 || NET461
 using System.Configuration;
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
 using System.Net;
 using Microsoft.Extensions.Configuration;
 #endif
@@ -44,7 +44,7 @@ namespace Platibus.MongoDB
     [Provider("MongoDB")]
     public class MongoDBServicesProvider : IMessageQueueingServiceProvider, ISubscriptionTrackingServiceProvider, IMessageJournalProvider
     {
-#if NET452
+#if NET452 || NET461
         /// <inheritdoc />
         public async Task<IMessageQueueingService> CreateMessageQueueingService(QueueingElement configuration)
         {
@@ -160,7 +160,7 @@ namespace Platibus.MongoDB
             return Task.FromResult<IMessageJournal>(sqlMessageJournalingService);
         }
 #endif
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET461
         /// <inheritdoc />
         public async Task<IMessageQueueingService> CreateMessageQueueingService(IConfiguration configuration)
         {

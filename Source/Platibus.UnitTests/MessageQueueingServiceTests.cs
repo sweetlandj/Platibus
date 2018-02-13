@@ -292,7 +292,7 @@ namespace Platibus.UnitTests
                 new Claim(ClaimTypes.Role, "user"),
                 new Claim(ClaimTypes.Role, "staff"),
             };
-            return Principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
+            return Principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "Basic"));
         }
 
         protected virtual Task QueueOperationCompletion()
