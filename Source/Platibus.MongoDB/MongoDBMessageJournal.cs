@@ -41,7 +41,7 @@ namespace Platibus.MongoDB
     /// </summary>
     public class MongoDBMessageJournal : IMessageJournal
     {
-        private static readonly Collation Collation = new Collation("simple", strength: CollationStrength.Secondary);
+        private readonly Collation _collation = new Collation("simple");
 
         /// <summary>
         /// The default name of the collection that will be used to store message journal entries
@@ -85,6 +85,10 @@ namespace Platibus.MongoDB
 
             var minServerVersion = database.Client.Cluster.Description.Servers.Min(s => s.Version);
             _collationSupported = Feature.Collation.IsSupported(minServerVersion);
+            if (_collationSupported)
+            {
+                 _collation = new Collation("en", strength: CollationStrength.Secondary);
+            }
 
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
 
@@ -97,7 +101,7 @@ namespace Platibus.MongoDB
             var options = new CreateIndexOptions();
             if (_collationSupported)
             {
-                options.Collation = Collation;
+                options.Collation = _collation;
             }
 
             TryCreateIndex(ikb.Ascending(c => c.Category), "category_1");
@@ -118,7 +122,7 @@ namespace Platibus.MongoDB
 
             if (_collationSupported)
             {
-                options.Collation = Collation;
+                options.Collation = _collation;
             }
 
             try
@@ -185,7 +189,7 @@ namespace Platibus.MongoDB
             var options = new FindOptions();
             if (_collationSupported)
             {
-                options.Collation = Collation;
+                options.Collation = _collation;
             }
 
             var entryDocuments = await _messageJournalEntries.Find(filterDef, options)
