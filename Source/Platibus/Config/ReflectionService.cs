@@ -20,12 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Microsoft.Extensions.DependencyModel;
+using Platibus.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Platibus.Diagnostics;
 
 namespace Platibus.Config
 {
@@ -45,6 +46,48 @@ namespace Platibus.Config
 
         public IEnumerable<Type> FindConcreteSubtypes<TBase>()
         {
+            var appDomain = AppDomain.CurrentDomain;
+            var assemblyNames = GetAssemblyNames(appDomain);
+            var subtypes = new List<Type>();
+            foreach (var assemblyName in assemblyNames)
+            {
+                try
+                {
+                    var assembly = appDomain.GetAssemblies()
+                        .FirstOrDefault(a => a.GetName() == assemblyName)
+                        ?? appDomain.Load(assemblyName);
+                    
+                    subtypes.AddRange(assembly.GetTypes()
+                        .Where(typeof(TBase).IsAssignableFrom)
+                        .Where(t => !t.IsInterface && !t.IsAbstract));
+                }
+                catch (Exception ex)
+                {
+                    _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.TypeLoadFailed)
+                    {
+                        Detail = $"Error loading assembly {assemblyName}",
+                        Exception = ex
+                    }.Build());
+                }
+            }
+            return subtypes;
+        }
+
+        public IEnumerable<AssemblyName> GetAssemblyNames(AppDomain appDomain)
+        {
+            return GetDefaultAssemblyNames()
+                .Union(GetAppDomainBaseDirectoryAssemblyNames(appDomain))
+                .Distinct(new AssemblyNameEqualityComparer());
+        }
+
+        public IEnumerable<AssemblyName> GetDefaultAssemblyNames()
+        {
+            var dependencyContext = DependencyContext.Default;
+            return dependencyContext?.GetDefaultAssemblyNames() ?? Enumerable.Empty<AssemblyName>();
+        }
+
+        public IEnumerable<AssemblyName> GetAppDomainBaseDirectoryAssemblyNames(AppDomain appDomain)
+        {
             var appDomainBaseDirectory = AppDomain.CurrentDomain.BaseDirectory;
             var directories = new[]
             {
@@ -62,20 +105,13 @@ namespace Platibus.Config
                 .Where(dir => dir.Directory.Exists)
                 .SelectMany(x => x.Directory.GetFiles(x.FilenamePattern, SearchOption.TopDirectoryOnly));
 
-            var subtypes = new List<Type>();
+            var assemblyNames = new List<AssemblyName>();
             foreach (var assemblyFile in assemblyFiles)
             {
                 try
                 {
                     var assemblyName = AssemblyName.GetAssemblyName(assemblyFile.FullName);
-                    var appDomain = AppDomain.CurrentDomain;
-                    var assembly = appDomain.GetAssemblies()
-                        .FirstOrDefault(a => a.GetName() == assemblyName)
-                        ?? appDomain.Load(assemblyName);
-                    
-                    subtypes.AddRange(assembly.GetTypes()
-                        .Where(typeof(TBase).IsAssignableFrom)
-                        .Where(t => !t.IsInterface && !t.IsAbstract));
+                    assemblyNames.Add(assemblyName);
                 }
                 catch (Exception ex)
                 {
@@ -84,9 +120,23 @@ namespace Platibus.Config
                         Detail = $"Error loading assembly file {assemblyFile.FullName}",
                         Exception = ex
                     }.Build());
-                }
+                } 
             }
-            return subtypes;
+
+            return assemblyNames;
+        }
+
+        private class AssemblyNameEqualityComparer : IEqualityComparer<AssemblyName>
+        {
+            public bool Equals(AssemblyName x, AssemblyName y)
+            {
+                return Equals(x.Name, y.Name);
+            }
+
+            public int GetHashCode(AssemblyName obj)
+            {
+                return obj?.Name.GetHashCode() ?? 0;
+            }
         }
     }
 }
