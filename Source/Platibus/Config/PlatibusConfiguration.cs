@@ -128,7 +128,8 @@ namespace Platibus.Config
         public virtual void AddTopic(TopicName topic)
         {
             if (topic == null) throw new ArgumentNullException(nameof(topic));
-            if (_topics.Contains(topic)) throw new TopicAlreadyExistsException(topic);
+            // Support idempotent adds
+            if (_topics.Contains(topic)) return;
             _topics.Add(topic);
         }
 

@@ -26,26 +26,30 @@ using System.Security.Permissions;
 
 namespace Platibus.Config
 {
+    /// <inheritdoc />
     /// <summary>
     /// Exception thrown to indicate that the same topic name has been added
     /// more than once
     /// </summary>
     [Serializable]
+    [Obsolete]
     public class TopicAlreadyExistsException : ApplicationException
     {
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="TopicAlreadyExistsException"/> with
-        /// the specified <paramref name="topic"/>
+        /// Initializes a new <see cref="T:Platibus.Config.TopicAlreadyExistsException" /> with
+        /// the specified <paramref name="topic" />
         /// </summary>
         /// <param name="topic">The name of the topic that was added multiple
         /// time</param>
-        public TopicAlreadyExistsException(TopicName topic)
+        public TopicAlreadyExistsException(TopicName topic) : base(topic)
         {
             Topic = topic;
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a serialized <see cref="TopicAlreadyExistsException"/>
+        /// Initializes a serialized <see cref="T:Platibus.Config.TopicAlreadyExistsException" />
         /// from a streaming context
         /// </summary>
         /// <param name="info">The serialization info</param>
@@ -61,10 +65,11 @@ namespace Platibus.Config
         /// </summary>
         public TopicName Topic { get; }
 
+        /// <inheritdoc />
         /// <summary>
-        /// When overridden in a derived class, sets the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> with information about the exception.
+        /// When overridden in a derived class, sets the <see cref="T:System.Runtime.Serialization.SerializationInfo" /> with information about the exception.
         /// </summary>
-        /// <param name="info">The <see cref="T:System.Runtime.Serialization.SerializationInfo"/> that holds the serialized object data about the exception being thrown. </param><param name="context">The <see cref="T:System.Runtime.Serialization.StreamingContext"/> that contains contextual information about the source or destination. </param><exception cref="T:System.ArgumentNullException">The <paramref name="info"/> parameter is a null reference (Nothing in Visual Basic). </exception><filterpriority>2</filterpriority><PermissionSet><IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="*AllFiles*" PathDiscovery="*AllFiles*"/><IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="SerializationFormatter"/></PermissionSet>
+        /// <param name="info">The <see cref="T:System.Runtime.Serialization.SerializationInfo" /> that holds the serialized object data about the exception being thrown. </param><param name="context">The <see cref="T:System.Runtime.Serialization.StreamingContext" /> that contains contextual information about the source or destination. </param><exception cref="T:System.ArgumentNullException">The <paramref name="info" /> parameter is a null reference (Nothing in Visual Basic). </exception><filterpriority>2</filterpriority><PermissionSet><IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="*AllFiles*" PathDiscovery="*AllFiles*" /><IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="SerializationFormatter" /></PermissionSet>
         [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
