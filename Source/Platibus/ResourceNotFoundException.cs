@@ -25,22 +25,25 @@ using System.Runtime.Serialization;
 
 namespace Platibus
 {
+	/// <inheritdoc />
 	/// <summary>
 	/// Thrown to indicate that the requested resource could not be found
 	/// </summary>
 	[Serializable]
 	public class ResourceNotFoundException : InvalidRequestException
 	{
+		/// <inheritdoc />
 		/// <summary>
-		/// Initializes a new <see cref="InvalidRequestException"/>
+		/// Initializes a new <see cref="T:Platibus.InvalidRequestException" />
 		/// </summary>
 		public ResourceNotFoundException()
 		{
 		}
 
+		/// <inheritdoc />
 		/// <summary>
-		/// Initializes a new <see cref="InvalidRequestException"/> with the specified
-		/// detail <paramref name="message"/>
+		/// Initializes a new <see cref="T:Platibus.InvalidRequestException" /> with the specified
+		/// detail <paramref name="message" />
 		/// </summary>
 		/// <param name="message">The detail message</param>
 		public ResourceNotFoundException(string message)
@@ -48,9 +51,10 @@ namespace Platibus
 		{
 		}
 
+		/// <inheritdoc />
 		/// <summary>
-		/// Initializes a new <see cref="InvalidRequestException"/> with the specified
-		/// detail <paramref name="message"/> and nested <paramref name="innerException"/>
+		/// Initializes a new <see cref="T:Platibus.InvalidRequestException" /> with the specified
+		/// detail <paramref name="message" /> and nested <paramref name="innerException" />
 		/// </summary>
 		/// <param name="message">The detail message</param>
 		/// <param name="innerException">The nested exception</param>
@@ -59,8 +63,9 @@ namespace Platibus
 		{
 		}
 
+		/// <inheritdoc />
 		/// <summary>
-		/// Initializes a serialized <see cref="InvalidRequestException"/> from a streaming context
+		/// Initializes a serialized <see cref="T:Platibus.InvalidRequestException" /> from a streaming context
 		/// </summary>
 		/// <param name="info">The serialization info</param>
 		/// <param name="context">The streaming context</param>
