@@ -64,7 +64,7 @@ namespace Platibus.IIS
         }
 
         private readonly Task<IIISConfiguration> _configuration;
-        private readonly Task<IHttpResourceRouter> _resourceRouter;
+        private readonly Lazy<Task<IHttpResourceRouter>> _resourceRouter;
 
         /// <summary>
         /// The base URI for requests handled by this handler
@@ -113,8 +113,8 @@ namespace Platibus.IIS
         public PlatibusHttpHandler(Task<IIISConfiguration> configuration)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            var bus = InitBus(configuration);
-            _resourceRouter = InitResourceRouter(configuration, bus);
+            var bus = new Lazy<Task<Bus>>(() => InitBus(_configuration));
+            _resourceRouter = new Lazy<Task<IHttpResourceRouter>>(() => InitResourceRouter(configuration, bus.Value));
         }
 
         /// <inheritdoc />
@@ -133,7 +133,7 @@ namespace Platibus.IIS
             if (bus == null) throw new ArgumentNullException(nameof(bus));
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             _configuration = Task.FromResult(configuration);
-            _resourceRouter = Task.FromResult(InitResourceRouter(bus, configuration));
+            _resourceRouter = new Lazy<Task<IHttpResourceRouter>>(() => Task.FromResult(InitResourceRouter(bus, configuration)));
         }
 
         private static Task<IIISConfiguration> GetConfiguration(string sectionName = null)
@@ -196,7 +196,7 @@ namespace Platibus.IIS
 
         private async Task ProcessRequestAsync(HttpContextBase context)
         {
-            var resourceRouter = await _resourceRouter;
+            var resourceRouter = await _resourceRouter.Value;
             var configuration = await _configuration;
             var diagnosticService = configuration.DiagnosticService;
 

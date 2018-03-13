@@ -34,10 +34,9 @@ namespace Platibus.IIS
     public class PlatibusHttpModule : IHttpModule, IDisposable
     {
         private readonly Task<IIISConfiguration> _configuration;
-        private readonly Task<Bus> _bus;
-
+        private readonly Lazy<Task<Bus>> _bus;
         private bool _disposed;
-        
+
 		/// <inheritdoc />
 		/// <summary>
 		/// Initializes a new <see cref="T:Platibus.IIS.PlatibusHttpModule" /> with the default configuration
@@ -79,7 +78,7 @@ namespace Platibus.IIS
         {
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             _configuration = Configure(configuration);
-            _bus = InitBus(configuration);
+            _bus = new Lazy<Task<Bus>>(() => InitBus(_configuration));
         }
 
         private static async Task<IIISConfiguration> Configure(Task<IIISConfiguration> loadConfiguration)
@@ -114,7 +113,7 @@ namespace Platibus.IIS
         /// </summary>
         /// <param name="context">An <see cref="T:System.Web.HttpApplication" /> that provides access to the methods, properties, and events common to all application objects within an ASP.NET application </param>
         public void Init(HttpApplication context)
-		{
+        {
             var beginRequest = new EventHandlerTaskAsyncHelper(OnBeginRequest);
             context.AddOnBeginRequestAsync(beginRequest.BeginEventHandler, beginRequest.EndEventHandler);
             
@@ -126,7 +125,7 @@ namespace Platibus.IIS
         {
             var application = (HttpApplication)source;
             var context = application.Context;
-            var bus = await _bus;
+            var bus = await _bus.Value;
             context.SetBus(bus);
         }
         
@@ -140,7 +139,7 @@ namespace Platibus.IIS
             var baseUri = configuration.BaseUri;
             if (IsPlatibusUri(request.Url, baseUri))
             {
-                var bus = context.GetBus() as Bus ?? await _bus;
+                var bus = context.GetBus() as Bus ?? await _bus.Value;
                 context.Handler = new PlatibusHttpHandler(bus, configuration);
             }
 		}
