@@ -30,6 +30,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Diagnostics;
 using Platibus.Journaling;
+using Platibus.Utils;
 
 namespace Platibus.Http
 {

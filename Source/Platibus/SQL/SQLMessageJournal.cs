@@ -37,6 +37,7 @@ using Platibus.Config.Extensibility;
 using Platibus.Diagnostics;
 using Platibus.Journaling;
 using Platibus.SQL.Commands;
+using Platibus.Utils;
 
 namespace Platibus.SQL
 {

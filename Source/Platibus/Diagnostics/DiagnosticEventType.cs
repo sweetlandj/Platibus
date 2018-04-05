@@ -91,7 +91,7 @@ namespace Platibus.Diagnostics
         /// <summary>
         /// Emitted whenever a message cannot be delivered to its intended destination
         /// </summary>
-        public static readonly DiagnosticEventType MessageDeliveryFailed = new DiagnosticEventType("MessageDeliveryFailed", DiagnosticEventLevel.Trace);
+        public static readonly DiagnosticEventType MessageDeliveryFailed = new DiagnosticEventType("MessageDeliveryFailed", DiagnosticEventLevel.Warn);
 
         /// <summary>
         /// Emitted whenever a message is published to a topic

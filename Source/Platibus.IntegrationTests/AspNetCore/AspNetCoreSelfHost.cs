@@ -24,6 +24,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Platibus.AspNetCore;
+using Platibus.Utils;
 using System;
 using System.IO;
 using System.Threading;

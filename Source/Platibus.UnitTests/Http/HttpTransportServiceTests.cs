@@ -27,6 +27,7 @@ using Xunit;
 using Platibus.Config;
 using Platibus.Http;
 using Platibus.InMemory;
+using Platibus.Utils;
 
 namespace Platibus.UnitTests.Http
 {

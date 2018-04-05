@@ -24,27 +24,30 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Owin.BuilderProperties;
 using Owin;
+using Platibus.Http;
+using Platibus.Utils;
 
 namespace Platibus.Owin
 {
     public static class PlatibusAppBuilderExtensions
     {
-        public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, string sectionName = null)
+        public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, string sectionName)
         {
             if (app == null) throw new ArgumentNullException(nameof(app));
-            return app.UsePlatibusMiddleware(new PlatibusMiddleware(sectionName), true);
+            return app.UsePlatibusMiddlewareAsync(null, sectionName).GetResultUsingContinuation();
         }
 
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, IOwinConfiguration configuration)
         {
             if (app == null) throw new ArgumentNullException(nameof(app));
-            return app.UsePlatibusMiddleware(new PlatibusMiddleware(configuration), true);
+            return app.UsePlatibusMiddlewareAsync(configuration).GetResultUsingContinuation();
         }
 
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, Task<IOwinConfiguration> configuration)
         {
             if (app == null) throw new ArgumentNullException(nameof(app));
-            return app.UsePlatibusMiddleware(new PlatibusMiddleware(configuration), true);
+            var configurationResult = configuration.GetResultUsingContinuation();
+            return app.UsePlatibusMiddlewareAsync(configurationResult).GetResultUsingContinuation();
         }
 
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, PlatibusMiddleware middleware, bool disposeMiddleware = false)
@@ -57,6 +60,80 @@ namespace Platibus.Owin
                 var appProperties = new AppProperties(app.Properties);
                 appProperties.OnAppDisposing.Register(middleware.Dispose);
             }
+
+            return app.Use(middleware.Invoke);
+        }
+
+        public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app)
+        {
+            return app.UsePlatibusMiddlewareAsync(null, null).GetResultUsingContinuation();
+        }
+
+        public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, Action<OwinConfiguration> configure, string sectionName = null)
+        {
+            return app.UsePlatibusMiddlewareAsync(configuration =>
+            {
+                configure?.Invoke(configuration);
+                return Task.FromResult(0);
+            }).GetResultUsingContinuation();
+        }
+
+        public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, Func<OwinConfiguration, Task> configure, string sectionName = null)
+        {
+            return app.UsePlatibusMiddlewareAsync(configure, sectionName).GetResultUsingContinuation(); 
+        }
+
+        private static async Task<IAppBuilder> UsePlatibusMiddlewareAsync(this IAppBuilder app,
+            Func<OwinConfiguration, Task> configure, string sectionName = null)
+        {
+            var configuration = new OwinConfiguration();
+            var configurationManager = new OwinConfigurationManager();
+            await configurationManager.Initialize(configuration, sectionName);
+            await configurationManager.FindAndProcessConfigurationHooks(configuration);
+            if (configure != null)
+            {
+                await configure(configuration);
+            }
+
+            return await app.UsePlatibusMiddlewareAsync(configuration);
+        }
+
+        private static async Task<IAppBuilder> UsePlatibusMiddlewareAsync(this IAppBuilder app,
+            IOwinConfiguration configuration)
+        {
+            var appProperties = new AppProperties(app.Properties);
+
+            var baseUri = configuration.BaseUri;
+            var subscriptionTrackingService = configuration.SubscriptionTrackingService;
+            var messageQueueingService = configuration.MessageQueueingService;
+            
+            var transportServiceOptions = new HttpTransportServiceOptions(baseUri, messageQueueingService, subscriptionTrackingService)
+            {
+                DiagnosticService = configuration.DiagnosticService,
+                Endpoints = configuration.Endpoints,
+                MessageJournal = configuration.MessageJournal,
+                BypassTransportLocalDestination = configuration.BypassTransportLocalDestination
+            };
+
+            var transportService = new HttpTransportService(transportServiceOptions);
+            appProperties.OnAppDisposing.Register(transportService.Dispose);
+
+            var bus = new Bus(configuration, baseUri, transportService, messageQueueingService);
+            transportService.LocalDelivery += (sender, args) => bus.HandleMessage(args.Message, args.Principal);
+
+            await transportService.Init();
+            await bus.Init();
+
+            var middleware = new PlatibusMiddleware(configuration, bus);
+
+            appProperties.OnAppDisposing.Register(() =>
+            {
+                middleware.Dispose();
+                transportService.Dispose();
+                bus.Dispose();
+                (messageQueueingService as IDisposable)?.Dispose();
+                (subscriptionTrackingService as IDisposable)?.Dispose();
+            });
 
             return app.Use(middleware.Invoke);
         }

@@ -21,36 +21,42 @@
 // THE SOFTWARE.
 
 using System;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace Platibus
+namespace Platibus.Utils
 {
     /// <summary>
-    /// Extension methods for working with wait handles in an async context
+    /// Helper extension methods for working with URIs
     /// </summary>
-    public static class WaitHandleExtensions
+    public static class UriExtensions
     {
+		/// <summary>
+		/// Ensures that the path of the specified <paramref name="uri"/> contains a trailing slash
+		/// </summary>
+		/// <param name="uri">The URI</param>
+		/// <returns>Returns the specified URI with a trailing slash</returns>
+	    public static Uri WithTrailingSlash(this Uri uri)
+		{
+		    if (uri == null) return null;
+		    if (uri.AbsolutePath.EndsWith("/")) return uri;
+		    return new UriBuilder(uri)
+		    {
+			    Path = uri.AbsolutePath + "/"
+		    }.Uri;
+	    }
+
         /// <summary>
-        /// Returns a task that will complete when the specified 
-        /// <paramref name="waitHandle"/> is set or the specified 
-        /// <paramref name="timeout"/> is reached.
-        /// </summary>
-        /// <param name="waitHandle">The wait handle</param>
-        /// <param name="timeout">The maximum amount of time to wait
-        /// for the wait handle to be set</param>
-        /// <returns>
-        /// Returns a task whose result will be <c>true</c> if the wait 
-        /// handle is set or <c>false</c> if the wait times out
-        /// </returns>
-        public static Task<bool> WaitOneAsync(this WaitHandle waitHandle, TimeSpan timeout = default(TimeSpan))
+		/// Ensures that the path of the specified <paramref name="uri"/> contains a trailing slash
+		/// </summary>
+		/// <param name="uri">The URI</param>
+		/// <returns>Returns the specified URI with a trailing slash</returns>
+	    public static Uri WithoutTrailingSlash(this Uri uri)
         {
-            var tcs = new TaskCompletionSource<bool>(false);
-
-            ThreadPool.RegisterWaitForSingleObject(waitHandle, (o, timedOut) => { tcs.SetResult(!timedOut); }, null,
-                timeout, true);
-
-            return tcs.Task;
+            if (uri == null) return null;
+            if (!uri.AbsolutePath.EndsWith("/")) return uri;
+            return new UriBuilder(uri)
+            {
+                Path = uri.AbsolutePath.TrimEnd('/')
+            }.Uri;
         }
     }
 }

@@ -23,6 +23,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Web;
+using Platibus.Utils;
 
 namespace Platibus.IIS
 {
@@ -33,18 +34,18 @@ namespace Platibus.IIS
     /// </summary>
     public class PlatibusHttpModule : IHttpModule, IDisposable
     {
-        private readonly Task<IIISConfiguration> _configuration;
+        private readonly IIISConfiguration _configuration;
         private readonly Lazy<Task<Bus>> _bus;
         private bool _disposed;
 
-		/// <inheritdoc />
-		/// <summary>
-		/// Initializes a new <see cref="T:Platibus.IIS.PlatibusHttpModule" /> with the default configuration
-		/// using any configuration hooks present in the app domain assemblies
-		/// </summary>
-		public PlatibusHttpModule()
-            : this(LoadConfiguration())
-		{
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new <see cref="T:Platibus.IIS.PlatibusHttpModule" /> with the default configuration
+        /// using any configuration hooks present in the app domain assemblies
+        /// </summary>
+        public PlatibusHttpModule()
+            : this(LoadConfiguration(null))
+        {
         }
 
         /// <inheritdoc />
@@ -52,58 +53,95 @@ namespace Platibus.IIS
         /// Initializes a new <see cref="T:Platibus.IIS.PlatibusHttpModule" /> with the default configuration
         /// using any configuration hooks present in the app domain assemblies
         /// </summary>
-        /// <param name="configurationSectionName">(Optional) The name of the configuration
-        /// section from which the bus configuration should be loaded</param>
-        public PlatibusHttpModule(string configurationSectionName = null)
-            : this(LoadConfiguration(configurationSectionName))
+        public PlatibusHttpModule(string sectionName)
+            : this(LoadConfiguration(sectionName))
         {
         }
 
         /// <inheritdoc />
         /// <summary>
+        /// Initializes a new <see cref="T:Platibus.IIS.PlatibusHttpModule" /> with the default configuration
+        /// using any configuration hooks present in the app domain assemblies
+        /// </summary>
+        public PlatibusHttpModule(string sectionName, Action<IIISConfiguration> configure)
+            : this(LoadConfiguration(sectionName, configure))
+        {
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new <see cref="T:Platibus.IIS.PlatibusHttpModule" /> with the default configuration
+        /// using any configuration hooks present in the app domain assemblies
+        /// </summary>
+        public PlatibusHttpModule(string sectionName, Func<IIISConfiguration, Task> configure)
+            : this(LoadConfiguration(sectionName, configure))
+        {
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new <see cref="T:Platibus.IIS.PlatibusHttpModule" /> with the default configuration
+        /// using any configuration hooks present in the app domain assemblies
+        /// </summary>
+        public PlatibusHttpModule(Action<IIISConfiguration> configure)
+            : this(LoadConfiguration(null, configure))
+        {
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new <see cref="T:Platibus.IIS.PlatibusHttpModule" /> with the default configuration
+        /// using any configuration hooks present in the app domain assemblies
+        /// </summary>
+        public PlatibusHttpModule(Func<IIISConfiguration, Task> configure)
+            : this(LoadConfiguration(null, configure))
+        {
+        }
+        
+        /// <summary>
         /// Initializes a new <see cref="T:Platibus.IIS.PlatibusHttpModule" /> with the specified configuration
         /// and any configuration hooks present in the app domain assemblies
         /// </summary>
         public PlatibusHttpModule(IIISConfiguration configuration)
-            : this (Task.FromResult(configuration))
-		{
-		    if (configuration == null) throw new ArgumentNullException(nameof(configuration));
-		}
-
-        /// <summary>
-        /// Initializes a new <see cref="PlatibusHttpModule"/> with the specified configuration
-        /// and any configuration hooks present in the app domain assemblies
-        /// </summary>
-        public PlatibusHttpModule(Task<IIISConfiguration> configuration)
         {
-            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
-            _configuration = Configure(configuration);
-            _bus = new Lazy<Task<Bus>>(() => InitBus(_configuration));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _bus = new Lazy<Task<Bus>>(InitBusAsync);
         }
 
-        private static async Task<IIISConfiguration> Configure(Task<IIISConfiguration> loadConfiguration)
+        private static IIISConfiguration LoadConfiguration(string sectionName)
         {
-            var configuration = await loadConfiguration;
+            var configuration = LoadConfigurationAsync(sectionName).GetResultUsingContinuation();
+            return configuration;
+        }
+        
+        private static IIISConfiguration LoadConfiguration(string sectionName, Action<IIISConfiguration> configure)
+        {
+            var configuration = LoadConfigurationAsync(sectionName).GetResultUsingContinuation();
+            configure?.Invoke(configuration);
             return configuration;
         }
 
-        private static async Task<IIISConfiguration> LoadConfiguration(string sectionName = null)
+        private static IIISConfiguration LoadConfiguration(string sectionName, Func<IIISConfiguration, Task> configure)
+        {
+            return LoadConfigurationAsync(sectionName, configure).GetResultUsingContinuation();
+        }
+
+        private static async Task<IIISConfiguration> LoadConfigurationAsync(string sectionName = null, Func<IIISConfiguration, Task> configure = null)
         {
             var configuration = new IISConfiguration();
             var configManager = new IISConfigurationManager();
             await configManager.Initialize(configuration, sectionName);
             await configManager.FindAndProcessConfigurationHooks(configuration);
+            if (configure != null)
+            {
+                await configure(configuration);
+            }
             return configuration;
         }
         
-        private static async Task<Bus> InitBus(Task<IIISConfiguration> configuration)
+        private async Task<Bus> InitBusAsync()
         {
-            return await InitBus(await configuration);
-        }
-
-        private static async Task<Bus> InitBus(IIISConfiguration configuration)
-        {
-            var managedBus = await BusManager.SingletonInstance.GetManagedBus(configuration);
+            var managedBus = await BusManager.SingletonInstance.GetManagedBus(_configuration);
             return await managedBus.GetBus();
         }
 
@@ -134,13 +172,11 @@ namespace Platibus.IIS
             var application = (HttpApplication)source;
             var context = application.Context;
             var request = context.Request;
-
-            var configuration = await _configuration;
-            var baseUri = configuration.BaseUri;
+            var baseUri = _configuration.BaseUri;
             if (IsPlatibusUri(request.Url, baseUri))
             {
                 var bus = context.GetBus() as Bus ?? await _bus.Value;
-                context.Handler = new PlatibusHttpHandler(bus, configuration);
+                context.Handler = new PlatibusHttpHandler(bus, _configuration);
             }
 		}
 

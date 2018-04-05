@@ -29,6 +29,7 @@ using System.Threading.Tasks;
 using Platibus.Diagnostics;
 using Platibus.Journaling;
 using Platibus.Security;
+using Platibus.Utils;
 
 namespace Platibus.RabbitMQ
 {

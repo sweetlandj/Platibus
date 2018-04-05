@@ -24,10 +24,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Web.Hosting;
-using Platibus.Diagnostics;
 
 namespace Platibus.IIS
 {
+    /// <inheritdoc cref="IBusManager" />
+    /// <inheritdoc cref="IDisposable" />
+    /// <inheritdoc cref="IRegisteredObject" />
     /// <summary>
     /// Initializes an IIS-hosted bus instance
     /// </summary>
@@ -59,26 +61,10 @@ namespace Platibus.IIS
             Dispose(true);
         }
 
-        /// <summary>
-        /// Provides access to the IIS-hosted bus using the configuration loaded
-        /// from the configuration section with the specified <paramref name="sectionName"/>
-        /// </summary>
-        /// <param name="sectionName">The name of the configuration section</param>
-        /// <param name="diagnosticService">(Optional) A preconfigured diagnostic service through
-        /// which diagnostic events will be reported and processed</param>
-        /// <returns>Returns a task whose result is the bus instance</returns>
-        public async Task<IBus> GetBus(string sectionName = null, IDiagnosticService diagnosticService = null)
-        {
-            var configManager = new IISConfigurationManager();
-            var configuration = new IISConfiguration(diagnosticService);
-            await configManager.Initialize(configuration);
-            await configManager.FindAndProcessConfigurationHooks(configuration);
-            return await GetBus(configuration);
-        }
-
+        /// <inheritdoc />
         /// <summary>
         /// Provides access to the IIS-hosted bus with the specified 
-        /// <paramref name="configuration"/>.
+        /// <paramref name="configuration" />.
         /// </summary>
         /// <param name="configuration">The bus configuration</param>
         /// <returns>Returns a task whose result is the bus instance</returns>
@@ -121,10 +107,7 @@ namespace Platibus.IIS
                 }
             }
 
-            if (bus != null)
-            {
-                bus.Dispose();
-            }
+            bus?.Dispose();
         }
 
         /// <summary>
@@ -136,6 +119,7 @@ namespace Platibus.IIS
             Dispose(false);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>

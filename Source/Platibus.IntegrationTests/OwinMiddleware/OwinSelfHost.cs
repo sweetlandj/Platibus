@@ -24,26 +24,32 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Owin.Hosting;
+using Platibus.Http;
 using Platibus.Owin;
 
 namespace Platibus.IntegrationTests.OwinMiddleware
 {
     public class OwinSelfHost : IDisposable
     {
+        private HttpTransportService _transportService;
+        private IMessageQueueingService _messageQueueingService;
+        private ISubscriptionTrackingService _subscriptionTrackingService;
+        private PlatibusMiddleware _middleware;
+        private IDisposable _webapp;
+
         private bool _disposed;
 
-        public IDisposable WebApp { get; }
-        public PlatibusMiddleware Middleware { get; }
-        public IBus Bus { get; }
+        public IBus Bus { get; private set; }
 
-        private OwinSelfHost(IDisposable webApp, PlatibusMiddleware middleware, IBus bus)
+        public static async Task<OwinSelfHost> StartNewHost(string configSectionName)
         {
-            WebApp = webApp;
-            Middleware = middleware;
-            Bus = bus;
+            var owinSelfHost = new OwinSelfHost();
+            await owinSelfHost.Start(configSectionName);
+            return owinSelfHost;
         }
 
-        public static async Task<OwinSelfHost> Start(string configSectionName)
+        public async Task Start(string configSectionName)
         {
             var serverPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, configSectionName);
             var serverDirectory = new DirectoryInfo(serverPath);
@@ -53,12 +59,35 @@ namespace Platibus.IntegrationTests.OwinMiddleware
                 serverDirectory.Delete(true);
             }
 
-            var middleware = new PlatibusMiddleware(configSectionName);
-            var configuration = await middleware.Configuration;
+            var configuration = new OwinConfiguration();
+            var configurationManager = new OwinConfigurationManager();
+            await configurationManager.Initialize(configuration, configSectionName);
+            await configurationManager.FindAndProcessConfigurationHooks(configuration);
+
             var baseUri = configuration.BaseUri;
-            var webApp = Microsoft.Owin.Hosting.WebApp.Start(baseUri.ToString(), app => app.UsePlatibusMiddleware(middleware));
-            var bus = await middleware.Bus;
-            return new OwinSelfHost(webApp, middleware, bus);
+            _subscriptionTrackingService = configuration.SubscriptionTrackingService;
+            _messageQueueingService = configuration.MessageQueueingService;
+            
+            var transportServiceOptions = new HttpTransportServiceOptions(baseUri, _messageQueueingService, _subscriptionTrackingService)
+            {
+                DiagnosticService = configuration.DiagnosticService,
+                Endpoints = configuration.Endpoints,
+                MessageJournal = configuration.MessageJournal,
+                BypassTransportLocalDestination = configuration.BypassTransportLocalDestination
+            };
+
+            _transportService = new HttpTransportService(transportServiceOptions);
+
+            var bus = new Bus(configuration, baseUri, _transportService, _messageQueueingService);
+            _transportService.LocalDelivery += (sender, args) => bus.HandleMessage(args.Message, args.Principal);
+
+            await _transportService.Init();
+            await bus.Init();
+
+            Bus = bus;
+
+            _middleware = new PlatibusMiddleware(configuration, bus);
+            _webapp = WebApp.Start(baseUri.ToString(), app => app.UsePlatibusMiddleware(_middleware));
         }
 
         public void Dispose()
@@ -72,13 +101,13 @@ namespace Platibus.IntegrationTests.OwinMiddleware
         protected virtual void Dispose(bool disposing)
         {
             if (!disposing) return;
-            
-            WebApp.Dispose();
-            Middleware.Dispose();
-            if (Bus is IDisposable disposableBus)
-            {
-                disposableBus.Dispose();
-            }
+
+            _webapp?.Dispose();
+            _middleware?.Dispose();
+            _transportService?.Dispose();
+            (_messageQueueingService as IDisposable)?.Dispose();
+            (_subscriptionTrackingService as IDisposable)?.Dispose();
+            (Bus as IDisposable)?.Dispose();
         }
     }
 }

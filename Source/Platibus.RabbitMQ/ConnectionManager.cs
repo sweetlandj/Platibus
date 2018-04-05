@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Concurrent;
 using Platibus.Diagnostics;
+using Platibus.Utils;
 using RabbitMQ.Client;
 
 namespace Platibus.RabbitMQ

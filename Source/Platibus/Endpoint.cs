@@ -22,6 +22,7 @@
 
 using System;
 using System.Diagnostics;
+using Platibus.Utils;
 
 namespace Platibus
 {

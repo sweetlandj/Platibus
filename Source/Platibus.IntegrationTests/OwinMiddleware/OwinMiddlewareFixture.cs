@@ -45,8 +45,8 @@ namespace Platibus.IntegrationTests.OwinMiddleware
 
         public OwinMiddlewareFixture()
         {
-            _sendingHost = OwinSelfHost.Start("platibus.owin0");
-            _receivingHost = OwinSelfHost.Start("platibus.owin1");
+            _sendingHost = OwinSelfHost.StartNewHost("platibus.owin0");
+            _receivingHost = OwinSelfHost.StartNewHost("platibus.owin1");
         }
 
         public void Dispose()

@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using Platibus.Diagnostics;
+using Platibus.Utils;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
