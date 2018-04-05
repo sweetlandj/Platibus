@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -235,6 +236,9 @@ namespace Platibus.Http
             Uri postUri = null;
             int? status = null;
             var delivered = false;
+            var sw = Stopwatch.StartNew();
+            var httpClientTimeout = TimeSpan.Zero;
+            var requestInitiated = false;
             HttpResponseMessage httpResponseMessage = null;
             try
             {
@@ -272,6 +276,8 @@ namespace Platibus.Http
                 WriteHttpContentHeaders(message, httpContent);
                 
                 httpClient = await _httpClientFactory.GetClient(endpointBaseUri, credentials, cancellationToken);
+                httpClientTimeout = httpClient.Timeout;
+                requestInitiated = true;
                 httpResponseMessage = await httpClient.PostAsync(relativeUri, httpContent, cancellationToken);
                 status = (int)httpResponseMessage.StatusCode;
 
@@ -318,6 +324,37 @@ namespace Platibus.Http
             }
             catch (OperationCanceledException)
             {
+                sw.Stop();
+                var elapsed = sw.Elapsed;
+                var cancellationRequested = cancellationToken.IsCancellationRequested;
+                var timeoutKnown = httpClientTimeout > TimeSpan.Zero;
+                var timeoutExceeded = requestInitiated && timeoutKnown && elapsed > httpClientTimeout;
+                var probableTimeout = !cancellationRequested || timeoutExceeded;
+
+                var detail = $"HTTP transport operation was canceled after {elapsed.TotalSeconds} second(s).  " +
+                             $"Cancellation {(cancellationToken.IsCancellationRequested ? "was" : "was not")} requested by the caller.  ";
+
+                if (timeoutKnown)
+                {
+                    detail += $"The HTTP client timeout is set to {httpClientTimeout.TotalSeconds} second(s).  ";
+                }
+
+                if (probableTimeout)
+                {
+                    detail += "Cancelation was likely due to a timeout on the HTTP client.  " +
+                              "This may be caused by setting Synchronous to 'true' when sending a message.";
+                }
+               
+                _diagnosticService.Emit(
+                    new HttpEventBuilder(this, HttpEventType.HttpCommunicationError)
+                    {
+                        Detail = detail,
+                        Message = message,
+                        Method = HttpMethod.Post.ToString(),
+                        Uri = postUri,
+                        Status = status
+                    }.Build());
+
                 throw;
             }
             catch (Exception ex)
@@ -339,6 +376,7 @@ namespace Platibus.Http
             }
             finally
             {
+                sw.Stop();
                 var eventType = delivered
                     ? DiagnosticEventType.MessageDelivered
                     : DiagnosticEventType.MessageDeliveryFailed;
