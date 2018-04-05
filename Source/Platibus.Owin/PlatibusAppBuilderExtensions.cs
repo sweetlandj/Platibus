@@ -34,7 +34,7 @@ namespace Platibus.Owin
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, string sectionName)
         {
             if (app == null) throw new ArgumentNullException(nameof(app));
-            return app.UsePlatibusMiddlewareAsync(null, sectionName).GetResultUsingContinuation();
+            return app.UsePlatibusMiddlewareAsync(sectionName, null).GetResultUsingContinuation();
         }
 
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, IOwinConfiguration configuration)
@@ -69,22 +69,37 @@ namespace Platibus.Owin
             return app.UsePlatibusMiddlewareAsync(null, null).GetResultUsingContinuation();
         }
 
-        public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, Action<OwinConfiguration> configure, string sectionName = null)
+        public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, Action<OwinConfiguration> configure)
         {
-            return app.UsePlatibusMiddlewareAsync(configuration =>
+            return app.UsePlatibusMiddlewareAsync(null, configuration =>
             {
                 configure?.Invoke(configuration);
                 return Task.FromResult(0);
             }).GetResultUsingContinuation();
         }
-
-        public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, Func<OwinConfiguration, Task> configure, string sectionName = null)
+        
+        public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, Func<OwinConfiguration, Task> configure)
         {
-            return app.UsePlatibusMiddlewareAsync(configure, sectionName).GetResultUsingContinuation(); 
+            return app.UsePlatibusMiddlewareAsync(null, configure).GetResultUsingContinuation(); 
+        }
+
+        public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, string sectionName, Action<OwinConfiguration> configure)
+        {
+            return app.UsePlatibusMiddlewareAsync(sectionName, cfg =>
+            {
+                configure?.Invoke(cfg);
+                return Task.FromResult(0);
+            }).GetResultUsingContinuation();
+        }
+
+        public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, string sectionName, Func<OwinConfiguration, Task> configure)
+        {
+            return app.UsePlatibusMiddlewareAsync(sectionName, configure).GetResultUsingContinuation();
         }
 
         private static async Task<IAppBuilder> UsePlatibusMiddlewareAsync(this IAppBuilder app,
-            Func<OwinConfiguration, Task> configure, string sectionName = null)
+            string sectionName,
+            Func<OwinConfiguration, Task> configure)
         {
             var configuration = new OwinConfiguration();
             var configurationManager = new OwinConfigurationManager();
