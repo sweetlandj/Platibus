@@ -1,0 +1,43 @@
+﻿@model IEnumerable<Platibus.Diagnostics.DiagnosticEvent>
+@{
+    ViewBag.Title = "Platibus Sample Web App - Logs";
+}
+
+<h4>Logs</h4>
+
+<hr />
+
+<table class="table table-condensed table-striped">
+    <thead>
+        <tr>
+            <th>Timestamp</th>
+            <th>Type</th>
+            <th>Level</th>
+            <th>Detail</th>
+            <th>Message</th>
+            <th>Endpoint</th>
+            <th>Queue</th>
+            <th>Topic</th>
+            <th>Exception</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var e in Model)
+    {
+        <tr>
+            <td>@e.Timestamp.ToString("o")</td>
+            <td>@e.Type.Name</td>
+            <td>@e.Type.Level.ToString("G")</td>
+            <td>@e.Detail</td>
+            <td>@if (e.Message != null)
+                {
+                    @(e.Message.Headers.MessageId) @:/ @(e.Message.Headers.MessageName)
+                }</td>
+            <td>@e.Endpoint</td>
+            <td>@e.Queue</td>
+            <td>@e.Topic</td>
+            <td style="white-space: pre">@(e.Exception?.ToString() ?? "")</td>
+        </tr>
+    }
+    </tbody>
+</table>

@@ -69,15 +69,15 @@ namespace Platibus.Config.Extensibility
                 return null;
             }
 
-            var messageJournal = await provider.CreateSecurityTokenService(myConfig);
+            var securityTokenService = await provider.CreateSecurityTokenService(myConfig);
 
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                 {
-                    Detail = "Message journal initialized"
+                    Detail = $"Security token service {securityTokenService?.GetType().FullName} initialized"
                 }.Build());
 
-            return messageJournal;
+            return securityTokenService;
         }
 #endif
 #if NETSTANDARD2_0 || NET461
@@ -101,15 +101,15 @@ namespace Platibus.Config.Extensibility
                 return null;
             }
 
-            var messageJournal = await provider.CreateSecurityTokenService(configuration);
+            var securityTokenService = await provider.CreateSecurityTokenService(configuration);
 
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                 {
-                    Detail = "Message journal initialized"
+                    Detail = $"Security token service {securityTokenService?.GetType().FullName} initialized"
                 }.Build());
 
-            return messageJournal;
+            return securityTokenService;
         }
 #endif
 

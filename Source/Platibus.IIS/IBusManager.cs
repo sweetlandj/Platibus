@@ -20,7 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Threading.Tasks;
 
 namespace Platibus.IIS
 {
@@ -33,6 +32,6 @@ namespace Platibus.IIS
         /// Returns a bus instance with the specified <paramref name="configuration"/>
         /// </summary>
         /// <returns>Returns a task whose result is the bus instance</returns>
-        Task<IBus> GetBus(IIISConfiguration configuration);
+        IBus GetBus(IIISConfiguration configuration);
     }
 }

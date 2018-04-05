@@ -72,6 +72,9 @@ namespace Platibus.Config.Extensibility
 
             var provider = GetProvider(myConfig.Provider);
             var messageJournal = await provider.CreateMessageJournal(myConfig);
+            if (messageJournal == null) return null;
+
+            var messageJournalType = messageJournal.GetType().FullName;
 
             var categories = new List<MessageJournalCategory>();
             if (myConfig.JournalSentMessages) categories.Add(MessageJournalCategory.Sent);
@@ -84,7 +87,7 @@ namespace Platibus.Config.Extensibility
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                 {
-                    Detail = "Message journal initialized"
+                    Detail = $"Message journal {messageJournalType} initialized"
                 }.Build());
 
             return new SanitizedMessageJournal(messageJournal);
@@ -114,6 +117,8 @@ namespace Platibus.Config.Extensibility
             var messageJournal = await provider.CreateMessageJournal(configuration);
             if (messageJournal == null) return null;
 
+            var messageJournalType = messageJournal.GetType().FullName;
+
             var categories = new List<MessageJournalCategory>();
             var journalSentMessages = configuration?.GetValue("sent", true) ?? false;
             if (journalSentMessages) categories.Add(MessageJournalCategory.Sent);
@@ -130,7 +135,7 @@ namespace Platibus.Config.Extensibility
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                 {
-                    Detail = "Message journal initialized"
+                    Detail = $"Message journal {messageJournalType} initialized"
                 }.Build());
 
             return new SanitizedMessageJournal(messageJournal);

@@ -20,41 +20,33 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Platibus.Http;
 using Platibus.Journaling;
+using Platibus.Utils;
+using System;
+using System.Threading.Tasks;
 
 namespace Platibus.IIS
 {
+    /// <inheritdoc />
     /// <summary>
     /// Encapsulates the IIS hosted bus and its dependencies for coordinated
     /// intialization and disposal.
     /// </summary>
     public class ManagedBus : IDisposable
     {
-        private readonly Task _initialization;
-
-        private readonly IIISConfiguration _configuration;
-        private readonly Uri _baseUri;
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
         private readonly IMessageQueueingService _messageQueueingService;
         private readonly IMessageJournal _messageJournal;
         private readonly HttpTransportService _transportService;
 
-        private Bus _bus;
         private bool _disposed;
 
         /// <summary>
         /// Returns the managed bus instance
         /// </summary>
         /// <returns>Returns the managed bus instance</returns>
-        public async Task<Bus> GetBus()
-        {
-            await _initialization;
-            return _bus;
-        }
+        public Bus Bus { get; }
 
         /// <summary>
         /// Initializes a new <see cref="ManagedBus"/> with the specified <paramref name="configuration"/>
@@ -63,30 +55,32 @@ namespace Platibus.IIS
         /// and its related components</param>
         public ManagedBus(IIISConfiguration configuration)
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _baseUri = _configuration.BaseUri;
-            _subscriptionTrackingService = _configuration.SubscriptionTrackingService;
-            _messageQueueingService = _configuration.MessageQueueingService;
-            _messageJournal = _configuration.MessageJournal;
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+            var baseUri = configuration.BaseUri;
+            _subscriptionTrackingService = configuration.SubscriptionTrackingService;
+            _messageQueueingService = configuration.MessageQueueingService;
+            _messageJournal = configuration.MessageJournal;
             
-            var transportServiceOptions = new HttpTransportServiceOptions(_baseUri, _messageQueueingService, _subscriptionTrackingService)
+            var transportServiceOptions = new HttpTransportServiceOptions(baseUri, _messageQueueingService, _subscriptionTrackingService)
             {
                 DiagnosticService = configuration.DiagnosticService,
                 Endpoints = configuration.Endpoints,
                 MessageJournal = configuration.MessageJournal,
                 BypassTransportLocalDestination = configuration.BypassTransportLocalDestination
             };
+
             _transportService = new HttpTransportService(transportServiceOptions);
 
-            _initialization = Init();
+            Bus = InitBus(configuration, _transportService, _messageQueueingService).GetResultUsingContinuation();
         }
 
-        private async Task Init(CancellationToken cancellationToken = default(CancellationToken))
+        private static async Task<Bus> InitBus(IIISConfiguration cfg, HttpTransportService ts, IMessageQueueingService mqs)
         {
-            _bus = new Bus(_configuration, _baseUri, _transportService, _messageQueueingService);
-            _transportService.LocalDelivery += (sender, args) => _bus.HandleMessage(args.Message, args.Principal);
-            await _transportService.Init(cancellationToken);
-            await _bus.Init(cancellationToken);
+            var bus = new Bus(cfg, cfg.BaseUri, ts, mqs);
+            ts.LocalDelivery += (sender, args) => bus.HandleMessage(args.Message, args.Principal);
+            await ts.Init();
+            await bus.Init();
+            return bus;
         }
 
         /// <summary>
@@ -122,7 +116,7 @@ namespace Platibus.IIS
         {
             if (!disposing) return;
 
-            _bus.Dispose();
+            Bus.Dispose();
             _transportService.Dispose();
             if (_messageQueueingService is IDisposable disposableMessageQueueingService)
             {

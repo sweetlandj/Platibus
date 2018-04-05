@@ -66,15 +66,15 @@ namespace Platibus.Config.Extensibility
                     Detail = "Initializing subscription tracking service"
                 }.Build());
 
-            var messageQueueingService = await provider.CreateSubscriptionTrackingService(myConfig);
+            var subscriptionTrackingService = await provider.CreateSubscriptionTrackingService(myConfig);
 
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                 {
-                    Detail = "Subscription tracking service initialized"
+                    Detail = $"Message queueing service {subscriptionTrackingService.GetType().FullName} initialized"
                 }.Build());
 
-            return messageQueueingService;
+            return subscriptionTrackingService;
         }
 #endif
 #if NETSTANDARD2_0 || NET461
@@ -95,15 +95,15 @@ namespace Platibus.Config.Extensibility
                     Detail = "Initializing subscription tracking service"
                 }.Build());
 
-            var messageQueueingService = await provider.CreateSubscriptionTrackingService(configuration);
+            var subscriptionTrackingService = await provider.CreateSubscriptionTrackingService(configuration);
 
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                 {
-                    Detail = "Subscription tracking service initialized"
+                    Detail = $"Message queueing service {subscriptionTrackingService.GetType().FullName} initialized"
                 }.Build());
 
-            return messageQueueingService;
+            return subscriptionTrackingService;
         }
 #endif
 

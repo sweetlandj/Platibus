@@ -23,7 +23,6 @@
 using System;
 using System.Threading.Tasks;
 using System.Web;
-using Platibus.Utils;
 
 namespace Platibus.IIS
 {
@@ -35,8 +34,10 @@ namespace Platibus.IIS
     public class PlatibusHttpModule : IHttpModule, IDisposable
     {
         private readonly IIISConfiguration _configuration;
-        private readonly Lazy<Task<Bus>> _bus;
+        private readonly IBus _bus;
         private bool _disposed;
+
+        public IBus Bus => _bus;
 
         /// <inheritdoc />
         /// <summary>
@@ -44,7 +45,7 @@ namespace Platibus.IIS
         /// using any configuration hooks present in the app domain assemblies
         /// </summary>
         public PlatibusHttpModule()
-            : this(LoadConfiguration(null))
+            : this(IISConfigurationCache.SingletonInstance.GetConfiguration(null))
         {
         }
 
@@ -54,7 +55,7 @@ namespace Platibus.IIS
         /// using any configuration hooks present in the app domain assemblies
         /// </summary>
         public PlatibusHttpModule(string sectionName)
-            : this(LoadConfiguration(sectionName))
+            : this(IISConfigurationCache.SingletonInstance.GetConfiguration(sectionName))
         {
         }
 
@@ -64,7 +65,7 @@ namespace Platibus.IIS
         /// using any configuration hooks present in the app domain assemblies
         /// </summary>
         public PlatibusHttpModule(string sectionName, Action<IIISConfiguration> configure)
-            : this(LoadConfiguration(sectionName, configure))
+            : this(IISConfigurationCache.SingletonInstance.GetConfiguration(sectionName, configure))
         {
         }
 
@@ -74,7 +75,7 @@ namespace Platibus.IIS
         /// using any configuration hooks present in the app domain assemblies
         /// </summary>
         public PlatibusHttpModule(string sectionName, Func<IIISConfiguration, Task> configure)
-            : this(LoadConfiguration(sectionName, configure))
+            : this(IISConfigurationCache.SingletonInstance.GetConfiguration(sectionName, configure))
         {
         }
 
@@ -84,7 +85,7 @@ namespace Platibus.IIS
         /// using any configuration hooks present in the app domain assemblies
         /// </summary>
         public PlatibusHttpModule(Action<IIISConfiguration> configure)
-            : this(LoadConfiguration(null, configure))
+            : this(IISConfigurationCache.SingletonInstance.GetConfiguration(null, configure))
         {
         }
 
@@ -94,7 +95,7 @@ namespace Platibus.IIS
         /// using any configuration hooks present in the app domain assemblies
         /// </summary>
         public PlatibusHttpModule(Func<IIISConfiguration, Task> configure)
-            : this(LoadConfiguration(null, configure))
+            : this(IISConfigurationCache.SingletonInstance.GetConfiguration(null, configure))
         {
         }
         
@@ -105,46 +106,9 @@ namespace Platibus.IIS
         public PlatibusHttpModule(IIISConfiguration configuration)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _bus = new Lazy<Task<Bus>>(InitBusAsync);
-        }
-
-        private static IIISConfiguration LoadConfiguration(string sectionName)
-        {
-            var configuration = LoadConfigurationAsync(sectionName).GetResultUsingContinuation();
-            return configuration;
+            _bus = BusManager.SingletonInstance.GetBus(configuration);
         }
         
-        private static IIISConfiguration LoadConfiguration(string sectionName, Action<IIISConfiguration> configure)
-        {
-            var configuration = LoadConfigurationAsync(sectionName).GetResultUsingContinuation();
-            configure?.Invoke(configuration);
-            return configuration;
-        }
-
-        private static IIISConfiguration LoadConfiguration(string sectionName, Func<IIISConfiguration, Task> configure)
-        {
-            return LoadConfigurationAsync(sectionName, configure).GetResultUsingContinuation();
-        }
-
-        private static async Task<IIISConfiguration> LoadConfigurationAsync(string sectionName = null, Func<IIISConfiguration, Task> configure = null)
-        {
-            var configuration = new IISConfiguration();
-            var configManager = new IISConfigurationManager();
-            await configManager.Initialize(configuration, sectionName);
-            await configManager.FindAndProcessConfigurationHooks(configuration);
-            if (configure != null)
-            {
-                await configure(configuration);
-            }
-            return configuration;
-        }
-        
-        private async Task<Bus> InitBusAsync()
-        {
-            var managedBus = await BusManager.SingletonInstance.GetManagedBus(_configuration);
-            return await managedBus.GetBus();
-        }
-
         /// <inheritdoc />
         /// <summary>
         /// Initializes a module and prepares it to handle requests.
@@ -152,22 +116,18 @@ namespace Platibus.IIS
         /// <param name="context">An <see cref="T:System.Web.HttpApplication" /> that provides access to the methods, properties, and events common to all application objects within an ASP.NET application </param>
         public void Init(HttpApplication context)
         {
-            var beginRequest = new EventHandlerTaskAsyncHelper(OnBeginRequest);
-            context.AddOnBeginRequestAsync(beginRequest.BeginEventHandler, beginRequest.EndEventHandler);
-            
-            var postMapRequestHandler = new EventHandlerTaskAsyncHelper(OnPostMapRequestHandler);
-            context.AddOnPostMapRequestHandlerAsync(postMapRequestHandler.BeginEventHandler, postMapRequestHandler.EndEventHandler);
+            context.BeginRequest += OnBeginRequest;
+            context.PostMapRequestHandler += OnPostMapRequestHandler;
         }
 
-        private async Task OnBeginRequest(object source, EventArgs args)
+        private void OnBeginRequest(object source, EventArgs args)
         {
             var application = (HttpApplication)source;
             var context = application.Context;
-            var bus = await _bus.Value;
-            context.SetBus(bus);
+            context.SetBus(_bus);
         }
         
-        private async Task OnPostMapRequestHandler(object source, EventArgs args)
+        private void OnPostMapRequestHandler(object source, EventArgs args)
 		{
             var application = (HttpApplication)source;
             var context = application.Context;
@@ -175,7 +135,7 @@ namespace Platibus.IIS
             var baseUri = _configuration.BaseUri;
             if (IsPlatibusUri(request.Url, baseUri))
             {
-                var bus = context.GetBus() as Bus ?? await _bus.Value;
+                var bus = context.GetBus() as Bus ?? _bus;
                 context.Handler = new PlatibusHttpHandler(bus, _configuration);
             }
 		}

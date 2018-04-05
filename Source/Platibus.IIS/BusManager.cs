@@ -22,7 +22,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Web.Hosting;
 
 namespace Platibus.IIS
@@ -62,35 +61,29 @@ namespace Platibus.IIS
         }
 
         /// <inheritdoc />
-        /// <summary>
-        /// Provides access to the IIS-hosted bus with the specified 
-        /// <paramref name="configuration" />.
-        /// </summary>
-        /// <param name="configuration">The bus configuration</param>
-        /// <returns>Returns a task whose result is the bus instance</returns>
-        public async Task<IBus> GetBus(IIISConfiguration configuration)
+        public IBus GetBus(IIISConfiguration configuration)
         {
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
-            var managedBus = await GetManagedBus(configuration);
-            return await managedBus.GetBus();
+            var managedBus = GetManagedBus(configuration);
+            return managedBus.Bus;
         }
 
-        internal async Task<ManagedBus> GetManagedBus(IIISConfiguration configuration)
+        internal ManagedBus GetManagedBus(IIISConfiguration configuration)
         {
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
 
             var uri = configuration.BaseUri;
-            ManagedBus bus;
+            ManagedBus managedBus;
             lock (_syncRoot)
             {
-                if (_busInstances.TryGetValue(uri, out bus))
+                if (_busInstances.TryGetValue(uri, out managedBus))
                 {
-                    return bus;
+                    return managedBus;
                 }
-                bus = new ManagedBus(configuration);
-                _busInstances[configuration.BaseUri] = bus;
+                managedBus = new ManagedBus(configuration);
+                _busInstances[configuration.BaseUri] = managedBus;
             }
-            return await Task.FromResult(bus);
+            return managedBus;
         }
 
         internal void DisposeManagedBus(IIISConfiguration configuration)

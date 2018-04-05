@@ -21,12 +21,12 @@
 // THE SOFTWARE.
 
 using System;
-using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using System.Web;
 using Platibus.Diagnostics;
 using Platibus.Http;
 using Platibus.Http.Controllers;
+using Platibus.Utils;
 
 namespace Platibus.IIS
 {
@@ -47,29 +47,21 @@ namespace Platibus.IIS
         /// </remarks>
         private static readonly HttpMetricsCollector SingletonMetricsCollector = new HttpMetricsCollector();
 
-        /// <summary>
-        /// Configuration cache
-        /// </summary>
-        /// <remarks>
-        /// An HTTP handler is created for each request and possibly pooled depending on the value
-        /// returned by <see cref="IsReusable"/>.  Because of this it is possible for several
-        /// HTTP handlers to exist at the same time.  In order to avoid re-initializing the HTTP
-        /// handler for each new request, the configuration tasks will be cached by section name.
-        /// </remarks>
-        private static readonly ConcurrentDictionary<string, Task<IIISConfiguration>> ConfigurationCache = new ConcurrentDictionary<string, Task<IIISConfiguration>>();
-
+        
         static PlatibusHttpHandler()
         {
             DiagnosticService.DefaultInstance.AddSink(SingletonMetricsCollector);
         }
 
-        private readonly Task<IIISConfiguration> _configuration;
-        private readonly Lazy<Task<IHttpResourceRouter>> _resourceRouter;
+        private readonly IIISConfiguration _configuration;
+        private readonly IHttpResourceRouter _resourceRouter;
+
+        public IBus Bus { get; }
 
         /// <summary>
         /// The base URI for requests handled by this handler
         /// </summary>
-        public Uri BaseUri { get; private set; }
+        public Uri BaseUri { get; }
 
         /// <inheritdoc />
         /// <summary>
@@ -86,7 +78,27 @@ namespace Platibus.IIS
         /// configuration and configuration hooks
         /// </summary>
         public PlatibusHttpHandler()
-            : this(GetConfiguration())
+            : this(IISConfigurationCache.SingletonInstance.GetConfiguration(null))
+        {
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Inititializes a new <see cref="T:Platibus.IIS.PlatibusHttpHandler" /> with the default
+        /// configuration and configuration hooks
+        /// </summary>
+        public PlatibusHttpHandler(string configSectionName, Action<IISConfiguration> configure)
+            : this(IISConfigurationCache.SingletonInstance.GetConfiguration(configSectionName, configure))
+        {
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Inititializes a new <see cref="T:Platibus.IIS.PlatibusHttpHandler" /> with the default
+        /// configuration and configuration hooks
+        /// </summary>
+        public PlatibusHttpHandler(string configSectionName, Func<IISConfiguration, Task> configure)
+            : this(IISConfigurationCache.SingletonInstance.GetConfiguration(configSectionName, configure))
         {
         }
 
@@ -99,7 +111,7 @@ namespace Platibus.IIS
         /// <param name="configurationSectionName">The name of the configuration
         /// section from which the bus configuration should be loaded</param>
         public PlatibusHttpHandler(string configurationSectionName = null)
-            : this(GetConfiguration(configurationSectionName))
+            : this(IISConfigurationCache.SingletonInstance.GetConfiguration(configurationSectionName))
         {
         }
 
@@ -111,10 +123,26 @@ namespace Platibus.IIS
         /// <param name="configuration">A task whose result is the configuration to use for this
         /// handler</param>
         public PlatibusHttpHandler(Task<IIISConfiguration> configuration)
+            : this(configuration?.GetResultUsingContinuation())
+        {
+            _configuration = configuration?.GetResultUsingContinuation() ?? throw new ArgumentNullException(nameof(configuration));
+            Bus = BusManager.SingletonInstance.GetBus(_configuration);
+            _resourceRouter = InitResourceRouter(Bus, _configuration);
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new <see cref="T:Platibus.IIS.PlatibusHttpHandler" /> with the configuration that will
+        /// eventually be returned by the supplied <paramref name="configuration" /> task.
+        /// </summary>
+        /// <param name="configuration">A task whose result is the configuration to use for this
+        /// handler</param>
+        public PlatibusHttpHandler(IIISConfiguration configuration)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            var bus = new Lazy<Task<Bus>>(() => InitBus(_configuration));
-            _resourceRouter = new Lazy<Task<IHttpResourceRouter>>(() => InitResourceRouter(configuration, bus.Value));
+            Bus = BusManager.SingletonInstance.GetBus(_configuration);
+            BaseUri = _configuration.BaseUri;
+            _resourceRouter = InitResourceRouter(Bus, _configuration);
         }
 
         /// <inheritdoc />
@@ -128,47 +156,17 @@ namespace Platibus.IIS
         /// Used internally by <see cref="T:Platibus.IIS.PlatibusHttpModule" />.  This method bypasses the
         /// configuration cache and singleton diagnostic service and metrics collector. 
         /// </remarks>
-        internal PlatibusHttpHandler(Bus bus, IIISConfiguration configuration)
+        internal PlatibusHttpHandler(IBus bus, IIISConfiguration configuration)
         {
-            if (bus == null) throw new ArgumentNullException(nameof(bus));
-            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
-            _configuration = Task.FromResult(configuration);
-            _resourceRouter = new Lazy<Task<IHttpResourceRouter>>(() => Task.FromResult(InitResourceRouter(bus, configuration)));
-        }
-
-        private static Task<IIISConfiguration> GetConfiguration(string sectionName = null)
-        {
-            var cacheKey = sectionName ?? "";
-            return ConfigurationCache.GetOrAdd(cacheKey, LoadConfiguration);
-        }
-
-        private static async Task<IIISConfiguration> LoadConfiguration(string sectionName = null)
-        {
-            var configuration = new IISConfiguration();
-            var configManager = new IISConfigurationManager();
-            await configManager.Initialize(configuration, sectionName);
-            await configManager.FindAndProcessConfigurationHooks(configuration);
-            return configuration;
-        }
-
-        private async Task<Bus> InitBus(Task<IIISConfiguration> configurationTask)
-        {
-            return await InitBus(await configurationTask);
-        }
-
-        private async Task<Bus> InitBus(IIISConfiguration configuration)
-        {
+            Bus = bus ?? throw new ArgumentNullException(nameof(bus));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             BaseUri = configuration.BaseUri;
-            var managedBus = await BusManager.SingletonInstance.GetManagedBus(configuration);
-            return await managedBus.GetBus();
+           _resourceRouter = InitResourceRouter(bus, configuration);
         }
 
-        private static async Task<IHttpResourceRouter> InitResourceRouter(Task<IIISConfiguration> configuration, Task<Bus> bus)
-        {
-            return InitResourceRouter(await bus, await configuration);
-        }
+        
 
-        private static IHttpResourceRouter InitResourceRouter(Bus bus, IIISConfiguration configuration)
+        private static IHttpResourceRouter InitResourceRouter(IBus bus, IIISConfiguration configuration)
         {
             var authorizationService = configuration.AuthorizationService;
             var subscriptionTrackingService = configuration.SubscriptionTrackingService;
@@ -196,9 +194,7 @@ namespace Platibus.IIS
 
         private async Task ProcessRequestAsync(HttpContextBase context)
         {
-            var resourceRouter = await _resourceRouter.Value;
-            var configuration = await _configuration;
-            var diagnosticService = configuration.DiagnosticService;
+            var diagnosticService = _configuration.DiagnosticService;
 
             await diagnosticService.EmitAsync(
                 new HttpEventBuilder(this, HttpEventType.HttpRequestReceived)
@@ -212,7 +208,7 @@ namespace Platibus.IIS
             var resourceResponse = new HttpResponseAdapter(context.Response);
             try
             {
-                await resourceRouter.Route(resourceRequest, resourceResponse);
+                await _resourceRouter.Route(resourceRequest, resourceResponse);
             }
             catch (Exception ex)
             {

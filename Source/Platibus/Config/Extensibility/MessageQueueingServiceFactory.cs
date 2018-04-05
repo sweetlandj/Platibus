@@ -65,7 +65,7 @@ namespace Platibus.Config.Extensibility
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                 {
-                    Detail = "Message queueing service initialized"
+                    Detail = $"Message queueing service {messageQueueingService.GetType().FullName} initialized"
                 }.Build());
 
             return messageQueueingService;
@@ -88,7 +88,7 @@ namespace Platibus.Config.Extensibility
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                 {
-                    Detail = "Message queueing service initialized"
+                    Detail = $"Message queueing service {messageQueueingService.GetType().FullName} initialized"
                 }.Build());
 
             return messageQueueingService;

@@ -75,7 +75,7 @@ namespace Platibus.Config.Extensibility
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                 {
-                    Detail = "Message encryption service initialized"
+                    Detail = $"Message encryption service {messageEncryptionService?.GetType().FullName} initialized"
                 }.Build());
 
             return messageEncryptionService;
@@ -109,7 +109,7 @@ namespace Platibus.Config.Extensibility
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
                 {
-                    Detail = "Message encryption service initialized"
+                    Detail = $"Message encryption service {messageEncryptionService?.GetType().FullName} initialized"
                 }.Build());
 
             return messageEncryptionService;

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Platibus.Http;
 using Platibus.Http.Controllers;
 using System.Threading.Tasks;
+using Platibus.Utils;
 
 namespace Platibus.AspNetCore
 {
@@ -17,21 +18,69 @@ namespace Platibus.AspNetCore
         /// </summary>
         /// <param name="services">The service collection to which the Platibus services
         /// will be added</param>
+        public static void AddPlatibusServices(this IServiceCollection services)
+        {
+            services.AddPlatibusServices(null, null);
+        }
+
+        /// <summary>
+        /// Adds Platibus services to the supplied <paramref name="services"/> collection
+        /// based on the configuration in appsettings.json
+        /// </summary>
+        /// <param name="services">The service collection to which the Platibus services
+        /// will be added</param>
+        /// <param name="sectionName">(Optional) The name of the Platibus configuration 
+        /// section.  (The default section name is "platibus".)</param>
+        public static void AddPlatibusServices(this IServiceCollection services, string sectionName)
+        {
+            services.AddPlatibusServices(sectionName, null);
+        }
+
+        /// <summary>
+        /// Adds Platibus services to the supplied <paramref name="services"/> collection
+        /// based on the configuration in appsettings.json
+        /// </summary>
+        /// <param name="services">The service collection to which the Platibus services
+        /// will be added</param>
+        /// <param name="configure">(Optional) Additional configuration to be performed
+        /// after the configuration is loaded from appsettings.json</param>
+        public static void AddPlatibusServices(this IServiceCollection services, Action<AspNetCoreConfiguration> configure)
+        {
+            services.AddPlatibusServices(null, configure);
+        }
+
+        /// <summary>
+        /// Adds Platibus services to the supplied <paramref name="services"/> collection
+        /// based on the configuration in appsettings.json
+        /// </summary>
+        /// <param name="services">The service collection to which the Platibus services
+        /// will be added</param>
         /// <param name="sectionName">(Optional) The name of the Platibus configuration 
         /// section.  (The default section name is "platibus".)</param>
         /// <param name="configure">(Optional) Additional configuration to be performed
         /// after the configuration is loaded from appsettings.json</param>
-        public static void AddPlatibusServices(this IServiceCollection services, string sectionName = null, Action<AspNetCoreConfiguration> configure = null)
+        public static void AddPlatibusServices(this IServiceCollection services, string sectionName, Action<AspNetCoreConfiguration> configure)
         {
-            var tcs = new TaskCompletionSource<bool>();
-            services.AddPlatibusServicesAsync(sectionName, configure)
-                .ContinueWith(t =>
-                {
-                    if (t.IsFaulted) tcs.TrySetException(t.Exception);
-                    else if (t.IsCanceled) tcs.TrySetCanceled();
-                    else tcs.TrySetResult(true);
-                });
-            tcs.Task.Wait();
+            services.AddPlatibusServices(sectionName, cfg =>
+            {
+                configure?.Invoke(cfg);
+                return Task.CompletedTask;
+            });
+        }
+
+        /// <summary>
+        /// Adds Platibus services to the supplied <paramref name="services"/> collection
+        /// based on the configuration in appsettings.json
+        /// </summary>
+        /// <param name="services">The service collection to which the Platibus services
+        /// will be added</param>
+        /// <param name="sectionName">(Optional) The name of the Platibus configuration 
+        /// section.  (The default section name is "platibus".)</param>
+        /// <param name="configure">(Optional) Additional configuration to be performed
+        /// after the configuration is loaded from appsettings.json</param>
+        public static void AddPlatibusServices(this IServiceCollection services, string sectionName, Func<AspNetCoreConfiguration, Task> configure)
+        {
+            services.AddPlatibusServicesAsync(sectionName, configure).WaitUsingContinuation();
         }
 
         /// <summary>
@@ -43,15 +92,7 @@ namespace Platibus.AspNetCore
         /// <param name="configuration">The ASP.NET Core Platibus configuration</param>
         public static void AddPlatibusServices(this IServiceCollection services, IAspNetCoreConfiguration configuration)
         {
-            var tcs = new TaskCompletionSource<bool>();
-            services.AddPlatibusServicesAsync(configuration)
-                .ContinueWith(t =>
-                {
-                    if (t.IsFaulted) tcs.TrySetException(t.Exception);
-                    else if (t.IsCanceled) tcs.TrySetCanceled();
-                    else tcs.TrySetResult(true);
-                });
-            tcs.Task.Wait();
+            services.AddPlatibusServicesAsync(configuration).WaitUsingContinuation();
         }
 
         /// <summary>
@@ -64,13 +105,16 @@ namespace Platibus.AspNetCore
         /// section.  (The default section name is "platibus".)</param>
         /// <param name="configure">(Optional) Additional configuration to be performed
         /// after the configuration is loaded from appsettings.json</param>
-        public static async Task AddPlatibusServicesAsync(this IServiceCollection services, string sectionName = null, Action<AspNetCoreConfiguration> configure = null)
+        public static async Task AddPlatibusServicesAsync(this IServiceCollection services, string sectionName = null, Func<AspNetCoreConfiguration, Task> configure = null)
         {
             var configuration = new AspNetCoreConfiguration();
             var configurationManager = new AspNetCoreConfigurationManager();
             await configurationManager.Initialize(configuration, sectionName);
             await configurationManager.FindAndProcessConfigurationHooks(configuration);
-            configure?.Invoke(configuration);
+            if (configure != null)
+            {
+                await configure(configuration);
+            }
             await services.AddPlatibusServicesAsync(configuration);
         }
 

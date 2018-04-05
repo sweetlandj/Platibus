@@ -170,7 +170,7 @@ namespace Platibus.SQL
                                 }
                                 catch (Exception ex)
                                 {
-                                    DiagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.MessageRecordFormatError)
+                                    DiagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.SQLMessageRecordFormatError)
                                     {
                                         Detail = "Error reading previously queued message record; skipping",
                                         Exception = ex

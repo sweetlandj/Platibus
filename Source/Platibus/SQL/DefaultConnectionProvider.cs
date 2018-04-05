@@ -92,7 +92,7 @@ namespace Platibus.SQL
                 connection.ConnectionString = ConnectionStringSettings.ConnectionString;
                 connection.Open(); 
 
-                _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.ConnectionOpened)
+                _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.SQLConnectionOpened)
                 {
                     ConnectionName = ConnectionStringSettings.Name
                 }.Build());
@@ -111,14 +111,14 @@ namespace Platibus.SQL
                 try
                 {
                     connection.Close();
-                    _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.ConnectionClosed)
+                    _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.SQLConnectionClosed)
                     {
                         ConnectionName = ConnectionStringSettings.Name
                     }.Build());
                 }
                 catch (Exception ex)
                 {
-                    _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.CommandError)
+                    _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.SQLCommandError)
                     {
                         Detail = "Error closing connection",
                         ConnectionName = ConnectionStringSettings.Name,

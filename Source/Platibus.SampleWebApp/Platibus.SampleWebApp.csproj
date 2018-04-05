@@ -182,9 +182,11 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\Startup.cs" />
+    <Compile Include="Controllers\LogsController.cs" />
     <Compile Include="Controllers\DiagnosticsController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\HtmlHelperExtensions.cs" />
+    <Compile Include="Controllers\DiagnosticEventLog.cs" />
     <Compile Include="Controllers\MessageJournalController.cs" />
     <Compile Include="Controllers\RequestSimulator.cs" />
     <Compile Include="Controllers\SubmitActionAttribute.cs" />
@@ -200,6 +202,7 @@
     <Compile Include="Models\DiagnosticsMonitoringModel.cs" />
     <Compile Include="Models\MessageJournalIndexModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SampleWebAppSetting.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.css" />
@@ -250,6 +253,7 @@
     <Content Include="Views\Widgets\Details.cshtml" />
     <Content Include="Views\Widgets\Edit.cshtml" />
     <Content Include="Views\Widgets\Index.cshtml" />
+    <Content Include="Views\Logs\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -268,6 +272,10 @@
     <Content Include="Scripts\jquery-1.10.2.min.map" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Platibus.IIS\Platibus.IIS.csproj">
+      <Project>{BF2C4B39-5E10-4115-BEFF-8340982CDA72}</Project>
+      <Name>Platibus.IIS</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Platibus.Owin\Platibus.Owin.csproj">
       <Project>{4070b7da-dfef-4fa7-bb44-72c084ca9e80}</Project>
       <Name>Platibus.Owin</Name>

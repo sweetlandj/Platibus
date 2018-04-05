@@ -32,32 +32,32 @@ namespace Platibus.SQL
         /// <summary>
         /// Emitted when a connection is opened
         /// </summary>
-        public static readonly DiagnosticEventType ConnectionOpened = new DiagnosticEventType("ConnectionOpened", DiagnosticEventLevel.Trace);
+        public static readonly DiagnosticEventType SQLConnectionOpened = new DiagnosticEventType("SQLConnectionOpened", DiagnosticEventLevel.Trace);
 
         /// <summary>
         /// Emitted when a connection is closed
         /// </summary>
-        public static readonly DiagnosticEventType ConnectionClosed = new DiagnosticEventType("ConnectionClosed", DiagnosticEventLevel.Trace);
+        public static readonly DiagnosticEventType SQLConnectionClosed = new DiagnosticEventType("SQLConnectionClosed", DiagnosticEventLevel.Trace);
 
         /// <summary>
         /// Emitted when there is an error opening or closing a connection
         /// </summary>
-        public static readonly DiagnosticEventType ConnectionError = new DiagnosticEventType("ConnectionError", DiagnosticEventLevel.Trace);
+        public static readonly DiagnosticEventType SQLConnectionError = new DiagnosticEventType("SQLConnectionError", DiagnosticEventLevel.Trace);
 
         /// <summary>
         /// Emitted when there is an error opening or closing a connection
         /// </summary>
-        public static readonly DiagnosticEventType CommandExecuted = new DiagnosticEventType("CommandExecuted", DiagnosticEventLevel.Trace);
+        public static readonly DiagnosticEventType SQLCommandExecuted = new DiagnosticEventType("SQLCommandExecuted", DiagnosticEventLevel.Trace);
 
         /// <summary>
         /// Emitted when there is an error opening or closing a connection
         /// </summary>
-        public static readonly DiagnosticEventType CommandError = new DiagnosticEventType("CommandError", DiagnosticEventLevel.Error);
+        public static readonly DiagnosticEventType SQLCommandError = new DiagnosticEventType("SQLCommandError", DiagnosticEventLevel.Error);
 
         /// <summary>
         /// Emitted when message headers or content cannot be read from the database
         /// </summary>
-        public static readonly DiagnosticEventType MessageRecordFormatError = new DiagnosticEventType("MessageFormatError", DiagnosticEventLevel.Error);
+        public static readonly DiagnosticEventType SQLMessageRecordFormatError = new DiagnosticEventType("MessageFormatError", DiagnosticEventLevel.Error);
 
     }
 }

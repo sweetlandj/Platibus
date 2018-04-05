@@ -15,6 +15,8 @@ using System.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using Platibus.Diagnostics;
+using Platibus.SampleWebApp.Controllers;
 using AuthenticationOptions = IdentityServer3.Core.Configuration.AuthenticationOptions;
 
 [assembly: OwinStartup(typeof(Startup))]
@@ -78,7 +80,11 @@ namespace Platibus.SampleWebApp
 
         private static void ConfigurePlatibus(IAppBuilder app)
         {
-            app.UsePlatibusMiddleware();
+            if (SampleWebAppSetting.OwinMiddleware.IsEnabled())
+            {
+                DiagnosticService.DefaultInstance.AddSink(DiagnosticEventLog.SingletonInstance);
+                app.UsePlatibusMiddleware();
+            }
         }
 
         private static Task OnRedirectToIdentityProvider(RedirectToIdentityProviderNotification<OpenIdConnectMessage, OpenIdConnectAuthenticationOptions> notification)

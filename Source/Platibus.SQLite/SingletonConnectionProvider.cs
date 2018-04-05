@@ -69,14 +69,14 @@ namespace Platibus.SQLite
                     {
                         myConnection.Close();
 
-                        _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.ConnectionClosed)
+                        _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.SQLConnectionClosed)
                         {
                             ConnectionName = _connectionStringSettings.Name
                         }.Build());
                     }
                     catch (Exception ex)
                     {
-                        _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.CommandError)
+                        _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.SQLCommandError)
                         {
                             Detail = "Error closing singleton connection",
                             ConnectionName = _connectionStringSettings.Name,
@@ -99,7 +99,7 @@ namespace Platibus.SQLite
                 {
                     myConnection.Open();
 
-                    _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.ConnectionOpened)
+                    _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.SQLConnectionOpened)
                     {
                         ConnectionName = _connectionStringSettings.Name
                     }.Build());
@@ -142,7 +142,7 @@ namespace Platibus.SQLite
                 }
                 catch (Exception ex)
                 {
-                    _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.CommandError)
+                    _diagnosticService.Emit(new SQLEventBuilder(this, SQLEventType.SQLCommandError)
                     {
                         Detail = "Error closing singleton connection",
                         ConnectionName = _connectionStringSettings.Name,

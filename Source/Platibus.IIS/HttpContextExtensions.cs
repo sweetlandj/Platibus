@@ -47,8 +47,7 @@ namespace Platibus.IIS
         /// <returns>Returns the Platibus bus instance for the current HTTP context</returns>
         public static IBus GetBus(this HttpContextBase context)
         {
-            if (context == null) return null;
-            return context.Items[HttpContextItemKeys.Bus] as IBus;
+            return context?.Items[HttpContextItemKeys.Bus] as IBus;
         }
 
         /// <summary>
@@ -56,7 +55,7 @@ namespace Platibus.IIS
         /// </summary>
         /// <param name="context">The HTTP context</param>
         /// <param name="bus">The bus instance in scope for the HTTP context</param>
-        internal static void SetBus(this HttpContext context, Bus bus)
+        internal static void SetBus(this HttpContext context, IBus bus)
         {
             context.Items[HttpContextItemKeys.Bus] = bus;
         }

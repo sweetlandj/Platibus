@@ -1,5 +1,6 @@
 ﻿using System.Web;
 using System.Web.Mvc;
+using Platibus.IIS;
 using Platibus.Owin;
 using Platibus.SampleWebApp.Models;
 
@@ -24,7 +25,12 @@ namespace Platibus.SampleWebApp.Controllers
         [HttpPost]
         public ActionResult Index(DiagnosticsIndexModel model)
         {
-            var bus = HttpContext.GetOwinContext().GetBus();
+            // This is only necessary since this sample app can toggle between 
+            // multiple different configurations
+            var bus = SampleWebAppSetting.OwinMiddleware.IsEnabled()
+                ? HttpContext.GetOwinContext().GetBus()
+                : HttpContext.GetBus();
+
             var simulator = new RequestSimulator(bus, model.Requests, model.MinTime, model.MaxTime,
                 model.AcknowledgementRate, model.ReplyRate, model.ErrorRate);
 

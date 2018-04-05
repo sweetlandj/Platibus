@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using Platibus.IIS;
 using Platibus.Owin;
 using Platibus.SampleMessages.Widgets;
 using Platibus.Security;
@@ -14,7 +15,12 @@ namespace Platibus.SampleWebApp.Controllers
         {
             get
             {
-                var bus = HttpContext.GetOwinContext().GetBus();
+                // This is only necessary since this sample app can toggle between 
+                // multiple different configurations
+                var bus = SampleWebAppSetting.OwinMiddleware.IsEnabled()
+                    ? HttpContext.GetOwinContext().GetBus()
+                    : HttpContext.GetBus();
+
                 return new WidgetsClient(GetAccessToken(), bus);
             }
         }
