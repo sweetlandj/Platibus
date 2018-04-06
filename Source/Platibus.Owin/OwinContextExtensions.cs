@@ -36,7 +36,7 @@ namespace Platibus.Owin
         /// <returns>Returns the Platibus bus instance for the current HTTP context</returns>
         public static IBus GetBus(this IOwinContext context)
         {
-            return context?.Get<IBus>(OwinContextItemKeys.Bus);
+            return context?.Get<IBus>(OwinKeys.Bus);
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace Platibus.Owin
         /// <param name="bus">The bus instance in scope for the HTTP context</param>
         internal static void SetBus(this IOwinContext context, IBus bus)
         {
-            context.Set(OwinContextItemKeys.Bus, bus);
+            context.Set(OwinKeys.Bus, bus);
         }
     }
 }

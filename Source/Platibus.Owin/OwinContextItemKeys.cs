@@ -20,16 +20,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
+
 namespace Platibus.Owin
 {
     /// <summary>
     /// Lists the keys used to store Platibus components within the OWIN context
     /// </summary>
+    [Obsolete("Use OwinKeys")]
     public static class OwinContextItemKeys
     {
         /// <summary>
         /// The key under which the bus instance is stored
         /// </summary>
-        public const string Bus = "Platibus.Bus";
+        public const string Bus = OwinKeys.Bus;
     }
 }

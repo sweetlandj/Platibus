@@ -84,6 +84,10 @@ namespace Platibus.SampleWebApp
             {
                 DiagnosticService.DefaultInstance.AddSink(DiagnosticEventLog.SingletonInstance);
                 app.UsePlatibusMiddleware();
+
+                // IBus can be retrieved from the app builder to be added to a DI container
+                // or used in other middleware components
+                var bus = app.Properties[OwinKeys.Bus] as IBus;
             }
         }
 

@@ -116,8 +116,6 @@ namespace Platibus.Owin
         private static async Task<IAppBuilder> UsePlatibusMiddlewareAsync(this IAppBuilder app,
             IOwinConfiguration configuration)
         {
-            var appProperties = new AppProperties(app.Properties);
-
             var baseUri = configuration.BaseUri;
             var subscriptionTrackingService = configuration.SubscriptionTrackingService;
             var messageQueueingService = configuration.MessageQueueingService;
@@ -131,8 +129,6 @@ namespace Platibus.Owin
             };
 
             var transportService = new HttpTransportService(transportServiceOptions);
-            appProperties.OnAppDisposing.Register(transportService.Dispose);
-
             var bus = new Bus(configuration, baseUri, transportService, messageQueueingService);
             transportService.LocalDelivery += (sender, args) => bus.HandleMessage(args.Message, args.Principal);
 
@@ -141,6 +137,8 @@ namespace Platibus.Owin
 
             var middleware = new PlatibusMiddleware(configuration, bus);
 
+            var appProperties = new AppProperties(app.Properties);
+            appProperties = appProperties.Set("platibus.Bus", bus);
             appProperties.OnAppDisposing.Register(() =>
             {
                 middleware.Dispose();
