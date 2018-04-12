@@ -36,6 +36,7 @@ using Platibus.Http.Controllers;
 using Platibus.Http.Models;
 using Platibus.Journaling;
 using Platibus.Security;
+using Platibus.UnitTests.Journaling;
 using Xunit;
 
 namespace Platibus.UnitTests.Http

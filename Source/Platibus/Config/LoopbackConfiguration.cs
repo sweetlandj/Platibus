@@ -25,6 +25,8 @@ using Platibus.Diagnostics;
 
 namespace Platibus.Config
 {
+    /// <inheritdoc cref="PlatibusConfiguration"/>
+    /// <inheritdoc cref="ILoopbackConfiguration"/>
     /// <summary>
     /// A loopback configuration
     /// </summary>
@@ -32,20 +34,16 @@ namespace Platibus.Config
     {
         private readonly EndpointName _loopbackEndpoint;
 
-        /// <summary>
-        /// The base URI of the loopback bus instance
-        /// </summary>
+        /// <inheritdoc />
         public Uri BaseUri { get; }
 
-        /// <summary>
-        /// The message queueing service to use
-        /// </summary>
+        /// <inheritdoc />
         public IMessageQueueingService MessageQueueingService { get; set; }
 
-
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="LoopbackConfiguration"/> with a preconfigured
-        /// <paramref name="diagnosticService"/>
+        /// Initializes a new <see cref="T:Platibus.Config.LoopbackConfiguration" /> with a preconfigured
+        /// <paramref name="diagnosticService" />
         /// </summary>
         /// <param name="diagnosticService">(Optional) The service through which diagnostic events
         /// are reported and processed</param>
@@ -58,54 +56,26 @@ namespace Platibus.Config
             base.AddSendRule(new SendRule(allMessages, _loopbackEndpoint));
         }
 
-        /// <summary>
-        /// Adds a topic to the configuration
-        /// </summary>
-        /// <param name="topic">The name of the topic</param>
-        /// <remarks>
-        /// Topics must be explicitly added in order to publish messages to them
-        /// </remarks>
+        /// <inheritdoc />
         public override void AddTopic(TopicName topic)
         {
             base.AddTopic(topic);
             base.AddSubscription(new Subscription(_loopbackEndpoint, topic));
         }
 
-        /// <summary>
-        /// Adds a named endpoint to the configuration
-        /// </summary>
-        /// <param name="name">The name of the endpoint</param>
-        /// <param name="endpoint">The endpoint</param>
-        /// <remarks>
-        /// Not supported in loopback configurations
-        /// </remarks>
-        /// <exception cref="NotSupportedException">Always thrown</exception>
+        /// <inheritdoc />
         public override void AddEndpoint(EndpointName name, IEndpoint endpoint)
         {
             throw new NotSupportedException();
         }
 
-        /// <summary>
-        /// Adds a rule governing to which endpoints messages will be sent
-        /// </summary>
-        /// <param name="sendRule">The send rule</param>
-        /// <remarks>
-        /// Not supported in loopback configurations
-        /// </remarks>
-        /// <exception cref="NotSupportedException">Always thrown</exception>
+        /// <inheritdoc />
         public override void AddSendRule(ISendRule sendRule)
         {
             throw new NotSupportedException();
         }
 
-        /// <summary>
-        /// Adds a subscription to a local or remote topic
-        /// </summary>
-        /// <param name="subscription">The subscription</param>
-        /// <remarks>
-        /// Not supported in loopback configurations
-        /// </remarks>
-        /// <exception cref="NotSupportedException">Always thrown</exception>
+        /// <inheritdoc />
         public override void AddSubscription(ISubscription subscription)
         {
             throw new NotSupportedException();

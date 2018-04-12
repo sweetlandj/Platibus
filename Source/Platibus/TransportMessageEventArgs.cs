@@ -2,7 +2,7 @@
 using System.Security.Principal;
 using System.Threading;
 
-namespace Platibus.Http
+namespace Platibus
 {
     /// <inheritdoc />
     /// <summary>

@@ -41,7 +41,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platibus.SampleApi", "Plati
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus.SampleWebApp", "Platibus.SampleWebApp\Platibus.SampleWebApp.csproj", "{269F1BB0-1146-4691-AC58-E1C41D59A0B3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Platibus.SampleConsoleApp", "Platibus.SampleConsoleApp\Platibus.SampleConsoleApp.csproj", "{38E567C6-6A7C-43DA-96E2-BA2D86600C3E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Platibus.SampleConsoleApp", "Platibus.SampleConsoleApp\Platibus.SampleConsoleApp.csproj", "{38E567C6-6A7C-43DA-96E2-BA2D86600C3E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Platibus.Http
+namespace Platibus
 {
     /// <summary>
     /// Describes the signature for methods that handle transport events

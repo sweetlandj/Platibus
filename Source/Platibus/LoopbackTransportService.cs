@@ -21,12 +21,12 @@
 // THE SOFTWARE.
 
 using System;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Platibus
 {
+    /// <inheritdoc />
     /// <summary>
     /// Transport service that sends all messages back to the sender
     /// </summary>
@@ -35,63 +35,35 @@ namespace Platibus
     /// </remarks>
     public class LoopbackTransportService : ITransportService
     {
-        private readonly Func<Message, IPrincipal, Task> _accept;
-
         /// <summary>
-        /// Initializes a new loopback transport service
+        /// Event raised when tranpsport is bypassed due to local delivery
         /// </summary>
-        /// <param name="accept">The callback that will be invoked when a message is sent</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="accept"/>
-        /// is <c>null</c></exception>
-        public LoopbackTransportService(Func<Message, IPrincipal, Task> accept)
-        {
-            _accept = accept ?? throw new ArgumentNullException(nameof(accept));
-        }
+        public event TransportMessageEventHandler LocalDelivery;
 
-        /// <summary>
-        /// Sends a message directly to the application identified by the
-        /// <see cref="IMessageHeaders.Destination"/> header.
-        /// </summary>
-        /// <param name="message">The message to send.</param>
-        /// <param name="credentials">The credentials required to send a 
-        /// message to the specified destination, if applicable.</param>
-        /// <param name="cancellationToken">A token used by the caller to
-        /// indicate if and when the send operation has been canceled.</param>
-        /// <returns>returns a task that completes when the message has
-        /// been successfully sent to the destination.</returns> 
+        /// <inheritdoc />
         public async Task SendMessage(Message message, IEndpointCredentials credentials = null,
             CancellationToken cancellationToken = new CancellationToken())
         {
-            await Task.Run(async () => await _accept(message, Thread.CurrentPrincipal), cancellationToken);
-        }
-
-        /// <summary>
-        /// Publishes a message to a topic.
-        /// </summary>
-        /// <param name="message">The message to publish.</param>
-        /// <param name="topicName">The name of the topic.</param>
-        /// <param name="cancellationToken">A token used by the caller
-        /// to indicate if and when the publish operation has been canceled.</param>
-        /// <returns>returns a task that completes when the message has
-        /// been successfully published to the topic.</returns>
-        public async Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken)
-        {
-            await Task.Run(async () => await _accept(message, Thread.CurrentPrincipal), cancellationToken);
+            var localDeliveryHandlers = LocalDelivery;
+            if (localDeliveryHandlers != null)
+            {
+                var args = new TransportMessageEventArgs(message, Thread.CurrentPrincipal, cancellationToken);
+                await localDeliveryHandlers(this, args);
+            }
         }
         
-        /// <summary>
-        /// Subscribes to messages published to the specified <paramref name="topicName"/>
-        /// by the application at the provided <paramref name="endpoint"/>.
-        /// </summary>
-        /// <param name="endpoint"></param>
-        /// <param name="topicName">The name of the topic to which the caller is
-        ///     subscribing.</param>
-        /// <param name="ttl">(Optional) The Time To Live (TTL) for the subscription
-        ///     on the publishing application if it is not renewed.</param>
-        /// <param name="cancellationToken">A token used by the caller to
-        ///     indicate if and when the subscription should be canceled.</param>
-        /// <returns>Returns a long-running task that will be completed when the 
-        /// subscription is canceled by the caller or a non-recoverable error occurs.</returns>
+        /// <inheritdoc />
+        public async Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken)
+        {
+            var localDeliveryHandlers = LocalDelivery;
+            if (localDeliveryHandlers != null)
+            {
+                var args = new TransportMessageEventArgs(message, Thread.CurrentPrincipal, cancellationToken);
+                await localDeliveryHandlers(this, args);
+            }
+        }
+        
+        /// <inheritdoc />
         public Task Subscribe(IEndpoint endpoint, TopicName topicName, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
         {
             return Task.FromResult(false);

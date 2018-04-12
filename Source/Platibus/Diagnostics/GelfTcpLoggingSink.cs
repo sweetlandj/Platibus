@@ -123,7 +123,7 @@ namespace Platibus.Diagnostics
             {
                 lock (_syncRoot)
                 {
-                    if (_tcpClient.Connected)
+                    if (_tcpClient != null && _tcpClient.Connected)
                     {
                         _tcpClient.Close();
                     }

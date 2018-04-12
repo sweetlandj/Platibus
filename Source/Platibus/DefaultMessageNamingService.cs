@@ -34,25 +34,18 @@ namespace Platibus
     {
         private readonly ConcurrentDictionary<MessageName, Type> _messageTypesByName = new ConcurrentDictionary<MessageName, Type>();
 
-        /// <summary>
-        /// Returns the canonical message name for a given type
-        /// </summary>
-        /// <param name="messageType">The message type</param>
-        /// <returns>The canonical name associated with the type</returns>
+        /// <inheritdoc />
         public MessageName GetNameForType(Type messageType)
         {
             return messageType.FullName;
         }
 
-        /// <summary>
-        /// Returns the type associated with a canonical message name
-        /// </summary>
-        /// <param name="messageName">The canonical message name</param>
-        /// <returns>The type best suited to deserialized content for messages
-        /// with the specified <paramref name="messageName"/></returns>
+        /// <inheritdoc />
         public Type GetTypeForName(MessageName messageName)
         {
-            return _messageTypesByName.GetOrAdd(messageName, name => FindTypeByName(name));
+            return messageName == null 
+                ? typeof(object) 
+                : _messageTypesByName.GetOrAdd(messageName, name => FindTypeByName(name));
         }
 
         private static Type FindTypeByName(string typeName)

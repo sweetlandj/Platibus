@@ -20,15 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using System.Security.Principal;
-using System.Threading;
-using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Diagnostics;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Platibus
 {
+    /// <inheritdoc />
     /// <summary>
     /// Simple Platibus host for passing messages within a single process
     /// </summary>
@@ -41,8 +41,8 @@ namespace Platibus
         /// <summary>
         /// Creates and starts a new loopback host
         /// </summary>
-        /// <param name="configSectionName">(Optional) The name of the 
-        /// <see cref="PlatibusConfigurationSection"/> to use to configure the </param>
+        /// <param name="configSectionName">(Optional) The name of the configuration section 
+        /// to use to configure the loopback host</param>
         /// <param name="cancellationToken">(Optional) A cancellation token that can be
         /// used by the caller to cancel initialization of the loopback host</param>
         /// <param name="diagnosticService">(Optional) The service through which diagnostic events
@@ -91,20 +91,17 @@ namespace Platibus
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             // Placeholder value; required by the bus
             var baseUri = configuration.BaseUri;
-            var transportService = new LoopbackTransportService(HandleMessage);
+            var transportService = new LoopbackTransportService();
             _bus = new Bus(configuration, baseUri, transportService, configuration.MessageQueueingService);
+            transportService.LocalDelivery += (sender, args) =>
+                _bus.HandleMessage(args.Message, args.Principal, args.CancellationToken);
         }
 
         private async Task Init(CancellationToken cancellationToken = default(CancellationToken))
         {
             await _bus.Init(cancellationToken);
         }
-
-        private Task HandleMessage(Message message, IPrincipal senderPrincipal)
-        {
-            return _bus.HandleMessage(message, senderPrincipal);
-        }
-
+        
         /// <summary>
         /// Finalizer to ensure that resources are released
         /// </summary>

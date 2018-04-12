@@ -49,14 +49,14 @@ namespace Platibus.UnitTests.Diagnostics
             const int count = 10;
             var tasks = Enumerable
                 .Range(0, count)
-                .Select(async i =>
+                .Select(i =>
                 {
                     var messageNumber = i + 1;
                     var message = GenerateMessage();
                     var detail = "Concurrent message (" + messageNumber + " of " + count + ")";
                     var @event = GenerateDiagnosticEvent(this, TestExecuted, message, detail);
 
-                    await GelfLoggingSink.ConsumeAsync(@event);
+                    return GelfLoggingSink.ConsumeAsync(@event);
                 });
 
             await Task.WhenAll(tasks);
