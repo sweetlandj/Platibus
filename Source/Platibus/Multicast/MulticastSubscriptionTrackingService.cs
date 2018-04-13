@@ -28,6 +28,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Platibus.Diagnostics;
+using Platibus.Utils;
 
 namespace Platibus.Multicast
 {
@@ -45,7 +46,7 @@ namespace Platibus.Multicast
         private readonly UdpClient _broadcastClient;
         private readonly UdpClient _listenerClient;
         private readonly CancellationTokenSource _cancellationTokenSource;
-        private readonly Task _listeningTask;
+        private readonly Task _listenTask;
         private readonly ActionBlock<UdpReceiveResult> _receiveResultQueue;
         private readonly NodeId _nodeId;
         private readonly IDiagnosticService _diagnosticService;
@@ -114,19 +115,19 @@ namespace Platibus.Multicast
             }.Build());
 
             _cancellationTokenSource = new CancellationTokenSource();
-            _listeningTask = Task.Run(async () => await Listen(_cancellationTokenSource.Token));
+            _receiveResultQueue = new ActionBlock<UdpReceiveResult>(HandleReceiveResult,
+                new ExecutionDataflowBlockOptions
+                {
+                    MaxDegreeOfParallelism = 2
+                });
+
+            _listenTask = Task.Run(async () => await Listen(_cancellationTokenSource.Token));
             _diagnosticService.Emit(new MulticastEventBuilder(this, MulticastEventType.ListenerStarted)
             {
                 Node = _nodeId.ToString(),
                 Host = listenerBinding.Address.ToString(),
                 Port = listenerBinding.Port
             }.Build());
-            
-            _receiveResultQueue = new ActionBlock<UdpReceiveResult>(HandleReceiveResult,
-                new ExecutionDataflowBlockOptions
-                {
-                    MaxDegreeOfParallelism = 2
-                });
         }
         
         private async Task Listen(CancellationToken cancellationToken)
@@ -300,7 +301,7 @@ namespace Platibus.Multicast
                 _cancellationTokenSource.Dispose();
             }
 
-            _listeningTask?.Wait(TimeSpan.FromSeconds(5));
+            _listenTask?.Wait(TimeSpan.FromSeconds(5));
 
             if (_receiveResultQueue != null)
             {

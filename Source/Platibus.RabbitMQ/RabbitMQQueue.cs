@@ -32,6 +32,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Platibus.Utils;
 
 namespace Platibus.RabbitMQ
 {
@@ -254,7 +255,7 @@ namespace Platibus.RabbitMQ
             try
             {
                 // Put on the thread pool to avoid deadlock
-                var result = Task.Run(async () => await DispatchToListener(delivery, cancellationToken), cancellationToken).Result;          
+                var result = DispatchToListener(delivery, cancellationToken).GetResultFromCompletionSource();          
                 if (result.Acknowledged)
                 {
                     _diagnosticService.Emit(

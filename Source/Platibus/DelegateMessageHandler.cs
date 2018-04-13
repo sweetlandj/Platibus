@@ -168,7 +168,11 @@ namespace Platibus
         public DelegateMessageHandler(Action<TContent, IMessageContext> handleMessage)
         {
             if (handleMessage == null) throw new ArgumentNullException(nameof(handleMessage));
-            _handleMessage = (msg, ctx, tok) => Task.Run(() => handleMessage(msg, ctx), tok);
+            _handleMessage = (msg, ctx, tok) =>
+            {
+                handleMessage(msg, ctx);
+                return Task.FromResult(0);
+            };
         }
 
         /// <summary>
