@@ -20,12 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
+
 namespace Platibus.Config
 {
     /// <summary>
     /// Interface used by application developers to provide programmatic configuration
     /// during bus initialization.
     /// </summary>
+    [Obsolete]
     public interface IConfigurationHook
     {
         /// <summary>

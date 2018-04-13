@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,6 +30,7 @@ namespace Platibus.Config
 	/// Interface used by application developers to provide programmatic configuration
 	/// during bus initialization.
 	/// </summary>
+	[Obsolete]
 	public interface IAsyncConfigurationHook
 	{
 		/// <summary>
