@@ -22,6 +22,7 @@
 // THE SOFTWARE.
 
 using System;
+using Platibus.Config;
 
 namespace Platibus.IntegrationTests.OwinMiddleware
 {
@@ -39,7 +40,11 @@ namespace Platibus.IntegrationTests.OwinMiddleware
         public OwinMiddlewareFixture()
         {
             _sendingHost = OwinSelfHost.Start("platibus.owin0");
-            _receivingHost = OwinSelfHost.Start("platibus.owin1");
+            _receivingHost = OwinSelfHost.Start("platibus.owin1", configuration =>
+            {
+                configuration.AddHandlingRule<TestMessage>(".*TestMessage", TestHandler.HandleMessage, "TestHandler");
+                configuration.AddHandlingRule(".*TestPublication", new TestPublicationHandler(), "TestPublicationHandler");
+            });
         }
 
         public void Dispose()

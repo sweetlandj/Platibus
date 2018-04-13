@@ -22,6 +22,9 @@
 
 using System;
 using System.IO;
+using System.Net;
+using Platibus.Config;
+using Platibus.Http;
 
 namespace Platibus.IntegrationTests.HttpServer
 {
@@ -43,10 +46,18 @@ namespace Platibus.IntegrationTests.HttpServer
         public HttpServerFixture(string senderConfigSectionName, string receiverConfigSectionName)
         {
             _sendingHttpServer = StartHttpServer(senderConfigSectionName);
-            _receivingHttpServer = StartHttpServer(receiverConfigSectionName);
+            _receivingHttpServer = StartHttpServer(receiverConfigSectionName, configuration =>
+            {
+                configuration.AddHandlingRule<TestMessage>(".*TestMessage", TestHandler.HandleMessage, "TestHandler");
+                configuration.AddHandlingRule(".*TestPublication", new TestPublicationHandler(), "TestPublicationHandler");
+                if (configuration.AuthenticationSchemes.HasFlag(AuthenticationSchemes.Basic))
+                {
+                    configuration.AuthorizationService = new TestAuthorizationService("platibus", "Pbu$", true, true);
+                }
+            });
         }
 
-        private static Http.HttpServer StartHttpServer(string configSectionName)
+        private static Http.HttpServer StartHttpServer(string configSectionName, Action<HttpServerConfiguration> configure = null)
         {
             var serverPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, configSectionName);
             var serverDirectory = new DirectoryInfo(serverPath);
@@ -55,7 +66,7 @@ namespace Platibus.IntegrationTests.HttpServer
             {
                 serverDirectory.Delete(true);
             }
-            return Http.HttpServer.Start(configSectionName);
+            return Http.HttpServer.Start(configSectionName, configure);
         }
 
         public void Dispose()

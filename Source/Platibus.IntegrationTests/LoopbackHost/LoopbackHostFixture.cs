@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System;
+using Platibus.Config;
 
 namespace Platibus.IntegrationTests.LoopbackHost
 {
@@ -34,7 +35,11 @@ namespace Platibus.IntegrationTests.LoopbackHost
 
         public LoopbackHostFixture()
         {
-            _host = Platibus.LoopbackHost.Start("platibus.loopback");
+            _host = Platibus.LoopbackHost.Start("platibus.loopback", configuration =>
+            {
+                configuration.AddHandlingRule<TestMessage>(".*TestMessage", TestHandler.HandleMessage, "TestHandler");
+                configuration.AddHandlingRule(".*TestPublication", new TestPublicationHandler(), "TestPublicationHandler");
+            });
         }
 
         public void Dispose()

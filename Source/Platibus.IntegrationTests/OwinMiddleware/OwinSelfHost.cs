@@ -43,14 +43,23 @@ namespace Platibus.IntegrationTests.OwinMiddleware
 
         public IBus Bus { get; private set; }
 
-        public static OwinSelfHost Start(string configSectionName)
+        public static OwinSelfHost Start(string configSectionName, Action<OwinConfiguration> configure = null)
         {
             var owinSelfHost = new OwinSelfHost();
-            owinSelfHost.StartAsync(configSectionName).WaitOnCompletionSource();
+            owinSelfHost.StartAsync(configSectionName, configure).WaitOnCompletionSource();
             return owinSelfHost;
         }
 
-        public async Task StartAsync(string configSectionName)
+        public Task StartAsync(string configSectionName, Action<OwinConfiguration> configure = null)
+        {
+            return StartAsync(configSectionName, configuration =>
+            {
+                configure?.Invoke(configuration);
+                return Task.FromResult(0);
+            });
+        }
+
+        public async Task StartAsync(string configSectionName, Func<OwinConfiguration, Task> configure = null)
         {
             var serverPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, configSectionName);
             var serverDirectory = new DirectoryInfo(serverPath);
@@ -64,6 +73,11 @@ namespace Platibus.IntegrationTests.OwinMiddleware
             var configurationManager = new OwinConfigurationManager();
             await configurationManager.Initialize(configuration, configSectionName);
             await configurationManager.FindAndProcessConfigurationHooks(configuration);
+
+            if (configure != null)
+            {
+                await configure(configuration);
+            }
 
             var baseUri = configuration.BaseUri;
             _subscriptionTrackingService = configuration.SubscriptionTrackingService;

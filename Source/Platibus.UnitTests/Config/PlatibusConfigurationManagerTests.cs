@@ -1,4 +1,5 @@
-﻿using Platibus.Config;
+﻿using System;
+using Platibus.Config;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -40,6 +41,7 @@ namespace Platibus.UnitTests.Config
             Assert.IsType<MessageHandlerStub>(handlingRules[0].MessageHandler);
         }
         
+        [Obsolete]
         public class TestConfigurationHook : IConfigurationHook
         {
             public void Configure(PlatibusConfiguration configuration)

@@ -58,8 +58,7 @@ namespace Platibus.UnitTests
 
         public static void Reset()
         {
-            object message;
-            while (HandledMessageQueue.TryDequeue(out message))
+            while (HandledMessageQueue.TryDequeue(out _))
             {
             }
         }

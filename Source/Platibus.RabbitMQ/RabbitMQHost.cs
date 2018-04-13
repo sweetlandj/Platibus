@@ -496,7 +496,7 @@ namespace Platibus.RabbitMQ
 
             public bool Equals(SubscriptionKey other)
             {
-                if (ReferenceEquals(null, other)) return false;
+                if (other is null) return false;
                 if (ReferenceEquals(this, other)) return true;
                 return Equals(_publisherUri, other._publisherUri) && Equals(_subscriptionQueueName, other._subscriptionQueueName);
             }

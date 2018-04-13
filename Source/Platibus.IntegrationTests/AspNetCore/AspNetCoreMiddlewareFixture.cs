@@ -21,6 +21,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Platibus.Config;
 using System;
 
 namespace Platibus.IntegrationTests.AspNetCore
@@ -38,7 +39,11 @@ namespace Platibus.IntegrationTests.AspNetCore
         public AspNetCoreMiddlewareFixture()
         {
             _sendingHost = AspNetCoreSelfHost.Start("platibus.aspnetcore0");
-            _receivingHost = AspNetCoreSelfHost.Start("platibus.aspnetcore1");
+            _receivingHost = AspNetCoreSelfHost.Start("platibus.aspnetcore1", configuration =>
+            {
+                configuration.AddHandlingRule<TestMessage>(".*TestMessage", TestHandler.HandleMessage, "TestHandler");
+                configuration.AddHandlingRule(".*TestPublication", new TestPublicationHandler(), "TestPublicationHandler");
+            });
         }
 
         public void Dispose()

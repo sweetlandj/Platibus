@@ -24,6 +24,7 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using Platibus.Config;
 
 namespace Platibus.IntegrationTests.RabbitMQHost
 {
@@ -45,7 +46,11 @@ namespace Platibus.IntegrationTests.RabbitMQHost
             CreateVHosts();
             
             _sendingHost = RabbitMQ.RabbitMQHost.Start("platibus.rabbitmq0");
-            _receivingHost = RabbitMQ.RabbitMQHost.Start("platibus.rabbitmq1");
+            _receivingHost = RabbitMQ.RabbitMQHost.Start("platibus.rabbitmq1", configuration =>
+            {
+                configuration.AddHandlingRule<TestMessage>(".*TestMessage", TestHandler.HandleMessage, "TestHandler");
+                configuration.AddHandlingRule(".*TestPublication", new TestPublicationHandler(), "TestPublicationHandler");
+            });
         }
 
         private static void CreateVHosts()

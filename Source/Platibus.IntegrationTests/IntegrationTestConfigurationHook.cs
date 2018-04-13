@@ -26,21 +26,21 @@ using Platibus.Http;
 
 namespace Platibus.IntegrationTests
 {
-    public class IntegrationTestConfigurationHook : IConfigurationHook
-    {
-        public void Configure(PlatibusConfiguration configuration)
-        {
-            configuration.AddHandlingRule<TestMessage>(".*TestMessage", TestHandler.HandleMessage, "TestHandler");
-            configuration.AddHandlingRule(".*TestPublication", new TestPublicationHandler(), "TestPublicationHandler");
+    //public class IntegrationTestConfigurationHook : IConfigurationHook
+    //{
+    //    public void Configure(PlatibusConfiguration configuration)
+    //    {
+    //        configuration.AddHandlingRule<TestMessage>(".*TestMessage", TestHandler.HandleMessage, "TestHandler");
+    //        configuration.AddHandlingRule(".*TestPublication", new TestPublicationHandler(), "TestPublicationHandler");
 
-            var httpServerConfiguration = configuration as HttpServerConfiguration;
-            if (httpServerConfiguration != null)
-            {
-                if (httpServerConfiguration.AuthenticationSchemes.HasFlag(AuthenticationSchemes.Basic))
-                {
-                    httpServerConfiguration.AuthorizationService = new TestAuthorizationService("platibus", "Pbu$", true, true);
-                }
-            }
-        }
-    }
+    //        var httpServerConfiguration = configuration as HttpServerConfiguration;
+    //        if (httpServerConfiguration != null)
+    //        {
+    //            if (httpServerConfiguration.AuthenticationSchemes.HasFlag(AuthenticationSchemes.Basic))
+    //            {
+    //                httpServerConfiguration.AuthorizationService = new TestAuthorizationService("platibus", "Pbu$", true, true);
+    //            }
+    //        }
+    //    }
+    //}
 }
