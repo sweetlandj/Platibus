@@ -63,7 +63,7 @@ namespace Platibus.IntegrationTests.AspNetCore
 
         public static AspNetCoreSelfHost Start(string sectionName, Action<AspNetCoreConfiguration> configure = null)
         {
-            return StartAsync(sectionName, configure).GetResultUsingContinuation();
+            return StartAsync(sectionName, configure).GetResultFromCompletionSource();
         }
 
         public static async Task<AspNetCoreSelfHost> StartAsync(string sectionName, Action<AspNetCoreConfiguration> configure = null)

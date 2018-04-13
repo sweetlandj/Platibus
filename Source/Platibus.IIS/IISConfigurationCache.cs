@@ -62,14 +62,14 @@ namespace Platibus.IIS
 
         private static IISConfiguration LoadConfiguration(string sectionName, Action<IISConfiguration> configure)
         {
-            var configuration = LoadConfigurationAsync(sectionName, null).GetResultUsingContinuation();
+            var configuration = LoadConfigurationAsync(sectionName, null).GetResultFromCompletionSource();
             configure?.Invoke(configuration);
             return configuration;
         }
 
         private static IISConfiguration LoadConfiguration(string sectionName, Func<IISConfiguration, Task> configure)
         {
-            return LoadConfigurationAsync(sectionName, configure).GetResultUsingContinuation();
+            return LoadConfigurationAsync(sectionName, configure).GetResultFromCompletionSource();
         }
 
         private static async Task<IISConfiguration> LoadConfigurationAsync(string sectionName, Func<IISConfiguration, Task> configure)

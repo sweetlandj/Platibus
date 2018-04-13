@@ -30,6 +30,7 @@ using System.Threading.Tasks;
 using Platibus.Config;
 using Platibus.Diagnostics;
 using Platibus.Queueing;
+using Platibus.Utils;
 
 namespace Platibus.Journaling
 {
@@ -156,7 +157,25 @@ namespace Platibus.Journaling
         /// <returns>Returns a task that completes when the end of the journal is reached, when an
         /// exception is thrown, or when cancellation is requested, depending on the options
         /// specified in the constructor</returns>
-        public async Task Consume(MessageJournalPosition start,
+        public Task Consume(MessageJournalPosition start,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return ConsumeAsync(start, cancellationToken)
+                .GetCompletionSource(cancellationToken)
+                .Task;
+        }
+
+        /// <summary>
+        /// Consumes entries from the message journal starting at the specified <paramref name="start"/>
+        /// position
+        /// </summary>
+        /// <param name="start">The position of the first journal entry to consume</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to interrupt the message consumption process</param>
+        /// <returns>Returns a task that completes when the end of the journal is reached, when an
+        /// exception is thrown, or when cancellation is requested, depending on the options
+        /// specified in the constructor</returns>
+        private async Task ConsumeAsync(MessageJournalPosition start,
             CancellationToken cancellationToken = default(CancellationToken))
         {
             var bus = await _bus;
@@ -169,6 +188,7 @@ namespace Platibus.Journaling
                     if (readResult != null)
                     {
                         await HandleMessageJournalEntries(readResult.Entries, bus, cancellationToken);
+
                         current = readResult.Next;
                         if (readResult.EndOfJournal && _haltAtEndOfJournal)
                         {

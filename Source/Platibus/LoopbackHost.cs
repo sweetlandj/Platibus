@@ -133,7 +133,7 @@ namespace Platibus
             CancellationToken cancellationToken = default(CancellationToken))
         {
             return StartAsync(configSectionName, configure, cancellationToken)
-                .GetResultUsingContinuation(cancellationToken);
+                .GetResultFromCompletionSource(cancellationToken);
         }
 
         /// <summary>
@@ -146,7 +146,7 @@ namespace Platibus
         public static LoopbackHost Start(ILoopbackConfiguration configuration, CancellationToken cancellationToken = default(CancellationToken))
         {
             return StartAsync(configuration, cancellationToken)
-                .GetResultUsingContinuation(cancellationToken);
+                .GetResultFromCompletionSource(cancellationToken);
         }
 
         private static async Task<LoopbackHost> StartAsync(

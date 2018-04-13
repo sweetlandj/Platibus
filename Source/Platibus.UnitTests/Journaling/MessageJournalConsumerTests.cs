@@ -162,7 +162,7 @@ namespace Platibus.UnitTests.Journaling
         {
             var completionSource = new TaskCompletionSource<bool>();
             ConsumeTask.ContinueWith(t => completionSource.TrySetResult(true));
-            Assert.True(completionSource.Task.Wait(TimeSpan.FromSeconds(3)));
+            Assert.True(completionSource.Task.Wait(TimeSpan.FromSeconds(5)));
         }
 
         protected void AssertMessageJournalConsumerIsRunning()

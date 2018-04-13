@@ -123,9 +123,9 @@ namespace Platibus.IIS
         /// <param name="configuration">A task whose result is the configuration to use for this
         /// handler</param>
         public PlatibusHttpHandler(Task<IIISConfiguration> configuration)
-            : this(configuration?.GetResultUsingContinuation())
+            : this(configuration?.GetResultFromCompletionSource())
         {
-            _configuration = configuration?.GetResultUsingContinuation() ?? throw new ArgumentNullException(nameof(configuration));
+            _configuration = configuration?.GetResultFromCompletionSource() ?? throw new ArgumentNullException(nameof(configuration));
             Bus = BusManager.SingletonInstance.GetBus(_configuration);
             _resourceRouter = InitResourceRouter(Bus, _configuration);
         }

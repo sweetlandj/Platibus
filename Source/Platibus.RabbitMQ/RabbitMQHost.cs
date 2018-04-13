@@ -136,7 +136,7 @@ namespace Platibus.RabbitMQ
             CancellationToken cancellationToken = default(CancellationToken))
         {
             return StartAsync(configSectionName, configure, cancellationToken)
-                .GetResultUsingContinuation(cancellationToken);
+                .GetResultFromCompletionSource(cancellationToken);
         }
 
         /// <summary>
@@ -149,7 +149,7 @@ namespace Platibus.RabbitMQ
         public static RabbitMQHost Start(IRabbitMQHostConfiguration configuration, CancellationToken cancellationToken = default(CancellationToken))
         {
             return StartAsync(configuration, cancellationToken)
-                .GetResultUsingContinuation(cancellationToken);
+                .GetResultFromCompletionSource(cancellationToken);
         }
 
         private static async Task<RabbitMQHost> StartAsync(

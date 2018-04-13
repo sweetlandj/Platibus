@@ -46,7 +46,7 @@ namespace Platibus.IntegrationTests.OwinMiddleware
         public static OwinSelfHost Start(string configSectionName)
         {
             var owinSelfHost = new OwinSelfHost();
-            owinSelfHost.StartAsync(configSectionName).WaitUsingContinuation();
+            owinSelfHost.StartAsync(configSectionName).WaitOnCompletionSource();
             return owinSelfHost;
         }
 

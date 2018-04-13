@@ -34,20 +34,20 @@ namespace Platibus.Owin
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, string sectionName)
         {
             if (app == null) throw new ArgumentNullException(nameof(app));
-            return app.UsePlatibusMiddlewareAsync(sectionName, null).GetResultUsingContinuation();
+            return app.UsePlatibusMiddlewareAsync(sectionName, null).GetResultFromCompletionSource();
         }
 
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, IOwinConfiguration configuration)
         {
             if (app == null) throw new ArgumentNullException(nameof(app));
-            return app.UsePlatibusMiddlewareAsync(configuration).GetResultUsingContinuation();
+            return app.UsePlatibusMiddlewareAsync(configuration).GetResultFromCompletionSource();
         }
 
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, Task<IOwinConfiguration> configuration)
         {
             if (app == null) throw new ArgumentNullException(nameof(app));
-            var configurationResult = configuration.GetResultUsingContinuation();
-            return app.UsePlatibusMiddlewareAsync(configurationResult).GetResultUsingContinuation();
+            var configurationResult = configuration.GetResultFromCompletionSource();
+            return app.UsePlatibusMiddlewareAsync(configurationResult).GetResultFromCompletionSource();
         }
 
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, PlatibusMiddleware middleware, bool disposeMiddleware = false)
@@ -66,7 +66,7 @@ namespace Platibus.Owin
 
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app)
         {
-            return app.UsePlatibusMiddlewareAsync(null, null).GetResultUsingContinuation();
+            return app.UsePlatibusMiddlewareAsync(null, null).GetResultFromCompletionSource();
         }
 
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, Action<OwinConfiguration> configure)
@@ -75,12 +75,12 @@ namespace Platibus.Owin
             {
                 configure?.Invoke(configuration);
                 return Task.FromResult(0);
-            }).GetResultUsingContinuation();
+            }).GetResultFromCompletionSource();
         }
         
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, Func<OwinConfiguration, Task> configure)
         {
-            return app.UsePlatibusMiddlewareAsync(null, configure).GetResultUsingContinuation(); 
+            return app.UsePlatibusMiddlewareAsync(null, configure).GetResultFromCompletionSource(); 
         }
 
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, string sectionName, Action<OwinConfiguration> configure)
@@ -89,12 +89,12 @@ namespace Platibus.Owin
             {
                 configure?.Invoke(cfg);
                 return Task.FromResult(0);
-            }).GetResultUsingContinuation();
+            }).GetResultFromCompletionSource();
         }
 
         public static IAppBuilder UsePlatibusMiddleware(this IAppBuilder app, string sectionName, Func<OwinConfiguration, Task> configure)
         {
-            return app.UsePlatibusMiddlewareAsync(sectionName, configure).GetResultUsingContinuation();
+            return app.UsePlatibusMiddlewareAsync(sectionName, configure).GetResultFromCompletionSource();
         }
 
         private static async Task<IAppBuilder> UsePlatibusMiddlewareAsync(this IAppBuilder app,

@@ -20,16 +20,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Platibus.Config;
+using Platibus.Diagnostics;
+using Platibus.Journaling;
+using Platibus.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
-using Platibus.Config;
-using Platibus.Diagnostics;
-using Platibus.Journaling;
-using Platibus.Serialization;
+using Platibus.Utils;
 
 namespace Platibus
 {
@@ -159,12 +160,12 @@ namespace Platibus
             return queueOptions == null ? 1 : 0;
         }
 
-        private async Task SendMessage(Message message, IEndpointCredentials credentials,
+        private Task SendMessage(Message message, IEndpointCredentials credentials,
             CancellationToken cancellationToken)
         {
             try
             {
-                await _transportService.SendMessage(message, credentials, cancellationToken);
+                return _transportService.SendMessage(message, credentials, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -178,7 +179,7 @@ namespace Platibus
         }
 
         /// <inheritdoc />
-        public async Task<ISentMessage> Send(object content, SendOptions options = default(SendOptions),
+        public Task<ISentMessage> Send(object content, SendOptions options = default(SendOptions),
             CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
@@ -190,13 +191,12 @@ namespace Platibus
             var prototypicalMessage = BuildMessage(content, null, myOptions);
             var endpoints = GetEndpointsForSend(prototypicalMessage);
 
-            var sendTasks = new List<Task>();
-
             // Create the sent message before transporting it in order to ensure that the
             // reply stream is cached before any replies arrive.
             var sentMessage = _replyHub.CreateSentMessage(prototypicalMessage);
-
+            
             // ReSharper disable once LoopCanBeConvertedToQuery
+            var sendTasks = new List<Task>();
             foreach (var kvp in endpoints)
             {
                 var endpointName = kvp.Key;
@@ -216,18 +216,19 @@ namespace Platibus
                 var addressedMessage = new Message(perEndpointHeaders, prototypicalMessage.Content);
                 sendTasks.Add(SendMessage(addressedMessage, credentials, cancellationToken));
 
-                await _diagnosticService.EmitAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
+                _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
                 {
                     Message = addressedMessage,
                     Endpoint = endpointName
-                }.Build(), cancellationToken);
+                }.Build());
             }
-            await Task.WhenAll(sendTasks);
-            return sentMessage;
+
+            var sentMessageSource = Task.WhenAll(sendTasks).GetCompletionSource(sentMessage, cancellationToken);
+            return sentMessageSource.Task;
         }
         
         /// <inheritdoc />
-        public async Task<ISentMessage> Send(object content, EndpointName endpointName,
+        public Task<ISentMessage> Send(object content, EndpointName endpointName,
             SendOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
@@ -253,15 +254,16 @@ namespace Platibus
             // Create the sent message before transporting it in order to ensure that the
             // reply stream is cached before any replies arrive.
             var sentMessage = _replyHub.CreateSentMessage(message);
-            await SendMessage(message, credentials, cancellationToken);
+            var sentMessageSource = SendMessage(message, credentials, cancellationToken)
+                .GetCompletionSource(sentMessage, cancellationToken);
 
-            await _diagnosticService.EmitAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
+            _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
             {
                 Message = message,
                 Endpoint = endpointName
-            }.Build(), cancellationToken);
+            }.Build());
 
-            return sentMessage;
+            return sentMessageSource.Task;
         }
 
         /// <inheritdoc />
@@ -277,7 +279,7 @@ namespace Platibus
         }
         
         /// <inheritdoc />
-        public async Task<ISentMessage> Send(object content, Uri endpointAddress,
+        public Task<ISentMessage> Send(object content, Uri endpointAddress,
             SendOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
@@ -303,18 +305,27 @@ namespace Platibus
             // Create the sent message before transporting it in order to ensure that the
             // reply stream is cached before any replies arrive.
             var sentMessage = _replyHub.CreateSentMessage(message);
-            await SendMessage(message, credentials, cancellationToken);
+            var sentMessageSource = SendMessage(message, credentials, cancellationToken)
+                .GetCompletionSource(sentMessage, cancellationToken);
 
-            await _diagnosticService.EmitAsync(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
+            _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
             {
                 Message = message
-            }.Build(), cancellationToken);
+            }.Build());
 
-            return sentMessage;
+            return sentMessageSource.Task;
         }
         
         /// <inheritdoc />
-        public async Task Publish(object content, TopicName topic,
+        public Task Publish(object content, TopicName topic,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return PublishAsync(content, topic, cancellationToken)
+                .GetCompletionSource(cancellationToken)
+                .Task;
+        }
+
+        private async Task PublishAsync(object content, TopicName topic,
             CancellationToken cancellationToken = default(CancellationToken))
         {
             CheckDisposed();
@@ -397,7 +408,7 @@ namespace Platibus
             return messageEndpoints;
         }
 
-        internal async Task SendReply(BusMessageContext messageContext, object replyContent,
+        internal Task SendReply(BusMessageContext messageContext, object replyContent,
             SendOptions options = default(SendOptions), CancellationToken cancellationToken = default(CancellationToken))
         {
             if (messageContext == null) throw new ArgumentNullException(nameof(messageContext));
@@ -415,25 +426,29 @@ namespace Platibus
                 Destination = messageContext.Headers.Origination,
                 RelatedTo = messageContext.Headers.MessageId
             };
-            var replyMessage = BuildMessage(replyContent, headers, options);
-            await SendMessage(replyMessage, credentials, cancellationToken);
 
-            await _diagnosticService.EmitAsync(
+            var replyMessage = BuildMessage(replyContent, headers, options);
+            var sentMessageSource = SendMessage(replyMessage, credentials, cancellationToken)
+                .GetCompletionSource(cancellationToken);
+
+            _diagnosticService.Emit(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.MessageSent)
                 {
                     Message = replyMessage
-                }.Build(), cancellationToken);
+                }.Build());
+
+            return sentMessageSource.Task;
         }
 
-        /// <summary>
-        /// Called by the host when a new message arrives to handle the message
-        /// </summary>
-        /// <param name="message">The new message</param>
-        /// <param name="principal">The sender principal</param>
-        /// <param name="cancellationToken">(Optional) A cancellation token supplied by the
-        /// caller that can be used to request cancellation of the message handling request</param>
-        /// <returns>Returns a task that completes when message handling is complete</returns>
-        public async Task HandleMessage(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
+        /// <inheritdoc />
+        public Task HandleMessage(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return HandleMessageAsync(message, principal, cancellationToken)
+                .GetCompletionSource(cancellationToken)
+                .Task;
+        }
+
+        public async Task HandleMessageAsync(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (_messageJournal != null)
             {

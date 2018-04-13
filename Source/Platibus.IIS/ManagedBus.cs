@@ -71,7 +71,7 @@ namespace Platibus.IIS
 
             _transportService = new HttpTransportService(transportServiceOptions);
 
-            Bus = InitBus(configuration, _transportService, _messageQueueingService).GetResultUsingContinuation();
+            Bus = InitBus(configuration, _transportService, _messageQueueingService).GetResultFromCompletionSource();
         }
 
         private static async Task<Bus> InitBus(IIISConfiguration cfg, HttpTransportService ts, IMessageQueueingService mqs)

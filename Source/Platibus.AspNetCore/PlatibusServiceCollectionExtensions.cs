@@ -80,7 +80,7 @@ namespace Platibus.AspNetCore
         /// after the configuration is loaded from appsettings.json</param>
         public static void AddPlatibusServices(this IServiceCollection services, string sectionName, Func<AspNetCoreConfiguration, Task> configure)
         {
-            services.AddPlatibusServicesAsync(sectionName, configure).WaitUsingContinuation();
+            services.AddPlatibusServicesAsync(sectionName, configure).WaitOnCompletionSource();
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace Platibus.AspNetCore
         /// <param name="configuration">The ASP.NET Core Platibus configuration</param>
         public static void AddPlatibusServices(this IServiceCollection services, IAspNetCoreConfiguration configuration)
         {
-            services.AddPlatibusServicesAsync(configuration).WaitUsingContinuation();
+            services.AddPlatibusServicesAsync(configuration).WaitOnCompletionSource();
         }
 
         /// <summary>
