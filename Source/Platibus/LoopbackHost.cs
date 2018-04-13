@@ -21,7 +21,7 @@
 // THE SOFTWARE.
 
 using Platibus.Config;
-using Platibus.Diagnostics;
+using Platibus.Utils;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,39 +39,138 @@ namespace Platibus
     public class LoopbackHost : IDisposable
     {
         /// <summary>
-        /// Creates and starts a new loopback host
+        /// Creates and starts a new <see cref="LoopbackHost"/>
         /// </summary>
-        /// <param name="configSectionName">(Optional) The name of the configuration section 
-        /// to use to configure the loopback host</param>
-        /// <param name="cancellationToken">(Optional) A cancellation token that can be
-        /// used by the caller to cancel initialization of the loopback host</param>
-        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
-        /// are reported and processed</param>
-        /// <returns>Returns a task whose result will be an initialized loopback host</returns>
-        public static async Task<LoopbackHost> Start(string configSectionName = "platibus",
-            CancellationToken cancellationToken = default(CancellationToken),
-            IDiagnosticService diagnosticService = null)
+        /// <returns>Returns the fully initialized and listening loopback host</returns>
+#if NET452 || NET461
+/// <seealso cref="LoopbackConfigurationSection"/> 
+#endif
+        public static LoopbackHost Start() => Start(null, _ => { });
+
+        /// <summary>
+        /// Creates and starts a new <see cref="LoopbackHost"/>
+        /// </summary>
+        /// <param name="configSectionName">The name of the configuration section containing
+        /// the loopback host configuration</param>
+        /// <returns>Returns the fully initialized and listening loopback host</returns>
+#if NET452 || NET461
+/// <seealso cref="LoopbackConfigurationSection"/> 
+#endif
+        public static LoopbackHost Start(string configSectionName) => Start(configSectionName, _ => { });
+
+        /// <summary>
+        /// Creates and starts a new <see cref="LoopbackHost"/>
+        /// </summary>
+        /// <param name="configure">Delegate used to modify the configuration loaded
+        /// from the default configuration section</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to cancel loopback host initialization</param>
+        /// <returns>Returns the fully initialized and listening loopback host</returns>
+#if NET452 || NET461
+/// <seealso cref="LoopbackConfigurationSection"/> 
+#endif
+        public static LoopbackHost Start(
+            Action<LoopbackConfiguration> configure, 
+            CancellationToken cancellationToken = default(CancellationToken)) => Start(null, configure, cancellationToken);
+
+        /// <summary>
+        /// Creates and starts a new <see cref="LoopbackHost"/>
+        /// </summary>
+        /// <param name="configure">Delegate used to modify the configuration loaded
+        /// from the default configuration section</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to cancel loopback host initialization</param>
+        /// <returns>Returns the fully initialized and listening loopback host</returns>
+#if NET452 || NET461
+/// <seealso cref="LoopbackConfigurationSection"/> 
+#endif
+        public static LoopbackHost Start(
+            Func<LoopbackConfiguration, Task> configure, 
+            CancellationToken cancellationToken = default(CancellationToken)) => Start(null, configure, cancellationToken);
+
+        /// <summary>
+        /// Creates and starts a new <see cref="LoopbackHost"/>
+        /// </summary>
+        /// <param name="configSectionName">The name of the configuration section from which
+        /// declarative configuration should be loaded before invoking the <paramref name="configure"/></param>
+        /// <param name="configure">Delegate used to modify the configuration loaded
+        /// from the default configuration section</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to cancel loopback host initialization</param>
+        /// <returns>Returns the fully initialized and listening loopback host</returns>
+#if NET452 || NET461
+/// <seealso cref="LoopbackConfigurationSection"/> 
+#endif
+        public static LoopbackHost Start(
+            string configSectionName, 
+            Action<LoopbackConfiguration> configure, 
+            CancellationToken cancellationToken = default(CancellationToken))
         {
-            var configManager = new LoopbackConfigurationManager();
-            var configuration = new LoopbackConfiguration(diagnosticService);
-            await configManager.Initialize(configuration, configSectionName);
-            await configManager.FindAndProcessConfigurationHooks(configuration);
-            return await Start(configuration, cancellationToken);
+            return Start(configSectionName, configuration =>
+            {
+                configure?.Invoke(configuration);
+                return Task.FromResult(0);
+            }, cancellationToken);
         }
 
         /// <summary>
-        /// Creates and starts a new loopback host
+        /// Creates and starts a new <see cref="LoopbackHost"/>
         /// </summary>
-        /// <param name="configuration">The configuration to use to configure the </param>
-        /// <param name="cancellationToken">(Optional) A cancellation token that can be
-        /// used by the caller to cancel initialization of the loopback host</param>
-        /// <returns>Returns a task whose result will be an initialized loopback host</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="configuration"/>
-        /// is <c>null</c></exception>
-        public static async Task<LoopbackHost> Start(ILoopbackConfiguration configuration,
+        /// <param name="configSectionName">The name of the configuration section from which
+        /// declarative configuration should be loaded before invoking the 
+        /// <paramref name="configure"/></param>
+        /// <param name="configure">Delegate used to modify the configuration loaded
+        /// from the default configuration section</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to cancel loopback host initialization</param>
+        /// <returns>Returns the fully initialized and listening loopback host</returns>
+#if NET452 || NET461
+/// <seealso cref="LoopbackConfigurationSection"/> 
+#endif
+        public static LoopbackHost Start(
+            string configSectionName,
+            Func<LoopbackConfiguration, Task> configure, 
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+            return StartAsync(configSectionName, configure, cancellationToken)
+                .GetResultUsingContinuation(cancellationToken);
+        }
+
+        /// <summary>
+        /// Creates and starts a new <see cref="LoopbackHost"/>
+        /// </summary>
+        /// <param name="configuration">The HTTP sever configuration</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to cancel loopback host initialization</param>
+        /// <returns>Returns the fully initialized and listening loopback host</returns>
+        public static LoopbackHost Start(ILoopbackConfiguration configuration, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return StartAsync(configuration, cancellationToken)
+                .GetResultUsingContinuation(cancellationToken);
+        }
+
+        private static async Task<LoopbackHost> StartAsync(
+            string configSectionName,
+            Func<LoopbackConfiguration, Task> configure, 
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var configManager = new LoopbackConfigurationManager();
+            var configuration = new LoopbackConfiguration();
+            await configManager.Initialize(configuration, configSectionName);
+            await configManager.FindAndProcessConfigurationHooks(configuration);
+            if (configure != null)
+            {
+                await configure(configuration);
+            }
+
+            var host = await StartAsync(configuration, cancellationToken);
+            return host;
+        }
+
+        private static async Task<LoopbackHost> StartAsync(
+            ILoopbackConfiguration configuration, 
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
             var host = new LoopbackHost(configuration);
             await host.Init(cancellationToken);
             return host;

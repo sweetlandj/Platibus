@@ -42,49 +42,143 @@ namespace Platibus.RabbitMQ
     public class RabbitMQHost : ITransportService, IQueueListener, IDisposable
     {
         /// <summary>
-        /// Creates and starts a new <see cref="RabbitMQHost"/> based on the configuration
-        /// in the named configuration section.
+        /// Creates and starts a new <see cref="RabbitMQHost"/>
         /// </summary>
-        /// <param name="configSectionName">The configuration section containing the
-        /// settings for this RabbitMQ hostinstance.</param>
-        /// <param name="cancellationToken">(Optional) A cancelation token that may be
-        /// used by the caller to interrupt the Rabbit MQ host initialization process</param>
-        /// <param name="diagnosticService">The service through which diagnosic events are reported
-        /// and processed</param>
-        /// <returns>Returns the fully initialized and listening HTTP server</returns>
-#if NET452
-        /// <seealso cref="RabbitMQHostConfigurationSection"/> 
+        /// <returns>Returns the fully initialized and listening RabbitMQ host</returns>
+#if NET452 || NET461
+/// <seealso cref="RabbitMQHostConfigurationSection"/> 
 #endif
-        public static async Task<RabbitMQHost> Start(string configSectionName = "platibus.rabbitmq",
-            CancellationToken cancellationToken = default(CancellationToken), 
-            IDiagnosticService diagnosticService = null)
+        public static RabbitMQHost Start() => Start(null, _ => { });
+
+        /// <summary>
+        /// Creates and starts a new <see cref="RabbitMQHost"/>
+        /// </summary>
+        /// <param name="configSectionName">The name of the configuration section containing
+        /// the RabbitMQ host configuration</param>
+        /// <returns>Returns the fully initialized and listening RabbitMQ host</returns>
+#if NET452 || NET461
+/// <seealso cref="RabbitMQHostConfigurationSection"/> 
+#endif
+        public static RabbitMQHost Start(string configSectionName) => Start(configSectionName, _ => { });
+
+        /// <summary>
+        /// Creates and starts a new <see cref="RabbitMQHost"/>
+        /// </summary>
+        /// <param name="configure">Delegate used to modify the configuration loaded
+        /// from the default configuration section</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to cancel RabbitMQ host initialization</param>
+        /// <returns>Returns the fully initialized and listening RabbitMQ host</returns>
+#if NET452 || NET461
+/// <seealso cref="RabbitMQHostConfigurationSection"/> 
+#endif
+        public static RabbitMQHost Start(
+            Action<RabbitMQHostConfiguration> configure, 
+            CancellationToken cancellationToken = default(CancellationToken)) => Start(null, configure, cancellationToken);
+
+        /// <summary>
+        /// Creates and starts a new <see cref="RabbitMQHost"/>
+        /// </summary>
+        /// <param name="configure">Delegate used to modify the configuration loaded
+        /// from the default configuration section</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to cancel RabbitMQ host initialization</param>
+        /// <returns>Returns the fully initialized and listening RabbitMQ host</returns>
+#if NET452 || NET461
+/// <seealso cref="RabbitMQHostConfigurationSection"/> 
+#endif
+        public static RabbitMQHost Start(
+            Func<RabbitMQHostConfiguration, Task> configure, 
+            CancellationToken cancellationToken = default(CancellationToken)) => Start(null, configure, cancellationToken);
+
+        /// <summary>
+        /// Creates and starts a new <see cref="RabbitMQHost"/>
+        /// </summary>
+        /// <param name="configSectionName">The name of the configuration section from which
+        /// declarative configuration should be loaded before invoking the <paramref name="configure"/></param>
+        /// <param name="configure">Delegate used to modify the configuration loaded
+        /// from the default configuration section</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to cancel RabbitMQ host initialization</param>
+        /// <returns>Returns the fully initialized and listening RabbitMQ host</returns>
+#if NET452 || NET461
+/// <seealso cref="RabbitMQHostConfigurationSection"/> 
+#endif
+        public static RabbitMQHost Start(
+            string configSectionName, 
+            Action<RabbitMQHostConfiguration> configure, 
+            CancellationToken cancellationToken = default(CancellationToken))
         {
-            var configManager = new RabbitMQHostConfigurationManager();
-            var configuration = new RabbitMQHostConfiguration(diagnosticService);
-            await configManager.Initialize(configuration, configSectionName);
-            await configManager.FindAndProcessConfigurationHooks(configuration);
-            return await Start(configuration, cancellationToken);
+            return Start(configSectionName, configuration =>
+            {
+                configure?.Invoke(configuration);
+                return Task.FromResult(0);
+            }, cancellationToken);
         }
 
         /// <summary>
-        /// Creates and starts a new <see cref="RabbitMQHost"/> based on the specified
-        /// <paramref name="configuration"/>.
+        /// Creates and starts a new <see cref="RabbitMQHost"/>
         /// </summary>
-        /// <param name="configuration">The configuration for this HTTP server instance.</param>
-        /// <param name="cancellationToken">(Optional) A cancelation token that may be
-        /// used by the caller to interrupt the HTTP server initialization process</param>
-        /// <returns>Returns the fully initialized and listening HTTP server</returns>
-#if NET452
-        /// <seealso cref="RabbitMQHostConfigurationSection"/> 
+        /// <param name="configSectionName">The name of the configuration section from which
+        /// declarative configuration should be loaded before invoking the 
+        /// <paramref name="configure"/></param>
+        /// <param name="configure">Delegate used to modify the configuration loaded
+        /// from the default configuration section</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to cancel RabbitMQ host initialization</param>
+        /// <returns>Returns the fully initialized and listening RabbitMQ host</returns>
+#if NET452 || NET461
+/// <seealso cref="RabbitMQHostConfigurationSection"/> 
 #endif
-        public static async Task<RabbitMQHost> Start(IRabbitMQHostConfiguration configuration,
+        public static RabbitMQHost Start(
+            string configSectionName,
+            Func<RabbitMQHostConfiguration, Task> configure, 
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return StartAsync(configSectionName, configure, cancellationToken)
+                .GetResultUsingContinuation(cancellationToken);
+        }
+
+        /// <summary>
+        /// Creates and starts a new <see cref="RabbitMQHost"/>
+        /// </summary>
+        /// <param name="configuration">The HTTP sever configuration</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to cancel RabbitMQ host initialization</param>
+        /// <returns>Returns the fully initialized and listening RabbitMQ host</returns>
+        public static RabbitMQHost Start(IRabbitMQHostConfiguration configuration, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return StartAsync(configuration, cancellationToken)
+                .GetResultUsingContinuation(cancellationToken);
+        }
+
+        private static async Task<RabbitMQHost> StartAsync(
+            string configSectionName,
+            Func<RabbitMQHostConfiguration, Task> configure, 
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var configManager = new RabbitMQHostConfigurationManager();
+            var configuration = new RabbitMQHostConfiguration();
+            await configManager.Initialize(configuration, configSectionName);
+            await configManager.FindAndProcessConfigurationHooks(configuration);
+            if (configure != null)
+            {
+                await configure(configuration);
+            }
+
+            var server = await StartAsync(configuration, cancellationToken);
+            return server;
+        }
+
+        private static async Task<RabbitMQHost> StartAsync(
+            IRabbitMQHostConfiguration configuration, 
             CancellationToken cancellationToken = default(CancellationToken))
         {
             var server = new RabbitMQHost(configuration);
             await server.Init(cancellationToken);
             return server;
         }
-
+        
         private const string InboxQueueName = "inbox";
 
         private readonly IConnectionManager _connectionManager;

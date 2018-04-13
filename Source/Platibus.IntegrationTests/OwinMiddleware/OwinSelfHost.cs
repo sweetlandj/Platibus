@@ -27,6 +27,7 @@ using System.Threading.Tasks;
 using Microsoft.Owin.Hosting;
 using Platibus.Http;
 using Platibus.Owin;
+using Platibus.Utils;
 
 namespace Platibus.IntegrationTests.OwinMiddleware
 {
@@ -42,14 +43,14 @@ namespace Platibus.IntegrationTests.OwinMiddleware
 
         public IBus Bus { get; private set; }
 
-        public static async Task<OwinSelfHost> StartNewHost(string configSectionName)
+        public static OwinSelfHost Start(string configSectionName)
         {
             var owinSelfHost = new OwinSelfHost();
-            await owinSelfHost.Start(configSectionName);
+            owinSelfHost.StartAsync(configSectionName).WaitUsingContinuation();
             return owinSelfHost;
         }
 
-        public async Task Start(string configSectionName)
+        public async Task StartAsync(string configSectionName)
         {
             var serverPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, configSectionName);
             var serverDirectory = new DirectoryInfo(serverPath);

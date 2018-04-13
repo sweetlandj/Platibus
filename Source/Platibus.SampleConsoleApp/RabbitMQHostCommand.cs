@@ -29,7 +29,7 @@ namespace Platibus.SampleConsoleApp
 
                 var cancellationTokenSource = new CancellationTokenSource();
                 var cancellationToken = cancellationTokenSource.Token;
-                using (var host = await RabbitMQHost.Start(configuration, cancellationToken))
+                using (var host = RabbitMQHost.Start(configuration, cancellationToken))
                 {
                     Console.WriteLine($"[{Id}] Listening...");
                     await Execute(host, cancellationToken);

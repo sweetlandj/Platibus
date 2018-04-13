@@ -22,7 +22,6 @@
 // THE SOFTWARE.
 
 using System;
-using System.Threading.Tasks;
 
 namespace Platibus.IntegrationTests.AspNetCore
 {
@@ -30,11 +29,11 @@ namespace Platibus.IntegrationTests.AspNetCore
     {
         private bool _disposed;
 
-        private readonly Task<AspNetCoreSelfHost> _sendingHost;
-        private readonly Task<AspNetCoreSelfHost> _receivingHost;
+        private readonly AspNetCoreSelfHost _sendingHost;
+        private readonly AspNetCoreSelfHost _receivingHost;
 
-        public Task<IBus> Sender => _sendingHost.ContinueWith(t => t.Result.Bus);
-        public Task<IBus> Receiver => _receivingHost.ContinueWith(t => t.Result.Bus);
+        public IBus Sender => _sendingHost.Bus;
+        public IBus Receiver => _receivingHost.Bus;
 
         public AspNetCoreMiddlewareFixture()
         {
@@ -52,8 +51,8 @@ namespace Platibus.IntegrationTests.AspNetCore
 
         protected virtual void Dispose(bool disposing)
         {
-            _sendingHost?.ContinueWith(t => t.Result?.Dispose());
-            _receivingHost?.ContinueWith(t => t.Result?.Dispose());
+            _sendingHost?.Dispose();
+            _receivingHost?.Dispose();
         }
     }
 }

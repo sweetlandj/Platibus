@@ -24,26 +24,19 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Platibus.IntegrationTests.RabbitMQHost
 {
     public class RabbitMQHostFixture : IDisposable
     {
-        private readonly Task<RabbitMQ.RabbitMQHost> _sendingHost;
-        private readonly Task<RabbitMQ.RabbitMQHost> _receivingHost;
+        private readonly RabbitMQ.RabbitMQHost _sendingHost;
+        private readonly RabbitMQ.RabbitMQHost _receivingHost;
 
         private bool _disposed;
 
-        public Task<IBus> Sender
-        {
-            get { return _sendingHost.ContinueWith(hostTask => (IBus) hostTask.Result.Bus); }
-        }
-        
-        public Task<IBus> Receiver
-        {
-            get { return _receivingHost.ContinueWith(hostTask => (IBus) hostTask.Result.Bus); }
-        }
+        public IBus Sender => _sendingHost.Bus;
+
+        public IBus Receiver => _receivingHost.Bus;
 
         public RabbitMQHostFixture()
         {
@@ -88,10 +81,8 @@ namespace Platibus.IntegrationTests.RabbitMQHost
 
         protected virtual void Dispose(bool disposing)
         {
-            Task.WhenAll(
-                    _sendingHost.ContinueWith(t => t.Result.Dispose()),
-                    _receivingHost.ContinueWith(t => t.Result.Dispose()))
-                .Wait(TimeSpan.FromSeconds(10));
+            _sendingHost?.Dispose();
+            _receivingHost?.Dispose();
         }
     }
 }

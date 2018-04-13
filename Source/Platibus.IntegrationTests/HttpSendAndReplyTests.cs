@@ -29,7 +29,7 @@ namespace Platibus.IntegrationTests
     [Trait("Category", "IntegrationTests")]
     public abstract class HttpSendAndReplyTests : SendAndReplyTests
     {
-        protected HttpSendAndReplyTests(Task<IBus> sender, Task<IBus> receiver) : base(sender, receiver)
+        protected HttpSendAndReplyTests(IBus sender, IBus receiver) : base(sender, receiver)
         {
         }
 

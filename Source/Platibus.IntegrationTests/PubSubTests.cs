@@ -31,15 +31,15 @@ namespace Platibus.IntegrationTests
     {
         private static readonly Random RNG = new Random();
 
-        protected readonly Task<IBus> Publisher;
-        protected readonly Task<IBus> Subscriber;
+        protected readonly IBus Publisher;
+        protected readonly IBus Subscriber;
 
         protected TopicName Topic = "Topic0";
         protected TestPublication Publication;
         protected MessageHandledExpectation SubscriberHandlesPublication;
         private bool _disposed;
 
-        protected PubSubTests(Task<IBus> publisher, Task<IBus> subscriber)
+        protected PubSubTests(IBus publisher, IBus subscriber)
         {
             Publisher = publisher;
             Subscriber = subscriber;
@@ -92,9 +92,8 @@ namespace Platibus.IntegrationTests
 
         protected async Task GivenSubscriberExpectsPublication()
         {
-            var subscriber = await Subscriber;
             SubscriberHandlesPublication = new MessageHandledExpectation<TestPublication>((content, ctx) =>
-                Publication.Equals(content) && ctx.Bus == subscriber);
+                Publication.Equals(content) && ctx.Bus == Subscriber);
 
             TestPublicationHandler.SetExpectation(SubscriberHandlesPublication);
 
@@ -104,8 +103,7 @@ namespace Platibus.IntegrationTests
 
         protected async Task WhenPublished()
         {
-            var publisher = await Publisher;
-            await publisher.Publish(Publication, Topic);
+            await Publisher.Publish(Publication, Topic);
         }
 
         protected async Task WhenPublishedAfterTTLElapses(TimeSpan ttl)

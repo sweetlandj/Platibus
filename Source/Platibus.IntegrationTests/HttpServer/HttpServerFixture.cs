@@ -22,26 +22,19 @@
 
 using System;
 using System.IO;
-using System.Threading.Tasks;
 
 namespace Platibus.IntegrationTests.HttpServer
 {
     public class HttpServerFixture : IDisposable
     {      
-        private readonly Task<Http.HttpServer> _sendingHttpServer;
-        private readonly Task<Http.HttpServer> _receivingHttpServer;
+        private readonly Http.HttpServer _sendingHttpServer;
+        private readonly Http.HttpServer _receivingHttpServer;
 
         private bool _disposed;
         
-        public Task<IBus> Sender
-        {
-            get { return _sendingHttpServer.ContinueWith(serverTask => serverTask.Result.Bus); }
-        }
+        public IBus Sender => _sendingHttpServer.Bus;
 
-        public Task<IBus> Receiver
-        {
-            get { return _receivingHttpServer.ContinueWith(serverTask => serverTask.Result.Bus); }
-        }
+        public IBus Receiver => _receivingHttpServer.Bus;
 
         public HttpServerFixture() : this("platibus.http0", "platibus.http1")
         {
@@ -53,7 +46,7 @@ namespace Platibus.IntegrationTests.HttpServer
             _receivingHttpServer = StartHttpServer(receiverConfigSectionName);
         }
 
-        private static Task<Http.HttpServer> StartHttpServer(string configSectionName)
+        private static Http.HttpServer StartHttpServer(string configSectionName)
         {
             var serverPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, configSectionName);
             var serverDirectory = new DirectoryInfo(serverPath);
@@ -75,10 +68,8 @@ namespace Platibus.IntegrationTests.HttpServer
 
         protected virtual void Dispose(bool disposing)
         {
-            Task.WhenAll(
-                    _sendingHttpServer.ContinueWith(t => t.Result.Dispose()),
-                    _receivingHttpServer.ContinueWith(t => t.Result.Dispose()))
-                .Wait(TimeSpan.FromSeconds(10));
+            _sendingHttpServer?.Dispose();
+            _receivingHttpServer?.Dispose();
         }
     }
 }

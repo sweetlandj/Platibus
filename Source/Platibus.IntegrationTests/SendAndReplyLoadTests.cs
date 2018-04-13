@@ -12,12 +12,12 @@ namespace Platibus.IntegrationTests
     public abstract class SendAndReplyLoadTests
     {
         protected readonly ITestOutputHelper Output;
-        protected readonly Task<IBus> Sender;
+        protected readonly IBus Sender;
         protected int Count;
         protected TimeSpan Timeout;
         protected SendOptions SendOptions = new SendOptions {Synchronous = true};
 
-        protected SendAndReplyLoadTests(Task<IBus> sender, ITestOutputHelper output)
+        protected SendAndReplyLoadTests(IBus sender, ITestOutputHelper output)
         {
             Sender = sender;
             Output = output;
@@ -98,8 +98,7 @@ namespace Platibus.IntegrationTests
 
             try
             {
-                var bus = await Sender;
-                var sentMessage = await bus.Send(message, options, ct);
+                var sentMessage = await Sender.Send(message, options, ct);
                 var reply = await sentMessage.GetReply(ct);
                 return new SendResult(message, reply, null);
             }

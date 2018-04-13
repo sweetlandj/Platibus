@@ -31,14 +31,14 @@ namespace Platibus.IntegrationTests
     {
         private static readonly Random RNG = new Random();
 
-        protected readonly Task<IBus> Sender;
-        protected readonly Task<IBus> Receiver;
+        protected readonly IBus Sender;
+        protected readonly IBus Receiver;
 
         protected TestMessage Message;
         protected SendOptions SendOptions;
         protected ISentMessage SentMessage;
 
-        protected SendAndReplyTests(Task<IBus> sender, Task<IBus> receiver)
+        protected SendAndReplyTests(IBus sender, IBus receiver)
         {
             Sender = sender;
             Receiver = receiver;
@@ -75,8 +75,7 @@ namespace Platibus.IntegrationTests
 
         protected async Task WhenMessageSent()
         {
-            var sender = await Sender;
-            SentMessage = await sender.Send(Message, new SendOptions {Synchronous = true});
+            SentMessage = await Sender.Send(Message, new SendOptions {Synchronous = true});
         }
 
         protected async Task AssertReplyReceived()

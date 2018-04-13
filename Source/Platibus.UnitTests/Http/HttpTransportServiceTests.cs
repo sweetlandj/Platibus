@@ -48,20 +48,17 @@ namespace Platibus.UnitTests.Http
                 Path = "/platibus.test/"
             }.Uri;
 
-            var configuration = new HttpServerConfiguration
-            {
-                BaseUri = serverBaseUri
-            };
-
-            configuration.AddHandlingRule<string>(".*", (c, ctx) =>
-            {
-                content = c;
-                messageReceivedEvent.Set();
-                ctx.Acknowledge();
-            });
-
             bool messageReceived;
-            using (var server = await HttpServer.Start(configuration))
+            using (var server = HttpServer.Start(configuration =>
+            {
+                configuration.BaseUri = serverBaseUri;
+                configuration.AddHandlingRule<string>(".*", (c, ctx) =>
+                {
+                    content = c;
+                    messageReceivedEvent.Set();
+                    ctx.Acknowledge();
+                });
+            }))
             {
                 var endpoint = serverBaseUri;
                 var message = new Message(new MessageHeaders

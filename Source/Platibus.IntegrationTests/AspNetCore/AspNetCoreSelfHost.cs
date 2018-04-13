@@ -61,7 +61,12 @@ namespace Platibus.IntegrationTests.AspNetCore
             WebHost.Start();
         }
 
-        public static async Task<AspNetCoreSelfHost> Start(string sectionName, Action<AspNetCoreConfiguration> configure = null)
+        public static AspNetCoreSelfHost Start(string sectionName, Action<AspNetCoreConfiguration> configure = null)
+        {
+            return StartAsync(sectionName, configure).GetResultUsingContinuation();
+        }
+
+        public static async Task<AspNetCoreSelfHost> StartAsync(string sectionName, Action<AspNetCoreConfiguration> configure = null)
         {
             var serverPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, sectionName);
             var serverDirectory = new DirectoryInfo(serverPath);

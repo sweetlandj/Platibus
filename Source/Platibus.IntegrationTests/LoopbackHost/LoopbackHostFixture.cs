@@ -21,21 +21,17 @@
 // THE SOFTWARE.
 
 using System;
-using System.Threading.Tasks;
 
 namespace Platibus.IntegrationTests.LoopbackHost
 {
     public class LoopbackHostFixture : IDisposable
     {
-        private readonly Task<Platibus.LoopbackHost> _host;
+        private readonly Platibus.LoopbackHost _host;
 
         private bool _disposed;
 
-        public Task<IBus> Bus
-        {
-            get { return _host.ContinueWith(hostTask => hostTask.Result.Bus); }
-        }
-        
+        public IBus Bus => _host.Bus;
+
         public LoopbackHostFixture()
         {
             _host = Platibus.LoopbackHost.Start("platibus.loopback");
@@ -51,8 +47,7 @@ namespace Platibus.IntegrationTests.LoopbackHost
 
         protected virtual void Dispose(bool disposing)
         {
-            Task.WhenAll(_host.ContinueWith(t => t.Result.Dispose())) 
-                .Wait(TimeSpan.FromSeconds(10));
+            _host?.Dispose();
         }
     }
 }

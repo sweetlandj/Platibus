@@ -28,6 +28,7 @@ using System.Threading.Tasks.Dataflow;
 using Platibus.Diagnostics;
 using Platibus.Http.Controllers;
 using Platibus.Journaling;
+using Platibus.Utils;
 
 namespace Platibus.Http
 {
@@ -38,46 +39,143 @@ namespace Platibus.Http
     public class HttpServer : IDisposable
     {
         /// <summary>
-        /// Creates and starts a new <see cref="HttpServer"/> based on the configuration
-        /// in the named configuration section.
+        /// Creates and starts a new <see cref="HttpServer"/>
         /// </summary>
-        /// <param name="configSectionName">The configuration section containing the
-        /// settings for this HTTP server instance.</param>
-        /// <param name="cancellationToken">(Optional) A cancelation token that may be
-        /// used by the caller to interrupt the HTTP server initialization process</param>
         /// <returns>Returns the fully initialized and listening HTTP server</returns>
 #if NET452 || NET461
-        /// <seealso cref="HttpServerConfigurationSection"/> 
+/// <seealso cref="HttpServerConfigurationSection"/> 
 #endif
-        public static async Task<HttpServer> Start(string configSectionName = "platibus.httpserver",
+        public static HttpServer Start() => Start(null, _ => { });
+
+        /// <summary>
+        /// Creates and starts a new <see cref="HttpServer"/>
+        /// </summary>
+        /// <param name="configSectionName">The name of the configuration section containing
+        /// the HTTP server configuration</param>
+        /// <returns>Returns the fully initialized and listening HTTP server</returns>
+#if NET452 || NET461
+/// <seealso cref="HttpServerConfigurationSection"/> 
+#endif
+        public static HttpServer Start(string configSectionName) => Start(configSectionName, _ => { });
+
+        /// <summary>
+        /// Creates and starts a new <see cref="HttpServer"/>
+        /// </summary>
+        /// <param name="configure">Delegate used to modify the configuration loaded
+        /// from the default configuration section</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to cancel HTTP server initialization</param>
+        /// <returns>Returns the fully initialized and listening HTTP server</returns>
+#if NET452 || NET461
+/// <seealso cref="HttpServerConfigurationSection"/> 
+#endif
+        public static HttpServer Start(
+            Action<HttpServerConfiguration> configure, 
+            CancellationToken cancellationToken = default(CancellationToken)) => Start(null, configure, cancellationToken);
+
+        /// <summary>
+        /// Creates and starts a new <see cref="HttpServer"/>
+        /// </summary>
+        /// <param name="configure">Delegate used to modify the configuration loaded
+        /// from the default configuration section</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to cancel HTTP server initialization</param>
+        /// <returns>Returns the fully initialized and listening HTTP server</returns>
+#if NET452 || NET461
+/// <seealso cref="HttpServerConfigurationSection"/> 
+#endif
+        public static HttpServer Start(
+            Func<HttpServerConfiguration, Task> configure, 
+            CancellationToken cancellationToken = default(CancellationToken)) => Start(null, configure, cancellationToken);
+
+        /// <summary>
+        /// Creates and starts a new <see cref="HttpServer"/>
+        /// </summary>
+        /// <param name="configSectionName">The name of the configuration section from which
+        /// declarative configuration should be loaded before invoking the <paramref name="configure"/></param>
+        /// <param name="configure">Delegate used to modify the configuration loaded
+        /// from the default configuration section</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to cancel HTTP server initialization</param>
+        /// <returns>Returns the fully initialized and listening HTTP server</returns>
+#if NET452 || NET461
+/// <seealso cref="HttpServerConfigurationSection"/> 
+#endif
+        public static HttpServer Start(
+            string configSectionName, 
+            Action<HttpServerConfiguration> configure, 
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return Start(configSectionName, configuration =>
+            {
+                configure?.Invoke(configuration);
+                return Task.FromResult(0);
+            }, cancellationToken);
+        }
+
+        /// <summary>
+        /// Creates and starts a new <see cref="HttpServer"/>
+        /// </summary>
+        /// <param name="configSectionName">The name of the configuration section from which
+        /// declarative configuration should be loaded before invoking the 
+        /// <paramref name="configure"/></param>
+        /// <param name="configure">Delegate used to modify the configuration loaded
+        /// from the default configuration section</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to cancel HTTP server initialization</param>
+        /// <returns>Returns the fully initialized and listening HTTP server</returns>
+#if NET452 || NET461
+/// <seealso cref="HttpServerConfigurationSection"/> 
+#endif
+        public static HttpServer Start(
+            string configSectionName,
+            Func<HttpServerConfiguration, Task> configure, 
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return StartAsync(configSectionName, configure, cancellationToken)
+                .GetResultUsingContinuation(cancellationToken);
+        }
+
+        /// <summary>
+        /// Creates and starts a new <see cref="HttpServer"/>
+        /// </summary>
+        /// <param name="configuration">The HTTP sever configuration</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used by the
+        /// caller to cancel HTTP server initialization</param>
+        /// <returns>Returns the fully initialized and listening HTTP server</returns>
+        public static HttpServer Start(IHttpServerConfiguration configuration, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return StartAsync(configuration, cancellationToken)
+                .GetResultUsingContinuation(cancellationToken);
+        }
+
+        private static async Task<HttpServer> StartAsync(
+            string configSectionName,
+            Func<HttpServerConfiguration, Task> configure, 
             CancellationToken cancellationToken = default(CancellationToken))
         {
             var configManager = new HttpServerConfigurationManager();
             var configuration = new HttpServerConfiguration();
             await configManager.Initialize(configuration, configSectionName);
             await configManager.FindAndProcessConfigurationHooks(configuration);
-            return await Start(configuration, cancellationToken);
+            if (configure != null)
+            {
+                await configure(configuration);
+            }
+
+            var server = await StartAsync(configuration, cancellationToken);
+            return server;
         }
 
-        /// <summary>
-        /// Creates and starts a new <see cref="HttpServer"/> based on the specified
-        /// <paramref name="configuration"/>.
-        /// </summary>
-        /// <param name="configuration">The configuration for this HTTP server instance.</param>
-        /// <param name="cancellationToken">(Optional) A cancelation token that may be
-        /// used by the caller to interrupt the HTTP server initialization process</param>
-        /// <returns>Returns the fully initialized and listening HTTP server</returns>
-#if NET452 || NET461
-        /// <seealso cref="HttpServerConfigurationSection"/> 
-#endif
-        public static async Task<HttpServer> Start(IHttpServerConfiguration configuration,
+        private static async Task<HttpServer> StartAsync(
+            IHttpServerConfiguration configuration, 
             CancellationToken cancellationToken = default(CancellationToken))
         {
             var server = new HttpServer(configuration);
             await server.Init(cancellationToken);
             return server;
         }
-
+        
         private bool _disposed;
         private readonly Uri _baseUri;
         private readonly IDiagnosticService _diagnosticService;
