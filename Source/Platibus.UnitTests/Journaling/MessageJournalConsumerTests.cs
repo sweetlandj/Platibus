@@ -3,7 +3,6 @@ using Platibus.Journaling;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Moq;
 using Xunit;
 
 namespace Platibus.UnitTests.Journaling
@@ -59,17 +58,22 @@ namespace Platibus.UnitTests.Journaling
         [Fact]
         public async Task MessageJournalConsumerReportsProgress()
         {
-            var progress = new ProgressStub();
+            var progress = new ProgressStub(CancellationToken);
             Options.Progress = progress;
 
             await GivenJournaledMessage();
             GivenMessageHandlerAcknowledgesMessage();
             WhenConsumingJournaledMessages();
             AssertMessageConsumed();
+
+            var progressReport = await progress.Report;
+            Assert.NotNull(progressReport);
+            Assert.Equal(1, progressReport.Count);
+            Assert.Equal(new MessageJournalStub.Position(0), progressReport.Current);
+            Assert.Equal(new MessageJournalStub.Position(1), progressReport.Next);
+
             CancellationSource.Cancel();
             AssertMessageJournalConsumerHasStopped();
-
-            Assert.NotNull(progress.Report);
         }
 
         [Fact]
