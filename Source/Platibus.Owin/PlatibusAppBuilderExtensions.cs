@@ -130,12 +130,11 @@ namespace Platibus.Owin
 
             var transportService = new HttpTransportService(transportServiceOptions);
             var bus = new Bus(configuration, baseUri, transportService, messageQueueingService);
-            transportService.LocalDelivery += (sender, args) => bus.HandleMessage(args.Message, args.Principal);
 
             await transportService.Init();
             await bus.Init();
 
-            var middleware = new PlatibusMiddleware(configuration, bus);
+            var middleware = new PlatibusMiddleware(configuration, bus, transportService);
 
             var appProperties = new AppProperties(app.Properties);
             appProperties = appProperties.Set("platibus.Bus", bus);

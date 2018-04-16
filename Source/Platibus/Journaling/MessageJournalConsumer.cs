@@ -21,7 +21,6 @@
 // THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
 #if NET452 || NET461
 using System.Configuration;
 #endif
@@ -48,6 +47,7 @@ namespace Platibus.Journaling
         private readonly bool _rethrowExceptions;
         private readonly bool _haltAtEndOfJournal;
         private readonly TimeSpan _pollingInterval;
+        private readonly IProgress<MessageJournalConsumerProgress> _progress;
 
         /// <inheritdoc />
         /// <summary>
@@ -103,6 +103,8 @@ namespace Platibus.Journaling
             _pollingInterval = myOptions.PollingInterval > TimeSpan.Zero 
                 ? myOptions.PollingInterval 
                 : MessageJournalConsumerOptions.DefaultPollingInterval;
+
+            _progress = myOptions.Progress;
         }
 
         /// <summary>
@@ -134,6 +136,8 @@ namespace Platibus.Journaling
             _pollingInterval = myOptions.PollingInterval > TimeSpan.Zero 
                 ? myOptions.PollingInterval 
                 : MessageJournalConsumerOptions.DefaultPollingInterval;
+
+            _progress = myOptions.Progress;
         }
 
         private static async Task<IBus> InitBus(IPlatibusConfiguration configuration)
@@ -142,7 +146,6 @@ namespace Platibus.Journaling
             var messageQueuingService = new VirtualMessageQueueingService();
 
             var bus = new Bus(configuration, new Uri("urn:loopback"), transportService, messageQueuingService);
-            transportService.LocalDelivery += (sender, args) => bus.HandleMessage(args.Message, args.Principal, args.CancellationToken);
             await bus.Init();
             return bus;
         }
@@ -178,6 +181,7 @@ namespace Platibus.Journaling
         private async Task ConsumeAsync(MessageJournalPosition start,
             CancellationToken cancellationToken = default(CancellationToken))
         {
+            var count = 0L;
             var bus = await _bus;
             var current = start ?? await _messageJournal.GetBeginningOfJournal(cancellationToken);
             try
@@ -187,7 +191,7 @@ namespace Platibus.Journaling
                     var readResult = await ReadNext(cancellationToken, current);
                     if (readResult != null)
                     {
-                        await HandleMessageJournalEntries(readResult.Entries, bus, cancellationToken);
+                        count = await HandleMessageJournalEntries(count, readResult, bus, cancellationToken);
 
                         current = readResult.Next;
                         if (readResult.EndOfJournal && _haltAtEndOfJournal)
@@ -195,7 +199,6 @@ namespace Platibus.Journaling
                             return;
                         }
                     }
-                
                     await Task.Delay(_pollingInterval, cancellationToken);
                 }
             }
@@ -229,45 +232,80 @@ namespace Platibus.Journaling
             return readResult;
         }
 
-        private async Task HandleMessageJournalEntries(IEnumerable<MessageJournalEntry> entries, IBus bus, CancellationToken cancellationToken)
+        private async Task<long> HandleMessageJournalEntries(long count, MessageJournalReadResult result, IBus bus, CancellationToken cancellationToken)
         {
-            foreach (var entry in entries)
+            var entries = result.Entries;
+            using (var entryEnumerator = entries.GetEnumerator())
             {
-                try
+                if (!entryEnumerator.MoveNext())
                 {
-                    // Throws MessageNotAcknowledgedException if there are handling rules that apply to
-                    // the message but the message is not acknowledged (automatically or otherwise)
-                    await bus.HandleMessage(entry.Data, Thread.CurrentPrincipal, cancellationToken);
+                    return count;
                 }
-                catch (OperationCanceledException)
+                
+                // Handle messages [0, ..., n-2]
+                var current = entryEnumerator.Current;
+                count++;
+                while (entryEnumerator.MoveNext())
                 {
-                    return;
+                    var next = entryEnumerator.Current;
+                    await HandleMessageJournalEntry(bus, cancellationToken, current, next.Position, count);
+                    count++;
                 }
-                catch (MessageNotAcknowledgedException ex)
-                {
-                    _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
-                    {
-                        Message = entry.Data,
-                        Detail = "Message was not acknowledged by any handlers",
-                        Exception = ex
-                    }.Build());
 
-                    if (_rethrowExceptions) throw;
-                }
-                catch (Exception ex)
-                {
-                    _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.UnhandledException)
-                    {
-                        Message = entry.Data,
-                        Detail = "Unhandled exception thrown by one or more message handlers",
-                        Exception = ex
-                    }.Build());
+                // Handle message [n-1]
+                await HandleMessageJournalEntry(bus, cancellationToken, current, result.Next, count);
+                count++;
+            }
 
-                    if (_rethrowExceptions) throw;
+            return count;
+        }
+
+        private async Task HandleMessageJournalEntry(IBus bus, CancellationToken cancellationToken, MessageJournalEntry current, MessageJournalPosition next, long count)
+        {
+            try
+            {
+                // Throws MessageNotAcknowledgedException if there are handling rules that apply to
+                // the message but the message is not acknowledged (automatically or otherwise)
+                await bus.HandleMessage(current.Data, Thread.CurrentPrincipal, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (MessageNotAcknowledgedException ex)
+            {
+                _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
+                {
+                    Message = current.Data,
+                    Detail = "Message was not acknowledged by any handlers",
+                    Exception = ex
+                }.Build());
+
+                if (_rethrowExceptions) throw;
+            }
+            catch (Exception ex)
+            {
+                _diagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.UnhandledException)
+                {
+                    Message = current.Data,
+                    Detail = "Unhandled exception thrown by one or more message handlers",
+                    Exception = ex
+                }.Build());
+
+                if (_rethrowExceptions) throw;
+            }
+            finally
+            {
+                if (_progress != null)
+                {
+                    var progressReport = new MessageJournalConsumerProgress(
+                        count, current.Timestamp, current.Position, next, false);
+
+                    _progress.Report(progressReport);
                 }
             }
         }
-        
+
         /// <inheritdoc />
         public void Dispose()
         {

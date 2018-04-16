@@ -20,16 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Platibus.Diagnostics;
 using Platibus.Journaling;
 using Platibus.Security;
 using Platibus.Utils;
+using System;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Platibus.RabbitMQ
 {
@@ -39,7 +36,7 @@ namespace Platibus.RabbitMQ
     /// <summary>
     /// Hosts for a bus instance whose queueing and transport are based on RabbitMQ queues
     /// </summary>
-    public class RabbitMQHost : ITransportService, IQueueListener, IDisposable
+    public class RabbitMQHost : IQueueListener, IDisposable
     {
         /// <summary>
         /// Creates and starts a new <see cref="RabbitMQHost"/>
@@ -179,18 +176,10 @@ namespace Platibus.RabbitMQ
             return server;
         }
         
-        private const string InboxQueueName = "inbox";
-
         private readonly IConnectionManager _connectionManager;
-        private readonly Uri _baseUri;
-        private readonly Encoding _encoding;
-        private readonly QueueOptions _defaultQueueOptions;
-        private readonly RabbitMQQueue _inboundQueue;
         private readonly IMessageQueueingService _messageQueueingService;
         private readonly IMessageJournal _messageJournal;
-        private readonly ISecurityTokenService _securityTokenService;
-        private readonly IDiagnosticService _diagnosticService;
-        private readonly ConcurrentDictionary<SubscriptionKey, RabbitMQQueue> _subscriptions = new ConcurrentDictionary<SubscriptionKey, RabbitMQQueue>(); 
+        private readonly RabbitMQTransportService _transportService;
 
         private bool _disposed;
 
@@ -203,12 +192,12 @@ namespace Platibus.RabbitMQ
         {
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
 
-            _diagnosticService = configuration.DiagnosticService;
-            _baseUri = configuration.BaseUri.WithoutTrailingSlash();
+            var diagnosticService = configuration.DiagnosticService;
+            var baseUri = configuration.BaseUri.WithoutTrailingSlash();
             _connectionManager = new ConnectionManager();
-            _encoding = configuration.Encoding ?? Encoding.UTF8;
+            var encoding = configuration.Encoding ?? Encoding.UTF8;
 
-            _defaultQueueOptions = new QueueOptions
+            var defaultQueueOptions = new QueueOptions
             {
                 AutoAcknowledge = configuration.AutoAcknowledge,
                 MaxAttempts = configuration.MaxAttempts,
@@ -217,215 +206,45 @@ namespace Platibus.RabbitMQ
                 IsDurable = configuration.IsDurable
             };
 
-            _securityTokenService = configuration.SecurityTokenService ?? new JwtSecurityTokenService();
+            var securityTokenService = configuration.SecurityTokenService ?? new JwtSecurityTokenService();
             _messageJournal = configuration.MessageJournal;
 
-            var queueingOptions = new RabbitMQMessageQueueingOptions(_baseUri)
+            var queueingOptions = new RabbitMQMessageQueueingOptions(baseUri)
             {
                 ConnectionManager = _connectionManager,
-                DefaultQueueOptions = _defaultQueueOptions,
-                DiagnosticService = _diagnosticService,
-                Encoding = _encoding,
-                SecurityTokenService = _securityTokenService
+                DefaultQueueOptions = defaultQueueOptions,
+                DiagnosticService = diagnosticService,
+                Encoding = encoding,
+                SecurityTokenService = securityTokenService
             };
             _messageQueueingService = new RabbitMQMessageQueueingService(queueingOptions);
             
-            var connection = _connectionManager.GetConnection(_baseUri);
-            using (var channel = connection.CreateModel())
+            var transportServiceOptions = new RabbitMQTransportServiceOptions(baseUri, _connectionManager)
             {
-                foreach (var topicName in configuration.Topics)
-                {
-                    var exchangeName = topicName.GetTopicExchangeName();
-                    channel.ExchangeDeclare(exchangeName, "fanout", configuration.IsDurable, false, new Dictionary<string, object>());
-                    _diagnosticService.Emit(
-                        new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQExchangeDeclared)
-                        {
-                            Detail = "Fanout exchange declared for topic",
-                            Exchange = exchangeName,
-                            Topic = topicName,
-                            ChannelNumber = channel.ChannelNumber
-                        }.Build());
-                }
-            }
+                DiagnosticService = configuration.DiagnosticService,
+                MessageJournal = configuration.MessageJournal,
+                SecurityTokenService = configuration.SecurityTokenService,
+                Encoding = configuration.Encoding,
+                DefaultQueueOptions = defaultQueueOptions,
+                Topics = configuration.Topics
+            };
+            _transportService = new RabbitMQTransportService(transportServiceOptions);
 
-            _inboundQueue = new RabbitMQQueue(connection, InboxQueueName, this,
-                _encoding, _defaultQueueOptions, _diagnosticService, _securityTokenService, null);
-
-            Bus = new Bus(configuration, configuration.BaseUri, this, _messageQueueingService);
+            Bus = new Bus(configuration, configuration.BaseUri, _transportService, _messageQueueingService);
         }
 
         private async Task Init(CancellationToken cancellationToken = default(CancellationToken))
         {
             await Bus.Init(cancellationToken);
-            _inboundQueue.Init();
         }
 
         /// <inheritdoc />
-        /// <summary>
-        /// Handles a message that is received off of a queue
-        /// </summary>
-        /// <param name="message">The message that was received</param>
-        /// <param name="context">The context in which the message was dequeued</param>
-        /// <param name="cancellationToken">A cancellation token provided by the
-        /// queue that can be used to cancel message processing</param>
-        /// <returns>Returns a task that completes when the message is processed</returns>
-        public async Task MessageReceived(Message message, IQueuedMessageContext context,
-            CancellationToken cancellationToken = new CancellationToken())
+        async Task IQueueListener.MessageReceived(Message message, IQueuedMessageContext context, CancellationToken cancellationToken)
         {
-            // For now, allow exceptions to propagate and be handled by the RabbitMQQueue
-            await Bus.HandleMessage(message, null, cancellationToken);
+            await _transportService.ReceiveMessage(message, context.Principal, cancellationToken);
             await context.Acknowledge();
         }
-
-        /// <inheritdoc />
-        /// <summary>
-        /// Sends a message directly to the application identified by the
-        /// <see cref="P:Platibus.IMessageHeaders.Destination" /> header.
-        /// </summary>
-        /// <param name="message">The message to send.</param>
-        /// <param name="credentials">The credentials required to send a 
-        /// message to the specified destination, if applicable.</param>
-        /// <param name="cancellationToken">A token used by the caller to
-        /// indicate if and when the send operation has been canceled.</param>
-        /// <returns>returns a task that completes when the message has
-        /// been successfully sent to the destination.</returns> 
-        public async Task SendMessage(Message message, IEndpointCredentials credentials = null,
-            CancellationToken cancellationToken = new CancellationToken())
-        {
-            CheckDisposed();
-            var destination = message.Headers.Destination;
-            var connection = _connectionManager.GetConnection(destination);
-            using (var channel = connection.CreateModel())
-            {
-                await RabbitMQHelper.PublishMessage(message, Thread.CurrentPrincipal, channel, InboxQueueName);
-                await _diagnosticService.EmitAsync(
-                    new RabbitMQEventBuilder(this, DiagnosticEventType.MessageDelivered)
-                    {
-                        Message = message,
-                        ChannelNumber = channel.ChannelNumber,
-                        Queue = InboxQueueName
-                    }.Build(), cancellationToken);
-            }
-        }
-
-        /// <inheritdoc />
-        /// <summary>
-        /// Publishes a message to a topic.
-        /// </summary>
-        /// <param name="message">The message to publish.</param>
-        /// <param name="topicName">The name of the topic.</param>
-        /// <param name="cancellationToken">A token used by the caller
-        /// to indicate if and when the publish operation has been canceled.</param>
-        /// <returns>returns a task that completes when the message has
-        /// been successfully published to the topic.</returns>
-        public async Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken)
-        {
-            CheckDisposed();
-            var publisherTopicExchange = topicName.GetTopicExchangeName();
-            var connection = _connectionManager.GetConnection(_baseUri);
-            using (var channel = connection.CreateModel())
-            {
-                await RabbitMQHelper.PublishMessage(message, Thread.CurrentPrincipal, channel, null, publisherTopicExchange);
-                await _diagnosticService.EmitAsync(
-                    new RabbitMQEventBuilder(this, DiagnosticEventType.MessageDelivered)
-                    {
-                        Message = message,
-                        ChannelNumber = channel.ChannelNumber,
-                        Exchange = publisherTopicExchange
-                    }.Build(), cancellationToken);
-            }
-        }
-
-        /// <inheritdoc />
-        /// <summary>
-        /// Subscribes to messages published to the specified <paramref name="topicName" />
-        /// by the application at the provided <paramref name="endpoint" />.
-        /// </summary>
-        /// <param name="endpoint">The publishing endpoint</param>
-        /// <param name="topicName">The name of the topic to which the caller is
-        ///     subscribing.</param>
-        /// <param name="ttl">(Optional) The Time To Live (TTL) for the subscription
-        ///     on the publishing application if it is not renewed.</param>
-        /// <param name="cancellationToken">A token used by the caller to
-        ///     indicate if and when the subscription should be canceled.</param>
-        /// <returns>Returns a long-running task that will be completed when the 
-        /// subscription is canceled by the caller or a non-recoverable error occurs.</returns>
-        public Task Subscribe(IEndpoint endpoint, TopicName topicName, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            CheckDisposed();
-
-            var publisherUri = endpoint.Address;
-            var subscriptionQueueName = _baseUri.GetSubscriptionQueueName(topicName);
-            var subscriptionKey = new SubscriptionKey(publisherUri, subscriptionQueueName);
-            _subscriptions.GetOrAdd(subscriptionKey, _ => BindSubscriptionQueue(topicName, publisherUri, subscriptionQueueName, cancellationToken));
-            return Task.FromResult(true);
-        }
-
-        private RabbitMQQueue BindSubscriptionQueue(TopicName topicName, Uri publisherUri, string subscriptionQueueName, CancellationToken cancellationToken)
-        {
-            var publisherTopicExchange = topicName.GetTopicExchangeName();           
-            var attempts = 0;
-            const int maxAttempts = 10;
-            var retryDelay = TimeSpan.FromSeconds(5);
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                try
-                {
-                    using (var connection = _connectionManager.GetConnection(publisherUri))
-                    using (var channel = connection.CreateModel())
-                    {
-                        attempts++;
-                        channel.ExchangeDeclarePassive(publisherTopicExchange);
-
-                        var subscriptionQueue = new RabbitMQQueue(connection,
-                            subscriptionQueueName, this, _encoding, _defaultQueueOptions, _diagnosticService, _securityTokenService, null);
-
-                        subscriptionQueue.Init();
-
-                        channel.QueueBind(subscriptionQueueName, publisherTopicExchange, "", null);
-
-                        _diagnosticService.Emit(
-                            new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQQueueBound)
-                            {
-                                Detail = "Subscription queue bound to topic exchange",
-                                Queue = subscriptionQueueName,
-                                Exchange = publisherTopicExchange,
-                                Topic = topicName,
-                                ChannelNumber = channel.ChannelNumber
-                            }.Build());
-
-                        return subscriptionQueue;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    if (attempts >= maxAttempts)
-                    {
-                        throw;
-                    }
-
-                    _diagnosticService.Emit(
-                        new RabbitMQEventBuilder(this, RabbitMQEventType.RabbitMQQueueBindError)
-                        {
-                            Detail = "Error binding subscription queue to topic exchange (attempt " + attempts + " of " + maxAttempts + ").  Retrying in " + retryDelay,
-                            Queue = subscriptionQueueName,
-                            Exchange = publisherTopicExchange,
-                            Topic = topicName,
-                            Exception = ex
-                        }.Build());
-                    
-                    Task.Delay(retryDelay, cancellationToken).Wait(cancellationToken);
-                }
-            }
-
-            throw new OperationCanceledException();
-        }
-
-        private void CheckDisposed()
-        {
-            if (_disposed) throw new ObjectDisposedException(GetType().FullName);
-        }
-
+        
         /// <summary>
         /// Finalizer to ensure resources are released
         /// </summary>
@@ -459,12 +278,7 @@ namespace Platibus.RabbitMQ
         {
             if (!disposing) return;
 
-            foreach (var subscriptionQueue in _subscriptions)
-            {
-                subscriptionQueue.Value.Dispose();
-            }
-
-            _inboundQueue.Dispose();
+            _transportService.Dispose();
             Bus.Dispose();
 
             if (_messageQueueingService is IDisposable disposableMessageQueueingService)
@@ -480,48 +294,6 @@ namespace Platibus.RabbitMQ
             if (_connectionManager is IDisposable disposableConnectionManager)
             {
                 disposableConnectionManager.Dispose();
-            }
-        }
-
-        private class SubscriptionKey : IEquatable<SubscriptionKey>
-        {
-            private readonly Uri _publisherUri;
-            private readonly QueueName _subscriptionQueueName;
-
-            public SubscriptionKey(Uri publisherUri, QueueName subscriptionQueueName)
-            {
-                _publisherUri = publisherUri ?? throw new ArgumentNullException(nameof(publisherUri));
-                _subscriptionQueueName = subscriptionQueueName ?? throw new ArgumentNullException(nameof(subscriptionQueueName));
-            }
-
-            public bool Equals(SubscriptionKey other)
-            {
-                if (other is null) return false;
-                if (ReferenceEquals(this, other)) return true;
-                return Equals(_publisherUri, other._publisherUri) && Equals(_subscriptionQueueName, other._subscriptionQueueName);
-            }
-
-            public override bool Equals(object obj)
-            {
-                return Equals(obj as SubscriptionKey);
-            }
-
-            public override int GetHashCode()
-            {
-                unchecked
-                {
-                    return ((_publisherUri != null ? _publisherUri.GetHashCode() : 0)*397) ^ (_subscriptionQueueName != null ? _subscriptionQueueName.GetHashCode() : 0);
-                }
-            }
-
-            public static bool operator ==(SubscriptionKey left, SubscriptionKey right)
-            {
-                return Equals(left, right);
-            }
-
-            public static bool operator !=(SubscriptionKey left, SubscriptionKey right)
-            {
-                return !Equals(left, right);
             }
         }
     }

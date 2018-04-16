@@ -22,15 +22,14 @@
 
 using Platibus.Config;
 using Platibus.Diagnostics;
-using Platibus.Journaling;
 using Platibus.Serialization;
+using Platibus.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
-using Platibus.Utils;
 
 namespace Platibus
 {
@@ -45,7 +44,6 @@ namespace Platibus
         private readonly IList<Task> _subscriptionTasks = new List<Task>();
         private readonly IList<IHandlingRule> _handlingRules;
         private readonly IMessageNamingService _messageNamingService;
-        private readonly IMessageJournal _messageJournal;
         private readonly IMessageQueueingService _messageQueueingService;
 	    private readonly string _defaultContentType;
         private readonly SendOptions _defaultSendOptions;
@@ -88,7 +86,6 @@ namespace Platibus
 
             _defaultSendOptions = configuration.DefaultSendOptions ?? new SendOptions();
 
-            _messageJournal = configuration.MessageJournal;
             _messageNamingService = configuration.MessageNamingService;
             _serializationService = configuration.SerializationService;
 
@@ -100,6 +97,8 @@ namespace Platibus
 
             _diagnosticService = configuration.DiagnosticService;
             _messageHandler = new MessageHandler(_messageNamingService, _serializationService, _diagnosticService);
+
+            _transportService.MessageReceived += OnMessageReceived;
         }
 
         /// <summary>
@@ -338,10 +337,6 @@ namespace Platibus
             };
 
             var message = BuildMessage(content, prototypicalHeaders, null);
-            if (_messageJournal != null)
-            {
-                await _messageJournal.Append(message, MessageJournalCategory.Published, cancellationToken);
-            }
 
             await _transportService.PublishMessage(message, topic, cancellationToken);
             await _diagnosticService.EmitAsync(
@@ -440,21 +435,21 @@ namespace Platibus
             return sentMessageSource.Task;
         }
 
+        private Task OnMessageReceived(object sender, TransportMessageEventArgs args)
+        {
+            return HandleMessage(args.Message, args.Principal, args.CancellationToken);
+        }
+
         /// <inheritdoc />
         public Task HandleMessage(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return HandleMessageAsync(message, principal, cancellationToken)
+            return InternalHandleMessage(message, principal, cancellationToken)
                 .GetCompletionSource(cancellationToken)
                 .Task;
         }
 
-        public async Task HandleMessageAsync(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
+        private async Task InternalHandleMessage(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (_messageJournal != null)
-            {
-                await _messageJournal.Append(message, MessageJournalCategory.Received, cancellationToken);
-            }
-
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.MessageReceived)
                 {

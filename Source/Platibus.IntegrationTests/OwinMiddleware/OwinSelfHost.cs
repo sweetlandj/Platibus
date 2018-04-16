@@ -94,14 +94,14 @@ namespace Platibus.IntegrationTests.OwinMiddleware
             _transportService = new HttpTransportService(transportServiceOptions);
 
             var bus = new Bus(configuration, baseUri, _transportService, _messageQueueingService);
-            _transportService.LocalDelivery += (sender, args) => bus.HandleMessage(args.Message, args.Principal);
+            _transportService.MessageReceived += (sender, args) => bus.HandleMessage(args.Message, args.Principal);
 
             await _transportService.Init();
             await bus.Init();
 
             Bus = bus;
 
-            _middleware = new PlatibusMiddleware(configuration, bus);
+            _middleware = new PlatibusMiddleware(configuration, bus, _transportService);
             _webapp = WebApp.Start(baseUri.ToString(), app => app.UsePlatibusMiddleware(_middleware));
         }
 

@@ -159,13 +159,11 @@ namespace Platibus.AspNetCore
             var bus = new Bus(configuration, baseUri, transportService, configuration.MessageQueueingService);
             services.AddSingleton<IBus>(bus);
 
-            transportService.LocalDelivery += (sender, args) => bus.HandleMessage(args.Message, args.Principal);
-
             var authorizationService = configuration.AuthorizationService;
             var subscriptionTrackingService = configuration.SubscriptionTrackingService;
             var resourceRouter = new ResourceTypeDictionaryRouter(configuration.BaseUri)
             {
-                {"message", new MessageController(bus.HandleMessage, authorizationService)},
+                {"message", new MessageController(transportService.ReceiveMessage, authorizationService)},
                 {"topic", new TopicController(subscriptionTrackingService, configuration.Topics, authorizationService)},
                 {"journal", new JournalController(configuration.MessageJournal, configuration.AuthorizationService)},
                 {"metrics", new MetricsController(metricsCollector)},

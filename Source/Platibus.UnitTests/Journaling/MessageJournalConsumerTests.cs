@@ -3,6 +3,7 @@ using Platibus.Journaling;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Moq;
 using Xunit;
 
 namespace Platibus.UnitTests.Journaling
@@ -42,6 +43,33 @@ namespace Platibus.UnitTests.Journaling
             CancellationSource.Token.Register(() => ConsumedMessageSource.TrySetCanceled());
 
             CancellationToken = CancellationSource.Token;
+        }
+
+        [Fact]
+        public async Task MessageJournalConsumerConsumesMessages()
+        {
+            await GivenJournaledMessage();
+            GivenMessageHandlerAcknowledgesMessage();
+            WhenConsumingJournaledMessages();
+            AssertMessageConsumed();
+            CancellationSource.Cancel();
+            AssertMessageJournalConsumerHasStopped();
+        }
+
+        [Fact]
+        public async Task MessageJournalConsumerReportsProgress()
+        {
+            var progress = new ProgressStub();
+            Options.Progress = progress;
+
+            await GivenJournaledMessage();
+            GivenMessageHandlerAcknowledgesMessage();
+            WhenConsumingJournaledMessages();
+            AssertMessageConsumed();
+            CancellationSource.Cancel();
+            AssertMessageJournalConsumerHasStopped();
+
+            Assert.NotNull(progress.Report);
         }
 
         [Fact]

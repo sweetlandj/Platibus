@@ -72,5 +72,10 @@ namespace Platibus.Journaling
         /// The polling interval is only used when <see cref="HaltAtEndOfJournal"/> is <c>false</c>.
         /// </remarks>
         public TimeSpan PollingInterval { get; set; } = DefaultPollingInterval;
+
+        /// <summary>
+        /// An optional callback for reporting message consumer progress
+        /// </summary>
+        public IProgress<MessageJournalConsumerProgress> Progress { get; set; }
     }
 }

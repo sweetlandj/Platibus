@@ -20,15 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Platibus.Diagnostics;
+using Platibus.Http.Controllers;
+using Platibus.Journaling;
+using Platibus.Utils;
 using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Platibus.Diagnostics;
-using Platibus.Http.Controllers;
-using Platibus.Journaling;
-using Platibus.Utils;
 
 namespace Platibus.Http
 {
@@ -224,12 +224,10 @@ namespace Platibus.Http
 
             _bus = new Bus(configuration, _baseUri, TransportService, _messageQueueingService);
 
-            TransportService.LocalDelivery += (sender, args) => _bus.HandleMessage(args.Message, args.Principal);
-
             var authorizationService = configuration.AuthorizationService;
             _resourceRouter = new ResourceTypeDictionaryRouter(configuration.BaseUri)
             {
-                {"message", new MessageController(_bus.HandleMessage, authorizationService)},
+                {"message", new MessageController(TransportService.ReceiveMessage, authorizationService)},
                 {"topic", new TopicController(_subscriptionTrackingService, configuration.Topics, authorizationService)},
                 {"journal", new JournalController(configuration.MessageJournal, configuration.AuthorizationService)},
                 {"metrics", new MetricsController(_metricsCollector)}
@@ -248,7 +246,7 @@ namespace Platibus.Http
 
             _acceptBlock = new ActionBlock<HttpListenerContext>(async ctx => await Accept(ctx), acceptBlockOptions);
         }
-        
+
         private static HttpListener InitHttpListener(Uri baseUri, AuthenticationSchemes authenticationSchemes)
         {
             var httpListener = new HttpListener

@@ -21,8 +21,10 @@
 // THE SOFTWARE.
 
 using System;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
+using Platibus.Journaling;
 
 namespace Platibus
 {
@@ -35,38 +37,76 @@ namespace Platibus
     /// </remarks>
     public class LoopbackTransportService : ITransportService
     {
+        private readonly IMessageJournal _messageJournal;
+
+        /// <inheritdoc />
         /// <summary>
-        /// Event raised when tranpsport is bypassed due to local delivery
+        /// Initialies a new <see cref="T:Platibus.LoopbackTransportService" />
         /// </summary>
-        public event TransportMessageEventHandler LocalDelivery;
+        public LoopbackTransportService() : this(null)
+        {
+        }
+
+        /// <summary>
+        /// Initialies a new <see cref="LoopbackTransportService"/> with the specified
+        /// <paramref name="messageJournal"/>
+        /// </summary>
+        /// <param name="messageJournal">(Optional) The journal to which copies of sent, received, and/or
+        /// published messages will be recorded</param>
+        public LoopbackTransportService(IMessageJournal messageJournal)
+        {
+            _messageJournal = messageJournal;
+        }
+
+        /// <summary>
+        /// Event raised when a message is received
+        /// </summary>
+        public event TransportMessageEventHandler MessageReceived;
 
         /// <inheritdoc />
         public async Task SendMessage(Message message, IEndpointCredentials credentials = null,
             CancellationToken cancellationToken = new CancellationToken())
         {
-            var localDeliveryHandlers = LocalDelivery;
-            if (localDeliveryHandlers != null)
+            if (_messageJournal != null)
             {
-                var args = new TransportMessageEventArgs(message, Thread.CurrentPrincipal, cancellationToken);
-                await localDeliveryHandlers(this, args);
+                await _messageJournal.Append(message, MessageJournalCategory.Sent, cancellationToken);
             }
+
+            await ReceiveMessage(message, Thread.CurrentPrincipal, cancellationToken);
         }
         
         /// <inheritdoc />
         public async Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken)
-        {
-            var localDeliveryHandlers = LocalDelivery;
-            if (localDeliveryHandlers != null)
+        { 
+            if (_messageJournal != null)
             {
-                var args = new TransportMessageEventArgs(message, Thread.CurrentPrincipal, cancellationToken);
-                await localDeliveryHandlers(this, args);
+                await _messageJournal.Append(message, MessageJournalCategory.Published, cancellationToken);
             }
+
+            await ReceiveMessage(message, Thread.CurrentPrincipal, cancellationToken);
         }
         
         /// <inheritdoc />
         public Task Subscribe(IEndpoint endpoint, TopicName topicName, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
         {
             return Task.FromResult(false);
+        }
+
+        /// <inheritdoc />
+        public async Task ReceiveMessage(Message message, IPrincipal principal,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var messageReceivedHandlers = MessageReceived;
+            if (messageReceivedHandlers != null)
+            {
+                if (_messageJournal != null)
+                {
+                    await _messageJournal.Append(message, MessageJournalCategory.Received, cancellationToken);
+                }
+
+                var args = new TransportMessageEventArgs(message, Thread.CurrentPrincipal, cancellationToken);
+                await messageReceivedHandlers(this, args);
+            }
         }
     }
 }

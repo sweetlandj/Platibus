@@ -190,10 +190,8 @@ namespace Platibus
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             // Placeholder value; required by the bus
             var baseUri = configuration.BaseUri;
-            var transportService = new LoopbackTransportService();
+            var transportService = new LoopbackTransportService(configuration.MessageJournal);
             _bus = new Bus(configuration, baseUri, transportService, configuration.MessageQueueingService);
-            transportService.LocalDelivery += (sender, args) =>
-                _bus.HandleMessage(args.Message, args.Principal, args.CancellationToken);
         }
 
         private async Task Init(CancellationToken cancellationToken = default(CancellationToken))
@@ -209,10 +207,7 @@ namespace Platibus
             Dispose(false);
         }
 
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        /// <filterpriority>2</filterpriority>
+        /// <inheritdoc />
         public void Dispose()
         {
             if (_disposed) return;

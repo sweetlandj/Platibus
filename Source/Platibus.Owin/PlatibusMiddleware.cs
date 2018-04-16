@@ -39,11 +39,11 @@ namespace Platibus.Owin
         public IOwinConfiguration Configuration { get; }
         public IBus Bus { get; }
 
-        public PlatibusMiddleware(IOwinConfiguration configuration, IBus bus)
+        public PlatibusMiddleware(IOwinConfiguration configuration, IBus bus, HttpTransportService transportService)
         {
             Configuration = configuration ?? throw new ArgumentNullException(nameof(bus));
             Bus = bus ?? throw new ArgumentNullException(nameof(bus));
-            _resourceRouter = InitResourceRouter(Configuration, Bus);
+            _resourceRouter = InitResourceRouter(Configuration, transportService);
         }
 
         public async Task Invoke(IOwinContext context, Func<Task> next)
@@ -94,13 +94,13 @@ namespace Platibus.Owin
             return true;
         }
 
-        private ResourceTypeDictionaryRouter InitResourceRouter(IOwinConfiguration configuration, IBus bus)
+        private ResourceTypeDictionaryRouter InitResourceRouter(IOwinConfiguration configuration, HttpTransportService transportService)
         {
             var authorizationService = configuration.AuthorizationService;
             var subscriptionTrackingService = configuration.SubscriptionTrackingService;
             return new ResourceTypeDictionaryRouter(configuration.BaseUri)
             {
-                {"message", new MessageController(bus.HandleMessage, authorizationService)},
+                {"message", new MessageController(transportService.ReceiveMessage, authorizationService)},
                 {"topic", new TopicController(subscriptionTrackingService, configuration.Topics, authorizationService)},
                 {"journal", new JournalController(configuration.MessageJournal, configuration.AuthorizationService)},
                 {"metrics", new MetricsController(_metricsCollector)},

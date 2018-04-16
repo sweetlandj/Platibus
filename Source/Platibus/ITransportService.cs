@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -33,9 +34,19 @@ namespace Platibus
     public interface ITransportService
     {
         /// <summary>
+        /// Event raised when a message is received by the host.
+        /// </summary>
+        event TransportMessageEventHandler MessageReceived;
+
+        /// <summary>
         /// Sends a message directly to the application identified by the
         /// <see cref="IMessageHeaders.Destination"/> header.
         /// </summary>
+        /// <remarks>
+        /// Ensures that a copy of the sent message is recorded in the journal and that the
+        /// message is delivered to the <see cref="IMessageHeaders.Destination"/> specified
+        /// in the <paramref name="message"/> <see cref="Message.Headers"/>.
+        /// </remarks>
         /// <param name="message">The message to send.</param>
         /// <param name="credentials">The credentials required to send a 
         /// message to the specified destination, if applicable.</param>
@@ -49,12 +60,17 @@ namespace Platibus
         /// <summary>
         /// Publishes a message to a topic.
         /// </summary>
+        /// <remarks>
+        /// Ensures that the published message is recorded in the journal and that a
+        /// copy is delivered to all registered subscribers.
+        /// </remarks>
         /// <param name="message">The message to publish.</param>
         /// <param name="topicName">The name of the topic.</param>
         /// <param name="cancellationToken">A token used by the caller
         /// to indicate if and when the publish operation has been canceled.</param>
         /// <returns>returns a task that completes when the message has
         /// been successfully published to the topic.</returns>
+        /// <seealso cref="Subscribe"/>
         Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken);
 
         /// <summary>
@@ -71,5 +87,20 @@ namespace Platibus
         /// <returns>Returns a long-running task that will be completed when the 
         /// subscription is canceled by the caller or a non-recoverable error occurs.</returns>
         Task Subscribe(IEndpoint endpoint, TopicName topicName, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <summary>
+        /// Called by the host when a message is received.
+        /// </summary>
+        /// <remarks>
+        /// Ensures that the received message is recorded in the journal and raises the
+        /// <see cref="MessageReceived"/> event.
+        /// </remarks>
+        /// <param name="message">The message that is received</param>
+        /// <param name="principal">The principal that sent the message</param>
+        /// <param name="cancellationToken">(Optional) A cancellation token that can be used
+        /// by the caller to cancel the receipt operation</param>
+        /// <returns>Returns a task that completes once the received message has been journaled
+        /// and the <see cref="MessageReceived"/> event handlers have finished executing.</returns>
+        Task ReceiveMessage(Message message, IPrincipal principal, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

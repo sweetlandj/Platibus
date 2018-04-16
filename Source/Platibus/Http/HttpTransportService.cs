@@ -27,6 +27,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Diagnostics;
@@ -54,15 +55,12 @@ namespace Platibus.Http
         private readonly bool _bypassTransportLocalDestination;
         private readonly IDiagnosticService _diagnosticService;
         private readonly QueueName _outboundQueueName;
-
         private readonly IHttpClientFactory _httpClientFactory;
 
         private bool _disposed;
 
-        /// <summary>
-        /// Event raised when tranpsport is bypassed due to local delivery
-        /// </summary>
-        public event TransportMessageEventHandler LocalDelivery;
+        /// <inheritdoc />
+        public event TransportMessageEventHandler MessageReceived;
 
         /// <summary>
         /// Initializes a new <see cref="HttpTransportService"/>
@@ -200,13 +198,18 @@ namespace Platibus.Http
         /// been successfully published to the topic.</returns>
         public async Task PublishMessage(Message message, TopicName topicName, CancellationToken cancellationToken)
         {
+            if (_messageJournal != null)
+            {
+                await _messageJournal.Append(message, MessageJournalCategory.Published, cancellationToken);
+            }
+
             var subscribers = await _subscriptionTrackingService.GetSubscribers(topicName, cancellationToken);
             var transportTasks = new List<Task>();
 
             foreach (var subscriber in subscribers)
             {
                 IEndpointCredentials subscriberCredentials = null;
-                if (_endpoints.TryGetEndpointByAddress(subscriber, out IEndpoint subscriberEndpoint))
+                if (_endpoints.TryGetEndpointByAddress(subscriber, out var subscriberEndpoint))
                 {
                     subscriberCredentials = subscriberEndpoint.Credentials;
                 }
@@ -229,7 +232,23 @@ namespace Platibus.Http
 
             await Task.WhenAll(transportTasks);
         }
-        
+
+        public async Task ReceiveMessage(Message message, IPrincipal principal,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var messageReceivedHandlers = MessageReceived;
+            if (messageReceivedHandlers != null)
+            {
+                if (_messageJournal != null)
+                {
+                    await _messageJournal.Append(message, MessageJournalCategory.Received, cancellationToken);
+                }
+
+                var args = new TransportMessageEventArgs(message, principal, cancellationToken);
+                await messageReceivedHandlers(this, args);
+            }
+        }
+
         private async Task TransportMessage(Message message, IEndpointCredentials credentials, CancellationToken cancellationToken = default(CancellationToken))
         {
             HttpClient httpClient = null;
@@ -250,27 +269,11 @@ namespace Platibus.Http
                 var endpointBaseUri = message.Headers.Destination.WithTrailingSlash();
                 if (_bypassTransportLocalDestination && endpointBaseUri == _baseUri)
                 {
-                    await _diagnosticService.EmitAsync(
-                        new HttpEventBuilder(this, HttpEventType.HttpTransportBypassed)
-                        {
-                            Message = message,
-                            Uri = endpointBaseUri
-                        }.Build(), cancellationToken);
-
-                    var localDeliveryHandlers = LocalDelivery;
-                    if (localDeliveryHandlers != null)
-                    {
-                        var args = new TransportMessageEventArgs(message, Thread.CurrentPrincipal, cancellationToken);
-                        await localDeliveryHandlers(this, args);
-                    }
-                    delivered = true;
+                    delivered = await HandleLocalDelivery(message, cancellationToken, endpointBaseUri);
                     return;
                 }
 
-                var messageId = message.Headers.MessageId;
-                var urlEncodedMessageId = UrlEncoder.Encode(messageId);
-                var relativeUri = $"message/{urlEncodedMessageId}";
-                postUri = new Uri(endpointBaseUri, relativeUri);
+                postUri = BuildPostMessageUri(out var relativeUri, message, endpointBaseUri);
 
                 var httpContent = new StringContent(message.Content);
                 WriteHttpContentHeaders(message, httpContent);
@@ -395,19 +398,8 @@ namespace Platibus.Http
             }
         }
 
-        /// <summary>
-        /// Subscribes to messages published to the specified <paramref name="topicName"/>
-        /// by the application at the provided <paramref name="endpoint"/>.
-        /// </summary>
-        /// <param name="endpoint"></param>
-        /// <param name="topicName">The name of the topic to which the caller is
-        ///     subscribing.</param>
-        /// <param name="ttl">(Optional) The Time To Live (TTL) for the subscription
-        ///     on the publishing application if it is not renewed.</param>
-        /// <param name="cancellationToken">A token used by the caller to
-        ///     indicate if and when the subscription should be canceled.</param>
-        /// <returns>Returns a long-running task that will be completed when the 
-        /// subscription is canceled by the caller or a non-recoverable error occurs.</returns>
+        
+        /// <inheritdoc />
         public async Task Subscribe(IEndpoint endpoint, TopicName topicName, TimeSpan ttl, CancellationToken cancellationToken = default(CancellationToken))
         {
             try
@@ -540,6 +532,30 @@ namespace Platibus.Http
             {
             }
         }
+
+        private static Uri BuildPostMessageUri(out string relativeUri, Message message, Uri endpointBaseUri)
+        {
+            var messageId = message.Headers.MessageId;
+            var urlEncodedMessageId = UrlEncoder.Encode(messageId);
+            relativeUri = $"message/{urlEncodedMessageId}";
+            var postUri = new Uri(endpointBaseUri, relativeUri);
+            return postUri;
+        }
+
+        private async Task<bool> HandleLocalDelivery(Message message, CancellationToken cancellationToken, Uri endpointBaseUri)
+        {
+            await _diagnosticService.EmitAsync(
+                new HttpEventBuilder(this, HttpEventType.HttpTransportBypassed)
+                {
+                    Message = message,
+                    Uri = endpointBaseUri
+                }.Build(), cancellationToken);
+
+            await ReceiveMessage(message, Thread.CurrentPrincipal, cancellationToken);
+
+            return true;
+        }
+
 
         private async Task SendSubscriptionRequest(HttpSubscriptionMetadata subscriptionMetadata, CancellationToken cancellationToken = default(CancellationToken))
         {

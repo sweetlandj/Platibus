@@ -27,8 +27,9 @@ using Platibus.Security;
 
 namespace Platibus.RabbitMQ
 {
+    /// <inheritdoc />
     /// <summary>
-    /// Extends <see cref="IPlatibusConfiguration"/> with configuration specific to RabbitMQ hosting
+    /// Extends <see cref="T:Platibus.Config.IPlatibusConfiguration" /> with configuration specific to RabbitMQ hosting
     /// </summary>
     public interface IRabbitMQHostConfiguration : IPlatibusConfiguration
     {

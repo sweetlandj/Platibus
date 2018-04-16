@@ -23,6 +23,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Web;
+using Platibus.Http;
 
 namespace Platibus.IIS
 {
@@ -35,6 +36,7 @@ namespace Platibus.IIS
     {
         private readonly IIISConfiguration _configuration;
         private readonly IBus _bus;
+        private readonly HttpTransportService _transportService;
         private bool _disposed;
 
         public IBus Bus => _bus;
@@ -106,7 +108,10 @@ namespace Platibus.IIS
         public PlatibusHttpModule(IIISConfiguration configuration)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _bus = BusManager.SingletonInstance.GetBus(configuration);
+
+            var managedBus = BusManager.SingletonInstance.GetManagedBus(_configuration);
+            _bus = managedBus.Bus;
+            _transportService = managedBus.TransportService;
         }
         
         /// <inheritdoc />
@@ -135,8 +140,7 @@ namespace Platibus.IIS
             var baseUri = _configuration.BaseUri;
             if (IsPlatibusUri(request.Url, baseUri))
             {
-                var bus = context.GetBus() as Bus ?? _bus;
-                context.Handler = new PlatibusHttpHandler(bus, _configuration);
+                context.Handler = new PlatibusHttpHandler(_configuration, _bus, _transportService);
             }
 		}
 

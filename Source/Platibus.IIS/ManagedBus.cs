@@ -38,7 +38,6 @@ namespace Platibus.IIS
         private readonly ISubscriptionTrackingService _subscriptionTrackingService;
         private readonly IMessageQueueingService _messageQueueingService;
         private readonly IMessageJournal _messageJournal;
-        private readonly HttpTransportService _transportService;
 
         private bool _disposed;
 
@@ -47,6 +46,11 @@ namespace Platibus.IIS
         /// </summary>
         /// <returns>Returns the managed bus instance</returns>
         public Bus Bus { get; }
+
+        /// <summary>
+        /// The transport service for this managed bus instance
+        /// </summary>
+        public HttpTransportService TransportService { get; }
 
         /// <summary>
         /// Initializes a new <see cref="ManagedBus"/> with the specified <paramref name="configuration"/>
@@ -69,15 +73,14 @@ namespace Platibus.IIS
                 BypassTransportLocalDestination = configuration.BypassTransportLocalDestination
             };
 
-            _transportService = new HttpTransportService(transportServiceOptions);
+            TransportService = new HttpTransportService(transportServiceOptions);
 
-            Bus = InitBus(configuration, _transportService, _messageQueueingService).GetResultFromCompletionSource();
+            Bus = InitBus(configuration, TransportService, _messageQueueingService).GetResultFromCompletionSource();
         }
 
         private static async Task<Bus> InitBus(IIISConfiguration cfg, HttpTransportService ts, IMessageQueueingService mqs)
         {
             var bus = new Bus(cfg, cfg.BaseUri, ts, mqs);
-            ts.LocalDelivery += (sender, args) => bus.HandleMessage(args.Message, args.Principal);
             await ts.Init();
             await bus.Init();
             return bus;
@@ -117,7 +120,7 @@ namespace Platibus.IIS
             if (!disposing) return;
 
             Bus.Dispose();
-            _transportService.Dispose();
+            TransportService.Dispose();
             if (_messageQueueingService is IDisposable disposableMessageQueueingService)
             {
                 disposableMessageQueueingService.Dispose();

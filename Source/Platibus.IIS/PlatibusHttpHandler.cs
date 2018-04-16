@@ -126,8 +126,9 @@ namespace Platibus.IIS
             : this(configuration?.GetResultFromCompletionSource())
         {
             _configuration = configuration?.GetResultFromCompletionSource() ?? throw new ArgumentNullException(nameof(configuration));
-            Bus = BusManager.SingletonInstance.GetBus(_configuration);
-            _resourceRouter = InitResourceRouter(Bus, _configuration);
+            var managedBus = BusManager.SingletonInstance.GetManagedBus(_configuration);
+            Bus = managedBus.Bus;
+            _resourceRouter = InitResourceRouter(_configuration, managedBus.TransportService);
         }
 
         /// <inheritdoc />
@@ -140,9 +141,9 @@ namespace Platibus.IIS
         public PlatibusHttpHandler(IIISConfiguration configuration)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            Bus = BusManager.SingletonInstance.GetBus(_configuration);
-            BaseUri = _configuration.BaseUri;
-            _resourceRouter = InitResourceRouter(Bus, _configuration);
+            var managedBus = BusManager.SingletonInstance.GetManagedBus(_configuration);
+            Bus = managedBus.Bus;
+            _resourceRouter = InitResourceRouter(_configuration, managedBus.TransportService);
         }
 
         /// <inheritdoc />
@@ -150,29 +151,30 @@ namespace Platibus.IIS
         /// Inititializes a new <see cref="T:Platibus.IIS.PlatibusHttpHandler" /> with the specified
         /// <paramref name="bus" /> and <paramref name="configuration" />
         /// </summary>
-        /// <param name="bus">The initialized bus instance</param>
         /// <param name="configuration">The bus configuration</param>
+        /// <param name="bus">The initialized bus instance</param>
+        /// <param name="transportService"></param>
         /// <remarks>
         /// Used internally by <see cref="T:Platibus.IIS.PlatibusHttpModule" />.  This method bypasses the
         /// configuration cache and singleton diagnostic service and metrics collector. 
         /// </remarks>
-        internal PlatibusHttpHandler(IBus bus, IIISConfiguration configuration)
+        internal PlatibusHttpHandler(IIISConfiguration configuration, IBus bus, HttpTransportService transportService)
         {
-            Bus = bus ?? throw new ArgumentNullException(nameof(bus));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            Bus = bus ?? throw new ArgumentNullException(nameof(bus));
+            if (transportService == null) throw new ArgumentNullException(nameof(transportService));
+            
             BaseUri = configuration.BaseUri;
-           _resourceRouter = InitResourceRouter(bus, configuration);
+           _resourceRouter = InitResourceRouter(configuration, transportService);
         }
-
         
-
-        private static IHttpResourceRouter InitResourceRouter(IBus bus, IIISConfiguration configuration)
+        private static IHttpResourceRouter InitResourceRouter(IIISConfiguration configuration, HttpTransportService transportService)
         {
             var authorizationService = configuration.AuthorizationService;
             var subscriptionTrackingService = configuration.SubscriptionTrackingService;
             return new ResourceTypeDictionaryRouter(configuration.BaseUri)
             {
-                {"message", new MessageController(bus.HandleMessage, authorizationService)},
+                {"message", new MessageController(transportService.ReceiveMessage, authorizationService)},
                 {"topic", new TopicController(subscriptionTrackingService, configuration.Topics, authorizationService)},
                 {"journal", new JournalController(configuration.MessageJournal, configuration.AuthorizationService)},
                 {"metrics", new MetricsController(SingletonMetricsCollector)}
