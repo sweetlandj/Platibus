@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <Version>5.0.0</Version>
+    <Version>6.0.0</Version>
     <Authors>Jesse Sweetland</Authors>
     <Company />
     <Copyright>Copyright 2017 Jesse Sweetland</Copyright>
@@ -12,6 +12,8 @@
     <RepositoryUrl>https://github.com/sweetlandj/Platibus</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>bus message queue service rest async asp core middleware</PackageTags>
+    <AssemblyVersion>6.0.0.0</AssemblyVersion>
+    <FileVersion>6.0.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Platibus\Platibus.csproj"/>
+    <ProjectReference Include="..\Platibus\Platibus.csproj" />
   </ItemGroup>
 
 </Project>
