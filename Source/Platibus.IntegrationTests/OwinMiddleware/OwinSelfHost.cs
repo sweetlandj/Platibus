@@ -72,7 +72,9 @@ namespace Platibus.IntegrationTests.OwinMiddleware
             var configuration = new OwinConfiguration();
             var configurationManager = new OwinConfigurationManager();
             await configurationManager.Initialize(configuration, configSectionName);
+#pragma warning disable 612
             await configurationManager.FindAndProcessConfigurationHooks(configuration);
+#pragma warning restore 612
 
             if (configure != null)
             {

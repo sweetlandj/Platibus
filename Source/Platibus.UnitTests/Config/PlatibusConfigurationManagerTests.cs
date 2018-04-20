@@ -27,7 +27,9 @@ namespace Platibus.UnitTests.Config
         protected Task WhenProcessingConfigurationHooks()
         {
             var configurationManager = new PlatibusConfigurationManager();
+#pragma warning disable 612
             return configurationManager.FindAndProcessConfigurationHooks(Configuration);
+#pragma warning restore 612
         }
 
         protected void AssertHandlingRulesAreAdded()

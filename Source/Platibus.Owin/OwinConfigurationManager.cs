@@ -89,6 +89,7 @@ namespace Platibus.Owin
         /// <see cref="PlatibusConfiguration"/> object</returns>
         /// <seealso cref="PlatibusConfigurationSection"/>
         /// <seealso cref="IConfigurationHook"/>
+        [Obsolete]
         public static async Task<OwinConfiguration> LoadConfiguration(string sectionName = null,
             bool processConfigurationHooks = true)
         {

@@ -65,24 +65,15 @@ namespace Platibus.Config
             return (NameRegex == null || NameRegex.IsMatch(messageName));
         }
 
-        /// <summary>
-        /// Indicates whether the current object is equal to another object of the same type.
-        /// </summary>
-        /// <returns>
-        /// true if the current object is equal to the <paramref name="other"/> parameter; otherwise, false.
-        /// </returns>
-        /// <param name="other">An object to compare with this object.</param>
+        /// <inheritdoc />
         public bool Equals(MessageNamePatternSpecification other)
         {
-            if (ReferenceEquals(null, other))
+            if (other is null)
             {
                 return false;
             }
-            if (ReferenceEquals(this, other))
-            {
-                return true;
-            }
-            return Equals(NameRegex.ToString(), other.NameRegex.ToString());
+            
+            return ReferenceEquals(this, other) || Equals(NameRegex.ToString(), other.NameRegex.ToString());
         }
 
         /// <summary>
@@ -94,7 +85,7 @@ namespace Platibus.Config
         /// <param name="obj">The object to compare with the current object. </param><filterpriority>2</filterpriority>
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj))
+            if (obj is null)
             {
                 return false;
             }

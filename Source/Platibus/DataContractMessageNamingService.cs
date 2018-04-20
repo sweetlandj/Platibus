@@ -26,6 +26,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Runtime.Serialization;
 using Platibus.Diagnostics;
+using Platibus.Utils;
 
 namespace Platibus
 {
@@ -36,15 +37,18 @@ namespace Platibus
     /// <seealso cref="T:System.Runtime.Serialization.DataContractAttribute" />
     public class DataContractMessageNamingService : IMessageNamingService
     {
-        private readonly XsdDataContractExporter _dataContractExporter = new XsdDataContractExporter();
         private readonly IDiagnosticService _diagnosticService;
+        private readonly IReflectionService _reflectionService;
+        private readonly XsdDataContractExporter _dataContractExporter = new XsdDataContractExporter();
+        
         private readonly ConcurrentDictionary<Type, MessageName> _messageNamesByType = new ConcurrentDictionary<Type, MessageName>();
         private readonly ConcurrentDictionary<MessageName, Type> _typesByMessageName = new ConcurrentDictionary<MessageName, Type>();
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="DataContractMessageNamingService"/>
+        /// Initializes a new <see cref="T:Platibus.DataContractMessageNamingService" />
         /// </summary>
-        public DataContractMessageNamingService()
+        public DataContractMessageNamingService() : this(null)
         {
             _diagnosticService = DiagnosticService.DefaultInstance;
         }
@@ -57,6 +61,7 @@ namespace Platibus
         public DataContractMessageNamingService(IDiagnosticService diagnosticService)
         {
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+            _reflectionService = new DefaultReflectionService(_diagnosticService);
         }
 
         /// <summary>
@@ -126,10 +131,10 @@ namespace Platibus
         {
             // Search through all of the types in the current app domain for
             // a type whose schema type name is equal to the message name
-            return AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
-                .FirstOrDefault(type => type.GetCustomAttributes(typeof(DataContractAttribute), false).Any() 
-                    && GetSchemaTypeName(type) == messageName);
+            return _reflectionService
+                .EnumerateTypes()
+                .FirstOrDefault(type => type.Has<DataContractAttribute>() 
+                                        && GetSchemaTypeName(type) == messageName);
         }
     }
 }

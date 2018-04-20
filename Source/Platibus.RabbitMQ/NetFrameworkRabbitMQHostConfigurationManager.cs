@@ -100,6 +100,7 @@ namespace Platibus.RabbitMQ
         /// <see cref="PlatibusConfiguration"/> object</returns>
         /// <seealso cref="PlatibusConfigurationSection"/>
         /// <seealso cref="IConfigurationHook"/>
+        [Obsolete]
         public static async Task<RabbitMQHostConfiguration> LoadConfiguration(string sectionName = "platibus.rabbitmq", 
             bool processConfigurationHooks = true)
         {

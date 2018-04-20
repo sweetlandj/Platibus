@@ -77,7 +77,9 @@ namespace Platibus.IIS
             var configuration = new IISConfiguration();
             var configManager = new IISConfigurationManager();
             await configManager.Initialize(configuration, sectionName);
+#pragma warning disable 612
             await configManager.FindAndProcessConfigurationHooks(configuration);
+#pragma warning restore 612
             if (configure != null)
             {
                 await configure(configuration);

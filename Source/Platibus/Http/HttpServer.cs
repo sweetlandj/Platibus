@@ -157,7 +157,9 @@ namespace Platibus.Http
             var configManager = new HttpServerConfigurationManager();
             var configuration = new HttpServerConfiguration();
             await configManager.Initialize(configuration, configSectionName);
+#pragma warning disable 612
             await configManager.FindAndProcessConfigurationHooks(configuration);
+#pragma warning restore 612
             if (configure != null)
             {
                 await configure(configuration);

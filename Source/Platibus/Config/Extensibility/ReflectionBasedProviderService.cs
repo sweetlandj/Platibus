@@ -23,6 +23,7 @@
 using System;
 using System.Linq;
 using Platibus.Diagnostics;
+using Platibus.Utils;
 
 namespace Platibus.Config.Extensibility
 {
@@ -31,14 +32,14 @@ namespace Platibus.Config.Extensibility
     /// </summary>
     public class ReflectionBasedProviderService : IProviderService
     {
-        private readonly ReflectionService _reflectionService;
+        private readonly IReflectionService _reflectionService;
 
         /// <summary>
         /// Initializes a new <see cref="ReflectionBasedProviderService"/>
         /// </summary>
         public ReflectionBasedProviderService()
         {
-            _reflectionService = new ReflectionService();
+            _reflectionService = new DefaultReflectionService();
         }
 
         /// <summary>
@@ -48,7 +49,7 @@ namespace Platibus.Config.Extensibility
         /// events related to provider resolution will be directed</param>
         public ReflectionBasedProviderService(IDiagnosticService diagnosticService)
         {
-            _reflectionService = new ReflectionService(diagnosticService);
+            _reflectionService = new DefaultReflectionService(diagnosticService);
         }
 
         /// <summary>

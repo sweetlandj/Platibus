@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Platibus.Config
+namespace Platibus.Utils
 {
     internal static class ReflectionExtensions
     {
-
         public static bool Has<TAttribute>(this Type type) where TAttribute : Attribute
         {
             return type.GetCustomAttributes(typeof(TAttribute), false).Any();

@@ -91,6 +91,7 @@ namespace Platibus.IIS
         /// <see cref="PlatibusConfiguration"/> object</returns>
         /// <seealso cref="PlatibusConfigurationSection"/>
         /// <seealso cref="IConfigurationHook"/>
+        [Obsolete]
         public static async Task<IISConfiguration> LoadConfiguration(string sectionName = null,
             bool processConfigurationHooks = true)
         {
@@ -112,7 +113,7 @@ namespace Platibus.IIS
         /// <returns>Returns a task whose result is an initialized subscription tracking service</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="config"/> is
         /// <c>null</c></exception>
-        [Obsolete("Use SecurityTokenServiceFactory")]
+        [Obsolete("Use SubscriptionTrackingServiceFactory.InitSubscriptionTrackingService")]
         public static Task<ISubscriptionTrackingService> InitSubscriptionTrackingService(
             SubscriptionTrackingElement config)
         {

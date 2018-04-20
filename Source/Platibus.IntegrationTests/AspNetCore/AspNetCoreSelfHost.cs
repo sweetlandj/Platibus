@@ -79,7 +79,9 @@ namespace Platibus.IntegrationTests.AspNetCore
             var configuration = new AspNetCoreConfiguration();
             var configurationManager = new AspNetCoreConfigurationManager();
             await configurationManager.Initialize(configuration, sectionName);
+#pragma warning disable 612
             await configurationManager.FindAndProcessConfigurationHooks(configuration);
+#pragma warning restore 612
             configure?.Invoke(configuration);
             return new AspNetCoreSelfHost(configuration);
         }

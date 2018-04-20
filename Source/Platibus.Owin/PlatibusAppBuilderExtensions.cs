@@ -104,7 +104,9 @@ namespace Platibus.Owin
             var configuration = new OwinConfiguration();
             var configurationManager = new OwinConfigurationManager();
             await configurationManager.Initialize(configuration, sectionName);
+#pragma warning disable 612
             await configurationManager.FindAndProcessConfigurationHooks(configuration);
+#pragma warning restore 612
             if (configure != null)
             {
                 await configure(configuration);

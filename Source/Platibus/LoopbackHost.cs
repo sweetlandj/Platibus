@@ -157,7 +157,9 @@ namespace Platibus
             var configManager = new LoopbackConfigurationManager();
             var configuration = new LoopbackConfiguration();
             await configManager.Initialize(configuration, configSectionName);
+#pragma warning disable 612
             await configManager.FindAndProcessConfigurationHooks(configuration);
+#pragma warning restore 612
             if (configure != null)
             {
                 await configure(configuration);

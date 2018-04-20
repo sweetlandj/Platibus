@@ -31,6 +31,7 @@ using Platibus.Config.Extensibility;
 using Platibus.Diagnostics;
 using Platibus.Security;
 using Platibus.Serialization;
+using Platibus.Utils;
 
 namespace Platibus.Config
 {
@@ -151,12 +152,13 @@ namespace Platibus.Config
         /// </summary>
         /// <param name="configuration">The configuration that will be passed to the configuration
         /// hooks</param>
+        [Obsolete]
         public virtual async Task FindAndProcessConfigurationHooks(TConfiguration configuration)
         {
             if (configuration == null) return;
 
             var diagnosticService = configuration.DiagnosticService;
-            var reflectionService = new ReflectionService(diagnosticService);
+            var reflectionService = new DefaultReflectionService(diagnosticService);
             var hookTypes = reflectionService.FindConcreteSubtypes<IConfigurationHook>();
             foreach (var hookType in hookTypes.Distinct())
             {

@@ -110,7 +110,9 @@ namespace Platibus.AspNetCore
             var configuration = new AspNetCoreConfiguration();
             var configurationManager = new AspNetCoreConfigurationManager();
             await configurationManager.Initialize(configuration, sectionName);
+#pragma warning disable 612
             await configurationManager.FindAndProcessConfigurationHooks(configuration);
+#pragma warning restore 612
             if (configure != null)
             {
                 await configure(configuration);

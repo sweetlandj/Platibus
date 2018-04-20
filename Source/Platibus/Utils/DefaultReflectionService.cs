@@ -20,46 +20,60 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using Microsoft.Extensions.DependencyModel;
-using Platibus.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Microsoft.Extensions.DependencyModel;
+using Platibus.Diagnostics;
 
-namespace Platibus.Config
+namespace Platibus.Utils
 {
-    internal class ReflectionService
+    /// <inheritdoc />
+    /// <summary>
+    /// A basic <see cref="T:Platibus.Utils.IReflectionService" /> implementation that loads types from the app domain,
+    /// the assemblies found in the app domain base directory, and default assemblies from the
+    /// dependency context.
+    /// </summary>
+    public class DefaultReflectionService : IReflectionService
     {
         private readonly IDiagnosticService _diagnosticService;
 
-        public ReflectionService()
+        /// <inheritdoc />
+        /// <summary>
+        /// Initialies a new <see cref="T:Platibus.Utils.DefaultReflectionService" />
+        /// </summary>
+        public DefaultReflectionService() : this(null)
         {
             _diagnosticService = DiagnosticService.DefaultInstance;
         }
 
-        public ReflectionService(IDiagnosticService diagnosticService)
+        /// <summary>
+        /// Initializes a new <see cref="DefaultReflectionService"/>
+        /// </summary>
+        /// <param name="diagnosticService">The diagnostic service through which events related to assembly
+        /// or type loading will be reported</param>
+        public DefaultReflectionService(IDiagnosticService diagnosticService)
         {
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
         }
 
-        public IEnumerable<Type> FindConcreteSubtypes<TBase>()
+        /// <inheritdoc />
+        public IEnumerable<Type> EnumerateTypes()
         {
             var appDomain = AppDomain.CurrentDomain;
             var assemblyNames = GetAssemblyNames(appDomain);
-            var subtypes = new List<Type>();
             foreach (var assemblyName in assemblyNames)
             {
+                var assemblyTypes = Enumerable.Empty<Type>();
                 try
                 {
                     var assembly = appDomain.GetAssemblies()
-                        .FirstOrDefault(a => a.GetName() == assemblyName)
-                        ?? appDomain.Load(assemblyName);
-                    
-                    subtypes.AddRange(assembly.GetTypes()
-                        .Where(typeof(TBase).IsAssignableFrom)
-                        .Where(t => !t.IsInterface && !t.IsAbstract));
+                                       .FirstOrDefault(a => a.GetName() == assemblyName)
+                                   ?? appDomain.Load(assemblyName);
+
+                    assemblyTypes = assembly.GetTypes();
                 }
                 catch (Exception ex)
                 {
@@ -69,24 +83,28 @@ namespace Platibus.Config
                         Exception = ex
                     }.Build());
                 }
-            }
-            return subtypes;
-        }
 
-        public IEnumerable<AssemblyName> GetAssemblyNames(AppDomain appDomain)
+                foreach (var assemblyType in assemblyTypes)
+                {
+                    yield return assemblyType;
+                }
+            }
+        }
+        
+        protected IEnumerable<AssemblyName> GetAssemblyNames(AppDomain appDomain)
         {
             return GetDefaultAssemblyNames()
                 .Union(GetAppDomainBaseDirectoryAssemblyNames(appDomain))
                 .Distinct(new AssemblyNameEqualityComparer());
         }
 
-        public IEnumerable<AssemblyName> GetDefaultAssemblyNames()
+        protected IEnumerable<AssemblyName> GetDefaultAssemblyNames()
         {
             var dependencyContext = DependencyContext.Default;
             return dependencyContext?.GetDefaultAssemblyNames() ?? Enumerable.Empty<AssemblyName>();
         }
 
-        public IEnumerable<AssemblyName> GetAppDomainBaseDirectoryAssemblyNames(AppDomain appDomain)
+        protected IEnumerable<AssemblyName> GetAppDomainBaseDirectoryAssemblyNames(AppDomain appDomain)
         {
             var appDomainBaseDirectory = AppDomain.CurrentDomain.BaseDirectory;
             var directories = new[]
@@ -130,12 +148,14 @@ namespace Platibus.Config
         {
             public bool Equals(AssemblyName x, AssemblyName y)
             {
+                if (x is null) return false;
+                if (y is null) return false;
                 return Equals(x.Name, y.Name);
             }
 
             public int GetHashCode(AssemblyName obj)
             {
-                return obj?.Name.GetHashCode() ?? 0;
+                return obj.Name.GetHashCode();
             }
         }
     }
