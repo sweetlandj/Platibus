@@ -465,47 +465,73 @@ namespace Platibus
 
             if (message.Headers.Synchronous)
             {
-                tasks.Add(HandleMessageImmediately(message, principal));
+                tasks.Add(HandleMessageImmediately(message, principal, cancellationToken));
             }
             else
             {
                 // Message expiration handled in MessageHandlingListener
-                tasks.AddRange(_handlingRules
+                var matchingRules = _handlingRules
                     .Where(r => r.Specification.IsSatisfiedBy(message))
-                    .Select(rule => rule.QueueName)
-                    .Distinct()
-                    .Select(q => _messageQueueingService.EnqueueMessage(q, message, principal, cancellationToken)));
+                    .ToList();
+
+                if (!matchingRules.Any())
+                {
+                    await _diagnosticService.EmitAsync(
+                        new DiagnosticEventBuilder(this, DiagnosticEventType.NoMatchingHandlingRules)
+                        {
+                            Message = message
+                        }.Build(), cancellationToken);
+                    return;
+                }
+
+                var handlerQueues = matchingRules.Select(rule => rule.QueueName).Distinct();
+
+                tasks.AddRange(handlerQueues.Select(queue => _messageQueueingService.EnqueueMessage(queue, message, principal, cancellationToken)));
             }
 
             await Task.WhenAll(tasks);
         }
 
-        private async Task HandleMessageImmediately(Message message, IPrincipal senderPrincipal)
+        private async Task HandleMessageImmediately(Message message, IPrincipal senderPrincipal, CancellationToken cancellationToken)
         {
-            var messageContext = new BusMessageContext(this, message.Headers, senderPrincipal);
-            var handlers = _handlingRules
+            var matchingRules = _handlingRules
                 .Where(r => r.Specification.IsSatisfiedBy(message))
-                .Select(rule => rule.MessageHandler)
                 .ToList();
+
+            if (!matchingRules.Any())
+            {
+                await _diagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.NoMatchingHandlingRules)
+                    {
+                        Message = message
+                    }.Build(), cancellationToken);
+
+                throw new MessageNotAcknowledgedException("Message does not match any configured handling rules");
+            }
+
+            var messageContext = new BusMessageContext(this, message.Headers, senderPrincipal);
+            var handlers = matchingRules.Select(rule => rule.MessageHandler).ToList();
+            var autoAcknowledge = matchingRules.Any(rule => rule.QueueOptions?.AutoAcknowledge ?? false);
             
             await _messageHandler.HandleMessage(handlers, message, messageContext, _cancellationTokenSource.Token);
-            
-            if (!messageContext.MessageAcknowledged)
+
+            var acknowledged = messageContext.MessageAcknowledged || autoAcknowledge;
+            if (!acknowledged)
             {
                 await _diagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
                     {
                         Message = message
-                    }.Build());
+                    }.Build(), cancellationToken);
 
-                throw new MessageNotAcknowledgedException();
+                throw new MessageNotAcknowledgedException("Message not acknowledged by any message handlers");
             }
 
             await _diagnosticService.EmitAsync(
                 new DiagnosticEventBuilder(this, DiagnosticEventType.MessageAcknowledged)
                 {
                     Message = message
-                }.Build());
+                }.Build(), cancellationToken);
         }
 
         private async Task NotifyReplyReceived(Message message)
