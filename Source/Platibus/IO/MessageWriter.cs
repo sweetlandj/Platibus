@@ -27,6 +27,7 @@ using System.Threading.Tasks;
 
 namespace Platibus.IO
 {
+    /// <inheritdoc />
     /// <summary>
     /// An object that writes messages to streams
     /// </summary>

@@ -126,7 +126,7 @@ namespace Platibus
 
             public void Dispose()
             {
-                if (_unsubscribe != null) _unsubscribe(this);
+                _unsubscribe?.Invoke(this);
             }
         }
     }

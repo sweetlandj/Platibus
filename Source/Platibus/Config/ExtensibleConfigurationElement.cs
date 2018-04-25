@@ -169,18 +169,20 @@ namespace Platibus.Config
         /// </returns>
         /// <exception cref="FormatException">If the property value
         /// cannot be cast or parsed to <typeparamref name="TEnum"/></exception>
-        public TEnum GetEnum<TEnum>(string name) where TEnum : struct
+        public TEnum? GetEnum<TEnum>(string name) where TEnum : struct
         {
             var val = GetObject(name);
-            if (val == null) return default(TEnum);
-
-            if (val is TEnum)
+            switch (val)
             {
-                return (TEnum) val;
+                case null:
+                    return null;
+                case TEnum @enum:
+                    return @enum;
             }
+
             return (TEnum) Enum.Parse(typeof (TEnum), val.ToString(), false);
         }
-
+        
         /// <summary>
         /// Returns the property with the specified <paramref name="name"/>
         /// as a <see cref="TimeSpan"/>.
@@ -200,14 +202,15 @@ namespace Platibus.Config
         /// cannot be cast or converted to an int</exception>
         /// <exception cref="FormatException">If the property value
         /// cannot be cast or converted to an int</exception>
-        public TimeSpan GetTimeSpan(string name)
+        public TimeSpan? GetTimeSpan(string name)
         {
             var val = GetObject(name);
-            if (val == null) return default(TimeSpan);
-
-            if (val is TimeSpan)
+            switch (val)
             {
-                return (TimeSpan)val;
+                case null:
+                    return null;
+                case TimeSpan span:
+                    return span;
             }
 
             var str = val.ToString();

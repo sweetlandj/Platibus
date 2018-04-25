@@ -32,15 +32,13 @@ namespace Platibus
 {
     internal class MessageHandler 
     {
-        private readonly IMessageNamingService _messageNamingService;
-        private readonly ISerializationService _serializationService;
         private readonly IDiagnosticService _diagnosticService;
+        private readonly MessageMarshaller _messageMarshaller;
 
-        public MessageHandler(IMessageNamingService messageNamingService, ISerializationService serializationService, IDiagnosticService diagnosticService = null)
+        public MessageHandler(MessageMarshaller messageMarshaller, IDiagnosticService diagnosticService = null)
         {
-            _messageNamingService = messageNamingService ?? throw new ArgumentNullException(nameof(messageNamingService));
-            _serializationService = serializationService ?? throw new ArgumentNullException(nameof(serializationService));
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
+            _messageMarshaller = messageMarshaller ?? throw new ArgumentNullException(nameof(messageMarshaller));
         }
 
         public async Task HandleMessage(IEnumerable<IMessageHandler> messageHandlers, Message message,
@@ -59,9 +57,7 @@ namespace Platibus
                 return;
             }
 
-            var messageType = _messageNamingService.GetTypeForName(message.Headers.MessageName);
-            var serializer = _serializationService.GetSerializer(message.Headers.ContentType);
-            var messageContent = serializer.Deserialize(message.Content, messageType);
+            var messageContent = _messageMarshaller.Unmarshal(message);
 
             var handlingTasks = messageHandlers.Select(handler =>
                 handler.HandleMessage(messageContent, messageContext, cancellationToken));

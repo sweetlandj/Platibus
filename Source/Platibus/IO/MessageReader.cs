@@ -49,7 +49,7 @@ namespace Platibus.IO
         /// <see cref="reader"/> will be left to the caller.  Defaults to <c>false</c>.</param>
         public MessageReader(TextReader reader, bool leaveOpen = false)
         {
-            _reader = reader ?? throw new ArgumentNullException("reader");
+            _reader = reader ?? throw new ArgumentNullException(nameof(reader));
             _leaveOpen = leaveOpen;
         }
 
@@ -64,7 +64,7 @@ namespace Platibus.IO
         /// <see cref="stream"/> will be left to the caller.  Defaults to <c>false</c>.</param>
         public MessageReader(Stream stream, Encoding encoding = null, bool leaveOpen = false)
         {
-            if (stream == null) throw new ArgumentNullException("stream");
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
             _reader = new StreamReader(stream, encoding ?? Encoding.UTF8);
             _leaveOpen = leaveOpen;
         }

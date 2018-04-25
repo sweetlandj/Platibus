@@ -7,9 +7,10 @@ using System.Text;
 
 namespace Platibus.Serialization
 {
+    /// <inheritdoc />
     /// <summary>
-    /// An <see cref="ISerializer"/> implementation based on the .NET framework
-    /// <see cref="DataContractJsonSerializer"/>
+    /// An <see cref="T:Platibus.Serialization.ISerializer" /> implementation based on the .NET framework
+    /// <see cref="T:System.Runtime.Serialization.Json.DataContractJsonSerializer" />
     /// </summary>
     public class DataContractJsonSerializerAdapter : ISerializer
     {
@@ -39,11 +40,7 @@ namespace Platibus.Serialization
             _settings = settings;
         }
 
-        /// <summary>
-        /// Serializes an object into a string
-        /// </summary>
-        /// <param name="obj">The object to serialize</param>
-        /// <returns>Returns the serialized object string</returns>
+        /// <inheritdoc />
         public string Serialize(object obj)
         {
             if (obj == null) return null;
@@ -55,12 +52,7 @@ namespace Platibus.Serialization
             }
         }
 
-        /// <summary>
-        /// Deserializes a string into an object of the specified <paramref name="type"/>
-        /// </summary>
-        /// <param name="str">The serialized object string</param>
-        /// <param name="type">The type of object</param>
-        /// <returns>Returns a deserialized object of the specified type</returns>
+        /// <inheritdoc />
         public object Deserialize(string str, Type type)
         {
             if (string.IsNullOrWhiteSpace(str)) return null;
@@ -71,12 +63,7 @@ namespace Platibus.Serialization
             }
         }
 
-        /// <summary>
-        /// Deserializes a string into an object of the specified type <typeparamref name="T"/>
-        /// </summary>
-        /// <typeparam name="T">The object type</typeparam>
-        /// <param name="str">The serialized object string</param>
-        /// <returns>Returns a deserialized object of type <typeparamref name="T"/></returns>
+        /// <inheritdoc />
         public T Deserialize<T>(string str)
         {
             if (string.IsNullOrWhiteSpace(str)) return default(T);

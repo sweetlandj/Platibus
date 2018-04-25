@@ -22,6 +22,8 @@
 
 using System;
 using System.Threading.Tasks;
+using Platibus.Diagnostics;
+using Platibus.Serialization;
 #if NET452 || NET461
 using System.Runtime.Caching;
 #endif
@@ -38,7 +40,8 @@ namespace Platibus
     /// </summary>
     public class MemoryCacheReplyHub : IDisposable
     {
-        private bool _disposed;
+        private readonly MessageMarshaller _messageMarshaller;
+        private readonly IDiagnosticService _diagnosticService;
 #if NET452 || NET461
         private readonly MemoryCache _cache = new MemoryCache("MemoryCacheReplyHub");
 #endif
@@ -46,15 +49,21 @@ namespace Platibus
         private readonly MemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
 #endif
         private readonly TimeSpan _replyTimeout;
+        private bool _disposed;
 
         /// <summary>
         /// Creates a new <see cref="MemoryCacheReplyHub"/> that will hold sent messages
         /// in memory until the specified <paramref name="replyTimeout"/> has elapsed
         /// </summary>
+        /// <param name="messageMarshaller">A service used to deserialize message content</param>
+        /// <param name="diagnosticService">A service through which diagnostic events related
+        /// to handling replies will be reported</param>
         /// <param name="replyTimeout">The maximum amount of time to hold send messages
-        /// in memory before they are evicted from cache</param>
-        public MemoryCacheReplyHub(TimeSpan replyTimeout)
+        ///     in memory before they are evicted from cache</param>
+        public MemoryCacheReplyHub(MessageMarshaller messageMarshaller, IDiagnosticService diagnosticService, TimeSpan replyTimeout)
         {
+            _messageMarshaller = messageMarshaller ?? throw new ArgumentNullException(nameof(messageMarshaller));
+            _diagnosticService = diagnosticService ?? throw new ArgumentNullException(nameof(diagnosticService));
             _replyTimeout = replyTimeout <= TimeSpan.Zero ? TimeSpan.FromMinutes(5) : replyTimeout;
         }
 
@@ -101,19 +110,28 @@ namespace Platibus
         /// Called by the bus to indicate that a message has been received that is
         /// related to another message (possibly a reply)
         /// </summary>
-        /// <param name="reply">The content of the related message</param>
-        /// <param name="relatedToMessageId">The message ID to which this message
-        /// is related</param>
+        /// <param name="message"></param>
         /// <returns>Returns a task that will complete when all reply stream
         /// observers have been notified that a reply was received</returns>
-        public Task ReplyReceived(object reply, MessageId relatedToMessageId)
+        public Task NotifyReplyReceived(Message message)
         {
             CheckDisposed();
+            var relatedTo = message.Headers.RelatedTo;
             return Task.Run(() =>
             {
-                if (_cache.Get(relatedToMessageId) is ReplyStream replyStream)
+                if (_cache.Get(relatedTo) is ReplyStream replyStream)
                 {
-                    replyStream.NotifyReplyReceived(reply);
+                    var messageContent = _messageMarshaller.Unmarshal(message);
+                    replyStream.NotifyReplyReceived(messageContent);
+                }
+                else
+                {
+                    _diagnosticService.Emit(
+                        new DiagnosticEventBuilder(this, DiagnosticEventType.CorrelationFailed)
+                        {
+                            Message = message,
+                            Detail = $"No sent message found with ID {relatedTo}"
+                        }.Build());
                 }
             });
         }
@@ -123,22 +141,23 @@ namespace Platibus
         /// specified message ID has been received and the reply stream can be
         /// completed
         /// </summary>
-        /// <param name="relatedToMessageId">The message ID to which the replies
-        /// are related</param>
+        /// <param name="message"></param>
         /// <returns>Returns a task when all reply stream observers have been 
         /// notified that the last reply was received</returns>
-        public Task NotifyLastReplyReceived(MessageId relatedToMessageId)
+        public Task NotifyLastReplyReceived(Message message)
         {
+            CheckDisposed();
+            var relatedTo = message.Headers.RelatedTo;
             return Task.Run(() =>
             {
-#if NET452
-                var replyStream = _cache.Remove(relatedToMessageId) as ReplyStream;
+#if NET452 || NET461
+                var replyStream = _cache.Remove(relatedTo) as ReplyStream;
                 replyStream?.NotifyCompleted();
 #endif
 #if NETSTANDARD2_0
-                var replyStream = _cache.Get<ReplyStream>(relatedToMessageId);
+                var replyStream = _cache.Get<ReplyStream>(relatedTo);
                 replyStream?.NotifyCompleted();
-                _cache.Remove(relatedToMessageId);
+                _cache.Remove(message);
 #endif
             });
         }
@@ -157,10 +176,7 @@ namespace Platibus
             Dispose(false);
         }
 
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        /// <filterpriority>2</filterpriority>
+        /// <inheritdoc />
         public void Dispose()
         {
             if (_disposed) return;

@@ -20,7 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Platibus.Diagnostics;
+using Platibus.Serialization;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -29,23 +32,62 @@ namespace Platibus.UnitTests
     [Trait("Category", "UnitTests")]
     public class SentMessageExtensionsTests
     {
-        [Fact]
-        public async Task FirstReplyIsReturned()
+        protected CancellationTokenSource CancellationTokenSource;
+        protected MemoryCacheReplyHub ReplyHub;
+        protected Message Message;
+        protected ISentMessage SentMessage;
+        protected Message Reply;
+
+        public SentMessageExtensionsTests()
         {
-            var memoryCacheReplyHub = new MemoryCacheReplyHub(TimeSpan.FromSeconds(3));
-            var messageId = MessageId.Generate();
-            var message = new Message(new MessageHeaders { MessageId = messageId }, "Hello, world!");
-            var sentMessage = memoryCacheReplyHub.CreateSentMessage(message);
+            var timeout = TimeSpan.FromSeconds(3);
+            CancellationTokenSource = new CancellationTokenSource(timeout);
 
-            const string reply = "Hello yourself!";
-            var replyTask = Task.Delay(TimeSpan.FromMilliseconds(500))
-                .ContinueWith(t => memoryCacheReplyHub.ReplyReceived(reply, messageId));
+            var messageSerializationService = new MessageMarshaller();
+            var diagnosticService = DiagnosticService.DefaultInstance;
 
-            var awaitedReply = await sentMessage.GetReply(TimeSpan.FromSeconds(3));
-            await replyTask;
+            ReplyHub = new MemoryCacheReplyHub(
+                messageSerializationService, 
+                diagnosticService,
+                timeout);
+        }
 
-            Assert.NotNull(awaitedReply);
-            Assert.Equal(reply, awaitedReply);
+        [Fact]
+        public async Task GetReplyReturnsFirstReply()
+        {
+            GivenSentMessage();
+            GivenReply();
+            WhenReplyReceived();
+
+            var cancellationToken = CancellationTokenSource.Token;
+            var awaitedReplyContent = await SentMessage.GetReply(cancellationToken);
+
+            Assert.NotNull(awaitedReplyContent);
+            Assert.Equal(Reply.Content, awaitedReplyContent);
+        }
+
+        protected void GivenSentMessage()
+        {
+            Message = new Message(new MessageHeaders
+            {
+                MessageId = MessageId.Generate()
+            }, "Hello, world!");
+
+            SentMessage = ReplyHub.CreateSentMessage(Message);
+        }
+
+        protected void GivenReply()
+        {
+            Reply = new Message(new MessageHeaders
+            {
+                MessageId = MessageId.Generate(),
+                RelatedTo = Message?.Headers.MessageId ?? default(MessageId)
+            }, "Hello, back!");
+        }
+
+        protected void WhenReplyReceived()
+        {
+            ReplyHub.NotifyReplyReceived(Reply);
         }
     }
 }

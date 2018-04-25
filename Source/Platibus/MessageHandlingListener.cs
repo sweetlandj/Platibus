@@ -20,13 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Platibus.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Platibus.Diagnostics;
-using Platibus.Serialization;
 
 namespace Platibus
 {
@@ -38,11 +37,12 @@ namespace Platibus
         private readonly MessageHandler _messageHandler;
         private readonly IDiagnosticService _diagnosticService;
 
-        public MessageHandlingListener(Bus bus, IMessageNamingService namingService, ISerializationService serializationService, QueueName queueName, IEnumerable<IMessageHandler> messageHandlers, IDiagnosticService diagnosticService = null)
+        public MessageHandlingListener(Bus bus, MessageHandler messageHandler, QueueName queueName, IEnumerable<IMessageHandler> messageHandlers, IDiagnosticService diagnosticService = null)
         {
-            if (namingService == null) throw new ArgumentNullException(nameof(namingService));
-            if (serializationService == null) throw new ArgumentNullException(nameof(serializationService));
-            if (messageHandlers == null) throw new ArgumentNullException(nameof(messageHandlers));
+            if (messageHandlers == null)
+            {
+                throw new ArgumentNullException(nameof(messageHandlers));
+            }
 
             var handlerList = messageHandlers.Where(h => h != null).ToList();
             if (!handlerList.Any()) throw new ArgumentNullException(nameof(messageHandlers));
@@ -51,7 +51,7 @@ namespace Platibus
             _queueName = queueName;
             _messageHandlers = handlerList;
             _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
-            _messageHandler = new MessageHandler(namingService, serializationService, _diagnosticService);
+            _messageHandler = messageHandler ?? throw new ArgumentNullException(nameof(messageHandler));
         }
 
         public async Task MessageReceived(Message message, IQueuedMessageContext context,

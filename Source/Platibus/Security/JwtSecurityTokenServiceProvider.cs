@@ -46,7 +46,7 @@ namespace Platibus.Security
         {
             var signingKey = (HexEncodedSecurityKey)configuration.GetString("signingKey");
             var fallbackSigningKey = (HexEncodedSecurityKey)configuration.GetString("fallbackSigningKey");
-            var defaultTtl = configuration.GetTimeSpan("defaultTtl");
+            var defaultTtl = configuration.GetTimeSpan("defaultTtl").GetValueOrDefault();
             var options = new JwtSecurityTokenServiceOptions
             {
                 SigningKey = signingKey,

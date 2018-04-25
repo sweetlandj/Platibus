@@ -22,13 +22,13 @@ namespace Platibus.UnitTests.Filesystem
 
         public LegacyMessageFileWriter(TextWriter writer, bool leaveOpen = false)
         {
-            _writer = writer ?? throw new ArgumentNullException("writer");
+            _writer = writer ?? throw new ArgumentNullException(nameof(writer));
             _leaveOpen = leaveOpen;
         }
 
         public LegacyMessageFileWriter(Stream stream, Encoding encoding = null, bool leaveOpen = false)
         {
-            if (stream == null) throw new ArgumentNullException("stream");
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
             _writer = new StreamWriter(stream, encoding ?? Encoding.UTF8);
             _leaveOpen = leaveOpen;
         }
@@ -52,7 +52,7 @@ namespace Platibus.UnitTests.Filesystem
 
         public async Task WriteMessage(Message message)
         {
-            if (message == null) throw new ArgumentNullException("message");
+            if (message == null) throw new ArgumentNullException(nameof(message));
 
             var headers = message.Headers;
             if (headers != null)

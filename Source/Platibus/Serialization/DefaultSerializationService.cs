@@ -24,13 +24,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 
 namespace Platibus.Serialization
 {
+    /// <inheritdoc cref="ISerializationService"/>
+    /// <inheritdoc cref="IEnumerable{T}"/>
     /// <summary>
-    /// A basic <see cref="ISerializationService"/> implementation that uses a
-    /// dictionary to match MIME content types to registered <see cref="ISerializer"/>
+    /// A basic <see cref="T:Platibus.Serialization.ISerializationService" /> implementation that uses a
+    /// dictionary to match MIME content types to registered <see cref="T:Platibus.Serialization.ISerializer" />
     /// implementations
     /// </summary>
     public class DefaultSerializationService : ISerializationService, IEnumerable<KeyValuePair<string, ISerializer>>
@@ -46,7 +47,7 @@ namespace Platibus.Serialization
         /// <remarks>
         /// Data contract serialization should only be used if there is a reasonable
         /// expectation that all types that are serialized are correctly annotated
-        /// with <see cref="DataContractAttribute"/>
+        /// with <see cref="System.Runtime.Serialization.DataContractAttribute"/>
         /// </remarks>
         public DefaultSerializationService(bool useDataContractSerializer = false)
         {
@@ -75,35 +76,19 @@ namespace Platibus.Serialization
             _serializers[applicationOctetStream] = new Base64ObjectSerializer();
         }
 
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="T:System.Collections.Generic.IEnumerator`1"/> that can be used to iterate through the collection.
-        /// </returns>
-        /// <filterpriority>1</filterpriority>
+        /// <inheritdoc />
         public IEnumerator<KeyValuePair<string, ISerializer>> GetEnumerator()
         {
             return _serializers.GetEnumerator();
         }
 
-        /// <summary>
-        /// Returns an enumerator that iterates through a collection.
-        /// </summary>
-        /// <returns>
-        /// An <see cref="T:System.Collections.IEnumerator"/> object that can be used to iterate through the collection.
-        /// </returns>
-        /// <filterpriority>2</filterpriority>
+        /// <inheritdoc />
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
         }
 
-        /// <summary>
-        /// Returns the most appropriate serializer for the specified content type
-        /// </summary>
-        /// <param name="forContentType">The MIME content type</param>
-        /// <returns>Returns a serializer for the specified content type</returns>
+        /// <inheritdoc />
         public ISerializer GetSerializer(string forContentType)
         {
             var key = NormalizeContentType(forContentType);

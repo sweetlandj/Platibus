@@ -384,7 +384,7 @@ namespace Platibus.UnitTests
                 _taskCompletionSource = new TaskCompletionSource<Message>();
                 _cancellationTokenSource = new CancellationTokenSource();
                 var cancelAfter = timeout <= TimeSpan.Zero
-                    ? TimeSpan.FromSeconds(3)
+                    ? TimeSpan.FromSeconds(5)
                     : timeout;
 
                 _cancellationTokenSource.Token.Register(() => _taskCompletionSource.TrySetCanceled());
@@ -445,7 +445,7 @@ namespace Platibus.UnitTests
                 _taskCompletionSource = new TaskCompletionSource<Message>();
                 _cancellationTokenSource = new CancellationTokenSource();
                 var cancelAfter = timeout <= TimeSpan.Zero
-                    ? TimeSpan.FromSeconds(3)
+                    ? TimeSpan.FromSeconds(5)
                     : timeout;
 
                 _cancellationTokenSource.Token.Register(() => _taskCompletionSource.TrySetCanceled());

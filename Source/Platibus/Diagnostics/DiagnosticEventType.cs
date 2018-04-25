@@ -40,8 +40,7 @@ namespace Platibus.Diagnostics
         /// Emitted when an error occurs during component or service initialization
         /// </summary>
         public static readonly DiagnosticEventType ComponentInitializationError = new DiagnosticEventType("ComponentInitializationError", DiagnosticEventLevel.Error);
-
-
+        
         /// <summary>
         /// Emitted when a default configuration is used
         /// </summary>
@@ -132,7 +131,7 @@ namespace Platibus.Diagnostics
         /// <summary>
         /// Emitted whenever a message is not acknowledged
         /// </summary>
-        public static readonly DiagnosticEventType MessageNotAcknowledged = new DiagnosticEventType("MessageNotAcknowledged", DiagnosticEventLevel.Trace);
+        public static readonly DiagnosticEventType MessageNotAcknowledged = new DiagnosticEventType("MessageNotAcknowledged", DiagnosticEventLevel.Warn);
 
         /// <summary>
         /// Emitted whenever an attempt is made to handle a message that has expired

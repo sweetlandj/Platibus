@@ -25,15 +25,17 @@ using Newtonsoft.Json;
 
 namespace Platibus.Serialization
 {
+	/// <inheritdoc />
 	/// <summary>
-	/// An <see cref="ISerializer"/> implementation based on the Newtonsoft JSON.Net library
+	/// An <see cref="T:Platibus.Serialization.ISerializer" /> implementation based on the Newtonsoft JSON.Net library
 	/// </summary>
     public class NewtonsoftJsonSerializer : ISerializer
     {
         private readonly JsonSerializerSettings _settings;
 
+		/// <inheritdoc />
 		/// <summary>
-		/// Initializes a new <see cref="NewtonsoftJsonSerializer"/> with recommended
+		/// Initializes a new <see cref="T:Platibus.Serialization.NewtonsoftJsonSerializer" /> with recommended
 		/// serializer settings
 		/// </summary>
         public NewtonsoftJsonSerializer() : this(null)
@@ -58,35 +60,21 @@ namespace Platibus.Serialization
             };
         }
 
-		/// <summary>
-		/// Serializes an object into a string
-		/// </summary>
-		/// <param name="obj">The object to serialize</param>
-		/// <returns>Returns the serialized object string</returns>
+		/// <inheritdoc />
 		public string Serialize(object obj)
 		{
 		    if (obj == null) return null;
             return JsonConvert.SerializeObject(obj, _settings);
         }
 
-		/// <summary>
-		/// Deserializes a string into an object of the specified <paramref name="type"/>
-		/// </summary>
-		/// <param name="str">The serialized object string</param>
-		/// <param name="type">The type of object</param>
-		/// <returns>Returns a deserialized object of the specified type</returns>
+		/// <inheritdoc />
 		public object Deserialize(string str, Type type)
         {
             if (string.IsNullOrWhiteSpace(str)) return null;
             return JsonConvert.DeserializeObject(str, type, _settings);
         }
 
-		/// <summary>
-		/// Deserializes a string into an object of the specified type <typeparamref name="T"/>
-		/// </summary>
-		/// <typeparam name="T">The object type</typeparam>
-		/// <param name="str">The serialized object string</param>
-		/// <returns>Returns a deserialized object of type <typeparamref name="T"/></returns>
+		/// <inheritdoc />
 		public T Deserialize<T>(string str)
         {
             if (string.IsNullOrWhiteSpace(str)) return default(T);

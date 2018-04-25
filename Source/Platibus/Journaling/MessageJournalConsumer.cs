@@ -60,13 +60,14 @@ namespace Platibus.Journaling
         {
         }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="MessageJournalConsumer"/> with the specified configuration
+        /// Initializes a new <see cref="T:Platibus.Journaling.MessageJournalConsumer" /> with the specified configuration
         /// and services
         /// </summary>
         /// <param name="bus">A configured and initialized bus instance</param>
         /// <param name="messageJournal">The message journal from which entries will be consumed</param>
-        /// <exception cref="ArgumentNullException">Thrown if any of the parameters are <c>null</c></exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown if any of the parameters are <c>null</c></exception>
         public MessageJournalConsumer(IBus bus, IMessageJournal messageJournal) : this(bus, messageJournal, null)
         {
         }

@@ -46,7 +46,7 @@ namespace Platibus.UnitTests
         /// <param name="outputHelper">The text writer to target</param>
         public TestOutputHelperSink(ITestOutputHelper outputHelper)
         {
-            _outputHelper = outputHelper ?? throw new ArgumentNullException("outputHelper");
+            _outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
         }
 
         /// <inheritdoc />

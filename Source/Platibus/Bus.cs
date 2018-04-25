@@ -43,15 +43,14 @@ namespace Platibus
         private readonly IEndpointCollection _endpoints;
         private readonly IList<Task> _subscriptionTasks = new List<Task>();
         private readonly IList<IHandlingRule> _handlingRules;
-        private readonly IMessageNamingService _messageNamingService;
         private readonly IMessageQueueingService _messageQueueingService;
 	    private readonly string _defaultContentType;
         private readonly SendOptions _defaultSendOptions;
         private readonly IDiagnosticService _diagnosticService;
 
-        private readonly MemoryCacheReplyHub _replyHub = new MemoryCacheReplyHub(TimeSpan.FromMinutes(5));
+        private readonly MessageMarshaller _messageMarshaller;
+        private readonly MemoryCacheReplyHub _replyHub;
         private readonly IList<ISendRule> _sendRules;
-        private readonly ISerializationService _serializationService;
         private readonly IList<ISubscription> _subscriptions;
         private readonly IList<TopicName> _topics;
         private readonly Uri _baseUri;
@@ -86,8 +85,10 @@ namespace Platibus
 
             _defaultSendOptions = configuration.DefaultSendOptions ?? new SendOptions();
 
-            _messageNamingService = configuration.MessageNamingService;
-            _serializationService = configuration.SerializationService;
+            _messageMarshaller = new MessageMarshaller(
+                configuration.MessageNamingService,
+                configuration.SerializationService,
+                configuration.DefaultContentType);
 
             _endpoints = new ReadOnlyEndpointCollection(configuration.Endpoints);
             _topics = configuration.Topics.ToList();
@@ -96,9 +97,11 @@ namespace Platibus
             _subscriptions = configuration.Subscriptions.ToList();
 
             _diagnosticService = configuration.DiagnosticService;
-            _messageHandler = new MessageHandler(_messageNamingService, _serializationService, _diagnosticService);
+            _messageHandler = new MessageHandler(_messageMarshaller, _diagnosticService);
 
             _transportService.MessageReceived += OnMessageReceived;
+
+            _replyHub = new MemoryCacheReplyHub(_messageMarshaller, _diagnosticService, TimeSpan.FromMinutes(5));
         }
 
         /// <summary>
@@ -128,8 +131,7 @@ namespace Platibus
                     .Select(r => r.QueueOptions)
                     .FirstOrDefault();
 
-                var queueListener = new MessageHandlingListener(this, _messageNamingService,
-                    _serializationService, queueName, handlers, _diagnosticService);
+                var queueListener = new MessageHandlingListener(this, _messageHandler, queueName, handlers, _diagnosticService);
 
                 await _messageQueueingService.CreateQueue(queueName, queueListener, queueOptions, cancellationToken);
             }
@@ -350,12 +352,9 @@ namespace Platibus
         private Message BuildMessage(object content, IMessageHeaders suppliedHeaders, SendOptions options)
         {
             if (content == null) throw new ArgumentNullException(nameof(content));
-            var messageName = _messageNamingService.GetNameForType(content.GetType());
-
             var headers = new MessageHeaders(suppliedHeaders)
             {
                 MessageId = MessageId.Generate(),
-                MessageName = messageName,
                 Origination = _baseUri,
                 Synchronous = options != null && options.Synchronous
             };
@@ -372,9 +371,7 @@ namespace Platibus
             }
             headers.ContentType = contentType;
 
-            var serializer = _serializationService.GetSerializer(headers.ContentType);
-            var serializedContent = serializer.Serialize(content);
-            return new Message(headers, serializedContent);
+            return _messageMarshaller.Marshal(content, headers);
         }
 
         private IEnumerable<KeyValuePair<EndpointName, IEndpoint>> GetEndpointsForSend(Message message)
@@ -385,6 +382,12 @@ namespace Platibus
 
             if (!matchingSendRules.Any())
             {
+                _diagnosticService.Emit(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.NoMatchingSendRules)
+                    {
+                        Message = message
+                    }.Build());
+
                 throw new NoMatchingSendRulesException();
             }
 
@@ -547,13 +550,8 @@ namespace Platibus
             // number of replies received is less than the number expected, then the OnComplete
             // event can be deferred.
 
-            var relatedToMessageId = message.Headers.RelatedTo;
-            var messageType = _messageNamingService.GetTypeForName(message.Headers.MessageName);
-            var serializer = _serializationService.GetSerializer(message.Headers.ContentType);
-            var messageContent = serializer.Deserialize(message.Content, messageType);
-
-            await _replyHub.ReplyReceived(messageContent, relatedToMessageId);
-            await _replyHub.NotifyLastReplyReceived(relatedToMessageId);
+            await _replyHub.NotifyReplyReceived(message);
+            await _replyHub.NotifyLastReplyReceived(message);
         }
 
         private void CheckDisposed()
