@@ -5,8 +5,10 @@ using Platibus.Security;
 
 namespace Platibus.Journaling
 {
+    /// <inheritdoc cref="IMessageJournal"/>
+    /// <inheritdoc cref="IDisposable"/>
     /// <summary>
-    /// A wrapper for <see cref="IMessageJournal"/> implementations that ensures sensitive
+    /// A wrapper for <see cref="T:Platibus.Journaling.IMessageJournal" /> implementations that ensures sensitive
     /// information is not written to the journal
     /// </summary>
     internal class SanitizedMessageJournal : IMessageJournal, IDisposable
@@ -70,8 +72,7 @@ namespace Platibus.Journaling
         {
             if (disposing)
             {
-                var disposableJournal = _inner as IDisposable;
-                if (disposableJournal != null)
+                if (_inner is IDisposable disposableJournal)
                 {
                     disposableJournal.Dispose();
                 }

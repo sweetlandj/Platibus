@@ -22,6 +22,7 @@
 
 namespace Platibus.SQL.Commands
 {
+    /// <inheritdoc />
     /// <summary>
     /// Abstract base class that supplies default command builders suitable for SQL Server, SQLite,
     /// and other databases with support for Transact-SQL query syntax.

@@ -26,8 +26,9 @@ using System.Data.Common;
 
 namespace Platibus.SQL.Commands
 {
+    /// <inheritdoc />
     /// <summary>
-    /// A subclass of <see cref="CreateMessageJournalObjectsCommandBuilder"/> that produces
+    /// A subclass of <see cref="T:Platibus.SQL.Commands.CreateMessageJournalObjectsCommandBuilder" /> that produces
     /// commands for creating message journal objects in a SQL Server database using Transact-SQL
     /// syntax.
     /// </summary>

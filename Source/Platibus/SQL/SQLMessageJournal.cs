@@ -41,8 +41,9 @@ using Platibus.Utils;
 
 namespace Platibus.SQL
 {
+    /// <inheritdoc />
     /// <summary>
-    /// A <see cref="IMessageJournal"/> implementation that uses a SQL database to store journaled
+    /// A <see cref="T:Platibus.Journaling.IMessageJournal" /> implementation that uses a SQL database to store journaled
     /// messages
     /// </summary>
     public class SQLMessageJournal : IMessageJournal

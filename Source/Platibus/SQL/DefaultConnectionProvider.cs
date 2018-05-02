@@ -33,6 +33,7 @@ using Platibus.Diagnostics;
 
 namespace Platibus.SQL
 {
+    /// <inheritdoc />
     /// <summary>
     /// A connection provider that creates a new connection via the ADO.NET provider factory
     /// and closes the connection when released
@@ -69,15 +70,6 @@ namespace Platibus.SQL
         }
 
         /// <inheritdoc />
-        /// <summary>
-        /// Produces a database connection
-        /// </summary>
-        /// <returns>A database connection</returns>
-        /// <remarks>
-        /// The return value of this method may be <c>null</c> depending on whether the ADO.NET
-        /// provider has overridden the virtual <c>DbProviderFactory.CreateConnection</c>
-        /// method.
-        /// </remarks>
         public virtual DbConnection GetConnection()
         {
             var connection = ProviderFactory.CreateConnection();
@@ -100,10 +92,7 @@ namespace Platibus.SQL
             return connection;
         }
 
-        /// <summary>
-        /// Releases a database connection
-        /// </summary>
-        /// <param name="connection">The connection to release</param>
+        /// <inheritdoc />
         public virtual void ReleaseConnection(DbConnection connection)
         {
             if (connection != null && connection.State == ConnectionState.Open)

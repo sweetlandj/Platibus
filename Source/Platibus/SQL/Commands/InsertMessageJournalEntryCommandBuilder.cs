@@ -23,7 +23,6 @@
 using System;
 using System.Data;
 using System.Data.Common;
-using Platibus.Journaling;
 
 namespace Platibus.SQL.Commands
 {
@@ -46,7 +45,7 @@ namespace Platibus.SQL.Commands
         /// <summary>
         /// The journal category
         /// </summary>
-        /// <see cref="MessageJournalCategory"/>
+        /// <see cref="Platibus.Journaling.MessageJournalCategory"/>
         public string Category { get; set; }
 
         /// <summary>

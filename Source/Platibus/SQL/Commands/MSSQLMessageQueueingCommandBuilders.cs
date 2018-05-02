@@ -22,8 +22,9 @@
 
 namespace Platibus.SQL.Commands
 {
+    /// <inheritdoc />
     /// <summary>
-    /// A subclass of <see cref="CommonMessageJournalingCommandBuilders"/> that implements
+    /// A subclass of <see cref="T:Platibus.SQL.Commands.CommonMessageJournalingCommandBuilders" /> that implements
     /// command builder overrides for creating message queueing objects in SQL Server databases
     /// using Transact-SQL syntax.
     /// </summary>

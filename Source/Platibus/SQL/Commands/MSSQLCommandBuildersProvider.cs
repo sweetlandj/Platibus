@@ -29,6 +29,9 @@ using Platibus.Config.Extensibility;
 
 namespace Platibus.SQL.Commands
 {
+    /// <inheritdoc cref="IMessageJournalingCommandBuildersProvider"/>
+    /// <inheritdoc cref="IMessageQueueingCommandBuildersProvider"/>
+    /// <inheritdoc cref="ISubscriptionTrackingCommandBuildersProvider"/>
     /// <summary>
     /// Provides command builders for message journaling, message queueing, and subscription
     /// tracking based on Microsoft SQL Server databases.
