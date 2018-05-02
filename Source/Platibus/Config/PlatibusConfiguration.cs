@@ -28,8 +28,9 @@ using Platibus.Serialization;
 
 namespace Platibus.Config
 {
+    /// <inheritdoc />
     /// <summary>
-    /// Concrete mutable implementation of <see cref="IPlatibusConfiguration" /> used for
+    /// Concrete mutable implementation of <see cref="T:Platibus.Config.IPlatibusConfiguration" /> used for
     /// programmatically configuring the bus.
     /// </summary>
     /// <remarks>
@@ -39,7 +40,7 @@ namespace Platibus.Config
     /// </remarks>
     public class PlatibusConfiguration : IPlatibusConfiguration
     {
-        private readonly EndpointCollection _endpoints = new EndpointCollection();
+        private readonly EndpointCollection _endpoints;
         private readonly IList<IHandlingRule> _handlingRules = new List<IHandlingRule>();
         private readonly IList<ISendRule> _sendRules = new List<ISendRule>();
         private readonly IList<ISubscription> _subscriptions = new List<ISubscription>();
@@ -81,23 +82,49 @@ namespace Platibus.Config
         /// <inheritdoc />
         public SendOptions DefaultSendOptions { get; set; }
 
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="PlatibusConfiguration"/> with a preconfigured
-        /// <paramref name="diagnosticService"/>
+        /// Initializes a new <see cref="T:Platibus.Config.PlatibusConfiguration" />
+        /// </summary>
+        public PlatibusConfiguration() : this(null, null)
+        {
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new <see cref="T:Platibus.Config.PlatibusConfiguration" /> with a preconfigured
+        /// <paramref name="diagnosticService" />
         /// </summary>
         /// <param name="diagnosticService">(Optional) The service through which diagnostic events
         /// are reported and processed</param>
+        /// <remarks>
+        /// If a custom <paramref name="diagnosticService" /> is not specified, then the default
+        /// singleton instance <see cref="F:Platibus.Diagnostics.DiagnosticService.DefaultInstance" /> will 
+        /// be used.
+        /// </remarks>
+        public PlatibusConfiguration(IDiagnosticService diagnosticService) : this(diagnosticService, null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new <see cref="PlatibusConfiguration"/> with a preconfigured
+        /// <paramref name="diagnosticService"/> and an initial set of <paramref name="endpoints"/>
+        /// </summary>
+        /// <param name="diagnosticService">(Optional) The service through which diagnostic events
+        /// are reported and processed</param>
+        /// <param name="endpoints">(Optional) An initial set of default endpoints</param>
         /// <remarks>
         /// If a custom <paramref name="diagnosticService"/> is not specified, then the default
         /// singleton instance <see cref="Diagnostics.DiagnosticService.DefaultInstance"/> will 
         /// be used.
         /// </remarks>
-        public PlatibusConfiguration(IDiagnosticService diagnosticService = null)
+        public PlatibusConfiguration(IDiagnosticService diagnosticService, EndpointCollection endpoints)
         {
             MessageNamingService = new DefaultMessageNamingService();
             SerializationService = new DefaultSerializationService();
             DefaultContentType = "application/json";
             DiagnosticService = diagnosticService ?? Diagnostics.DiagnosticService.DefaultInstance;
+            _endpoints = endpoints ?? new EndpointCollection();
         }
         
         /// <summary>

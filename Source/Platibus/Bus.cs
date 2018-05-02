@@ -91,7 +91,7 @@ namespace Platibus
             _messageNamingService = configuration.MessageNamingService;
             _serializationService = configuration.SerializationService;
 
-            _endpoints = new ReadOnlyEndpointCollection(configuration.Endpoints);
+            _endpoints = configuration.Endpoints ?? EndpointCollection.Empty;
             _topics = configuration.Topics.ToList();
             _sendRules = configuration.SendRules.ToList();
             _handlingRules = configuration.HandlingRules.ToList();

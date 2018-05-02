@@ -71,9 +71,7 @@ namespace Platibus.Http
             if (options == null) throw new ArgumentNullException(nameof(options));
 
             _baseUri = options.BaseUri.WithTrailingSlash();
-            _endpoints = options.Endpoints == null
-                ? ReadOnlyEndpointCollection.Empty
-                : new ReadOnlyEndpointCollection(options.Endpoints);
+            _endpoints = options.Endpoints = options.Endpoints ?? EndpointCollection.Empty;
 
             _messageQueueingService = options.MessageQueueingService;
             _messageJournal = options.MessageJournal;

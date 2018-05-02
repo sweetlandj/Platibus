@@ -25,90 +25,48 @@ using Platibus.Diagnostics;
 
 namespace Platibus.Config
 {
+    /// <inheritdoc cref="PlatibusConfiguration"/>
+    /// <inheritdoc cref="ILoopbackConfiguration"/>
     /// <summary>
     /// A loopback configuration
     /// </summary>
     public class LoopbackConfiguration : PlatibusConfiguration, ILoopbackConfiguration
     {
-        private readonly EndpointName _loopbackEndpoint;
+        private static readonly EndpointName LoopbackEndpoint = "loopback";
+        private static readonly Uri LoopbackUri = new Uri("urn:localhost/loopback");
 
-        /// <summary>
-        /// The base URI of the loopback bus instance
-        /// </summary>
-        public Uri BaseUri { get; }
+        /// <inheritdoc />
+        public Uri BaseUri => LoopbackUri;
 
-        /// <summary>
-        /// The message queueing service to use
-        /// </summary>
+        /// <inheritdoc />
         public IMessageQueueingService MessageQueueingService { get; set; }
 
-
+        /// <inheritdoc />
         /// <summary>
-        /// Initializes a new <see cref="LoopbackConfiguration"/> with a preconfigured
-        /// <paramref name="diagnosticService"/>
+        /// Initializes a new <see cref="T:Platibus.Config.LoopbackConfiguration" />
+        /// </summary>
+        public LoopbackConfiguration() : this(null)
+        {
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Initializes a new <see cref="T:Platibus.Config.LoopbackConfiguration" /> with a preconfigured
+        /// <paramref name="diagnosticService" />
         /// </summary>
         /// <param name="diagnosticService">(Optional) The service through which diagnostic events
         /// are reported and processed</param>
-        public LoopbackConfiguration(IDiagnosticService diagnosticService = null) : base(diagnosticService)
+        public LoopbackConfiguration(IDiagnosticService diagnosticService) : base(diagnosticService, new LoopbackEndpoints(LoopbackEndpoint, LoopbackUri))
         {
-            _loopbackEndpoint = new EndpointName("looback");
-            BaseUri = new Uri("urn:localhost/loopback");
-            base.AddEndpoint(_loopbackEndpoint, new Endpoint(BaseUri));
             var allMessages = new MessageNamePatternSpecification(".*");
-            base.AddSendRule(new SendRule(allMessages, _loopbackEndpoint));
+            base.AddSendRule(new SendRule(allMessages, LoopbackEndpoint));
         }
-
-        /// <summary>
-        /// Adds a topic to the configuration
-        /// </summary>
-        /// <param name="topic">The name of the topic</param>
-        /// <remarks>
-        /// Topics must be explicitly added in order to publish messages to them
-        /// </remarks>
+        
+        /// <inheritdoc />
         public override void AddTopic(TopicName topic)
         {
             base.AddTopic(topic);
-            base.AddSubscription(new Subscription(_loopbackEndpoint, topic));
-        }
-
-        /// <summary>
-        /// Adds a named endpoint to the configuration
-        /// </summary>
-        /// <param name="name">The name of the endpoint</param>
-        /// <param name="endpoint">The endpoint</param>
-        /// <remarks>
-        /// Not supported in loopback configurations
-        /// </remarks>
-        /// <exception cref="NotSupportedException">Always thrown</exception>
-        public override void AddEndpoint(EndpointName name, IEndpoint endpoint)
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <summary>
-        /// Adds a rule governing to which endpoints messages will be sent
-        /// </summary>
-        /// <param name="sendRule">The send rule</param>
-        /// <remarks>
-        /// Not supported in loopback configurations
-        /// </remarks>
-        /// <exception cref="NotSupportedException">Always thrown</exception>
-        public override void AddSendRule(ISendRule sendRule)
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <summary>
-        /// Adds a subscription to a local or remote topic
-        /// </summary>
-        /// <param name="subscription">The subscription</param>
-        /// <remarks>
-        /// Not supported in loopback configurations
-        /// </remarks>
-        /// <exception cref="NotSupportedException">Always thrown</exception>
-        public override void AddSubscription(ISubscription subscription)
-        {
-            throw new NotSupportedException();
+            AddSubscription(new Subscription(LoopbackEndpoint, topic));
         }
     }
 }
