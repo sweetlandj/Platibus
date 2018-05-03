@@ -90,7 +90,7 @@ namespace Platibus
                 configuration.SerializationService,
                 configuration.DefaultContentType);
 
-            _endpoints = new ReadOnlyEndpointCollection(configuration.Endpoints);
+            _endpoints = configuration.Endpoints ?? EndpointCollection.Empty;
             _topics = configuration.Topics.ToList();
             _sendRules = configuration.SendRules.ToList();
             _handlingRules = configuration.HandlingRules.ToList();

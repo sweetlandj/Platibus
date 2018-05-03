@@ -28,11 +28,14 @@ using Platibus.Config;
 
 namespace Platibus
 {
+    /// <inheritdoc />
     /// <summary>
-    /// A mutable <see cref="IEndpointCollection"/> implementation
+    /// A mutable <see cref="T:Platibus.IEndpointCollection" /> implementation
     /// </summary>
     public class EndpointCollection : IEndpointCollection
     {
+        public static readonly IEndpointCollection Empty = new EndpointCollection();
+
         private readonly IDictionary<EndpointName, IEndpoint> _endpoints = new Dictionary<EndpointName, IEndpoint>();
 
         /// <summary>
@@ -44,21 +47,15 @@ namespace Platibus
         /// or <paramref name="endpoint"/> are <c>null</c></exception>
         /// <exception cref="EndpointAlreadyExistsException">Thrown if there is already an
         /// endpoint with the specified <paramref name="endpointName"/></exception>
-        public void Add(EndpointName endpointName, IEndpoint endpoint)
+        public virtual void Add(EndpointName endpointName, IEndpoint endpoint)
         {
             if (endpointName == null) throw new ArgumentNullException(nameof(endpointName));
             if (_endpoints.ContainsKey(endpointName)) throw new EndpointAlreadyExistsException(endpointName);
             _endpoints[endpointName] = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
         }
 
-        /// <summary>
-        /// Returns the endpoint with the specified name
-        /// </summary>
-        /// <param name="endpointName">The name of the endpoint</param>
-        /// <returns>Returns the endpoint</returns>
-        /// <exception cref="EndpointNotFoundException">Thrown if there
-        /// is no endpoint with the specified name</exception>
-        public IEndpoint this[EndpointName endpointName]
+        /// <inheritdoc />
+        public virtual IEndpoint this[EndpointName endpointName]
         {
             get
             {
@@ -70,15 +67,8 @@ namespace Platibus
             }
         }
 
-        /// <summary>
-        /// Tries to retrieve the endpoint with the specified address
-        /// </summary>
-        /// <param name="address">The address of the endpoint</param>
-        /// <param name="endpoint">An output parameter that will be initialied
-        /// with the endpoint if the endpoint is found</param>
-        /// <returns>Returns <c>true</c> if the endpoint is found; <c>false</c>
-        /// otherwise</returns>
-        public bool TryGetEndpointByAddress(Uri address, out IEndpoint endpoint)
+        /// <inheritdoc />
+        public virtual bool TryGetEndpointByAddress(Uri address, out IEndpoint endpoint)
         {
             var comparer = new EndpointAddressEqualityComparer();
             endpoint = _endpoints.Values.FirstOrDefault(e => comparer.Equals(e.Address, address));
@@ -86,7 +76,7 @@ namespace Platibus
         }
 
         /// <inheritdoc />
-        public bool Contains(EndpointName endpointName)
+        public virtual bool Contains(EndpointName endpointName)
         {
             return _endpoints.ContainsKey(endpointName);
         }
@@ -96,13 +86,7 @@ namespace Platibus
             return GetEnumerator();
         }
 
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="T:System.Collections.Generic.IEnumerator`1"/> that can be used to iterate through the collection.
-        /// </returns>
-        /// <filterpriority>1</filterpriority>
+        /// <inheritdoc />
         public IEnumerator<KeyValuePair<EndpointName, IEndpoint>> GetEnumerator()
         {
             return _endpoints.GetEnumerator();
