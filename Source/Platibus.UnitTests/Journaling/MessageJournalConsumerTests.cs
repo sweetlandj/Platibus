@@ -1,6 +1,8 @@
 ﻿using Platibus.Config;
 using Platibus.Journaling;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -9,6 +11,8 @@ namespace Platibus.UnitTests.Journaling
 {
     public class MessageJournalConsumerTests : IMessageHandler<string>
     {
+        protected readonly object SyncRoot = new object();
+
         protected MessageJournalStub MessageJournal;
         protected PlatibusConfiguration Configuration;
         protected MessageJournalConsumerOptions Options;
@@ -16,11 +20,13 @@ namespace Platibus.UnitTests.Journaling
         protected MessageJournalPosition Start;
         protected Task ConsumeTask;
 
-        protected Message Message;
+        protected IList<Message> JournaledMessages = new List<Message>();
+        protected int ExpectedMessageCount;
         protected bool Acknowledge;
         protected Exception Exception;
 
-        protected TaskCompletionSource<Message> ConsumedMessageSource;
+        protected IList<Message> ConsumedMessages = new List<Message>();
+        protected TaskCompletionSource<IEnumerable<Message>> ConsumedMessageSource;
         protected CancellationTokenSource CancellationSource;
         protected CancellationToken CancellationToken;
 
@@ -37,7 +43,7 @@ namespace Platibus.UnitTests.Journaling
             var thisHandler = new GenericMessageHandlerAdapter<string>(this);
             Configuration.AddHandlingRule(new HandlingRule(anyMessage, thisHandler));
 
-            ConsumedMessageSource = new TaskCompletionSource<Message>();
+            ConsumedMessageSource = new TaskCompletionSource<IEnumerable<Message>>();
             CancellationSource = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             CancellationSource.Token.Register(() => ConsumedMessageSource.TrySetCanceled());
 
@@ -50,7 +56,21 @@ namespace Platibus.UnitTests.Journaling
             await GivenJournaledMessage();
             GivenMessageHandlerAcknowledgesMessage();
             WhenConsumingJournaledMessages();
-            AssertMessageConsumed();
+            AssertMessagesAreConsumed();
+            CancellationSource.Cancel();
+            AssertMessageJournalConsumerHasStopped();
+        }
+
+        [Fact]
+        public async Task MessageJournalConsumerConsumesAllMessages()
+        {
+            for (var i = 0; i < 10; i++)
+            {
+                await GivenJournaledMessage(i);
+            }
+            GivenMessageHandlerAcknowledgesMessage();
+            WhenConsumingJournaledMessages();
+            AssertMessagesAreConsumed();
             CancellationSource.Cancel();
             AssertMessageJournalConsumerHasStopped();
         }
@@ -64,7 +84,7 @@ namespace Platibus.UnitTests.Journaling
             await GivenJournaledMessage();
             GivenMessageHandlerAcknowledgesMessage();
             WhenConsumingJournaledMessages();
-            AssertMessageConsumed();
+            AssertMessagesAreConsumed();
 
             var progressReport = await progress.Report;
             Assert.NotNull(progressReport);
@@ -84,7 +104,7 @@ namespace Platibus.UnitTests.Journaling
             Options.RethrowExceptions = true;
             WhenConsumingJournaledMessages();
             await Assert.ThrowsAsync<MessageNotAcknowledgedException>(async () => await ConsumeTask);
-            AssertMessageConsumed();
+            AssertMessagesAreConsumed();
             AssertMessageJournalConsumerHasStopped();
         }
 
@@ -96,7 +116,7 @@ namespace Platibus.UnitTests.Journaling
             Options.RethrowExceptions = false;
             WhenConsumingJournaledMessages();
             CancellationSource.Cancel();
-            AssertMessageConsumed();
+            AssertMessagesAreConsumed();
             AssertMessageJournalConsumerHasStopped();
         }
 
@@ -110,7 +130,7 @@ namespace Platibus.UnitTests.Journaling
             WhenConsumingJournaledMessages();
             var actualException = await Assert.ThrowsAsync<Exception>(async () => await ConsumeTask);
             Assert.Equal(expectedException, actualException);
-            AssertMessageConsumed();
+            AssertMessagesAreConsumed();
             AssertMessageJournalConsumerHasStopped();
         }
 
@@ -122,7 +142,7 @@ namespace Platibus.UnitTests.Journaling
             GivenMessageHandlerThrowsException(expectedException);
             Options.RethrowExceptions = false;
             WhenConsumingJournaledMessages();
-            AssertMessageConsumed();
+            AssertMessagesAreConsumed();
             AssertMessageJournalConsumerIsRunning();
             CancellationSource.Cancel();
             AssertMessageJournalConsumerHasStopped();
@@ -133,7 +153,7 @@ namespace Platibus.UnitTests.Journaling
         {
             await GivenJournaledMessage();
             WhenConsumingJournaledMessages();
-            AssertMessageConsumed();
+            AssertMessagesAreConsumed();
             CancellationSource.Cancel();
             AssertMessageJournalConsumerHasStopped();
         }
@@ -144,7 +164,7 @@ namespace Platibus.UnitTests.Journaling
             await GivenJournaledMessage();
             Options.HaltAtEndOfJournal = true;
             WhenConsumingJournaledMessages();
-            AssertMessageConsumed();
+            AssertMessagesAreConsumed();
             AssertMessageJournalConsumerHasStopped();
         }
 
@@ -154,7 +174,7 @@ namespace Platibus.UnitTests.Journaling
             await GivenJournaledMessage();
             Options.HaltAtEndOfJournal = false;
             WhenConsumingJournaledMessages();
-            AssertMessageConsumed();
+            AssertMessagesAreConsumed();
             WaitForPollingInterval();
             AssertMessageJournalConsumerIsRunning();
             CancellationSource.Cancel();
@@ -165,7 +185,7 @@ namespace Platibus.UnitTests.Journaling
             Task.Delay(Options.PollingInterval, CancellationToken).Wait(CancellationToken);
         }
 
-        protected async Task GivenJournaledMessage()
+        protected async Task GivenJournaledMessage(int i = 0)
         {
             var headers = new MessageHeaders
             {
@@ -174,8 +194,13 @@ namespace Platibus.UnitTests.Journaling
                 ContentType = "text/plain",
                 Published = DateTime.UtcNow
             };
-            Message = new Message(headers, "Test");
-            await MessageJournal.Append(Message, MessageJournalCategory.Published, CancellationToken);
+            var message = new Message(headers, $"Test {i + 1}");
+            await MessageJournal.Append(message, MessageJournalCategory.Published, CancellationToken);
+            lock (SyncRoot)
+            {
+                JournaledMessages.Add(message);
+                ExpectedMessageCount++;
+            }
         }
 
         protected void GivenMessageHandlerAcknowledgesMessage() => Acknowledge = true;
@@ -202,17 +227,28 @@ namespace Platibus.UnitTests.Journaling
             Assert.False(ConsumeTask.IsCompleted || ConsumeTask.IsCanceled || ConsumeTask.IsFaulted);
         }
 
-        protected void AssertMessageConsumed()
+        protected void AssertMessagesAreConsumed()
         {
-            var consumedMessage = ConsumedMessageSource.Task.Result;
-            Assert.NotNull(consumedMessage);
-            Assert.Equal(Message, consumedMessage, new MessageEqualityComparer());
+            var consumedMessages = ConsumedMessageSource.Task.Result?.ToList();
+            Assert.NotNull(consumedMessages);
+            Assert.NotEmpty(consumedMessages);
+            Assert.Equal(ExpectedMessageCount, ConsumedMessages.Count);
+            Assert.Equal(JournaledMessages, ConsumedMessages, new MessageEqualityComparer());
         }
 
         Task IMessageHandler<string>.HandleMessage(string content, IMessageContext messageContext, CancellationToken cancellationToken)
         {
             var message = new Message(messageContext.Headers, content);
-            ConsumedMessageSource.TrySetResult(message);
+            lock (SyncRoot)
+            {
+                ConsumedMessages.Add(message);
+                var allMessagesConsumed = ConsumedMessages.Count == ExpectedMessageCount;
+                if (allMessagesConsumed)
+                {
+                    ConsumedMessageSource.TrySetResult(ConsumedMessages);
+                }
+            }
+            
             if (Exception != null) throw Exception;
             if (Acknowledge)
             {
