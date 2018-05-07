@@ -36,7 +36,7 @@ namespace Platibus.SQL.Commands
     /// Provides command builders for message journaling, message queueing, and subscription
     /// tracking based on Microsoft SQL Server databases.
     /// </summary>
-    [Provider("System.Data.SQLClient")]
+    [Provider("System.Data.SqlClient")]
     public class MSSQLCommandBuildersProvider : 
         IMessageJournalingCommandBuildersProvider, 
         IMessageQueueingCommandBuildersProvider, 

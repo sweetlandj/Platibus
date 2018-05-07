@@ -41,7 +41,7 @@ namespace Platibus.UnitTests.Config.Extensibility
 
         protected void GivenSystemDataSQLClientProvider()
         {
-            ConnectionStringSettings.ProviderName = "System.Data.SQLClient";
+            ConnectionStringSettings.ProviderName = "System.Data.SqlClient";
         }
 
         protected void GivenSystemDataSQLiteProvider()
