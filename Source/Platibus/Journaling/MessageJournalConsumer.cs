@@ -249,7 +249,12 @@ namespace Platibus.Journaling
                 while (entryEnumerator.MoveNext())
                 {
                     var next = entryEnumerator.Current;
-                    await HandleMessageJournalEntry(bus, cancellationToken, current, next.Position, count);
+                    if (next != null)
+                    {
+                        await HandleMessageJournalEntry(bus, cancellationToken, current, next.Position, count);
+                    }
+
+                    current = next;
                     count++;
                 }
 
