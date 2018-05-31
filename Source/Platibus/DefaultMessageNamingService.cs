@@ -73,7 +73,9 @@ namespace Platibus
 
         private Type FindTypeByName(string typeName)
         {
-            return _reflectionSevice.FindTypesByName(typeName).FirstOrDefault();
+            return _reflectionSevice
+                .FindTypesByName(typeName)
+                .FirstOrDefault(t => !t.IsGenericTypeDefinition);
         }
     }
 }

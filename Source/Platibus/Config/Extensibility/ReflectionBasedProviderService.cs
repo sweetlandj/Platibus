@@ -52,24 +52,25 @@ namespace Platibus.Config.Extensibility
             _reflectionService = new DefaultReflectionService(diagnosticService);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Finds the most appropriate type or subtype of 
-        /// <typeparamref name="TProvider"/> whose type name is <paramref name="providerName"/>
-        /// or which has been decorated with a <see cref="ProviderAttribute"/> with the
-        /// specified <paramref name="providerName"/>.
+        /// <typeparamref name="TProvider" /> whose type name is <paramref name="providerName" />
+        /// or which has been decorated with a <see cref="T:Platibus.Config.Extensibility.ProviderAttribute" /> with the
+        /// specified <paramref name="providerName" />.
         /// </summary>
         /// <typeparam name="TProvider">The provider type or at type from which the provider 
         /// must inherit</typeparam>
         /// <param name="providerName">The provider name associated with the type</param>
         /// <returns>Returns a new provider instance with the specified 
-        /// <paramref name="providerName"/> and type.</returns>
-        /// <exception cref="NullReferenceException">Thrown if <paramref name="providerName"/>
+        /// <paramref name="providerName" /> and type.</returns>
+        /// <exception cref="T:System.NullReferenceException">Thrown if <paramref name="providerName" />
         /// is <c>null</c> or whitespace.</exception>
-        /// <exception cref="ProviderNotFoundException">Thrown if no suitable providers are
+        /// <exception cref="T:Platibus.Config.Extensibility.ProviderNotFoundException">Thrown if no suitable providers are
         /// found in the application domain.</exception>
-        /// <exception cref="MultipleProvidersFoundException">Thrown if there are multiple
+        /// <exception cref="T:Platibus.Config.Extensibility.MultipleProvidersFoundException">Thrown if there are multiple
         /// providers found with the same priority.</exception>
-        /// <seealso cref="ProviderAttribute"/>
+        /// <seealso cref="T:Platibus.Config.Extensibility.ProviderAttribute" />
         public TProvider GetProvider<TProvider>(string providerName)
         {
             var providerType = Type.GetType(providerName);
@@ -77,6 +78,7 @@ namespace Platibus.Config.Extensibility
             {
                 var prioritizedProviders = _reflectionService
                     .FindConcreteSubtypes<TProvider>()
+                    .Where(t => !t.IsGenericTypeDefinition)
                     .WithProviderName(providerName)
                     .GroupByPriorityDescending()
                     .ToList();

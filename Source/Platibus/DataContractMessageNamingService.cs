@@ -133,6 +133,7 @@ namespace Platibus
             // a type whose schema type name is equal to the message name
             return _reflectionService
                 .EnumerateTypes()
+                .Where(t => !t.IsGenericTypeDefinition)
                 .FirstOrDefault(type => type.Has<DataContractAttribute>() 
                                         && GetSchemaTypeName(type) == messageName);
         }
