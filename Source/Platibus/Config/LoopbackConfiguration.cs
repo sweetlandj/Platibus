@@ -48,7 +48,7 @@ namespace Platibus.Config
         public LoopbackConfiguration() : this(null)
         {
         }
-        /// <inheritdoc />
+
         /// <inheritdoc />
         /// <summary>
         /// Initializes a new <see cref="T:Platibus.Config.LoopbackConfiguration" /> with a preconfigured
@@ -61,15 +61,13 @@ namespace Platibus.Config
             var allMessages = new MessageNamePatternSpecification(".*");
             base.AddSendRule(new SendRule(allMessages, LoopbackEndpoint));
         }
-        /// <summary>
+
         /// <inheritdoc />
         public override void AddTopic(TopicName topic)
         {
             base.AddTopic(topic);
             AddSubscription(new Subscription(LoopbackEndpoint, topic));
         }
-        /// </remarks>
-        /// </remarks>
-        /// </remarks>
+
     }
 }
