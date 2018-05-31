@@ -57,14 +57,14 @@ BEGIN
         [MessageId] UNIQUEIDENTIFIER NOT NULL,
         [Timestamp] DATETIME NOT NULL,
         [Category] VARCHAR(20) NOT NULL,
-        [TopicName] NVARCHAR(100) NULL,
-        [MessageName] NVARCHAR(500) NULL,
-        [Origination] NVARCHAR(500) NULL,
-        [Destination] NVARCHAR(500) NULL,                            
-        [ReplyTo] NVARCHAR(500) NULL,
+        [TopicName] VARCHAR(100) NULL,
+        [MessageName] VARCHAR(400) NULL,
+        [Origination] VARCHAR(500) NULL,
+        [Destination] VARCHAR(500) NULL,                            
+        [ReplyTo] VARCHAR(500) NULL,
         [RelatedTo] UNIQUEIDENTIFIER NULL,
         [ContentType] VARCHAR(100) NULL,
-        [Headers] NVARCHAR(MAX),
+        [Headers] VARCHAR(MAX),
         [MessageContent] NVARCHAR(MAX),
 
         CONSTRAINT [PB_MessageJournal_PK] PRIMARY KEY CLUSTERED ([Id])
@@ -87,6 +87,9 @@ BEGIN
 
     CREATE INDEX [PB_MessageJournal_IX_Destination] 
         ON [PB_MessageJournal]([Destination])
+
+    CREATE INDEX [PB_MessageJournal_IX_TopicName] 
+        ON [PB_MessageJournal]([TopicName])
 END
 
 IF NOT EXISTS (SELECT * FROM [sys].[columns] 

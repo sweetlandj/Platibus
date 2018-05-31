@@ -60,8 +60,8 @@ IF OBJECT_ID('[PB_Subscriptions]') IS NULL
 BEGIN
     CREATE TABLE [PB_Subscriptions]
     (
-        [TopicName] NVARCHAR(255) NOT NULL,
-        [Subscriber] NVARCHAR(500) NOT NULL,
+        [TopicName] VARCHAR(255) NOT NULL,
+        [Subscriber] VARCHAR(500) NOT NULL,
         [Expires] DATETIME NULL,
 
         CONSTRAINT [PB_Subscriptions_PK] 
