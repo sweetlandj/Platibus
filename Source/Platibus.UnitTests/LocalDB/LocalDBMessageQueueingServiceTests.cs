@@ -39,7 +39,7 @@ namespace Platibus.UnitTests.LocalDB
         protected IMessageEncryptionService MessageEncryptionService;
 
         public LocalDBMessageQueueingServiceTests(AesEncryptedLocalDBFixture fixture)
-            : base(fixture.MessageQueueingService)
+            : base(fixture.DiagnosticService, fixture.MessageQueueingService)
         {
             MessageEncryptionService = fixture.MessageEncryptionService;
         }

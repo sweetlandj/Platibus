@@ -36,7 +36,7 @@ namespace Platibus.UnitTests.Diagnostics
     public class GelfTcpLoggingSinkTests : GelfLoggingSinkTests
     {
         protected const string Host = "localhost";
-        protected const int Port = 12201;
+        protected const int Port = 12211;
 
         public GelfTcpLoggingSinkTests() 
             : base(new GelfTcpLoggingSink(Host, Port))
@@ -44,6 +44,7 @@ namespace Platibus.UnitTests.Diagnostics
         }
 
         [Fact]
+        [Trait("Category", "Explicit")]
         public async Task MessagesCanBeHandledConcurrentlyAsync()
         {
             const int count = 10;
@@ -63,6 +64,7 @@ namespace Platibus.UnitTests.Diagnostics
         }
 
         [Fact]
+        [Trait("Category", "Explicit")]
         public async Task MessagesCanBeHandledConcurrently()
         {
             const int count = 10;

@@ -20,31 +20,37 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Platibus.Diagnostics;
+using Platibus.Security;
 using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Platibus.Security;
 
 namespace Platibus.UnitTests
 {
     [Trait("Category", "UnitTests")]
-    public abstract class MessageQueueingServiceTests<TMessageQueueingService>
-        where TMessageQueueingService : IMessageQueueingService
+    public abstract class MessageQueueingServiceTests<TMessageQueueingService> : IDisposable where TMessageQueueingService : IMessageQueueingService
     {
+        protected readonly IDiagnosticService DiagnosticService;
+        protected readonly VerificationSink VerificationSink = new VerificationSink();
         protected readonly TMessageQueueingService MessageQueueingService;
 
         protected ISecurityTokenService SecurityTokenService;
         protected IPrincipal Principal;
         protected QueueListenerStub Listener;
         protected Message HandledMessage;
+        protected IList<DiagnosticEvent> DiagnosticEvents = new List<DiagnosticEvent>();
 
-        protected MessageQueueingServiceTests(TMessageQueueingService messageQueueingService)
+        protected MessageQueueingServiceTests(IDiagnosticService diagnosticService, TMessageQueueingService messageQueueingService)
         {
+            DiagnosticService = diagnosticService ?? Platibus.Diagnostics.DiagnosticService.DefaultInstance;
             MessageQueueingService = messageQueueingService;
             SecurityTokenService = new JwtSecurityTokenService();
+            DiagnosticService.AddSink(VerificationSink);
         }
 
         [Fact]
@@ -120,6 +126,8 @@ namespace Platibus.UnitTests
 
             await QueueOperationCompletion();
             await AssertMessageNoLongerQueued(queue, message);
+
+            VerificationSink.AssertExactly(1, DiagnosticEventType.MessageAcknowledged, message);
         }
 
         [Fact]
@@ -157,6 +165,9 @@ namespace Platibus.UnitTests
 
             await QueueOperationCompletion();
             await AssertMessageNoLongerQueued(queue, message);
+
+            VerificationSink.AssertExactly(1, DiagnosticEventType.MessageAcknowledged, message);
+            VerificationSink.AssertNone(DiagnosticEventType.MessageNotAcknowledged, message);
         }
 
         [Fact]
@@ -178,6 +189,10 @@ namespace Platibus.UnitTests
             await QueueOperationCompletion();
             await AssertMessageIsDead(queue, message);
             await AssertMessageNoLongerQueued(queue, message);
+
+            VerificationSink.AssertAtLeast(1, DiagnosticEventType.MessageNotAcknowledged, message);
+            VerificationSink.AssertExactly(1, DiagnosticEventType.MaxAttemptsExceeded, message);
+            VerificationSink.AssertNone(DiagnosticEventType.MessageAcknowledged, message);
         }
 
         [Fact]
@@ -201,6 +216,10 @@ namespace Platibus.UnitTests
             await QueueOperationCompletion();
             await AssertMessageIsDead(queue, message);
             await AssertMessageNoLongerQueued(queue, message);
+
+            VerificationSink.AssertAtLeast(1, DiagnosticEventType.MessageNotAcknowledged, message);
+            VerificationSink.AssertExactly(1, DiagnosticEventType.QueuedMessageRetry, message);
+            VerificationSink.AssertNone(DiagnosticEventType.MessageAcknowledged, message);
         }
 
         [Fact]
@@ -221,6 +240,9 @@ namespace Platibus.UnitTests
 
             await QueueOperationCompletion();
             await AssertMessageStillQueuedForRetry(queue, message);
+
+            VerificationSink.AssertAtLeast(1, DiagnosticEventType.MessageNotAcknowledged, message);
+            VerificationSink.AssertNone(DiagnosticEventType.MessageAcknowledged, message);
         }
 
         [Fact]
@@ -360,6 +382,27 @@ namespace Platibus.UnitTests
             setCustomHeaders?.Invoke(headers);
 
             return new Message(headers, "Hello, world!");
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            DiagnosticService.RemoveSink(VerificationSink);
+        }
+
+        public void Consume(DiagnosticEvent @event)
+        {
+            DiagnosticEvents.Add(@event);
+        }
+
+        public Task ConsumeAsync(DiagnosticEvent @event, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            DiagnosticEvents.Add(@event);
+            return Task.FromResult(0);
         }
 
         protected class QueueListenerStub : IQueueListener, IDisposable

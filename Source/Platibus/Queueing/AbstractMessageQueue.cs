@@ -258,6 +258,13 @@ namespace Platibus.Queueing
             var eventArgs = new MessageQueueEventArgs(QueueName, queuedMessage, exception);
             if (context.Acknowledged)
             {
+                await DiagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageAcknowledged)
+                    {
+                        Message = message,
+                        Queue = QueueName
+                    }.Build(), cancellationToken);
+
                 var messageAcknowledgedHandlers = MessageAcknowledged;
                 if (messageAcknowledgedHandlers != null)
                 {
@@ -265,6 +272,13 @@ namespace Platibus.Queueing
                 }
                 return;
             }
+            
+            await DiagnosticService.EmitAsync(
+                new DiagnosticEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
+                {
+                    Message = message,
+                    Queue = QueueName
+                }.Build(), cancellationToken);
 
             if (queuedMessage.Attempts >= _maxAttempts)
             {

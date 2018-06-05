@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.IO;
+using Platibus.Diagnostics;
 using Platibus.Security;
 using Platibus.SQLite;
 using Platibus.UnitTests.Security;
@@ -10,6 +11,8 @@ namespace Platibus.UnitTests.SQLite
     public class AesEncryptedSQLiteFixture : IDisposable
     {
         private bool _disposed;
+
+        public IDiagnosticService DiagnosticService { get; } = new DiagnosticService();
 
         public DirectoryInfo BaseDirectory { get; }
 
@@ -23,12 +26,16 @@ namespace Platibus.UnitTests.SQLite
         {
             BaseDirectory = GetTempDirectory();
 
-            var aesOptions = new AesMessageEncryptionOptions(KeyGenerator.GenerateAesKey());
+            var aesOptions = new AesMessageEncryptionOptions(KeyGenerator.GenerateAesKey())
+            {
+                DiagnosticService = DiagnosticService
+            };
             MessageEncryptionService = new AesMessageEncryptionService(aesOptions);
             
             QueueDirectory = CreateSubdirectory(BaseDirectory, "queues");
             var queueingOptions = new SQLiteMessageQueueingOptions
             {
+                DiagnosticService = DiagnosticService,
                 BaseDirectory = QueueDirectory,
                 MessageEncryptionService = MessageEncryptionService
             };

@@ -23,6 +23,7 @@
 using System;
 using System.Data;
 using System.IO;
+using Platibus.Diagnostics;
 using Platibus.SQLite;
 
 namespace Platibus.UnitTests.SQLite
@@ -30,6 +31,8 @@ namespace Platibus.UnitTests.SQLite
     public class SQLiteFixture : IDisposable
     {
         private bool _disposed;
+
+        public IDiagnosticService DiagnosticService { get; } = new DiagnosticService();
 
         public DirectoryInfo BaseDirectory { get; }
 
@@ -48,17 +51,18 @@ namespace Platibus.UnitTests.SQLite
             QueueDirectory = CreateSubdirectory(BaseDirectory, "queues");
             var queueingOptions = new SQLiteMessageQueueingOptions
             {
+                DiagnosticService = DiagnosticService,
                 BaseDirectory = QueueDirectory
             };
             MessageQueueingService = new SQLiteMessageQueueingService(queueingOptions);
             MessageQueueingService.Init();
 
             var subscriptionDirectory = CreateSubdirectory(BaseDirectory, "subscriptions");
-            SubscriptionTrackingService = new SQLiteSubscriptionTrackingService(subscriptionDirectory);
+            SubscriptionTrackingService = new SQLiteSubscriptionTrackingService(subscriptionDirectory, DiagnosticService);
             SubscriptionTrackingService.Init();
 
             var journalDirectory = CreateSubdirectory(BaseDirectory, "journal");
-            MessageJournal = new SQLiteMessageJournal(journalDirectory);
+            MessageJournal = new SQLiteMessageJournal(journalDirectory, DiagnosticService);
             MessageJournal.Init();
         }
 

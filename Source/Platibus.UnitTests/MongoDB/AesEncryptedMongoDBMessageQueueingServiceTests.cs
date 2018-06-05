@@ -17,7 +17,7 @@ namespace Platibus.UnitTests.MongoDB
         private readonly IMongoDatabase _database;
 
         public AesEncryptedMongoDBMessageQueueingServiceTests(AesEncryptedMongoDBFixture fixture)
-            : base(fixture.MessageQueueingService)
+            : base(fixture.DiagnosticService, fixture.MessageQueueingService)
         {
             _database = fixture.Database;
         }

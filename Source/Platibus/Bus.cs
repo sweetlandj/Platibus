@@ -131,7 +131,7 @@ namespace Platibus
                     .Select(r => r.QueueOptions)
                     .FirstOrDefault();
 
-                var queueListener = new MessageHandlingListener(this, _messageHandler, queueName, handlers, _diagnosticService);
+                var queueListener = new MessageHandlingListener(this, _messageHandler, handlers);
 
                 await _messageQueueingService.CreateQueue(queueName, queueListener, queueOptions, cancellationToken);
             }

@@ -37,7 +37,7 @@ namespace Platibus.UnitTests.Diagnostics
     public class GelfUdpLoggingSinkTests : GelfLoggingSinkTests
     {
         protected const string Host = "localhost";
-        protected const int Port = 12201;
+        protected const int Port = 12211;
 
         public GelfUdpLoggingSinkTests() 
             : base(new GelfUdpLoggingSink(new GelfUdpOptions(Host){Port = Port}))

@@ -23,6 +23,7 @@
 using System;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Platibus.Diagnostics;
 using Platibus.MongoDB;
 #if NET452
 using System.Configuration;
@@ -39,6 +40,8 @@ namespace Platibus.UnitTests.MongoDB
 
         public string DatabaseName { get; }
 
+        public IDiagnosticService DiagnosticService { get; } = new DiagnosticService();
+
         public ConnectionStringSettings ConnectionStringSettings { get; }
 
         public IMongoDatabase Database { get; }
@@ -54,11 +57,11 @@ namespace Platibus.UnitTests.MongoDB
             var rng = new Random();
             DatabaseName = $"MongoDBFixture_{rng.Next(int.MaxValue):X}";
 
-            // docker run -it --rm --name mongodb -p 27017:27017 mongo:3.6.0-jessie
+            // docker run -it --rm --name mongodb -p 27027:27017 mongo:3.6.0-jessie
             ConnectionStringSettings = new ConnectionStringSettings
             {
                 Name = DatabaseName,
-                ConnectionString = $"mongodb://localhost:27017/{DatabaseName}?maxpoolsize=1000"
+                ConnectionString = $"mongodb://localhost:27027/{DatabaseName}?maxpoolsize=1000"
             };
 #if NET452
 
@@ -74,13 +77,22 @@ namespace Platibus.UnitTests.MongoDB
 
             Database = MongoDBHelper.Connect(ConnectionStringSettings, DatabaseName);
             
-            var subscriptionTrackingOptions = new MongoDBSubscriptionTrackingOptions(Database);
+            var subscriptionTrackingOptions = new MongoDBSubscriptionTrackingOptions(Database)
+            {
+                DiagnosticService = DiagnosticService
+            };
             SubscriptionTrackingService = new MongoDBSubscriptionTrackingService(subscriptionTrackingOptions);
 
-            var messageQueueingOptions = new MongoDBMessageQueueingOptions(Database);
+            var messageQueueingOptions = new MongoDBMessageQueueingOptions(Database)
+            {
+                DiagnosticService = DiagnosticService
+            };
             MessageQueueingService = new MongoDBMessageQueueingService(messageQueueingOptions);
 
-            var journalOptions = new MongoDBMessageJournalOptions(Database);
+            var journalOptions = new MongoDBMessageJournalOptions(Database)
+            {
+                DiagnosticService = DiagnosticService
+            };
             MessageJournal = new MongoDBMessageJournal(journalOptions);
         }
 

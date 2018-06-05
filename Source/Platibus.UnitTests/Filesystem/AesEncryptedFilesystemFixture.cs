@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Platibus.Diagnostics;
 using Platibus.Filesystem;
 using Platibus.Security;
 using Platibus.UnitTests.Security;
@@ -9,6 +10,8 @@ namespace Platibus.UnitTests.Filesystem
     public class AesEncryptedFilesystemFixture : IDisposable
     {
         private bool _disposed;
+
+        public IDiagnosticService DiagnosticService { get; } = new DiagnosticService();
 
         public DirectoryInfo BaseDirectory { get; }
 
@@ -20,11 +23,16 @@ namespace Platibus.UnitTests.Filesystem
         {
             BaseDirectory = GetTempDirectory();
 
-            var aesOptions = new AesMessageEncryptionOptions(KeyGenerator.GenerateAesKey());
+            var aesOptions = new AesMessageEncryptionOptions(KeyGenerator.GenerateAesKey())
+            {
+                DiagnosticService = DiagnosticService
+            };
+
             MessageEncryptionService = new AesMessageEncryptionService(aesOptions);
 
             var fsQueueingOptions = new FilesystemMessageQueueingOptions
             {
+                DiagnosticService = DiagnosticService,
                 BaseDirectory = BaseDirectory,
                 MessageEncryptionService = MessageEncryptionService
             };

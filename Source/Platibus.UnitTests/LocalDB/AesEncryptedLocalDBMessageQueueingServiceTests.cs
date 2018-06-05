@@ -14,7 +14,7 @@ namespace Platibus.UnitTests.LocalDB
     public class AesEncryptedLocalDBMessageQueueingServiceTests : MessageQueueingServiceTests<SQLMessageQueueingService>
     {
         public AesEncryptedLocalDBMessageQueueingServiceTests(LocalDBFixture fixture)
-            : base(fixture.MessageQueueingService)
+            : base(fixture.DiagnosticService, fixture.MessageQueueingService)
         {
         }
 

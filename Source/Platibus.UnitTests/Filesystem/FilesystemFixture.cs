@@ -1,12 +1,15 @@
 ﻿using Platibus.Filesystem;
 using System;
 using System.IO;
+using Platibus.Diagnostics;
 
 namespace Platibus.UnitTests.Filesystem
 {
     public class FilesystemFixture : IDisposable
     {
         private bool _disposed;
+
+        public IDiagnosticService DiagnosticService { get; } = new DiagnosticService();
 
         public DirectoryInfo BaseDirectory { get; }
 
@@ -20,6 +23,7 @@ namespace Platibus.UnitTests.Filesystem
 
             var fsQueueingOptions = new FilesystemMessageQueueingOptions
             {
+                DiagnosticService = DiagnosticService,
                 BaseDirectory = BaseDirectory
             };
             

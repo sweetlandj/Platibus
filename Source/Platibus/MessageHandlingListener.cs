@@ -20,7 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using Platibus.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,15 +28,25 @@ using System.Threading.Tasks;
 
 namespace Platibus
 {
+    /// <inheritdoc />
+    /// <summary>
+    /// A <see cref="T:Platibus.IQueueListener" /> that routes a queued message to one or more <see cref="T:Platibus.IMessageHandler" />s.
+    /// </summary>
     internal class MessageHandlingListener : IQueueListener
     {
         private readonly Bus _bus;
-        private readonly QueueName _queueName;
         private readonly IEnumerable<IMessageHandler> _messageHandlers;
         private readonly MessageHandler _messageHandler;
-        private readonly IDiagnosticService _diagnosticService;
 
-        public MessageHandlingListener(Bus bus, MessageHandler messageHandler, QueueName queueName, IEnumerable<IMessageHandler> messageHandlers, IDiagnosticService diagnosticService = null)
+        /// <summary>
+        /// Initializes a new <see cref="MessageHandlingListener"/>
+        /// </summary>
+        /// <param name="bus">The bus instance to pass to the <paramref name="messageHandlers"/> via
+        /// the <see cref="IMessageContext"/></param>
+        /// <param name="messageHandler">Object responsible for unmarshalling <see cref="Message"/>s into strongly-typed
+        /// content representations and routing them to the <paramref name="messageHandlers"/></param>
+        /// <param name="messageHandlers">The handler(s) that will process the queued message</param>
+        public MessageHandlingListener(Bus bus, MessageHandler messageHandler, IEnumerable<IMessageHandler> messageHandlers)
         {
             if (messageHandlers == null)
             {
@@ -48,37 +57,19 @@ namespace Platibus
             if (!handlerList.Any()) throw new ArgumentNullException(nameof(messageHandlers));
 
             _bus = bus ?? throw new ArgumentNullException(nameof(bus));
-            _queueName = queueName;
             _messageHandlers = handlerList;
-            _diagnosticService = diagnosticService ?? DiagnosticService.DefaultInstance;
             _messageHandler = messageHandler ?? throw new ArgumentNullException(nameof(messageHandler));
         }
 
+        /// <inheritdoc />
         public async Task MessageReceived(Message message, IQueuedMessageContext context,
             CancellationToken cancellationToken = default(CancellationToken))
         {
             var messageContext = new BusMessageContext(_bus, context.Headers, context.Principal);
-
             await _messageHandler.HandleMessage(_messageHandlers, message, messageContext, cancellationToken);
-
             if (messageContext.MessageAcknowledged)
             {
-                await _diagnosticService.EmitAsync(
-                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageAcknowledged)
-                    {
-                        Message = message,
-                        Queue = _queueName
-                    }.Build(), cancellationToken);
-
                 await context.Acknowledge();
-            }
-            else
-            {
-                await _diagnosticService.EmitAsync(
-                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
-                    {
-                        Message = message
-                    }.Build(), cancellationToken);
             }
         }
     }

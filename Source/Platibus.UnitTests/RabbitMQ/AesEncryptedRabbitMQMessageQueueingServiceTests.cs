@@ -1,11 +1,10 @@
-﻿using System;
+﻿using Platibus.RabbitMQ;
+using RabbitMQ.Client;
+using System;
 using System.Collections.Generic;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
-using Platibus.Diagnostics;
-using Platibus.RabbitMQ;
-using RabbitMQ.Client;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -14,22 +13,23 @@ namespace Platibus.UnitTests.RabbitMQ
     [Trait("Category", "UnitTests")]
     [Trait("Dependency", "RabbitMQ")]
     [Collection(AesEncryptedRabbitMQCollection.Name)]
-    public class AesEncryptedRabbitMQMessageQueueingServiceTests : MessageQueueingServiceTests<RabbitMQMessageQueueingService>, IDisposable
+    public class AesEncryptedRabbitMQMessageQueueingServiceTests : MessageQueueingServiceTests<RabbitMQMessageQueueingService>
     {
         private readonly Uri _uri;
         private readonly TestOutputHelperSink _diagnosticSink;
         
         public AesEncryptedRabbitMQMessageQueueingServiceTests(AesEncryptedRabbitMQFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture.MessageQueueingService)
+            : base(fixture.DiagnosticService, fixture.MessageQueueingService)
         {
             _uri = fixture.Uri;
             _diagnosticSink = new TestOutputHelperSink(outputHelper);
-            DiagnosticService.DefaultInstance.AddSink(_diagnosticSink);
+            DiagnosticService.AddSink(_diagnosticSink);
         }
 
-        public void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            DiagnosticService.DefaultInstance.RemoveSink(_diagnosticSink);
+            DiagnosticService.RemoveSink(_diagnosticSink);
+            base.Dispose(disposing);
         }
 
         protected override async Task GivenExistingQueuedMessage(QueueName queueName, Message message, IPrincipal principal)

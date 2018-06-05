@@ -39,7 +39,7 @@ namespace Platibus.UnitTests.MongoDB
         private readonly IMongoDatabase _database;
 
         public MongoDBMessageQueueingServiceTests(MongoDBFixture fixture)
-            : base(fixture.MessageQueueingService)
+            : base(fixture.DiagnosticService, fixture.MessageQueueingService)
         {
             _database = fixture.Database;
         }

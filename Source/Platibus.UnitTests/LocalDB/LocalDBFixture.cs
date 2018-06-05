@@ -21,7 +21,7 @@
 // THE SOFTWARE.
 
 using System;
-
+using Platibus.Diagnostics;
 using Platibus.SQL;
 using Platibus.SQL.Commands;
 #if NET452
@@ -37,6 +37,8 @@ namespace Platibus.UnitTests.LocalDB
     {
         private bool _disposed;
         
+        public IDiagnosticService DiagnosticService { get; } = new DiagnosticService();
+
         public IDbConnectionProvider ConnectionProvider { get; }
 
         public SQLMessageJournal MessageJournal { get; }
@@ -50,14 +52,17 @@ namespace Platibus.UnitTests.LocalDB
             var connectionStringSettings = ConfigurationManager.ConnectionStrings["PlatibusUnitTests.LocalDB"];
             ConnectionProvider = new DefaultConnectionProvider(connectionStringSettings);
             
-            MessageJournal = new SQLMessageJournal(ConnectionProvider, new MSSQLMessageJournalingCommandBuilders());
+            MessageJournal = new SQLMessageJournal(ConnectionProvider, new MSSQLMessageJournalingCommandBuilders(), DiagnosticService);
             MessageJournal.Init();
 
-            var queueingOptions = new SQLMessageQueueingOptions(ConnectionProvider, new MSSQLMessageQueueingCommandBuilders());
+            var queueingOptions = new SQLMessageQueueingOptions(ConnectionProvider, new MSSQLMessageQueueingCommandBuilders())
+            {
+                DiagnosticService = DiagnosticService
+            };
             MessageQueueingService = new SQLMessageQueueingService(queueingOptions);
             MessageQueueingService.Init();
 
-            SubscriptionTrackingService = new SQLSubscriptionTrackingService(ConnectionProvider, new MSSQLSubscriptionTrackingCommandBuilders());
+            SubscriptionTrackingService = new SQLSubscriptionTrackingService(ConnectionProvider, new MSSQLSubscriptionTrackingCommandBuilders(), DiagnosticService);
             SubscriptionTrackingService.Init();
 
             DeleteJournaledMessages();

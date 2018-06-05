@@ -1,5 +1,4 @@
-﻿using Platibus.Diagnostics;
-using Platibus.Filesystem;
+﻿using Platibus.Filesystem;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -16,7 +15,7 @@ namespace Platibus.UnitTests.Filesystem
         private readonly DirectoryInfo _baseDirectory;
         
         public FilesystemMessageQueueingServiceTests(FilesystemFixture fixture)
-            : base(fixture.MessageQueueingService)
+            : base(fixture.DiagnosticService, fixture.MessageQueueingService)
         {
             _baseDirectory = fixture.BaseDirectory;
         }
@@ -27,21 +26,13 @@ namespace Platibus.UnitTests.Filesystem
             var queue = GivenUniqueQueueName();
             var path = GivenExistingMalformedMessage(queue);
 
-            var sink = new VerificationSink();
-            DiagnosticService.DefaultInstance.AddSink(sink);
-            try
-            {
-                var listener = new QueueListenerStub();
-                await MessageQueueingService.CreateQueue(queue, listener);
-            }
-            finally
-            {
-                DiagnosticService.DefaultInstance.RemoveSink(sink);
-            }
+            var listener = new QueueListenerStub();
+            await MessageQueueingService.CreateQueue(queue, listener);
 
-            sink.VerifyEmitted<FilesystemEvent>(
-                FilesystemEventType.MessageFileFormatError, 
-                e => e.Path == path && e.Exception != null);
+            VerificationSink.AssertExactly<FilesystemEvent>(1, e =>
+                e.Type == FilesystemEventType.MessageFileFormatError &&
+                e.Path == path &&
+                e.Exception != null);
         }
 
         protected override async Task GivenExistingQueuedMessage(QueueName queueName, Message message, IPrincipal principal)

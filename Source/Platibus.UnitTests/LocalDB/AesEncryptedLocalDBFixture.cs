@@ -1,4 +1,5 @@
 ﻿using System;
+using Platibus.Diagnostics;
 #if NET452
 using System.Configuration;
 #endif
@@ -16,6 +17,8 @@ namespace Platibus.UnitTests.LocalDB
     {
         private bool _disposed;
         
+        public IDiagnosticService DiagnosticService { get; } = new DiagnosticService();
+
         public IDbConnectionProvider ConnectionProvider { get; }
 
         public AesMessageEncryptionService MessageEncryptionService { get; }
@@ -27,11 +30,15 @@ namespace Platibus.UnitTests.LocalDB
             var connectionStringSettings = ConfigurationManager.ConnectionStrings["PlatibusUnitTests.LocalDB"];
             ConnectionProvider = new DefaultConnectionProvider(connectionStringSettings);
 
-            var aesOptions = new AesMessageEncryptionOptions(KeyGenerator.GenerateAesKey());
+            var aesOptions = new AesMessageEncryptionOptions(KeyGenerator.GenerateAesKey())
+            {
+                DiagnosticService = DiagnosticService
+            };
             MessageEncryptionService = new AesMessageEncryptionService(aesOptions);
             
             var queueingOptions = new SQLMessageQueueingOptions(ConnectionProvider, new MSSQLMessageQueueingCommandBuilders())
             {
+                DiagnosticService = DiagnosticService,
                 MessageEncryptionService = MessageEncryptionService
             };
             MessageQueueingService = new SQLMessageQueueingService(queueingOptions);

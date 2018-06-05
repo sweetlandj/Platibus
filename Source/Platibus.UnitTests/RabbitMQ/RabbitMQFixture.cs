@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System;
+using Platibus.Diagnostics;
 using Platibus.RabbitMQ;
 
 namespace Platibus.UnitTests.RabbitMQ
@@ -29,16 +30,18 @@ namespace Platibus.UnitTests.RabbitMQ
     {
         private bool _disposed;
 
+        public IDiagnosticService DiagnosticService { get; } = new DiagnosticService();
         public Uri Uri { get; }
         public RabbitMQMessageQueueingService MessageQueueingService { get; }
 
         public RabbitMQFixture()
         {
-            // docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
-            Uri = new Uri("amqp://guest:guest@localhost:5672");
+            // docker run -it --rm --name rabbitmq -p 5682:5672 -p 15682:15672 rabbitmq:3-management
+            Uri = new Uri("amqp://guest:guest@localhost:5682");
 
             var queueingOptions = new RabbitMQMessageQueueingOptions(Uri)
             {
+                DiagnosticService = DiagnosticService,
                 DefaultQueueOptions = new QueueOptions
                 {
                     IsDurable = false

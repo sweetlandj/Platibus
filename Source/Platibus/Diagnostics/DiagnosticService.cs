@@ -50,6 +50,7 @@ namespace Platibus.Diagnostics
 
         private volatile IList<IDiagnosticEventSink> _consumers = new List<IDiagnosticEventSink>();
 
+        /// <inheritdoc />
         /// <summary>
         /// Event raised when an unhandled exception is caught from one of the registered sinks
         /// </summary>

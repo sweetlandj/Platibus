@@ -17,7 +17,7 @@ namespace Platibus.UnitTests.SQLite
         private readonly DirectoryInfo _queueDirectory;
         
         public AesEncryptedSQLiteMessageQueueingServiceTests(SQLiteFixture fixture)
-            : base(fixture.MessageQueueingService)
+            : base(fixture.DiagnosticService, fixture.MessageQueueingService)
         {
             _queueDirectory = fixture.QueueDirectory;
         }
