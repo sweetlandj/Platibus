@@ -203,7 +203,7 @@ namespace Platibus.AspNetCore
 
         }
 
-        private static async Task<AspNetCoreConfiguration> InitializePlatibusConfiguration(string sectionName, Func<AspNetCoreConfiguration, Task> configure)
+        private static async Task<IAspNetCoreConfiguration> InitializePlatibusConfiguration(string sectionName, Func<AspNetCoreConfiguration, Task> configure)
         {
             var configuration = new AspNetCoreConfiguration();
             var configurationManager = new AspNetCoreConfigurationManager();
