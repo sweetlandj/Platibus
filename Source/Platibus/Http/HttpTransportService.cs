@@ -57,6 +57,7 @@ namespace Platibus.Http
         private readonly QueueName _outboundQueueName;
         private readonly IHttpClientFactory _httpClientFactory;
 
+        private int _initialized;
         private bool _disposed;
 
         /// <inheritdoc />
@@ -126,12 +127,30 @@ namespace Platibus.Http
         /// <returns>Returns a task that completes when initialization is complete</returns>
         public async Task Init(CancellationToken cancellationToken = default(CancellationToken))
         {
-            await _messageQueueingService.CreateQueue(_outboundQueueName, this, cancellationToken: cancellationToken);
-            await _diagnosticService.EmitAsync(
-                new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
+            if (Interlocked.Exchange(ref _initialized, 1) == 0)
+            {
+                try
                 {
-                    Detail = "HTTP transport service initialized"
-                }.Build(), cancellationToken);
+                    await _messageQueueingService.CreateQueue(_outboundQueueName, this,
+                        cancellationToken: cancellationToken);
+
+                    await _diagnosticService.EmitAsync(
+                        new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitialization)
+                        {
+                            Detail = "HTTP transport service initialized"
+                        }.Build(), cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _diagnosticService.Emit(
+                        new DiagnosticEventBuilder(this, DiagnosticEventType.ComponentInitializationError)
+                        {
+                            Detail = "Error initializating outbound transport queue",
+                            Exception = ex
+                        }.Build());
+                    throw;
+                }
+            }
         }
 
         /// <inheritdoc />
