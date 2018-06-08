@@ -40,23 +40,15 @@ namespace Platibus.IntegrationTests.AspNetCore
         public AspNetCoreSelfHost(AspNetCoreConfiguration configuration)
         {
             var startup = new Startup(configuration);
-            var busSource = new TaskCompletionSource<IBus>();
-            var busInitialized = busSource.Task;
-
             var webHostBuilder = Microsoft.AspNetCore.WebHost
                 .CreateDefaultBuilder()
                 .UseUrls(configuration.BaseUri.WithoutTrailingSlash().ToString())
-                .ConfigureServices(services =>
-                {
-                    startup.ConfigureServices(services);
-                    var bus = services.BuildServiceProvider().GetService<IBus>();
-                    busSource.TrySetResult(bus);
-                })
-                .Configure(app => startup.Configure(app, null))
+                .ConfigureServices(startup.ConfigureServices)
+                .Configure(startup.Configure)
                 .UseKestrel();
 
             WebHost = webHostBuilder.Build();
-            Bus = busInitialized.Result;
+            Bus = WebHost.Services.GetService<IBus>();
 
             WebHost.Start();
         }

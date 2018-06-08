@@ -21,6 +21,8 @@
 // THE SOFTWARE.
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Platibus.Diagnostics;
 
 namespace Platibus.AspNetCore
 {
@@ -28,6 +30,15 @@ namespace Platibus.AspNetCore
     {
         public static IApplicationBuilder UsePlatibusMiddleware(this IApplicationBuilder app)
         {
+            var diagnosticSinks = app.ApplicationServices.GetServices<IDiagnosticEventSink>();
+            var diagnosticService = app.ApplicationServices.GetService<IDiagnosticService>();
+            if (diagnosticService != null && diagnosticSinks != null)
+            {
+                foreach (var diagnosticEventSink in diagnosticSinks)
+                {
+                    diagnosticService.AddSink(diagnosticEventSink);
+                }
+            }
             return app.UseMiddleware<PlatibusMiddleware>();
         }
     }
