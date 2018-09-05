@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Platibus.Http;
 using Platibus.Http.Controllers;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Platibus.Diagnostics;
 using Platibus.Journaling;
 using Platibus.Security;
@@ -134,6 +135,9 @@ namespace Platibus.AspNetCore
         /// be added</param>
         public static void AddPlatibus(this IServiceCollection services)
         {
+            services.TryAdd(ServiceDescriptor.Singleton(provider =>
+                InitializePlatibusConfiguration(null, null).GetResultFromCompletionSource()));
+
             services.AddSingleton<AspNetCoreLoggingSink>();
 
             services.AddSingleton(serviceProvider => serviceProvider.GetService<IAspNetCoreConfiguration>().DiagnosticService);
