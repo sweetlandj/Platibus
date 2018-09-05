@@ -40,23 +40,31 @@ namespace Platibus.UnitTests.Filesystem
         protected FileInfo MessageFileInfo;
 
         protected MessageFile MessageFile;
+        protected Message ReadMessage;
+
+        [Fact]
+        public async Task ZeroByteMessageFileThrowsMessageFileFormatExceptionWhenRead()
+        {
+            GivenZeroByteMessageFile();
+            await Assert.ThrowsAsync<MessageFileFormatException>(WhenReadingTheMessageFileContent);
+        }
 
         [Fact]
         public async Task MessageFileWithSecurityTokenCanBeRead()
         {
             await GivenMessageFileWithClaimsPrincipal();
-            WhenReadingTheMessageFileContent();
-            await ThenTheMessageShouldBeReadSuccessfully();
-            await ThenTheMessageShouldHaveASecurityTokenHeader();
+            await WhenReadingTheMessageFileContent();
+            ThenTheReadMessageShouldBeReadSuccessfully();
+            ThenTheReadMessageShouldHaveASecurityTokenHeader();
         }
 
         [Fact]
         public async Task MessageFileWithNoPrincipalCanBeRead()
         {
             await GivenMessageFileWithNoPrincipal();
-            WhenReadingTheMessageFileContent();
-            await ThenTheMessageShouldBeReadSuccessfully();
-            await ThenTheMessageShouldNotHaveASecurityTokenHeader();
+            await WhenReadingTheMessageFileContent();
+            ThenTheReadMessageShouldBeReadSuccessfully();
+            ThenTheMessageShouldNotHaveASecurityTokenHeader();
         }
         
         protected IPrincipal GivenClaimsPrincipal()
@@ -90,21 +98,17 @@ namespace Platibus.UnitTests.Filesystem
 
             return Message = new Message(headers, "Hello, world!");
         }
-        
-        protected async Task<FileInfo> GivenLegacyMessageFileWithNoPrincipal()
+
+        protected FileInfo GivenZeroByteMessageFile()
         {
-            GivenNoPrincipal();
-            GivenSampleSentMessage();
-
-            var tempFile = Path.GetTempFileName();
-            using (var writer = new LegacyMessageFileWriter(File.OpenWrite(tempFile)))
-            {
-                await writer.WritePrincipal(Principal);
-                await writer.WriteMessage(Message);
-            }
-            return MessageFileInfo = new FileInfo(tempFile);
+            var directory = new DirectoryInfo(Path.GetTempPath());
+            MessageFileInfo = new FileInfo(Path.Combine(directory.FullName, Guid.NewGuid() + ".pmsg" ));
+            var stream = MessageFileInfo.Create();
+            stream.Flush(true);
+            stream.Close();
+            return MessageFileInfo;
         }
-
+        
         protected async Task<FileInfo> GivenMessageFileWithClaimsPrincipal()
         {
             GivenClaimsPrincipal();
@@ -130,32 +134,30 @@ namespace Platibus.UnitTests.Filesystem
             return MessageFileInfo = messageFile.File;
         }
 
-        protected MessageFile WhenReadingTheMessageFileContent()
+        protected async Task<Message> WhenReadingTheMessageFileContent()
         {
             Assert.NotNull(MessageFileInfo);
-            return MessageFile = new MessageFile(MessageFileInfo);
+            MessageFile = new MessageFile(MessageFileInfo);
+            return ReadMessage = await MessageFile.ReadMessage();
         }
         
-        protected async Task ThenTheMessageShouldBeReadSuccessfully()
+        protected void ThenTheReadMessageShouldBeReadSuccessfully()
         {
-            Assert.NotNull(MessageFile);
-            var message = await MessageFile.ReadMessage();
-            Assert.Equal(Message, message, new MessageEqualityComparer(HeaderName.SecurityToken));
+            Assert.NotNull(ReadMessage);
+            Assert.Equal(Message, ReadMessage, new MessageEqualityComparer(HeaderName.SecurityToken));
         }
 
-        protected async Task ThenTheMessageShouldHaveASecurityTokenHeader()
+        protected void ThenTheReadMessageShouldHaveASecurityTokenHeader()
         {
-            Assert.NotNull(MessageFile);
-            var message = await MessageFile.ReadMessage();
-            Assert.NotNull(message.Headers.SecurityToken);
-            Assert.True(message.Headers.SecurityToken.Length > 0);
+            Assert.NotNull(ReadMessage);
+            Assert.NotNull(ReadMessage.Headers.SecurityToken);
+            Assert.True(ReadMessage.Headers.SecurityToken.Length > 0);
         }
 
-        protected async Task ThenTheMessageShouldNotHaveASecurityTokenHeader()
+        protected void ThenTheMessageShouldNotHaveASecurityTokenHeader()
         {
-            Assert.NotNull(MessageFile);
-            var message = await MessageFile.ReadMessage();
-            Assert.Null(message.Headers.SecurityToken);
+            Assert.NotNull(ReadMessage);
+            Assert.Null(ReadMessage.Headers.SecurityToken);
         }
     }
 }

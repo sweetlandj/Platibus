@@ -118,6 +118,8 @@ namespace Platibus.Filesystem
                         Path = file.FullName,
                         Exception = ex
                     }.Build());
+
+                    MoveToDeadLetterDirectory(file);
                 }
             }
             return pendingMessages;
@@ -177,12 +179,25 @@ namespace Platibus.Filesystem
                 await DiagnosticService.EmitAsync(
                     new FilesystemEventBuilder(this, DiagnosticEventType.DeadLetter)
                     {
-                        Detail = "Message file deleted",
+                        Detail = "Message file moved to dead letter directory",
                         Message = message,
                         Queue = QueueName,
                         Path = deadLetter.File.FullName
                     }.Build());
             }
+        }
+
+        private async void MoveToDeadLetterDirectory(FileInfo fileInfo)
+        {
+            var deadLetter = new FileInfo(Path.Combine(_deadLetterDirectory.FullName, fileInfo.Name));
+            deadLetter.MoveTo(deadLetter.FullName);
+            await DiagnosticService.EmitAsync(
+                new FilesystemEventBuilder(this, DiagnosticEventType.DeadLetter)
+                {
+                    Detail = "Message file moved to dead letter directory",  
+                    Queue = QueueName,
+                    Path = deadLetter.FullName
+                }.Build());
         }
 
         /// <inheritdoc />

@@ -20,12 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Platibus.IO;
 using System;
 using System.IO;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
-using Platibus.IO;
 
 namespace Platibus.Filesystem
 {
@@ -141,6 +140,11 @@ namespace Platibus.Filesystem
                     messageFileContent = await fileReader.ReadToEndAsync();
                 }
 
+                if (string.IsNullOrWhiteSpace(messageFileContent))
+                {
+                    throw new MessageFileFormatException(File.FullName, "Message file contains no content");
+                }
+
                 cancellationToken.ThrowIfCancellationRequested();
 
                 using (var stringReader = new StringReader(messageFileContent))
@@ -150,6 +154,10 @@ namespace Platibus.Filesystem
                 }
             }
             catch (TaskCanceledException)
+            {
+                throw;
+            }
+            catch (MessageFileFormatException)
             {
                 throw;
             }

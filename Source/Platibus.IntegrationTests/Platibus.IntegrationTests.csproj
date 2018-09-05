@@ -42,6 +42,10 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
     <Reference Include="netstandard" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <DotNetCliToolReference Include="dotnet-retire" Version="1.0.1" />
+  </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
     <PackageReference Include="Microsoft.AspNetCore.Http" Version="1.1.2" />

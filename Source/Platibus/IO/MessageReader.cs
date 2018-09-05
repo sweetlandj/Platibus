@@ -112,15 +112,12 @@ namespace Platibus.IO
                 var separatorPos = currentLine.IndexOf(':');
                 if (separatorPos < 0)
                 {
-                    throw new FormatException(string.Format("Invalid header on line {0}:  Character ':' expected", lineNumber));
+                    throw new FormatException($"Invalid header on line {lineNumber}:  Character ':' expected");
                 }
 
                 if (separatorPos == 0)
                 {
-                    throw new FormatException(
-                        string.Format(
-                            "Invalid header on line {0}:  Character ':' found at position 0 (missing header name)",
-                            lineNumber));
+                    throw new FormatException($"Invalid header on line {lineNumber}:  Character ':' found at position 0 (missing header name)");
                 }
 
                 currentHeaderName = currentLine.Substring(0, separatorPos);
@@ -165,6 +162,7 @@ namespace Platibus.IO
 
             var headers = await ReadMessageHeaders();
             var content = await ReadMessageContent();
+
             return new Message(headers, content);
         }
 
