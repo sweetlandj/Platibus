@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Platibus.SQLite
 {
-    internal class SynchronizingCommandExecutor : ICommandExecutor, IDisposable
+    public class SynchronizingCommandExecutor : ICommandExecutor, IDisposable
     {
         private readonly SemaphoreSlim _synchronization = new SemaphoreSlim(1);
 

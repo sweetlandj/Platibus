@@ -45,8 +45,8 @@ namespace Platibus.SQLite
     /// </summary>
     public class SQLiteMessageJournal : SQLMessageJournal, IDisposable
     {
-        private readonly CancellationTokenSource _cancellationTokenSource;
-        private readonly ICommandExecutor _commandExecutor = new SynchronizingCommandExecutor();
+        protected readonly CancellationTokenSource CancellationTokenSource;
+        protected readonly ICommandExecutor CommandExecutor = new SynchronizingCommandExecutor();
 
         private bool _disposed;
 
@@ -66,7 +66,7 @@ namespace Platibus.SQLite
         public SQLiteMessageJournal(DirectoryInfo baseDirectory, IDiagnosticService diagnosticService = null)
             : base(InitConnectionProvider(baseDirectory, diagnosticService), new SQLiteMessageJournalCommandBuilders(), diagnosticService)
         {
-            _cancellationTokenSource = new CancellationTokenSource();
+            CancellationTokenSource = new CancellationTokenSource();
         }
         
         private static IDbConnectionProvider InitConnectionProvider(DirectoryInfo directory, IDiagnosticService diagnosticService)
@@ -110,7 +110,7 @@ namespace Platibus.SQLite
             CancellationToken cancellationToken = new CancellationToken())
         {
             CheckDisposed();
-            return _commandExecutor.Execute(
+            return CommandExecutor.Execute(
                 () => base.Append(message, category, cancellationToken),
                 cancellationToken);
         }
@@ -120,7 +120,7 @@ namespace Platibus.SQLite
             CancellationToken cancellationToken = new CancellationToken())
         {
             CheckDisposed();
-            return _commandExecutor.ExecuteRead(
+            return CommandExecutor.ExecuteRead(
                 () => base.Read(start, count, filter, cancellationToken),
                 cancellationToken);
         }
@@ -142,6 +142,7 @@ namespace Platibus.SQLite
             Dispose(false);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
@@ -161,16 +162,16 @@ namespace Platibus.SQLite
         /// <see cref="Dispose()"/> method (<c>true</c>) or from the finalizer (<c>false</c>)</param>
         protected virtual void Dispose(bool disposing)
         {
-            _cancellationTokenSource.Cancel();
+            CancellationTokenSource.Cancel();
 
-            if (_commandExecutor is IDisposable disposableCommandExecutor)
+            if (CommandExecutor is IDisposable disposableCommandExecutor)
             {
                 disposableCommandExecutor.Dispose();
             }
 
             if (disposing)
             {
-                _cancellationTokenSource.Dispose();
+                CancellationTokenSource.Dispose();
             }
         }
     }

@@ -294,12 +294,12 @@ namespace Platibus.Http
 
                 var httpContent = new StringContent(message.Content);
                 WriteHttpContentHeaders(message, httpContent);
-                
+
                 httpClient = await _httpClientFactory.GetClient(endpointBaseUri, credentials, cancellationToken);
                 httpClientTimeout = httpClient.Timeout;
                 requestInitiated = true;
                 httpResponseMessage = await httpClient.PostAsync(relativeUri, httpContent, cancellationToken);
-                status = (int)httpResponseMessage.StatusCode;
+                status = (int) httpResponseMessage.StatusCode;
 
                 HandleHttpErrorResponse(httpResponseMessage);
                 delivered = true;
@@ -364,7 +364,7 @@ namespace Platibus.Http
                     detail += "Cancelation was likely due to a timeout on the HTTP client.  " +
                               "This may be caused by setting Synchronous to 'true' when sending a message.";
                 }
-               
+
                 _diagnosticService.Emit(
                     new HttpEventBuilder(this, HttpEventType.HttpCommunicationError)
                     {
@@ -691,6 +691,8 @@ namespace Platibus.Http
                         {
                             case SocketError.ConnectionRefused:
                                 throw new ConnectionRefusedException(uri.Host, uri.Port, ex.InnerException ?? ex);
+                            case SocketError.HostNotFound:
+                                throw new NameResolutionFailedException(uri.Host);
                         }
                         break;
                     default:
