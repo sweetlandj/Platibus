@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
@@ -7,7 +7,7 @@
     <Company />
     <Copyright>Copyright 2017 Jesse Sweetland</Copyright>
     <PackageProjectUrl>https://github.com/sweetlandj/Platibus</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/sweetlandj/Platibus/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageIconUrl>https://raw.githubusercontent.com/sweetlandj/Platibus/master/Icon.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/sweetlandj/Platibus</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
