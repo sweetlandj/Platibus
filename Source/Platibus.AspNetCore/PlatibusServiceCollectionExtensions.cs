@@ -228,6 +228,79 @@ namespace Platibus.AspNetCore
         /// </summary>
         /// <param name="services">The service collection to which the Platibus services
         /// will be added</param>
+        /// <param name="sectionName">(Optional) The name of the Platibus configuration 
+        /// section.  (The default section name is "platibus".)</param>
+        public static void AddPlatibus(this IServiceCollection services, string sectionName)
+        {
+            services.ConfigurePlatibus(sectionName);
+            services.AddPlatibus();
+        }
+
+        /// <summary>
+        /// Adds Platibus services to the supplied <paramref name="services"/> collection
+        /// based on the configuration in appsettings.json
+        /// </summary>
+        /// <param name="services">The service collection to which the Platibus services
+        /// will be added</param>
+        /// <param name="configure">(Optional) Additional configuration to be performed
+        /// after the configuration is loaded from appsettings.json</param>
+        public static void AddPlatibus(this IServiceCollection services, Action<AspNetCoreConfiguration> configure)
+        {
+            services.ConfigurePlatibus(configure);
+            services.AddPlatibus();
+        }
+
+        /// <summary>
+        /// Adds Platibus services to the supplied <paramref name="services"/> collection
+        /// based on the configuration in appsettings.json
+        /// </summary>
+        /// <param name="services">The service collection to which the Platibus services
+        /// will be added</param>
+        /// <param name="sectionName">(Optional) The name of the Platibus configuration 
+        /// section.  (The default section name is "platibus".)</param>
+        /// <param name="configure">(Optional) Additional configuration to be performed
+        /// after the configuration is loaded from appsettings.json</param>
+        public static void AddPlatibus(this IServiceCollection services, string sectionName, Action<AspNetCoreConfiguration> configure)
+        {
+            services.ConfigurePlatibus(sectionName, configure);
+            services.AddPlatibus();
+        }
+
+        /// <summary>
+        /// Adds Platibus services to the supplied <paramref name="services"/> collection
+        /// based on the configuration in appsettings.json
+        /// </summary>
+        /// <param name="services">The service collection to which the Platibus services
+        /// will be added</param>
+        /// <param name="sectionName">(Optional) The name of the Platibus configuration 
+        /// section.  (The default section name is "platibus".)</param>
+        /// <param name="configure">(Optional) Additional configuration to be performed
+        /// after the configuration is loaded from appsettings.json</param>
+        public static void AddPlatibus(this IServiceCollection services, string sectionName, Func<AspNetCoreConfiguration, Task> configure)
+        {
+            services.ConfigurePlatibus(sectionName, configure);
+            services.AddPlatibus();
+        }
+
+        /// <summary>
+        /// Adds Platibus services to the supplied <paramref name="services"/> collection
+        /// based on the specified <paramref name="configuration"/>
+        /// </summary>
+        /// <param name="services">The service collection to which the Platibus services
+        /// will be added</param>
+        /// <param name="configuration">The ASP.NET Core Platibus configuration</param>
+        public static void AddPlatibus(this IServiceCollection services, IAspNetCoreConfiguration configuration)
+        {
+            services.AddSingleton(configuration);
+            services.AddPlatibus();
+        }
+        
+        /// <summary>
+        /// Adds Platibus services to the supplied <paramref name="services"/> collection
+        /// based on the configuration in appsettings.json
+        /// </summary>
+        /// <param name="services">The service collection to which the Platibus services
+        /// will be added</param>
         [Obsolete("Use ConfigurePlatibus and AddPlatibus")]
         public static void AddPlatibusServices(this IServiceCollection services)
         {

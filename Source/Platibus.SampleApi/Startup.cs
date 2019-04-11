@@ -71,7 +71,7 @@ namespace Platibus.SampleApi
 
             // Platibus services
             var serviceProvider = services.BuildServiceProvider();
-            services.AddPlatibusServices(configuration =>
+            services.AddPlatibus(configuration =>
             {
                 var sink = serviceProvider.GetService<AspNetCoreLoggingSink>();
                 configuration.DiagnosticService.AddSink(sink);
