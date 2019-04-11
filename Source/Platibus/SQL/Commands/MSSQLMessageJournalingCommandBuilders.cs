@@ -34,5 +34,10 @@ namespace Platibus.SQL.Commands
         {
             return new MSSQLCreateMessageJournalObjectsCommandBuilder();
         }
+
+        public override SelectMessageJournalEntriesCommandBuilder NewSelectJournaledMessagesCommandBuilder()
+        {
+            return new MSSQLSelectMessageJournalEntriesCommandBuilder();
+        }
     }
 }
