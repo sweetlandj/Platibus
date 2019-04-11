@@ -99,6 +99,7 @@ namespace Platibus.Filesystem
             using (var fileWriter = new StreamWriter(fileStream))
             {
                 await fileWriter.WriteAsync(messageFileContent);
+                await fileWriter.FlushAsync();
             }
             return new MessageFile(file);
         }
