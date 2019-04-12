@@ -205,7 +205,7 @@ namespace Platibus.SQL
                 commandBuilder.Start = ((SQLMessageJournalPosition) start).Id;
                 commandBuilder.Count = count + 1;
 
-                using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
+                using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
                 {
                     using (var command = commandBuilder.BuildDbCommand(connection))
                     {
