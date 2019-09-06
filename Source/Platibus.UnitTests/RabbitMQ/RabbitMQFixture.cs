@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.Threading;
 using Platibus.Diagnostics;
 using Platibus.RabbitMQ;
 
@@ -48,7 +49,30 @@ namespace Platibus.UnitTests.RabbitMQ
                 }
             };
 
+            WaitForRabbitMQ(Uri);
+
             MessageQueueingService = new RabbitMQMessageQueueingService(queueingOptions);
+        }
+
+        private static void WaitForRabbitMQ(Uri uri)
+        {
+            using (var connectionManager = new ConnectionManager())
+            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
+            {
+                while (!cts.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var connection = connectionManager.GetConnection(uri);
+                        if (connection.IsOpen) return;
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+
+            throw new TimeoutException("RabbitMQ not available");
         }
 
         public void Dispose()

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Platibus.Diagnostics;
 using Platibus.RabbitMQ;
 using Platibus.Security;
@@ -20,6 +21,8 @@ namespace Platibus.UnitTests.RabbitMQ
             // docker run -it --rm --name rabbitmq -p 5682:5672 -p 15682:15672 rabbitmq:3-management
             Uri = new Uri("amqp://guest:guest@localhost:5682");
 
+            WaitForRabbitMQ(Uri);
+
             var encryptionOptions = new AesMessageEncryptionOptions(KeyGenerator.GenerateAesKey())
             {
                 DiagnosticService = DiagnosticService
@@ -36,6 +39,28 @@ namespace Platibus.UnitTests.RabbitMQ
                 MessageEncryptionService = MessageEncryptionService
             };
             MessageQueueingService = new RabbitMQMessageQueueingService(queueingOptions);
+        }
+
+
+        private static void WaitForRabbitMQ(Uri uri)
+        {
+            using (var connectionManager = new ConnectionManager())
+            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
+            {
+                while (!cts.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var connection = connectionManager.GetConnection(uri);
+                        if (connection.IsOpen) return;
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+
+            throw new TimeoutException("RabbitMQ not available");
         }
 
         public void Dispose()

@@ -25,6 +25,8 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using Platibus.Diagnostics;
 using Platibus.MongoDB;
+using System.Threading;
+using System.Threading.Tasks;
 #if NET452
 using System.Configuration;
 #endif
@@ -75,7 +77,7 @@ namespace Platibus.UnitTests.MongoDB
             ConfigurationManager.ConnectionStrings[ConnectionStringSettings.Name] = ConnectionStringSettings;
 #endif
 
-            Database = MongoDBHelper.Connect(ConnectionStringSettings, DatabaseName);
+            Database = WaitForMongoDB(ConnectionStringSettings, DatabaseName);
             
             var subscriptionTrackingOptions = new MongoDBSubscriptionTrackingOptions(Database)
             {
@@ -94,6 +96,35 @@ namespace Platibus.UnitTests.MongoDB
                 DiagnosticService = DiagnosticService
             };
             MessageJournal = new MongoDBMessageJournal(journalOptions);
+        }
+
+        private static IMongoDatabase WaitForMongoDB(ConnectionStringSettings connectionStringSettings, string databaseName)
+        {
+            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
+            {
+                while (!cts.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var database = MongoDBHelper.Connect(connectionStringSettings, databaseName);
+                        database.ListCollections();
+                        return database;
+                    }
+                    catch (Exception)
+                    {
+                    }
+
+                    try
+                    {
+                        Task.Delay(TimeSpan.FromSeconds(1)).Wait(cts.Token);
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+
+            throw new TimeoutException("MongoDB not available");
         }
 
         public void DeleteJournaledMessages()

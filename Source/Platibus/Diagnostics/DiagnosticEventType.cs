@@ -123,6 +123,11 @@ namespace Platibus.Diagnostics
         public static readonly DiagnosticEventType MessageAcknowledged = new DiagnosticEventType("MessageAcknowledged", DiagnosticEventLevel.Trace);
 
         /// <summary>
+        /// Emitted whenever an unexpected error occurs when acknowledging a message
+        /// </summary>
+        public static readonly DiagnosticEventType MessageAcknowledgementError = new DiagnosticEventType("MessageAcknowledgementError", DiagnosticEventLevel.Error);
+
+        /// <summary>
         /// Emitted whenever an attempt is made to sent a message or subscription request to a
         /// named endpoint that has not been configured
         /// </summary>
@@ -139,9 +144,25 @@ namespace Platibus.Diagnostics
         public static readonly DiagnosticEventType MessageExpired = new DiagnosticEventType("MessageExpired", DiagnosticEventLevel.Warn);
 
         /// <summary>
+        /// Emitted when there is an unexpected error during message processing
+        /// </summary>
+        public static readonly DiagnosticEventType QueuedMessageProcessingError = new DiagnosticEventType("QueuedMessageProcessingError", DiagnosticEventLevel.Error);
+
+        /// <summary>
+        /// Emitted when an attempt to schedule a message retry fails
+        /// </summary>
+        public static readonly DiagnosticEventType MessageRetryFailed = new DiagnosticEventType("MessageRetryFailed", DiagnosticEventLevel.Error);
+
+        /// <summary>
         /// Emitted whenever the maximum number of attempts to process a message have been exceeded
         /// </summary>
         public static readonly DiagnosticEventType MaxAttemptsExceeded = new DiagnosticEventType("MaxAttemptsExceeded", DiagnosticEventLevel.Warn);
+
+        /// <summary>
+        /// Emitted whenever an unexpected error occurs when the maximum number of attempts
+        /// to process a message have been exceeded
+        /// </summary>
+        public static readonly DiagnosticEventType MaxAttemptsExceededError = new DiagnosticEventType("MaxAttemptsExceededError", DiagnosticEventLevel.Error);
 
         /// <summary>
         /// Emitted whenever a message is abandoned (i.e. moved to a dead letter queue) due to

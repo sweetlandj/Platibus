@@ -391,15 +391,136 @@ namespace Platibus.Http
         /// </remarks>
         protected virtual void Dispose(bool disposing)
         {
-            _httpListener.Stop();
-            _cancellationTokenSource.Cancel();
-            _listenTask.Wait(TimeSpan.FromSeconds(30));
+            StopListening();
+
             if (!disposing) return;
 
-            _cancellationTokenSource.Dispose();
+            DisposeCancellationTokenSource();
+            CloseHttpListener();
+            DisposeBus();
+            DisposeTransportService();
+            DisposeMessageQueueingService();
+            DisposeMessageJournal();
+            DisposeSubscriptionTrackingService();
+            DisposeMetricsCollector();
+        }
+
+        private void DisposeMetricsCollector()
+        {
+            try
+            {
+                _metricsCollector.Dispose();
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private void DisposeSubscriptionTrackingService()
+        {
+            try
+            {
+                if (_subscriptionTrackingService is IDisposable disposableSubscriptionTrackingService)
+                {
+                    disposableSubscriptionTrackingService.Dispose();
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private void DisposeMessageJournal()
+        {
+            try
+            {
+                if (_messageJournal is IDisposable disposableMessageJournal)
+                {
+                    disposableMessageJournal.Dispose();
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private void DisposeMessageQueueingService()
+        {
+            try
+            {
+                if (_messageQueueingService is IDisposable disposableMessageQueueingService)
+                {
+                    disposableMessageQueueingService.Dispose();
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private void DisposeTransportService()
+        {
+            try
+            {
+                TransportService.Dispose();
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private void DisposeBus()
+        {
+            try
+            {
+                _bus.Dispose();
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private void CloseHttpListener()
+        {
             try
             {
                 _httpListener.Close();
+            }
+            catch(Exception)
+            {
+            }
+        }
+
+        private void DisposeCancellationTokenSource()
+        {
+            try
+            {
+                _cancellationTokenSource.Dispose();
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private void StopListening()
+        {
+            try
+            {
+                if (!_cancellationTokenSource.IsCancellationRequested)
+                {
+                    _cancellationTokenSource.Cancel();
+                }
+
+                if (_listenTask != null)
+                {
+                    _listenTask.Wait(TimeSpan.FromSeconds(30));
+                }
+
+                if (_httpListener.IsListening)
+                {
+                    _httpListener.Stop();
+
+                }
 
                 _diagnosticService.Emit(
                     new HttpEventBuilder(this, HttpEventType.HttpServerStopped)
@@ -418,26 +539,6 @@ namespace Platibus.Http
                     }.Build());
                 _httpListener.Abort();
             }
-            
-            _bus.Dispose();
-            TransportService.Dispose();
-
-            if (_messageQueueingService is IDisposable disposableMessageQueueingService)
-            {
-                disposableMessageQueueingService.Dispose();
-            }
-
-            if (_messageJournal is IDisposable disposableMessageJournal)
-            {
-                disposableMessageJournal.Dispose();
-            }
-
-            if (_subscriptionTrackingService is IDisposable disposableSubscriptionTrackingService)
-            {
-                disposableSubscriptionTrackingService.Dispose();
-            }
-
-            _metricsCollector.Dispose();
         }
     }
 }

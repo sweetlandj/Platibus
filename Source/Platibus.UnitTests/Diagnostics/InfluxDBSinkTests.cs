@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Diagnostics;
 using Xunit;
@@ -21,6 +22,35 @@ namespace Platibus.UnitTests.Diagnostics
         public InfluxDBSinkTests()
         {
             CreateDatabase();
+            WaitForInfluxDB(Options.Uri);
+        }
+
+        private static void WaitForInfluxDB(Uri uri)
+        {
+            var pingUri = new UriBuilder(uri)
+            {
+                Path = "ping"
+            }.Uri;
+
+            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
+            using (var client = new HttpClient())
+            {
+                while (!cts.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var response = client.GetAsync(pingUri).Result;
+                        if (response.IsSuccessStatusCode) return;
+                        
+                        Task.Delay(TimeSpan.FromSeconds(1)).Wait(cts.Token);
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+
+            throw new TimeoutException("InfluxDB not available");
         }
 
         private void CreateDatabase()

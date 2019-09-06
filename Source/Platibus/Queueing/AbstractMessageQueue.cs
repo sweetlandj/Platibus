@@ -20,13 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Platibus.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Platibus.Diagnostics;
 
 namespace Platibus.Queueing
 {
@@ -216,36 +216,90 @@ namespace Platibus.Queueing
         protected virtual async Task ProcessQueuedMessage(QueuedMessage queuedMessage,
             CancellationToken cancellationToken)
         {
-            Exception exception = null;
-            var message = queuedMessage.Message;
-            var principal = queuedMessage.Principal;
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-
-            queuedMessage = queuedMessage.NextAttempt();
-
-            await DiagnosticService.EmitAsync(
-                new DiagnosticEventBuilder(this, DiagnosticEventType.QueuedMessageAttempt)
-                {
-                    Detail = "Processing queued message (attempt " + queuedMessage.Attempts + " of " + _maxAttempts +
-                             ")",
-                    Message = message,
-                    Queue = QueueName
-                }.Build(), cancellationToken);
-
-            var context = new QueuedMessageContext(message, principal);
-            Thread.CurrentPrincipal = context.Principal;
-            cancellationToken.ThrowIfCancellationRequested();
             try
             {
+                queuedMessage = queuedMessage.NextAttempt();
+                var acknowledged = await HandleMessageReceived(queuedMessage, cancellationToken);
+                if (acknowledged)
+                {
+                    await HandleMessageAcknowledged(queuedMessage, cancellationToken);
+                    return;
+                }
+            
+                await DiagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
+                    {
+                        Message = queuedMessage.Message,
+                        Queue = QueueName
+                    }.Build(), cancellationToken);
+
+                if (queuedMessage.Attempts >= _maxAttempts)
+                {
+                    await HandleMaximumAttemptsExceeded(queuedMessage, cancellationToken);
+                    return;
+                }
+
+                await HandleAcknowledgementFailure(queuedMessage);
+
+                DiagnosticService.Emit(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.QueuedMessageRetry)
+                    {
+                        Detail = "Message not acknowledged; retrying in " + _retryDelay,
+                        Message = queuedMessage.Message,
+                        Queue = QueueName
+                    }.Build());
+
+                ScheduleRetry(queuedMessage, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // Catch all.  Do not let any exceptions propagate outside of this method!
+                DiagnosticService.Emit(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.QueuedMessageProcessingError)
+                    {
+                        Detail = "Unhandled exception processing queued message",
+                        Message = queuedMessage.Message,
+                        Queue = QueueName,
+                        Exception = ex
+                    }.Build());
+            }
+        }
+
+        private async Task<bool> HandleMessageReceived(QueuedMessage queuedMessage, CancellationToken cancellationToken)
+        {
+            Message message = null;
+            var acknowledged = false;
+            IPrincipal originalThreadPrincipal = null;
+            try
+            {
+                originalThreadPrincipal = Thread.CurrentPrincipal;
+                message = queuedMessage.Message;
+                queuedMessage = queuedMessage.NextAttempt();
+
+                await DiagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.QueuedMessageAttempt)
+                    {
+                        Detail = "Processing queued message (attempt " + queuedMessage.Attempts + " of " +
+                                 _maxAttempts + ")",
+                        Message = message,
+                        Queue = QueueName
+                    }.Build(), cancellationToken);
+
+                var context = new QueuedMessageContext(message, queuedMessage.Principal);
+
+                Thread.CurrentPrincipal = context.Principal;
+                cancellationToken.ThrowIfCancellationRequested();
+
                 await _listener.MessageReceived(message, context, cancellationToken);
                 if (_autoAcknowledge && !context.Acknowledged)
                 {
                     await context.Acknowledge();
                 }
+
+                acknowledged = context.Acknowledged;
             }
             catch (Exception ex)
             {
-                exception = ex;
                 DiagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.UnhandledException)
                 {
                     Detail = "Unhandled exception handling queued message",
@@ -254,39 +308,47 @@ namespace Platibus.Queueing
                     Exception = ex
                 }.Build());
             }
-
-            var eventArgs = new MessageQueueEventArgs(QueueName, queuedMessage, exception);
-            if (context.Acknowledged)
+            finally
             {
-                await DiagnosticService.EmitAsync(
-                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageAcknowledged)
-                    {
-                        Message = message,
-                        Queue = QueueName
-                    }.Build(), cancellationToken);
-
-                var messageAcknowledgedHandlers = MessageAcknowledged;
-                if (messageAcknowledgedHandlers != null)
-                {
-                    await messageAcknowledgedHandlers(this, eventArgs);
-                }
-                return;
+                Thread.CurrentPrincipal = originalThreadPrincipal;
             }
-            
-            await DiagnosticService.EmitAsync(
-                new DiagnosticEventBuilder(this, DiagnosticEventType.MessageNotAcknowledged)
-                {
-                    Message = message,
-                    Queue = QueueName
-                }.Build(), cancellationToken);
 
-            if (queuedMessage.Attempts >= _maxAttempts)
+            return acknowledged;
+        }
+
+        private async Task HandleAcknowledgementFailure(QueuedMessage queuedMessage)
+        {
+            try
             {
+                var acknowledgementFailureHandlers = AcknowledgementFailure;
+                if (acknowledgementFailureHandlers != null)
+                {
+                    var eventArgs = new MessageQueueEventArgs(QueueName, queuedMessage, null);
+                    await AcknowledgementFailure(this, eventArgs);
+                }
+            }
+            catch (Exception ex)
+            {
+                DiagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageAcknowledgementError)
+                {
+                    Detail = "Unexpected error handling message acknowledgement failure",
+                    Message = queuedMessage.Message,
+                    Queue = QueueName,
+                    Exception = ex
+                }.Build());
+            }
+        }
+
+        private async Task HandleMaximumAttemptsExceeded(QueuedMessage queuedMessage, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var eventArgs = new MessageQueueEventArgs(QueueName, queuedMessage, null);
                 await DiagnosticService.EmitAsync(
                     new DiagnosticEventBuilder(this, DiagnosticEventType.MaxAttemptsExceeded)
                     {
                         Detail = "Maximum attempts exceeded (" + _maxAttempts + ")",
-                        Message = message,
+                        Message = queuedMessage.Message,
                         Queue = QueueName
                     }.Build(), cancellationToken);
 
@@ -295,45 +357,86 @@ namespace Platibus.Queueing
                 {
                     await MaximumAttemptsExceeded(this, eventArgs);
                 }
-
-                return;
             }
-
-            var acknowledgementFailureHandlers = AcknowledgementFailure;
-            if (acknowledgementFailureHandlers != null)
+            catch (Exception ex)
             {
-                await AcknowledgementFailure(this, eventArgs);
-            }
-
-            await DiagnosticService.EmitAsync(
-                new DiagnosticEventBuilder(this, DiagnosticEventType.QueuedMessageRetry)
+                DiagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.MaxAttemptsExceededError)
                 {
-                    Detail = "Message not acknowledged; retrying in " + _retryDelay,
-                    Message = message,
-                    Queue = QueueName
-                }.Build(), cancellationToken);
-
-            ScheduleRetry(queuedMessage, cancellationToken);
+                    Detail = "Unexpected error handling maximum attempts exceeded",
+                    Message = queuedMessage.Message,
+                    Queue = QueueName,
+                    Exception = ex
+                }.Build());
+            }
         }
 
-        private void ScheduleRetry(QueuedMessage queuedMessage, CancellationToken cancellationToken)
+        private async Task HandleMessageAcknowledged(QueuedMessage queuedMessage, CancellationToken cancellationToken)
         {
-            Task.Factory.StartNew(() =>
+            try
             {
-                Task.Delay(_retryDelay, cancellationToken).Wait(cancellationToken);
-                if (cancellationToken.IsCancellationRequested) return;
-                _queuedMessages.Post(queuedMessage);
-
-                DiagnosticService.EmitAsync(
-                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageRequeued)
+                var eventArgs = new MessageQueueEventArgs(QueueName, queuedMessage);
+                await DiagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageAcknowledged)
                     {
-                        Detail = "Message requeued (retry)",
                         Message = queuedMessage.Message,
                         Queue = QueueName
                     }.Build(), cancellationToken);
 
-            },
-            TaskCreationOptions.LongRunning);
+                var messageAcknowledgedHandlers = MessageAcknowledged;
+                if (messageAcknowledgedHandlers != null)
+                {
+                    await messageAcknowledgedHandlers(this, eventArgs);
+                }
+            }
+            catch (Exception ex)
+            {
+                DiagnosticService.Emit(new DiagnosticEventBuilder(this, DiagnosticEventType.MessageAcknowledgementError)
+                {
+                    Detail = "Unexpected error handling message acknowledgement",
+                    Message = queuedMessage.Message,
+                    Queue = QueueName,
+                    Exception = ex
+                }.Build());
+            }
+        }
+
+        private void ScheduleRetry(QueuedMessage queuedMessage, CancellationToken cancellationToken)
+        {
+            
+            Task.Factory.StartNew(
+                async _ => await ScheduleRetryAsync(queuedMessage, cancellationToken), 
+                cancellationToken,
+                TaskCreationOptions.LongRunning);
+        }
+
+        private async Task ScheduleRetryAsync(QueuedMessage queuedMessage, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await Task.Delay(_retryDelay, cancellationToken);
+                if (cancellationToken.IsCancellationRequested) return;
+
+                _queuedMessages.Post(queuedMessage);
+
+                await DiagnosticService.EmitAsync(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageRequeued)
+                    {
+                        Detail = "Message re-queued (retry)",
+                        Message = queuedMessage.Message,
+                        Queue = QueueName
+                    }.Build(), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                DiagnosticService.Emit(
+                    new DiagnosticEventBuilder(this, DiagnosticEventType.MessageRetryFailed)
+                    {
+                        Detail = "Unexpected error scheduling message retry",
+                        Message = queuedMessage.Message,
+                        Queue = QueueName,
+                        Exception = ex
+                    }.Build());
+            }
         }
 
         /// <summary>

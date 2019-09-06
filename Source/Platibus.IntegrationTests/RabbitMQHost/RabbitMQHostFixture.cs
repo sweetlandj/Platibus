@@ -24,7 +24,10 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Platibus.Config;
+using Platibus.RabbitMQ;
 
 namespace Platibus.IntegrationTests.RabbitMQHost
 {
@@ -42,7 +45,7 @@ namespace Platibus.IntegrationTests.RabbitMQHost
         public RabbitMQHostFixture()
         {
             // docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
-
+            WaitForRabbitMQ(new Uri("amqp://guest:guest@localhost:5682"));
             CreateVHosts();
             
             _sendingHost = RabbitMQ.RabbitMQHost.Start("platibus.rabbitmq0");
@@ -52,9 +55,34 @@ namespace Platibus.IntegrationTests.RabbitMQHost
                 configuration.AddHandlingRule(".*TestPublication", new TestPublicationHandler(), "TestPublicationHandler");
             });
         }
+        
+        private static void WaitForRabbitMQ(Uri uri)
+        {
+            using (var connectionManager = new ConnectionManager())
+            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
+            {
+                while (!cts.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var connection = connectionManager.GetConnection(uri);
+                        if (connection.IsOpen) return;
+                        
+                        Task.Delay(TimeSpan.FromSeconds(1)).Wait(cts.Token);
+                    }
+                    catch (Exception)
+                    {
+                    }
+
+                }
+            }
+
+            throw new TimeoutException("RabbitMQ not available");
+        }
 
         private static void CreateVHosts()
         {
+
             var baseAddress = new Uri("http://localhost:15672/api/");
             var basicAuthCreds = Convert.ToBase64String(Encoding.UTF8.GetBytes("guest:guest"));
             var adminPerms = "{\"configure\":\".*\",\"write\":\".*\",\"read\":\".*\"}";

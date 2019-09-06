@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Platibus.Diagnostics;
 using Xunit;
@@ -43,8 +44,40 @@ namespace Platibus.UnitTests.Diagnostics
         protected GelfLoggingSinkTests(GelfLoggingSink gelfLoggingSink)
         {
             GelfLoggingSink = gelfLoggingSink;
+            WaitForGelfInput(gelfLoggingSink);
         }
 
+        private void WaitForGelfInput(GelfLoggingSink sink)
+        {
+            var diagnosticEvent = new DiagnosticEventBuilder(sink, DiagnosticEventType.ComponentInitialization)
+            {
+                Detail = "[Unit Test] Waiting for GELF input to start (" + GetType().Name + ")"
+            }.Build();
+
+            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
+            {
+                while (!cts.IsCancellationRequested)
+                {
+                    try
+                    {
+                        sink.Consume(diagnosticEvent);
+                        return;
+                    }
+                    catch (Exception)
+                    {
+                    }
+
+                    try
+                    {
+                        Task.Delay(TimeSpan.FromSeconds(1)).Wait(cts.Token);
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+        }
+        
         [Fact]
         public async Task GelfMessagesAreSent()
         {
