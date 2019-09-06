@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
+
 namespace Platibus.Security
 {
     /// <summary>
@@ -29,11 +31,26 @@ namespace Platibus.Security
     /// This type of endpoint credentials implies integrated Windows (NTLM/Kerberos) 
     /// authentication
     /// </remarks>
-    public sealed class DefaultCredentials : IEndpointCredentials
+    public sealed class DefaultCredentials : IEndpointCredentials, IEquatable<DefaultCredentials>
     {
         void IEndpointCredentials.Accept(IEndpointCredentialsVisitor visitor)
         {
             visitor.Visit(this);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as DefaultCredentials);
+        }
+
+        public bool Equals(DefaultCredentials obj)
+        {
+            return obj != null;
+        }
+
+        public override int GetHashCode()
+        {
+            return 0;
         }
     }
 }

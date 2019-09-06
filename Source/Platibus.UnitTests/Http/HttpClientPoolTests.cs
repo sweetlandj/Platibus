@@ -35,13 +35,13 @@ namespace Platibus.UnitTests.Http
     public class HttpClientPoolTests
     {
         [Fact]
-        public async Task HttpClientPoolAllocatesOneHandlerPerUriAndManyCredentialsOfTheSameType()
+        public async Task HttpClientPoolAllocatesOneHandlerPerUriAndManyOfTheSameCredential()
         {
             var uri = new Uri("http://localhost/platibus");
             var clientPool = new HttpClientPool();
 
             var credentialSet = Enumerable.Range(0, 100)
-                .Select(i => new BasicAuthCredentials("user" + i, "pw" + i));
+                .Select(_ => new BasicAuthCredentials("user", "pw"));
 
             var initialSize = clientPool.Size;
             foreach (var credentials in credentialSet)
@@ -56,7 +56,7 @@ namespace Platibus.UnitTests.Http
         }
 
         [Fact]
-        public async Task HttpClientPoolAllocatesOneHandlerPerUriAndCredentialType()
+        public async Task HttpClientPoolAllocatesOneHandlerPerUriAndCredentialSet()
         {
             var uri = new Uri("http://localhost/platibus");
             var clientPool = new HttpClientPool();
@@ -142,6 +142,7 @@ namespace Platibus.UnitTests.Http
                 {
                     httpListener.Stop();
                 }
+                httpListener.Close();
                 clientPool.Dispose();
             }
         }

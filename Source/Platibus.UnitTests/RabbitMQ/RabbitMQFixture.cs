@@ -57,7 +57,7 @@ namespace Platibus.UnitTests.RabbitMQ
         private static void WaitForRabbitMQ(Uri uri)
         {
             using (var connectionManager = new ConnectionManager())
-            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
+            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
             {
                 while (!cts.IsCancellationRequested)
                 {

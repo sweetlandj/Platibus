@@ -45,7 +45,6 @@ namespace Platibus.IntegrationTests.RabbitMQHost
         public RabbitMQHostFixture()
         {
             // docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
-            WaitForRabbitMQ(new Uri("amqp://guest:guest@localhost:5682"));
             CreateVHosts();
             
             _sendingHost = RabbitMQ.RabbitMQHost.Start("platibus.rabbitmq0");
@@ -56,24 +55,22 @@ namespace Platibus.IntegrationTests.RabbitMQHost
             });
         }
         
-        private static void WaitForRabbitMQ(Uri uri)
+        private static void WaitForRabbitMQRestApi(HttpClient httpClient)
         {
-            using (var connectionManager = new ConnectionManager())
-            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
+            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
             {
                 while (!cts.IsCancellationRequested)
                 {
                     try
                     {
-                        var connection = connectionManager.GetConnection(uri);
-                        if (connection.IsOpen) return;
+                        var response = httpClient.GetAsync("vhosts").Result;
+                        if (response.IsSuccessStatusCode) return;
                         
                         Task.Delay(TimeSpan.FromSeconds(1)).Wait(cts.Token);
                     }
                     catch (Exception)
                     {
                     }
-
                 }
             }
 
@@ -82,13 +79,15 @@ namespace Platibus.IntegrationTests.RabbitMQHost
 
         private static void CreateVHosts()
         {
-
             var baseAddress = new Uri("http://localhost:15672/api/");
+
             var basicAuthCreds = Convert.ToBase64String(Encoding.UTF8.GetBytes("guest:guest"));
             var adminPerms = "{\"configure\":\".*\",\"write\":\".*\",\"read\":\".*\"}";
             using (var httpClient = new HttpClient{BaseAddress = baseAddress})
             {
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", basicAuthCreds);
+
+                WaitForRabbitMQRestApi(httpClient);
 
                 // net452
                 var response1 = httpClient.PutAsync("vhosts/platibus0", new StringContent("")).Result;

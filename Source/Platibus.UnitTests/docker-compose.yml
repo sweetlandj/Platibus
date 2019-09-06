@@ -1,11 +1,5 @@
 version: "3"
 services:
-  mongo:
-    image: mongo:3.6.0-jessie
-    ports:
-      - "27027:27017"
-    networks:
-      - "platibus-unit-tests"
   rabbitmq:
     image: rabbitmq:3
     ports:
@@ -13,6 +7,14 @@ services:
       - "15682:15672"
     networks:
       - "platibus-unit-tests"
+
+  mongo:
+    image: mongo:3.6.0-jessie
+    ports:
+      - "27027:27017"
+    networks:
+      - "platibus-unit-tests"
+  
   influxdb:
     image: influxdb
     ports:
@@ -20,6 +22,7 @@ services:
       - "8096:8086"
     networks:
       - "platibus-unit-tests"
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:5.5.2
     ports:
@@ -36,6 +39,7 @@ services:
         hard: -1
     networks:
       - "platibus-unit-tests"
+
   graylog:
     image: graylog/graylog:2.3.2-1
     links:
@@ -47,5 +51,6 @@ services:
       - "12211:12201/udp"
     networks:
       - "platibus-unit-tests"
+
 networks:
   platibus-unit-tests:

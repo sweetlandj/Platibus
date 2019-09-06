@@ -143,33 +143,31 @@ namespace Platibus.Http
         private class PoolKey : IEquatable<PoolKey>
         {
             private readonly Uri _uri;
-            private readonly Type _credentialType;
+            private readonly IEndpointCredentials _credentials;
 
             public PoolKey(Uri uri, IEndpointCredentials credentials)
             {
                 _uri = uri;
-                _credentialType = credentials?.GetType();
+                _credentials = credentials;
             }
 
             public bool Equals(PoolKey other)
             {
                 if (ReferenceEquals(null, other)) return false;
                 if (ReferenceEquals(this, other)) return true;
-                return Equals(_uri, other._uri) && _credentialType == other._credentialType;
+                return Equals(_uri, other._uri) && Equals(_credentials, other._credentials);
             }
 
             public override bool Equals(object obj)
             {
-                if (ReferenceEquals(null, obj)) return false;
-                if (ReferenceEquals(this, obj)) return true;
-                return obj.GetType() == GetType() && Equals((PoolKey)obj);
+                return Equals(obj as PoolKey);
             }
 
             public override int GetHashCode()
             {
                 unchecked
                 {
-                    return ((_uri != null ? _uri.GetHashCode() : 0) * 397) ^ (_credentialType != null ? _credentialType.GetHashCode() : 0);
+                    return ((_uri != null ? _uri.GetHashCode() : 0) * 397) ^ _credentials.GetHashCode();
                 }
             }
 
