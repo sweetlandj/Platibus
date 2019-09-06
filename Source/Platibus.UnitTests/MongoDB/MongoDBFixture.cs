@@ -66,12 +66,15 @@ namespace Platibus.UnitTests.MongoDB
                 ConnectionString = $"mongodb://localhost:27027/{DatabaseName}?maxpoolsize=1000"
             };
 #if NET452
-
             var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            var configMap = new ExeConfigurationFileMap() {
+                ExeConfigFilename = config.FilePath
+            };
+            config = ConfigurationManager.OpenMappedExeConfiguration(configMap, ConfigurationUserLevel.None);
             config.ConnectionStrings.ConnectionStrings.Remove(ConnectionStringSettings.Name);
             config.ConnectionStrings.ConnectionStrings.Add(ConnectionStringSettings);
-            config.Save();
-            ConfigurationManager.RefreshSection("connectionStrings");
+            config.Save(ConfigurationSaveMode.Full, true);
+            ConfigurationManager.RefreshSection(config.ConnectionStrings.SectionInformation.SectionName);
 #endif
 #if NETCOREAPP2_0
             ConfigurationManager.ConnectionStrings[ConnectionStringSettings.Name] = ConnectionStringSettings;
