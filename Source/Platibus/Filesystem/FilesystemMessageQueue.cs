@@ -85,10 +85,11 @@ namespace Platibus.Filesystem
         {
             return DeleteMessageFile(args.QueuedMessage);
         }
-        
+
         private Task OnMaximumAttemptsExceeded(object source, MessageQueueEventArgs args)
         {
-            return MoveToDeadLetterDirectory(args.QueuedMessage);
+            MoveToDeadLetterDirectory(args.QueuedMessage);
+            return Task.FromResult(true);
         }
 
         /// <inheritdoc />
@@ -166,38 +167,58 @@ namespace Platibus.Filesystem
             }
         }
 
-        private async Task MoveToDeadLetterDirectory(QueuedMessage queuedMessage)
+        private void MoveToDeadLetterDirectory(QueuedMessage queuedMessage)
         {
-            var message = queuedMessage.Message;
-            var headers = message.Headers;
-            var pattern = headers.MessageId + "*.pmsg";
-            var matchingFiles = _directory.EnumerateFiles(pattern);
-            foreach (var matchingFile in matchingFiles)
+            string pattern = "";
+            try
             {
-                var messageFile = new MessageFile(matchingFile);
-                var deadLetter = await messageFile.MoveTo(_deadLetterDirectory);
+                var message = queuedMessage.Message;
+                var headers = message.Headers;
+                pattern = headers.MessageId + "*.pmsg";
+                var matchingFiles = _directory.EnumerateFiles(pattern);
+                foreach (var matchingFile in matchingFiles)
+                {
+                    MoveToDeadLetterDirectory(matchingFile);
+                }
+            }
+            catch (Exception ex)
+            {
+                DiagnosticService.Emit(
+                    new FilesystemEventBuilder(this, DiagnosticEventType.DeadLetterError)
+                    {
+                        Detail = "Error moving message file(s) to dead letter directory",
+                        Queue = QueueName,
+                        Path = Path.Combine(_directory.FullName, pattern),
+                        Exception = ex
+                    }.Build());
+            }
+        }
+        
+        private async void MoveToDeadLetterDirectory(FileInfo file)
+        {
+            try
+            {
+                var deadLetter = new FileInfo(Path.Combine(_deadLetterDirectory.FullName, file.Name));
+                file.MoveTo(deadLetter.FullName);
                 await DiagnosticService.EmitAsync(
                     new FilesystemEventBuilder(this, DiagnosticEventType.DeadLetter)
                     {
                         Detail = "Message file moved to dead letter directory",
-                        Message = message,
                         Queue = QueueName,
-                        Path = deadLetter.File.FullName
+                        Path = deadLetter.FullName
                     }.Build());
             }
-        }
-
-        private async void MoveToDeadLetterDirectory(FileInfo fileInfo)
-        {
-            var deadLetter = new FileInfo(Path.Combine(_deadLetterDirectory.FullName, fileInfo.Name));
-            deadLetter.MoveTo(deadLetter.FullName);
-            await DiagnosticService.EmitAsync(
-                new FilesystemEventBuilder(this, DiagnosticEventType.DeadLetter)
-                {
-                    Detail = "Message file moved to dead letter directory",  
-                    Queue = QueueName,
-                    Path = deadLetter.FullName
-                }.Build());
+            catch (Exception ex)
+            {
+                DiagnosticService.Emit(
+                    new FilesystemEventBuilder(this, DiagnosticEventType.DeadLetterError)
+                    {
+                        Detail = "Error moving message file to dead letter directory",
+                        Queue = QueueName,
+                        Path = file.FullName,
+                        Exception = ex
+                    }.Build());
+            }
         }
 
         /// <inheritdoc />
@@ -219,7 +240,7 @@ namespace Platibus.Filesystem
                     _deadLetterDirectory.Create();
                     _deadLetterDirectory.Refresh();
                 }
-                
+
                 cancellationToken.ThrowIfCancellationRequested();
 
                 await DiagnosticService.EmitAsync(

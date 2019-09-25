@@ -95,12 +95,8 @@ namespace Platibus.Filesystem
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            using (var fileStream = file.Open(FileMode.CreateNew, FileAccess.Write))
-            using (var fileWriter = new StreamWriter(fileStream))
-            {
-                await fileWriter.WriteAsync(messageFileContent);
-                await fileWriter.FlushAsync();
-            }
+            System.IO.File.WriteAllText(file.FullName, messageFileContent);
+            
             return new MessageFile(file);
         }
 
@@ -134,13 +130,7 @@ namespace Platibus.Filesystem
                 // *could* be null, the message is the only thing we can go by.
                 if (_message != null) return;
 
-                string messageFileContent;
-                using (var fileStream = File.OpenRead())
-                using (var fileReader = new StreamReader(fileStream))
-                {
-                    messageFileContent = await fileReader.ReadToEndAsync();
-                }
-
+                var messageFileContent = System.IO.File.ReadAllText(File.FullName);
                 if (string.IsNullOrWhiteSpace(messageFileContent))
                 {
                     throw new MessageFileFormatException(File.FullName, "Message file contains no content");
@@ -188,6 +178,7 @@ namespace Platibus.Filesystem
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                File.Refresh();
                 File.MoveTo(newPath);
                 return new MessageFile(new FileInfo(newPath));
             }

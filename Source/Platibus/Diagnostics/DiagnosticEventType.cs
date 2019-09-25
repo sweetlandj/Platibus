@@ -170,7 +170,13 @@ namespace Platibus.Diagnostics
         /// being acknowledged by any handlers
         /// </summary>
         public static readonly DiagnosticEventType DeadLetter = new DiagnosticEventType("DeadLetter", DiagnosticEventLevel.Warn);
-        
+
+        /// <summary>
+        /// Emitted whenever an error occurs when handling a dead letter
+        /// </summary>
+        /// <seealso cref="DeadLetter"/>
+        public static readonly DiagnosticEventType DeadLetterError = new DiagnosticEventType("DeadLetterError", DiagnosticEventLevel.Warn);
+
         /// <summary>
         /// Emitted whenever access is denied to a resource
         /// </summary>

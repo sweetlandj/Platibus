@@ -73,7 +73,7 @@ namespace Platibus.UnitTests.Http
                 await transportService.SendMessage(message);
 
                 messageReceived = await messageReceivedEvent
-                    .WaitOneAsync(TimeSpan.FromSeconds(3));
+                    .WaitOneAsync(TimeSpan.FromSeconds(10));
             }
 
             // Sanity check.  We're really testing the transport to ensure
