@@ -38,7 +38,6 @@ namespace Platibus.UnitTests.Filesystem
             Configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection()
                 .Build();
-
 #endif
             Path = fixture.BaseDirectory;
             Message = new Message(new MessageHeaders
@@ -86,7 +85,7 @@ namespace Platibus.UnitTests.Filesystem
             {
                 Enabled = true,
                 Provider = "AES",
-                Key = HexEncoding.GetString(KeyGenerator.GenerateAesKey().GetSymmetricKey())
+                Key = HexEncoding.GetString(KeyGenerator.GenerateAesKey().Key)
             };
 #endif
 #if NETCOREAPP2_0
