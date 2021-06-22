@@ -12,12 +12,14 @@ using Platibus.SampleWebApp;
 using Platibus.SampleWebApp.IdentityServer;
 using System;
 using System.IdentityModel.Tokens;
+using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Platibus.Diagnostics;
 using Platibus.SampleWebApp.Controllers;
 using AuthenticationOptions = IdentityServer3.Core.Configuration.AuthenticationOptions;
+using JwtSecurityTokenHandler = System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler;
 
 [assembly: OwinStartup(typeof(Startup))]
 
@@ -147,26 +149,11 @@ namespace Platibus.SampleWebApp
             return new ClaimsIdentity(authenticationType);
         }
 
-        public static async Task AddUserInfoClaims(ClaimsIdentity identity, OpenIdConnectAuthenticationOptions options, string accessToken)
+        private static async Task AddUserInfoClaims(ClaimsIdentity identity, OpenIdConnectAuthenticationOptions options, string accessToken)
         {
             var userInfoClient = new UserInfoClient(options.Authority + "/connect/userinfo");
             var userInfo = await userInfoClient.GetAsync(accessToken);
-            foreach (var claim in userInfo.Claims)
-            {
-                // JWT specifies claim types like "sub", "iss", "aud", etc. whereas the .NET
-                // platform has claim types that are more verbose
-                // ("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name" for example).  To 
-                // ensure good interop with Windows/.NET claims and other security primitives the
-                // JwtSecurityTokenHandler.InboundClaimsMap can be leveraged to map the JWT claims
-                // onto their .NET equivalents.
-                var inboundClaimType = claim.Type;
-                string mappedClaimType;
-                if (!JwtSecurityTokenHandler.InboundClaimTypeMap.TryGetValue(inboundClaimType, out mappedClaimType))
-                {
-                    mappedClaimType = inboundClaimType;
-                }
-                identity.AddClaim(new Claim(mappedClaimType, claim.Value, claim.ValueType, claim.Issuer, claim.OriginalIssuer, claim.Subject));
-            }
+            identity = userInfo.Claims.Aggregate(identity, (current, claim) => AddDotNetEquivalentClaim(current, claim));
 
             // The "sub" claim is (rightly) mapped to the .NET
             // "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier" claim.
@@ -183,6 +170,25 @@ namespace Platibus.SampleWebApp
                     identity.AddClaim(nameClaim);
                 }
             }
+        }
+
+        private static ClaimsIdentity AddDotNetEquivalentClaim(ClaimsIdentity identity, Claim claim)
+        {
+            // JWT specifies claim types like "sub", "iss", "aud", etc. whereas the .NET
+            // platform has claim types that are more verbose
+            // ("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name" for example).  To 
+            // ensure good interop with Windows/.NET claims and other security primitives the
+            // JwtSecurityTokenHandler.InboundClaimsMap can be leveraged to map the JWT claims
+            // onto their .NET equivalents.
+            var inboundClaimType = claim.Type;
+            string mappedClaimType;
+            if (!JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.TryGetValue(inboundClaimType, out mappedClaimType))
+            {
+                mappedClaimType = inboundClaimType;
+            }
+
+            identity.AddClaim(new Claim(mappedClaimType, claim.Value, claim.ValueType, claim.Issuer, claim.OriginalIssuer, claim.Subject));
+            return identity;
         }
 
         private static X509Certificate2 LoadCertificate()
