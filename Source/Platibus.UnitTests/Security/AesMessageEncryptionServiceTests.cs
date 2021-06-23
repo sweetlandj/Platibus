@@ -31,12 +31,7 @@ using Platibus.Diagnostics;
 using Platibus.IO;
 using Platibus.Security;
 using Xunit;
-#if NET452
-using System.IdentityModel.Tokens;
-#endif
-#if NETCOREAPP2_0
 using Microsoft.IdentityModel.Tokens;
-#endif
 
 namespace Platibus.UnitTests.Security
 {
@@ -135,12 +130,7 @@ namespace Platibus.UnitTests.Security
 
         protected async Task GivenInvalidSignature()
         {
-#if NET452
-            var key = Options.Key.GetSymmetricKey();
-#endif
-#if NETCOREAPP2_0
             var key = Options.Key.Key;
-#endif
             using (var hmac = new HMACSHA256(key))
             {
                 var originalMessageHeaders = Message.Headers;

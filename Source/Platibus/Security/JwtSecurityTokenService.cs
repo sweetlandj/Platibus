@@ -27,12 +27,12 @@ using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using Platibus.Diagnostics;
+using Microsoft.IdentityModel.Tokens;
 #if NET452 || NET461
-using System.IdentityModel.Tokens;
 using System.IdentityModel.Protocols.WSTrust;
+using JwtSecurityTokenHandler = System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler;
 #endif
 #if NETSTANDARD2_0
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 #endif
 
@@ -70,6 +70,7 @@ namespace Platibus.Security
         /// </summary>
         public JwtSecurityTokenService(JwtSecurityTokenServiceOptions options)
         {
+            // here
             var myOptions = options ?? new JwtSecurityTokenServiceOptions();
             _diagnosticService = myOptions.DiagnosticService ?? DiagnosticService.DefaultInstance;
             _signingKey = myOptions.SigningKey;
@@ -109,21 +110,11 @@ namespace Platibus.Security
 
             var identity = principal.Identity;
             var claimsIdentity = identity as ClaimsIdentity ?? new ClaimsIdentity(identity);
-
-#if NET452 || NET461
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = claimsIdentity,
-                Lifetime = new Lifetime(DateTime.UtcNow, myExpires)
-            };
-#endif
-#if NETSTANDARD2_0
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = claimsIdentity,
                 Expires = myExpires
             };
-#endif
 
             if (_signingKey != null)
             {

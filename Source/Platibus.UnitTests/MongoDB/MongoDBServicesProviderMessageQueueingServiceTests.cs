@@ -123,7 +123,7 @@ namespace Platibus.UnitTests.MongoDB
             {
                 Enabled = true,
                 Provider = "AES",
-                Key = HexEncoding.GetString(KeyGenerator.GenerateAesKey().GetSymmetricKey())
+                Key = HexEncoding.GetString(KeyGenerator.GenerateAesKey().Key)
             };
 #endif
 #if NETCOREAPP2_0

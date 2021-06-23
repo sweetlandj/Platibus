@@ -53,17 +53,6 @@ namespace Platibus.Security
             if (options == null) throw new ArgumentNullException(nameof(options));
 
             _diagnosticService = options.DiagnosticService;
-#if NET452 || NET461
-            _encryptionKey = options.Key.GetSymmetricKey();
-            _decryptionKeys = new[] {_encryptionKey}.Union(
-                options.FallbackKeys?
-                    .Where(k => k != null)
-                    .Select(k => k.GetSymmetricKey())
-                    .ToList()
-                ?? Enumerable.Empty<byte[]>())
-                .ToList();
-#endif
-#if NETSTANDARD2_0
             _encryptionKey = options.Key.Key;
             _decryptionKeys = new[] {_encryptionKey}.Union(
                     options.FallbackKeys?
@@ -72,7 +61,6 @@ namespace Platibus.Security
                         .ToList()
                     ?? Enumerable.Empty<byte[]>())
                 .ToList();
-#endif
         }
 
         public async Task<Message> Encrypt(Message message)

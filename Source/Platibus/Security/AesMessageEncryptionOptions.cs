@@ -20,12 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#if NET452 || NET461
-using System.IdentityModel.Tokens;
-#endif
-#if NETSTANDARD2_0
 using Microsoft.IdentityModel.Tokens;
-#endif
 using Platibus.Diagnostics;
 using System;
 using System.Collections.Generic;
