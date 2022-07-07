@@ -48,7 +48,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
-    <PackageReference Include="Microsoft.AspNetCore.Http" Version="1.1.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.1.22" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Extensions" Version="1.1.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="1.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="1.1.3" />
